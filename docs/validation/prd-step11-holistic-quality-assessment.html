@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD Validation — Step 11: Holistic Quality Assessment</title>
+<style>
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; max-width: 1020px; margin: 2rem auto; padding: 0 1.5rem; background: #fafafa; color: #1a1a1a; line-height: 1.65; }
+  h1 { border-bottom: 3px solid #2563eb; padding-bottom: 0.5rem; margin-bottom: 0.25rem; }
+  h2 { color: #1e3a5f; margin-top: 2.5rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.3rem; }
+  h3 { color: #374151; margin-top: 1.5rem; }
+  h4 { color: #4b5563; margin-top: 1rem; margin-bottom: 0.4rem; }
+
+  .meta { color: #6b7280; font-size: 0.9rem; margin-bottom: 2rem; }
+  code { background: #f3f4f6; padding: 0.15rem 0.35rem; border-radius: 3px; font-size: 0.9em; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 700; font-size: 0.9rem; }
+  .pass { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .warning { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+  .critical { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: #1e3a5f; color: #fff; padding: 0.6rem 0.75rem; text-align: left; }
+  td { padding: 0.55rem 0.75rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) { background: #f3f4f6; }
+
+  /* Score cards */
+  .dimension-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+  .dimension-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .dimension-card .dim-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+  .dimension-card .dim-score { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .dimension-card .dim-title { font-weight: 600; font-size: 1rem; color: #1e3a5f; }
+  .dimension-card .dim-body { font-size: 0.92rem; color: #374151; }
+  .score-green { color: #16a34a; }
+  .score-amber { color: #d97706; }
+  .score-red { color: #dc2626; }
+
+  /* Overall score hero */
+  .overall-hero { display: flex; align-items: center; gap: 1.5rem; background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 2px solid #2563eb; border-radius: 10px; padding: 1.5rem 2rem; margin: 1.25rem 0; }
+  .overall-hero .hero-score { font-size: 3.5rem; font-weight: 800; color: #16a34a; }
+  .overall-hero .hero-label { font-size: 1.1rem; color: #374151; }
+
+  /* Principle cards */
+  .principle-row { display: flex; align-items: flex-start; gap: 0.75rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.85rem 1rem; margin: 0.6rem 0; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .principle-row .p-badge { flex-shrink: 0; width: 60px; text-align: center; }
+  .principle-row .p-content { flex: 1; }
+  .principle-row .p-title { font-weight: 700; color: #1e3a5f; }
+  .principle-row .p-detail { font-size: 0.92rem; color: #4b5563; margin-top: 0.25rem; }
+
+  /* Improvement cards */
+  .improvement-card { background: #fff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 0.85rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .improvement-card .imp-rank { font-weight: 800; color: #2563eb; font-size: 1.1rem; }
+  .improvement-card .imp-title { font-weight: 700; color: #1e3a5f; margin: 0.25rem 0; }
+  .improvement-card .imp-body { font-size: 0.93rem; color: #374151; }
+  .improvement-card .imp-impact { margin-top: 0.5rem; font-size: 0.88rem; color: #6b7280; font-style: italic; }
+
+  /* Section callouts */
+  .callout { padding: 0.75rem 1rem; border-radius: 6px; margin: 1rem 0; font-size: 0.95rem; }
+  .callout-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .callout-warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+  .callout-good { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+
+  ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+  li { margin: 0.3rem 0; }
+  strong { color: #111827; }
+</style>
+</head>
+<body>
+
+<h1>PRD Validation &mdash; Step 11: Holistic Quality Assessment</h1>
+<p class="meta">
+  <strong>Document:</strong> <code>_bmad-output/planning-artifacts/prd.md</code><br>
+  <strong>Source Brief:</strong> <code>_bmad-output/planning-artifacts/product-brief-Grid2-2026-02-10.md</code><br>
+  <strong>Date:</strong> 2026-02-11<br>
+  <strong>Validator:</strong> Claude Opus 4.6 (Automated PRD Validation &mdash; Step 11)<br>
+  <strong>Document Length:</strong> 547 lines &middot; 21 NFRs &middot; 36 FRs &middot; 9 FFRs &middot; 4 User Journeys
+</p>
+
+<!-- ============================================ -->
+<h2>Overall Quality Rating</h2>
+
+<div class="overall-hero">
+  <div class="hero-score">4.2 / 5</div>
+  <div>
+    <div class="hero-label">
+      <strong>Very Strong PRD.</strong> This document is well above average for a product requirements document. It demonstrates exceptional information density, strong domain awareness, and clear MVP scoping. The narrative user journeys effectively communicate capability requirements. The primary gaps are (1) a notable divergence from the product brief that introduces scope and architectural risk, (2) two explicitly flagged TODOs that represent real completeness gaps, and (3) a missing traceability matrix linking FRs to user needs. These are addressable without major rework.
+    </div>
+  </div>
+</div>
+
+<p><strong>Overall Severity:</strong> <span class="badge warning">WARNING</span></p>
+<p style="font-size:0.93rem; color:#6b7280;">Not CRITICAL because the document is functional and implementable as-is. Not PASS because the product brief divergence and open TODOs represent risks that should be resolved before implementation begins.</p>
+
+<!-- ============================================ -->
+<h2>1. Document Flow &amp; Coherence</h2>
+
+<div class="dimension-grid">
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-green">4 / 5</div>
+      <div class="dim-title">Flow &amp; Coherence</div>
+    </div>
+    <div class="dim-body">Strong logical progression with one structural concern.</div>
+  </div>
+</div>
+
+<h4>Strengths</h4>
+<ul>
+  <li><strong>Logical top-down flow:</strong> Executive Summary &rarr; Success Criteria &rarr; Product Scope &rarr; User Journeys &rarr; Domain Requirements &rarr; PWA Requirements &rarr; Phased Scoping &rarr; FRs &rarr; NFRs. Each section builds on the previous one naturally.</li>
+  <li><strong>User Journeys precede Domain Requirements:</strong> This is excellent &mdash; the reader first understands <em>who</em> and <em>what they do</em>, then encounters the domain-specific constraints that shape the system. The journeys establish empathy and context before the document shifts to specification mode.</li>
+  <li><strong>Scope section cleanly separates phases:</strong> The "Deliberately Cut from MVP" table (lines 384&ndash;401) is a powerful structural device &mdash; it defines scope by explicit negation, leaving zero ambiguity about what Phase 1 excludes. The "Returns In" column links cuts to future phases, maintaining coherence across the roadmap.</li>
+  <li><strong>NFRs and FRs appear last:</strong> Correctly positioned as the implementation-facing specification layer, after all business context and domain requirements have been established.</li>
+  <li><strong>Journey Requirements Summary table (lines 191&ndash;197):</strong> Excellent connective tissue &mdash; summarizes capabilities revealed across all four journeys in one scannable table, bridging the narrative section to the specification sections that follow.</li>
+</ul>
+
+<h4>Weaknesses</h4>
+<ul>
+  <li><strong>Product Scope appears before User Journeys (line 74 vs. line 98):</strong> The document introduces scope and phasing before the reader has encountered the user journeys that <em>justify</em> that scope. Moving User Journeys before Product Scope would improve the narrative arc: "Here are the users and their needs" &rarr; "Here is what we will build to meet those needs." Currently the reader encounters a feature list before fully understanding who it serves. This is a minor structural inversion that does not break the document but weakens its persuasive flow.</li>
+  <li><strong>Some repetition between Product Scope (lines 74&ndash;97) and Project Scoping &amp; Phased Development (lines 353&ndash;438):</strong> Both sections describe MVP features and phase breakdown. The first is a brief summary, the second is the detailed version. The intent is clear (summary up front, detail later), but the overlap in phase descriptions (Phase 2, Phase 3, Phase 4) could be consolidated. An explicit forward reference from the summary section ("See <em>Project Scoping &amp; Phased Development</em> for full breakdown") already exists at line 78, which mitigates this concern.</li>
+</ul>
+
+<div class="callout callout-info">
+  <strong>Verdict:</strong> The document flows well. The one structural inversion (Scope before Journeys) is a minor issue. Section transitions are generally clean and explicit. Repetition between the two scoping sections is acknowledged by the document itself.
+</div>
+
+<!-- ============================================ -->
+<h2>2. Dual-Audience Effectiveness</h2>
+
+<div class="dimension-grid">
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-green">4.5 / 5</div>
+      <div class="dim-title">Dual-Audience Effectiveness</div>
+    </div>
+    <div class="dim-body">Excellent balance between human narrative and machine-extractable specification.</div>
+  </div>
+</div>
+
+<h4>For Human Readers (Stakeholder-Ready)</h4>
+<ul>
+  <li><strong>Executive Summary is concise and compelling:</strong> In 16 lines (30&ndash;46), the reader understands the product, vision, differentiator, users, tech stack, and timeline. Stakeholder-ready without further context.</li>
+  <li><strong>Named personas throughout:</strong> "Jeanie," "Marcus," "DeShawn" &mdash; not abstract role labels. This makes the document immediately relatable and anchors abstract requirements to real operational scenarios.</li>
+  <li><strong>User Journeys use cinematic structure:</strong> "Opening Scene," "Rising Action," "Climax," "Resolution" &mdash; this is a deliberate narrative technique that transforms a requirements document into a story. It communicates <em>why</em> features exist, not just <em>what</em> they are. Human readers can emotionally connect with the pain points and resolutions.</li>
+  <li><strong>Tables used throughout for dense information:</strong> Browser matrix, performance targets, feature cut list, risk mitigation &mdash; all presented in scannable table format rather than prose paragraphs.</li>
+  <li><strong>"Author: GOD" label (line 28):</strong> Likely an abbreviation or placeholder, but in a stakeholder-facing document this reads as unprofessional. Should be a real name or team designation.</li>
+</ul>
+
+<h4>For LLM Consumption (Structured &amp; Extractable)</h4>
+<ul>
+  <li><strong>YAML frontmatter:</strong> Classification metadata (projectType, domain, complexity, projectContext) is machine-extractable and enables automated processing.</li>
+  <li><strong>Consistent FR/NFR/FFR numbering:</strong> FR1&ndash;FR36, NFR1&ndash;NFR21, FFR1&ndash;FFR9 &mdash; each uses a stable identifier pattern that LLMs can reliably extract and reference.</li>
+  <li><strong>"Actor can verb object" pattern:</strong> All 36 functional requirements use this consistent sentence structure, making them trivially parseable.</li>
+  <li><strong>Explicit cross-references:</strong> NFR20&ndash;NFR21 referenced from Domain Requirements (line 206). Phase returns referenced in the cut table. These enable LLMs to build a dependency graph.</li>
+  <li><strong>Missing: Traceability IDs on non-FR sections:</strong> Domain requirements, PWA requirements, and photo handling requirements lack unique identifiers. An LLM building an implementation plan from this document would struggle to reference "the third bullet under Environmental Hazard Reporting" versus a labeled DR-ENV-3.</li>
+</ul>
+
+<div class="callout callout-good">
+  <strong>Verdict:</strong> The dual-audience balance is one of this document's greatest strengths. The narrative sections serve humans; the specification sections serve machines. The only gap is the lack of identifiers on domain-specific and platform-specific requirements outside the FR/NFR blocks.
+</div>
+
+<!-- ============================================ -->
+<h2>3. BMAD PRD Principles Compliance</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:40px;">#</th>
+      <th style="width:220px;">Principle</th>
+      <th style="width:70px;">Result</th>
+      <th>Justification</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><strong>High Information Density</strong></td>
+      <td><span class="badge pass">PASS</span></td>
+      <td>Validated in Step 3. Score: 4.5/5. Only 3 minor violations across 547 lines (0.55% violation rate). Zero conversational filler, zero wordy phrases, zero redundant modifiers. Every sentence carries payload.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Measurable Requirements</strong></td>
+      <td><span class="badge pass">PASS</span></td>
+      <td>All NFRs include quantified targets: "&lt; 3 seconds" (NFR1), "&lt; 10 seconds" (NFR2), "&lt; 2 seconds" (NFR3), "50 concurrent users" (NFR4), "&lt; 1 second" (NFR5), "TLS 1.2+" (NFR6), "24 hours" (NFR11), "99.5% uptime" (NFR16), "1 year" (NFR20). Success Criteria include measurable targets: "&lt; 15 minutes," "50% reduction," "&lt; 5% rejection rate," "&lt; 2 hours/week," "&lt; 1% login failure rate." FRs are testable binary conditions ("Super Admin can create..." &mdash; either they can or they cannot).</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Clear Traceability</strong></td>
+      <td><span class="badge warning">WARNING</span></td>
+      <td>
+        <strong>Partial compliance.</strong> User Journeys reveal capabilities, and the Journey Requirements Summary table (lines 191&ndash;197) maps capabilities to personas. However, there is <strong>no explicit traceability matrix linking individual FRs to the user needs or journeys they satisfy.</strong> For example, FR21&ndash;FR27 (Damage Assessment) clearly trace to DeShawn's journey, but this link is implicit, not documented. An LLM or implementer cannot programmatically determine which FR satisfies which user need without manual analysis.
+        <br><br>
+        Additionally, domain requirements (Data Archival, Safety, Environmental Hazard, etc.) lack FR-level decomposition &mdash; they describe system behaviors that should map to specific FRs or be labeled as future requirements.
+      </td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Domain Awareness</strong></td>
+      <td><span class="badge pass">PASS</span></td>
+      <td>Exceptional domain awareness. The document demonstrates deep understanding of utility damage assessment contracting: chaotic ticket intake channels (line 239&ndash;245), conditional assessment form logic mirroring physical infrastructure (Pole &rarr; Primary &rarr; Secondary &rarr; Service/Neutral &rarr; Weatherhead/Meter), environmental hazard escalation chains, 1099 contractor compliance, seasonal workforce activation patterns, field conditions (rain, gloves, sunlight, poor connectivity), and Safari/iPadOS constraints. The Domain-Specific Requirements section (lines 200&ndash;271) is comprehensive and industry-authentic.</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Zero Anti-Patterns</strong></td>
+      <td><span class="badge pass">PASS</span></td>
+      <td>
+        <strong>Subjective adjectives:</strong> None detected. No "intuitive," "user-friendly," "seamless," "robust," or "scalable" used as standalone requirements.<br>
+        <strong>Implementation leakage:</strong> One minor instance &mdash; "Dexie.js" and "Supabase" are named as specific technologies, not just capability requirements. However, given the builder profile (solo non-developer using AI-assisted development on a 30-day timeline), naming specific technologies is a <em>deliberate, justified constraint</em>, not accidental leakage. The PRD explicitly acknowledges the tech stack as a project parameter.<br>
+        <strong>Vague quantifiers:</strong> None detected. All numeric targets are specific.
+      </td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Dual Audience Optimized</strong></td>
+      <td><span class="badge pass">PASS</span></td>
+      <td>Assessed in detail in Section 2 above. Score: 4.5/5. Strong for both human readers (narrative journeys, named personas, cinematic structure) and LLM consumption (YAML frontmatter, consistent FR/NFR numbering, "Actor can verb object" patterns, cross-references).</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><strong>Markdown Format</strong></td>
+      <td><span class="badge pass">PASS</span></td>
+      <td>Clean, professional Markdown throughout. Proper heading hierarchy (H1 &rarr; H2 &rarr; H3 &rarr; H4). Tables are well-formed. Bullet lists are consistent. Bold emphasis used judiciously for key terms. Horizontal rules separate major sections. YAML frontmatter present and well-structured. No rendering artifacts or broken syntax.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-info">
+  <strong>Principles Summary:</strong> 6 of 7 principles PASS. One WARNING on traceability &mdash; the implicit links between user needs and FRs should be made explicit through a requirements traceability matrix.
+</div>
+
+<!-- ============================================ -->
+<h2>4. Narrative Quality</h2>
+
+<div class="dimension-grid">
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-green">4.5 / 5</div>
+      <div class="dim-title">Narrative Quality</div>
+    </div>
+    <div class="dim-body">User Journeys are a standout strength. Executive Summary is razor-sharp.</div>
+  </div>
+</div>
+
+<h4>User Journey Assessment</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Journey</th>
+      <th>Compelling?</th>
+      <th>Capabilities Revealed?</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>J1: Jeanie (Super Admin)</strong></td>
+      <td>Yes</td>
+      <td>Extensive &mdash; 10+ capabilities</td>
+      <td>The "9 PM storm call" opening immediately establishes urgency. The climax ("trusts what she sees") directly communicates the core value proposition. Appropriately flagged with a TODO for SOP refinement.</td>
+    </tr>
+    <tr>
+      <td><strong>J2: Marcus (Admin Re-Activation)</strong></td>
+      <td>Yes</td>
+      <td>Strong &mdash; 8+ capabilities</td>
+      <td>The "3-month dormancy" framing is a genuinely novel UX insight. Most products design for first-use; this journey designs for re-use after absence. The "Welcome Back" UX concept is compelling and differentiating. The climax ("productive within 30 minutes") is measurable.</td>
+    </tr>
+    <tr>
+      <td><strong>J3: DeShawn (Contractor)</strong></td>
+      <td>Yes</td>
+      <td>Comprehensive &mdash; 12+ capabilities</td>
+      <td>The richest journey. The assessment form walkthrough (lines 166&ndash;168) effectively communicates the conditional logic UX: "Any damage? No = collapse. Yes = photo + description + dropdowns." The climax ("completes first assessment correctly on first attempt") ties directly to the North Star metric. DeShawn's resolution quote ("This app just works") is effective stakeholder communication.</td>
+    </tr>
+    <tr>
+      <td><strong>J4: Utility Client</strong></td>
+      <td>Adequate</td>
+      <td>Minimal &mdash; 5 capabilities</td>
+      <td>Appropriately brief for an indirect/secondary user. The competitive framing ("Grid Electric's data vs. three other contractors") effectively communicates the business value of data quality. Could be strengthened with a specific scenario (e.g., a real example of a contract won/lost based on data quality).</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>Executive Summary Effectiveness</h4>
+<ul>
+  <li><strong>Vision clarity:</strong> "Replace the fragmented chaos of paper forms, Excel spreadsheets, and phone calls with a single, purpose-built digital platform" &mdash; immediately communicates the problem and solution in one sentence.</li>
+  <li><strong>Differentiator clarity:</strong> "Grid2 is not a generic field service app" &mdash; the negation-first framing is effective. It tells the reader what the product is NOT before explaining what it IS, which prevents misframing.</li>
+  <li><strong>User definitions are operational:</strong> Each persona is described by what they DO, not by demographic attributes. "Creates storm projects, enters tickets, assigns contractors" tells an implementer exactly what capabilities to build.</li>
+  <li><strong>"Why" behind decisions:</strong> Consistently strong. The "Deliberately Cut from MVP" table includes a "Reason" column. Risk mitigations include rationale. Technology choices reference the builder profile as justification.</li>
+</ul>
+
+<div class="callout callout-good">
+  <strong>Verdict:</strong> The narrative quality is a standout feature of this PRD. The cinematic journey structure is an effective technique for communicating requirements through story. The Executive Summary would hold up in a board presentation.
+</div>
+
+<!-- ============================================ -->
+<h2>5. Completeness of Thought</h2>
+
+<div class="dimension-grid">
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-amber">3.5 / 5</div>
+      <div class="dim-title">Completeness of Thought</div>
+    </div>
+    <div class="dim-body">Mostly strong, but significant gaps in brief-to-PRD alignment and open TODOs.</div>
+  </div>
+</div>
+
+<h4>Edge Cases Considered</h4>
+<ul>
+  <li><strong>Safari/iPadOS constraints (lines 297&ndash;301):</strong> Background Sync API limitation addressed explicitly. Camera access fallback documented. Push notification version requirements specified. These are real-world edge cases that many PRDs miss.</li>
+  <li><strong>Field conditions (lines 309&ndash;317):</strong> Gloved operation (48px touch targets), sunlight readability, color-blind safety, wet conditions &mdash; comprehensive field-context edge cases.</li>
+  <li><strong>Session interruption (NFR18):</strong> Draft preservation on browser tab/session interruption &mdash; an important edge case for field workers.</li>
+  <li><strong>Seasonal workforce scaling (NFR13):</strong> "0 to 200+ contractors within hours" &mdash; addresses the surge-capacity edge case inherent to storm operations.</li>
+  <li><strong>Missing edge case &mdash; concurrent editing:</strong> If Jeanie and Marcus both edit the same ticket simultaneously, what happens? No conflict resolution policy is stated for the online-only MVP.</li>
+  <li><strong>Missing edge case &mdash; account recovery:</strong> What happens if a contractor loses their password? The PRD specifies email/password auth (FR2) but does not address password reset flows.</li>
+</ul>
+
+<h4>Decisions Justified</h4>
+<ul>
+  <li><strong>Online-only for MVP:</strong> Justified by cutting offline as the "most complex feature" (line 388). Clear return timeline (Phase 2).</li>
+  <li><strong>Hard-coded assessment form:</strong> Justified by 30-day timeline and "configurable form templates" deferred to Phase 2.</li>
+  <li><strong>Technology naming (Supabase, Dexie.js):</strong> Justified by builder profile &mdash; solo non-developer needs specific, proven tooling.</li>
+</ul>
+
+<h4>Open Questions &amp; TODOs</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Item</th>
+      <th>Location</th>
+      <th>Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>TODO: Detailed SOP Required</strong> &mdash; Jeanie's journey needs refinement once David provides the comprehensive SOP document</td>
+      <td>Lines 102, 198</td>
+      <td><span class="badge warning">WARNING</span> &mdash; The Super Admin journey is the most operationally critical path and it is explicitly flagged as incomplete. Implementation of admin workflows without the SOP risks building the wrong thing.</td>
+    </tr>
+    <tr>
+      <td><strong>Author field: "GOD"</strong> &mdash; Likely a placeholder or abbreviation</td>
+      <td>Line 28</td>
+      <td><span class="badge info">LOW</span> &mdash; Cosmetic, but undermines professionalism if the document is shared externally.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>MVP Scope Clarity</h4>
+<ul>
+  <li><strong>Well bounded:</strong> The 8-feature MVP table (lines 373&ndash;383) is explicit. The "Deliberately Cut" table (lines 386&ndash;401) defines scope by negation. The risk mitigation table includes a fallback ("If behind by week 2, cut dashboard #8"). This is strong MVP scoping.</li>
+  <li><strong>Phase gates are clear:</strong> Each phase has a stated focus and feature set. Decision criteria are implicit but could be more explicit (e.g., "Phase 2 begins when..." is not formalized).</li>
+</ul>
+
+<h4>Product Brief Divergence (Significant Finding)</h4>
+
+<div class="callout callout-warn">
+  <strong>Critical observation:</strong> The PRD's MVP scope diverges substantially from the Product Brief's Phase 1 definition. This is the single most important finding of this holistic assessment.
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Aspect</th>
+      <th>Product Brief (Phase 1)</th>
+      <th>PRD (MVP Phase 1)</th>
+      <th>Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Authentication</strong></td>
+      <td>Microsoft Entra ID (Azure AD) SSO</td>
+      <td>Supabase Auth (email/password)</td>
+      <td><span class="badge warning">HIGH</span> &mdash; Fundamental auth architecture change. Entra ID SSO with existing M365 tenant was a core brief requirement. PRD downgrades to basic email/password. This affects security posture, user experience (no SSO), and future Microsoft Graph integration.</td>
+    </tr>
+    <tr>
+      <td><strong>Permission Groups</strong></td>
+      <td>Admin capabilities controlled via permission groups (Billing, Tickets, Users, Inventory, Reports)</td>
+      <td>Not in MVP. Marcus operates with "same capabilities as Jeanie" (line 369)</td>
+      <td><span class="badge warning">MEDIUM</span> &mdash; The brief specifically calls out "features outside a user's permissions are hidden entirely, not disabled." The PRD eliminates this distinction in MVP.</td>
+    </tr>
+    <tr>
+      <td><strong>Damage Assessment</strong></td>
+      <td>Phase 2 (dedicated design sprint)</td>
+      <td>MVP Feature #6</td>
+      <td><span class="badge info">POSITIVE</span> &mdash; The PRD pulls the assessment form into MVP, which is arguably the right call given it is "the single most critical feature." The brief's recommendation to defer it was conservative.</td>
+    </tr>
+    <tr>
+      <td><strong>Ticket Management</strong></td>
+      <td>Phase 2</td>
+      <td>MVP Features #4 and #5</td>
+      <td><span class="badge info">POSITIVE</span> &mdash; Pulling tickets into MVP makes the product usable for its core purpose ("One Storm"). The brief's Phase 1 without tickets was a foundation without a building.</td>
+    </tr>
+    <tr>
+      <td><strong>Offline/PWA Shell</strong></td>
+      <td>Phase 1 includes "PWA Shell: Installable, offline-ready scaffold"</td>
+      <td>"No service workers, no offline" (line 434)</td>
+      <td><span class="badge warning">MEDIUM</span> &mdash; Brief explicitly includes PWA scaffold with Dexie.js and service worker foundation. PRD eliminates this entirely. This affects progressive enhancement strategy.</td>
+    </tr>
+    <tr>
+      <td><strong>Enum/Dropdown Management</strong></td>
+      <td>Phase 1 Feature #9</td>
+      <td>Not in MVP (hard-coded assessment form)</td>
+      <td><span class="badge info">LOW</span> &mdash; Consistent with hard-coding the assessment form.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The PRD has <strong>re-scoped the MVP</strong> relative to the product brief. Some changes are improvements (pulling assessment/tickets into MVP), but the auth architecture change (Entra ID &rarr; email/password) and elimination of permission groups represent significant departures that should be explicitly documented as <strong>deliberate scope decisions with stakeholder sign-off</strong>, not silent divergences.</p>
+
+<!-- ============================================ -->
+<h2>6. Dimension Scores Summary</h2>
+
+<div class="dimension-grid">
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-green">4.0</div>
+      <div class="dim-title">Document Flow &amp; Coherence</div>
+    </div>
+    <div class="dim-body">Strong logical progression. Minor structural inversion (Scope before Journeys). Controlled repetition between scoping sections.</div>
+  </div>
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-green">4.5</div>
+      <div class="dim-title">Dual-Audience Effectiveness</div>
+    </div>
+    <div class="dim-body">Excellent. Narrative for humans, structured IDs for machines. Missing identifiers on domain requirements.</div>
+  </div>
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-green">4.5</div>
+      <div class="dim-title">Narrative Quality</div>
+    </div>
+    <div class="dim-body">Standout strength. Cinematic journeys, razor-sharp Executive Summary, clear "why" behind decisions.</div>
+  </div>
+  <div class="dimension-card">
+    <div class="dim-header">
+      <div class="dim-score score-amber">3.5</div>
+      <div class="dim-title">Completeness of Thought</div>
+    </div>
+    <div class="dim-body">Good edge case coverage, clear MVP bounds. Weakened by product brief divergence and open TODOs.</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2>7. Top 3 Improvements</h2>
+
+<div class="improvement-card">
+  <div class="imp-rank">#1 &mdash; Highest Impact</div>
+  <div class="imp-title">Document and Justify Product Brief Divergences</div>
+  <div class="imp-body">
+    Add a section (or appendix) titled <strong>"Scope Decisions &mdash; Departures from Product Brief"</strong> that explicitly documents the three significant changes:
+    <ol>
+      <li><strong>Auth: Entra ID SSO &rarr; Supabase email/password.</strong> State the reason (e.g., 30-day timeline, Entra ID complexity, deferred to Phase 2). Document the migration path back to SSO.</li>
+      <li><strong>Permission Groups eliminated from MVP.</strong> State the reason (e.g., only one admin needed for first storm). Document when they return.</li>
+      <li><strong>PWA scaffold/service worker deferred.</strong> State the reason (online-only simplification). Document Phase 2 reintroduction.</li>
+    </ol>
+    Also acknowledge the <em>positive</em> divergences (assessment form and ticket management pulled forward) with rationale.
+  </div>
+  <div class="imp-impact">Impact: Eliminates the risk of a stakeholder (or future developer) discovering silent scope changes and losing trust in the document. Ensures architectural decisions are traceable.</div>
+</div>
+
+<div class="improvement-card">
+  <div class="imp-rank">#2 &mdash; High Impact</div>
+  <div class="imp-title">Add a Requirements Traceability Matrix</div>
+  <div class="imp-body">
+    Add a table mapping each FR to the user journey and success criteria it satisfies. Example:
+    <br><br>
+    <table>
+      <thead>
+        <tr><th>FR</th><th>User Need (Journey)</th><th>Success Criteria</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>FR21&ndash;FR27</td><td>J3: DeShawn &mdash; Damage Assessment</td><td>&lt; 5% ticket rejection rate</td></tr>
+        <tr><td>FR15&ndash;FR20</td><td>J1: Jeanie &mdash; Ticket Management</td><td>&lt; 2 hours/week corrections</td></tr>
+        <tr><td>FR6&ndash;FR10</td><td>J3: DeShawn &mdash; Onboarding</td><td>&lt; 15 min onboarding</td></tr>
+      </tbody>
+    </table>
+    <br>
+    This matrix converts the current implicit traceability into explicit, verifiable links. It also reveals any orphaned requirements (FRs that don't trace to a user need) or uncovered user needs (journey capabilities without corresponding FRs).
+  </div>
+  <div class="imp-impact">Impact: Directly addresses the BMAD Principle 3 (Clear Traceability) WARNING. Enables implementers and LLMs to understand the "why" behind each requirement without re-reading the entire document.</div>
+</div>
+
+<div class="improvement-card">
+  <div class="imp-rank">#3 &mdash; Medium-High Impact</div>
+  <div class="imp-title">Resolve or Time-Bound the Open TODO</div>
+  <div class="imp-body">
+    The TODO at lines 102 and 198 ("Detailed SOP Required &mdash; David will provide the comprehensive end-to-end SOP document from work") has <strong>no deadline or fallback strategy.</strong> Given the 30-day MVP timeline, this SOP is a blocking dependency for the Super Admin workflow design.
+    <br><br>
+    <strong>Recommended actions:</strong>
+    <ul>
+      <li>Set a deadline: "SOP document required by [date] to maintain 30-day timeline."</li>
+      <li>Define a fallback: "If SOP is not provided by [date], proceed with the generalized journey framework as documented. Refine post-launch based on operational feedback."</li>
+      <li>Identify the specific FRs that may change based on SOP input (likely FR11&ndash;FR14 and FR15&ndash;FR18) so the team knows which implementations are at risk of rework.</li>
+    </ul>
+  </div>
+  <div class="imp-impact">Impact: Converts an open-ended dependency into a bounded risk with a mitigation strategy. Prevents the TODO from silently blocking progress or being forgotten.</div>
+</div>
+
+<!-- ============================================ -->
+<h2>8. BMAD Principles Compliance Summary</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:40px;">#</th>
+      <th style="width:260px;">Principle</th>
+      <th style="width:70px;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>High Information Density</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>2</td><td>Measurable Requirements</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>3</td><td>Clear Traceability</td><td><span class="badge warning">WARNING</span></td></tr>
+    <tr><td>4</td><td>Domain Awareness</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>5</td><td>Zero Anti-Patterns</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>6</td><td>Dual Audience Optimized</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>7</td><td>Markdown Format</td><td><span class="badge pass">PASS</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================ -->
+<h2>9. Final Verdict</h2>
+
+<div class="overall-hero" style="border-color: #d97706;">
+  <div class="hero-score" style="color: #d97706;">WARNING</div>
+  <div>
+    <div class="hero-label">
+      <strong>Overall Quality: 4.2 / 5.</strong> This is a very strong PRD that demonstrates professional-grade requirements writing. The information density, domain awareness, and narrative quality are exceptional. The primary concern is the undocumented divergence from the product brief on authentication architecture and permission groups &mdash; these are not necessarily wrong decisions, but they must be explicitly documented and justified. The open SOP TODO should be time-bounded. Adding a traceability matrix would elevate this from "very good" to "excellent."
+    </div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Score</th>
+      <th>Weight</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Document Flow &amp; Coherence</td><td>4.0 / 5</td><td>20%</td></tr>
+    <tr><td>Dual-Audience Effectiveness</td><td>4.5 / 5</td><td>20%</td></tr>
+    <tr><td>BMAD Principles Compliance</td><td>6/7 PASS, 1 WARNING</td><td>25%</td></tr>
+    <tr><td>Narrative Quality</td><td>4.5 / 5</td><td>15%</td></tr>
+    <tr><td>Completeness of Thought</td><td>3.5 / 5</td><td>20%</td></tr>
+    <tr style="background: #eff6ff; font-weight: 700;"><td>Overall</td><td>4.2 / 5</td><td>100%</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top: 1.5rem; color: #6b7280; font-size: 0.85rem;">
+  <em>This assessment was generated by Claude Opus 4.6 as part of BMAD PRD Validation Step 11. Document analyzed: <code>_bmad-output/planning-artifacts/prd.md</code> (547 lines, 2026-02-10).</em>
+</p>
+
+</body>
+</html>

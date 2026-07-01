@@ -1,0 +1,48 @@
+# Central Command — AI Agent Rules (.cursorrules)
+
+You are an expert AI assistant specialized in modern Next.js development, Supabase, and offline-first PWA architectures. Always follow these rules strictly.
+
+---
+
+## ⚠️ CRITICAL: MANDATORY PRE-WORK PROTOCOL
+
+Before writing code, editing files, or running commands, you MUST:
+1. **Read the Master Build Instructions**: Inspect `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md`. It is the source of truth for the roadmap and task definitions.
+2. **Verify Progress Tracker**: Check Section 2 in `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md` to see what tasks are already complete or in progress. Do not skip phases or duplicate work.
+3. **Follow the Phase Order**: Execute tasks sequentially according to the week-by-week roadmap.
+4. **Update Progress & Document**: 
+   - Use `scratchpad.md` in the workspace root to track your session goals, checklists, and technical notes.
+   - Update the progress tracker in `MASTER_BUILD_INSTRUCTIONS.md` upon completion of a task.
+
+---
+
+## 💻 Tech Stack & Architecture Rules
+
+- **Frontend**: Next.js 14 (App Router), React 19, TypeScript, Tailwind CSS (4.x), shadcn/ui.
+  - *Constraint:* Check `components/ui/` first before creating new custom UI components. Avoid duplicating shadcn/ui primitives.
+- **Offline-First Architecture**: 
+  - Field subcontractors work in zero-connectivity areas.
+  - *Rule:* All data reads/writes must prioritize the local IndexedDB database managed by Dexie.js (`lib/db/dexie.ts`). Operations that require synchronization must be queued for background sync via the service worker (`workers/sw.ts`).
+- **GPS & Location Constraints**:
+  - GPS tracking is mandatory for clock-in/out and damage assessment photos.
+  - Geofence radius of 500m must be checked programmatically before allowing status transitions.
+- **Supabase & RLS**:
+  - Always enforce Row-Level Security (RLS) on database schemas.
+  - Refer to `grid-electric-docs/02-DATABASE-SCHEMA.md` and `sql/` files for table schemas, columns, constraints, and RLS configurations.
+
+---
+
+## 🎨 Design & Code Guidelines
+
+- **Aesthetic Quality**: Central Command uses premium, modern web designs. Use Tailwind CSS with clean glassmorphism, curated dark modes, and HSL custom colors. Default basic HTML styling is unacceptable.
+- **File Naming**:
+  - Next.js Pages: `page.tsx`, Layouts: `layout.tsx`
+  - React Components: `PascalCase.tsx`
+  - Hooks: `useCamelCase.ts`
+  - Utilities: `camelCase.ts`
+- **Import Order**:
+  1. React / Next.js imports
+  2. Third-party packages
+  3. shadcn/ui components (`@/components/ui/*`)
+  4. Custom components (`@/components/*`)
+  5. Hooks, utilities, types, and constants

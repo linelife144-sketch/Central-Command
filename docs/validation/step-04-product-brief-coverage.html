@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD Validation - Step 4: Product Brief Coverage</title>
+  <style>
+    :root {
+      --pass: #16a34a;
+      --warn: #d97706;
+      --fail: #dc2626;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #475569;
+      --accent: #38bdf8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; color: var(--accent); }
+    h2 { font-size: 1.35rem; margin: 2rem 0 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; margin: 1.25rem 0 0.5rem; color: #cbd5e1; }
+    .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+    .verdict-box { padding: 1.25rem 1.5rem; border-radius: 8px; margin: 1.5rem 0; font-weight: 600; font-size: 1.1rem; }
+    .verdict-warning { background: rgba(217, 119, 6, 0.15); border: 2px solid var(--warn); color: var(--warn); }
+    .section { background: var(--surface); border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; border: 1px solid var(--border); }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; vertical-align: middle; }
+    .badge-pass { background: rgba(22, 163, 74, 0.2); color: var(--pass); border: 1px solid var(--pass); }
+    .badge-warn { background: rgba(217, 119, 6, 0.2); color: var(--warn); border: 1px solid var(--warn); }
+    .badge-fail { background: rgba(220, 38, 38, 0.2); color: var(--fail); border: 1px solid var(--fail); }
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }
+    th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: var(--surface2); color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { vertical-align: top; }
+    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin-bottom: 0.35rem; font-size: 0.92rem; }
+    .highlight { color: var(--warn); font-weight: 600; }
+    .critical { color: var(--fail); font-weight: 600; }
+    .good { color: var(--pass); }
+    p { margin-bottom: 0.5rem; font-size: 0.92rem; }
+    .divergence-card { background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 6px; padding: 1rem 1.25rem; margin: 0.75rem 0; }
+    .divergence-card h4 { color: var(--fail); margin-bottom: 0.4rem; font-size: 0.95rem; }
+    .gap-card { background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.3); border-radius: 6px; padding: 1rem 1.25rem; margin: 0.75rem 0; }
+    .gap-card h4 { color: var(--warn); margin-bottom: 0.4rem; font-size: 0.95rem; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .summary-stat { background: var(--surface2); padding: 1rem; border-radius: 6px; text-align: center; }
+    .summary-stat .number { font-size: 2rem; font-weight: 700; }
+    .summary-stat .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; }
+    .meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 2rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Step 4: Product Brief Coverage Validation</h1>
+  <p class="subtitle">Mapping Product Brief content to PRD sections -- assessing completeness, gaps, and divergences</p>
+  <p class="meta">
+    <strong>PRD:</strong> <code>_bmad-output/planning-artifacts/prd.md</code><br>
+    <strong>Product Brief:</strong> <code>_bmad-output/planning-artifacts/product-brief-Grid2-2026-02-10.md</code><br>
+    <strong>Validation Date:</strong> 2026-02-11
+  </p>
+
+  <!-- ========== OVERALL VERDICT ========== -->
+  <div class="verdict-box verdict-warning">
+    OVERALL SEVERITY: WARNING -- PRD covers most brief content well but contains significant architectural divergences and MVP scope misalignment that must be reconciled before development proceeds.
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-stat">
+      <div class="number good">3</div>
+      <div class="label">Full Coverage</div>
+    </div>
+    <div class="summary-stat">
+      <div class="number" style="color: var(--warn);">3</div>
+      <div class="label">Partial Coverage</div>
+    </div>
+    <div class="summary-stat">
+      <div class="number" style="color: var(--fail);">1</div>
+      <div class="label">Gap</div>
+    </div>
+    <div class="summary-stat">
+      <div class="number" style="color: var(--fail);">5</div>
+      <div class="label">Divergences Found</div>
+    </div>
+  </div>
+
+  <!-- ========== AREA-BY-AREA ASSESSMENT ========== -->
+  <h2>1. Vision / Problem Statement</h2>
+  <div class="section">
+    <p><span class="badge badge-pass">FULL COVERAGE</span> PRD Executive Summary fully captures the brief's core problem and vision.</p>
+
+    <h3>Brief States:</h3>
+    <ul>
+      <li>"Replace a fragmented ecosystem of 12+ disconnected tools... with a single, purpose-built system that enforces data quality at the point of entry"</li>
+      <li>"Loss of operational control and productivity at scale" -- field tickets submitted incomplete, errors discovered after the fact, leadership time consumed policing work</li>
+    </ul>
+
+    <h3>PRD Captures:</h3>
+    <ul>
+      <li>"Replace the fragmented chaos of paper forms, Excel spreadsheets, and phone calls with a single, purpose-built digital platform that enforces data quality at the point of entry" (Executive Summary)</li>
+      <li>Ticket intake chaos documented extensively in Domain-Specific Requirements (Section: Ticket Intake & Data Exchange)</li>
+      <li>Pain points about manual correction cycles, missing data, and discovery-after-the-fact all reflected in User Journeys</li>
+    </ul>
+
+    <p><strong>Assessment:</strong> The PRD faithfully reproduces the vision. The "quality at point of entry" principle is woven throughout functional requirements (FR25 -- incomplete submissions blocked). The PRD slightly simplifies the "12+ tools" narrative to "paper forms, Excel spreadsheets, and phone calls" but the intent is preserved.</p>
+  </div>
+
+  <!-- ========== AREA 2 ========== -->
+  <h2>2. Target Users</h2>
+  <div class="section">
+    <p><span class="badge badge-warn">PARTIAL COVERAGE</span> All personas are present but with reduced depth in the PRD.</p>
+
+    <table>
+      <thead>
+        <tr><th>Persona</th><th>Brief Coverage</th><th>PRD Coverage</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Jeanie (Super Admin)</strong></td>
+          <td>Full bio, environment, pain points, success vision, device usage, design implications</td>
+          <td>Named in Executive Summary, detailed user journey (Journey 1), functional requirements (FR1-FR5, FR9-FR17, FR28-FR35)</td>
+          <td><span class="badge badge-pass">Full</span></td>
+        </tr>
+        <tr>
+          <td><strong>Marcus (Admin)</strong></td>
+          <td>Full bio, seasonal model, phase-by-phase responsibilities, dormancy re-activation, pre-storm checklists</td>
+          <td>Named in Executive Summary, detailed user journey (Journey 2), dormancy re-activation UX described</td>
+          <td><span class="badge badge-warn">Partial</span></td>
+        </tr>
+        <tr>
+          <td><strong>DeShawn (Contractor)</strong></td>
+          <td>Full bio with Ray (driver), assessment data complexity table, form design principles, field conditions</td>
+          <td>Named in Executive Summary, detailed user journey (Journey 3), assessment form requirements in FRs</td>
+          <td><span class="badge badge-pass">Full</span></td>
+        </tr>
+        <tr>
+          <td><strong>Utility Client</strong></td>
+          <td>Brief secondary user description, data quality as differentiator</td>
+          <td>Journey 4 describes their perspective; data quality emphasized</td>
+          <td><span class="badge badge-pass">Full</span></td>
+        </tr>
+        <tr>
+          <td><strong>Auditor/Compliance</strong></td>
+          <td>Mentioned as future persona; architecture should not preclude</td>
+          <td>Not mentioned in PRD</td>
+          <td><span class="badge badge-warn">Missing</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="gap-card">
+      <h4>Gap: Marcus Admin Role Simplification in MVP</h4>
+      <p>The Brief defines Marcus as having <strong>permission-group-controlled access</strong> (Billing, Tickets, Users, Inventory, Reports) -- features outside permissions are <em>hidden, not disabled</em>. The PRD simplifies this: "Marcus operates with same capabilities as Jeanie in MVP (no separate admin layer)" (MVP Feature Set). The permission groups system is entirely absent from the PRD's Phase 1. This is a deliberate scope cut, but it contradicts the Brief's Phase 1 which lists "Permission Groups" as a core feature.</p>
+    </div>
+
+    <div class="gap-card">
+      <h4>Gap: Ray (Driver) Persona Absent</h4>
+      <p>The Brief describes a two-person crew model (Ray drives, DeShawn assesses). Ray is explicitly named as a persona with a future "Navigator" view. The PRD mentions the crew pairing in Journey 3 but does not track Ray as a distinct persona or acknowledge the driver's needs.</p>
+    </div>
+  </div>
+
+  <!-- ========== AREA 3 ========== -->
+  <h2>3. Problem Statement / Pain Points</h2>
+  <div class="section">
+    <p><span class="badge badge-pass">FULL COVERAGE</span> All major pain points from the Brief are addressed in the PRD.</p>
+
+    <table>
+      <thead>
+        <tr><th>Brief Pain Point</th><th>PRD Coverage</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Field tickets submitted incomplete (missing GPS, circuit refs, equipment IDs)</td>
+          <td>FR22-FR25 enforce structured data and required fields; Domain section on Ticket Intake</td>
+        </tr>
+        <tr>
+          <td>Errors discovered after the fact, forcing callbacks/re-dispatches</td>
+          <td>Assessment form validation at point-of-entry (FR25); "Quality First" principle in Success Criteria</td>
+        </tr>
+        <tr>
+          <td>Roster gaps not escalated in real-time</td>
+          <td>Contractor Readiness Dashboard in Journey Requirements; FR35 shows contractor assignments</td>
+        </tr>
+        <tr>
+          <td>Rental vehicles untracked</td>
+          <td>Deferred to Phase 3 (appropriate scope cut)</td>
+        </tr>
+        <tr>
+          <td>15+ hrs/week manual corrections by leadership</td>
+          <td>Success Criteria: "Spends < 2 hours/week on ticket corrections" (explicit target)</td>
+        </tr>
+        <tr>
+          <td>Growth limited by manual overhead</td>
+          <td>NFR13-NFR14 address scalability; vision captures competitive moat through operational efficiency</td>
+        </tr>
+        <tr>
+          <td>12+ disconnected tools with zero integration</td>
+          <td>Executive Summary captures the consolidation vision; specific tools (Text-Em-All, Life360, Timesheet.com, Adobe Sign) not enumerated in PRD</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Assessment:</strong> The PRD translates every major pain point into either a functional requirement (MVP) or a tracked future requirement (FFR). The detailed tool-by-tool breakdown from the Brief (the table of 12+ tools) is not reproduced in the PRD, but this is acceptable -- the PRD focuses on the solution rather than cataloging every legacy tool.</p>
+  </div>
+
+  <!-- ========== AREA 4 ========== -->
+  <h2>4. Core Features / MVP Scope</h2>
+  <div class="section">
+    <p><span class="badge badge-fail">GAP</span> The PRD and Product Brief define <strong>fundamentally different MVP scopes</strong>. This is the most significant finding.</p>
+
+    <h3>Side-by-Side Comparison</h3>
+    <table>
+      <thead>
+        <tr><th>Feature</th><th>Brief Phase 1</th><th>PRD Phase 1 (MVP)</th><th>Conflict</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Authentication</strong></td>
+          <td>Microsoft Entra ID (Azure AD) SSO</td>
+          <td>Supabase Auth (email/password)</td>
+          <td class="critical">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>Permission Groups</strong></td>
+          <td>IN Phase 1 (Billing, Tickets, Users, Inventory, Reports)</td>
+          <td>NOT in Phase 1 ("no separate admin layer")</td>
+          <td class="critical">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>Enum/Dropdown Management</strong></td>
+          <td>IN Phase 1 (Super Admin-controlled DB values)</td>
+          <td>NOT in Phase 1 (assessment form is hard-coded)</td>
+          <td class="highlight">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>PWA Shell (offline scaffold)</strong></td>
+          <td>IN Phase 1 (Dexie.js, service worker, background sync foundation)</td>
+          <td>NOT in Phase 1 ("Online-only. No service workers, no offline")</td>
+          <td class="critical">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>Storm Project Management</strong></td>
+          <td>NOT in Phase 1 (Phase 2)</td>
+          <td>IN Phase 1 (FR11-FR14: create project, set status, archive, assign contractors)</td>
+          <td class="highlight">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>Ticket Management</strong></td>
+          <td>NOT in Phase 1 (Phase 2)</td>
+          <td>IN Phase 1 (FR15-FR20: create, edit, assign, track status)</td>
+          <td class="highlight">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>Damage Assessment Form</strong></td>
+          <td>NOT in Phase 1 (Phase 2 -- "dedicated design sprint")</td>
+          <td>IN Phase 1 (FR21-FR27: fixed/hard-coded form)</td>
+          <td class="highlight">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>Assessment Review</strong></td>
+          <td>NOT in Phase 1 (Phase 2)</td>
+          <td>IN Phase 1 (FR28-FR33: review, approve, reject)</td>
+          <td class="highlight">DIVERGENCE</td>
+        </tr>
+        <tr>
+          <td><strong>Dashboard</strong></td>
+          <td>IN Phase 1 (shell with KPI placeholders)</td>
+          <td>IN Phase 1 (FR34-FR36: functional dashboard with ticket counts)</td>
+          <td><span class="good">Aligned (PRD goes further)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Contractor Onboarding</strong></td>
+          <td>IN Phase 1 (full wizard)</td>
+          <td>IN Phase 1 (FR6-FR10: simplified "name, phone, email, W-9, insurance")</td>
+          <td><span class="good">Aligned (PRD simplified)</span></td>
+        </tr>
+        <tr>
+          <td><strong>User Management</strong></td>
+          <td>IN Phase 1 (CRUD)</td>
+          <td>IN Phase 1 (FR1-FR5)</td>
+          <td><span class="good">Aligned</span></td>
+        </tr>
+        <tr>
+          <td><strong>Contractor Readiness Dashboard</strong></td>
+          <td>IN Phase 1 (aggregated view)</td>
+          <td>Partially covered by FR35 (contractor list with assignments)</td>
+          <td><span class="badge badge-warn">Partial</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Summary of MVP Scope Misalignment</h3>
+    <p>The two documents describe <strong>entirely different MVP philosophies</strong>:</p>
+    <ul>
+      <li><strong>Brief's Phase 1</strong> = "Foundation" -- auth, roles, onboarding, dashboard shell, permission groups, PWA scaffold. NO tickets, NO assessments, NO storm operations. The operational features begin in Phase 2.</li>
+      <li><strong>PRD's Phase 1</strong> = "One Storm" -- auth, onboarding, storm project CRUD, ticket management, damage assessment, review workflow, dashboard with live data. This is a fully operational end-to-end storm workflow, online-only, with hard-coded forms.</li>
+    </ul>
+    <p>These are <strong>not minor differences</strong>. The PRD has essentially redefined what "MVP" means -- from a foundation-first approach to an operations-first approach. Both are valid strategies, but the documents are not aligned.</p>
+  </div>
+
+  <!-- ========== AREA 5 ========== -->
+  <h2>5. Success Metrics / Goals</h2>
+  <div class="section">
+    <p><span class="badge badge-warn">PARTIAL COVERAGE</span> Core metrics are present but several Brief metrics are missing from the PRD.</p>
+
+    <table>
+      <thead>
+        <tr><th>Brief Metric</th><th>PRD Coverage</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ticket error rate &lt; 5%</td>
+          <td>Success Criteria: "&lt; 5% ticket rejection/rework rate"</td>
+          <td><span class="badge badge-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>Contractor onboarding &lt; 30 min</td>
+          <td>Success Criteria: "Completes onboarding wizard in &lt; 15 minutes" (more aggressive target)</td>
+          <td><span class="badge badge-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>Admin correction hours &lt; 2 hrs/week</td>
+          <td>Success Criteria: "Spends &lt; 2 hours/week on ticket corrections"</td>
+          <td><span class="badge badge-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>Admin hours per storm day -- 50% reduction</td>
+          <td>Success Criteria: "Reduce Admin hours per storm day by 50%"</td>
+          <td><span class="badge badge-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>Reduce unrecovered costs by 20%</td>
+          <td>Success Criteria: "Reduce unrecovered costs by 20% via better tracking"</td>
+          <td><span class="badge badge-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>Ticket first-attempt acceptance rate &gt; 95%</td>
+          <td>Not explicitly stated in PRD Success Criteria (only in Journey 3 narrative)</td>
+          <td><span class="badge badge-warn">Partial</span></td>
+        </tr>
+        <tr>
+          <td>Project close-out time -- 40% reduction</td>
+          <td>Not mentioned in PRD</td>
+          <td><span class="badge badge-warn">Missing</span></td>
+        </tr>
+        <tr>
+          <td>Roster readiness visibility -- real-time</td>
+          <td>Not in PRD Success Criteria (implied by FR35)</td>
+          <td><span class="badge badge-warn">Missing</span></td>
+        </tr>
+        <tr>
+          <td>Invoice generation &lt; 10 minutes</td>
+          <td>Not in PRD (invoicing deferred to Phase 3)</td>
+          <td><span class="badge badge-warn">Deferred</span></td>
+        </tr>
+        <tr>
+          <td>Time from ticket creation to assignment &lt; 2 min</td>
+          <td>Not in PRD Success Criteria</td>
+          <td><span class="badge badge-warn">Missing</span></td>
+        </tr>
+        <tr>
+          <td>Baseline capture requirement (pre-launch)</td>
+          <td>Not mentioned in PRD</td>
+          <td><span class="badge badge-warn">Missing</span></td>
+        </tr>
+        <tr>
+          <td>"No Damage" path &lt; 60 seconds</td>
+          <td>Not mentioned in PRD</td>
+          <td><span class="badge badge-warn">Missing</span></td>
+        </tr>
+        <tr>
+          <td>Strategic Flywheel (data compounds into better bids)</td>
+          <td>Mentioned in Executive Summary as differentiator but not formalized as a metric</td>
+          <td><span class="badge badge-warn">Partial</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="gap-card">
+      <h4>Gap: North Star Metrics Not Formalized</h4>
+      <p>The Brief defines three explicit "North Star" metrics: (1) Ticket First-Attempt Acceptance Rate &gt; 95%, (2) Admin Hours Per Storm Day -- 50% reduction, (3) Project Close-Out Time -- 40% reduction. The PRD captures #2 but does not formalize #1 or #3 as named success criteria. The PRD also omits the Brief's "Baseline Capture" requirement -- the mandate to measure current-state metrics from Jeanie's last 3 storms before launch.</p>
+    </div>
+  </div>
+
+  <!-- ========== AREA 6 ========== -->
+  <h2>6. Key Differentiators</h2>
+  <div class="section">
+    <p><span class="badge badge-pass">FULL COVERAGE</span> All seven differentiators from the Brief are captured in the PRD.</p>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>Brief Differentiator</th><th>PRD Location</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Niche specificity -- purpose-built for utility damage assessment</td><td>Executive Summary: "not a generic field service app... built for the specific operational reality"</td></tr>
+        <tr><td>2</td><td>Data integrity by design -- validation at point-of-entry</td><td>Executive Summary: "Quality is enforced at source, not corrected after submission"; FR25</td></tr>
+        <tr><td>3</td><td>Permission groups, not complexity</td><td>Not in PRD MVP (deferred), but captured in Domain Requirements and User Journeys as a future capability</td></tr>
+        <tr><td>4</td><td>Contractor-resilient mobile UX -- field conditions, big buttons, offline-first</td><td>PWA Specific Requirements: touch targets 48x48pt, field usability, WCAG AAA contrast targets</td></tr>
+        <tr><td>5</td><td>Institutional knowledge engine -- historical data feeds forward</td><td>Executive Summary mentions "system remembers what people forget"; NFR20-21 on data retention and queryability</td></tr>
+        <tr><td>6</td><td>Competitive moat -- technology advantage vs. capital advantage</td><td>Executive Summary: "operational efficiency per crew" concept; brief competitor context not repeated but implied</td></tr>
+        <tr><td>7</td><td>Built from the trenches -- designed by someone who lived the pain</td><td>Not explicitly stated in PRD (more of a positioning statement), but the domain depth of the PRD demonstrates it</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Assessment:</strong> The PRD translates all differentiators into concrete requirements rather than repeating them as marketing statements. Differentiator #3 (permission groups) is notably deferred from MVP, which weakens it as a Phase 1 differentiator.</p>
+  </div>
+
+  <!-- ========== AREA 7 ========== -->
+  <h2>7. Phased Roadmap</h2>
+  <div class="section">
+    <p><span class="badge badge-warn">PARTIAL COVERAGE</span> Phase structure is preserved but content of each phase is significantly different.</p>
+
+    <table>
+      <thead>
+        <tr><th>Phase</th><th>Brief Scope</th><th>PRD Scope</th><th>Alignment</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Phase 1</strong></td>
+          <td>"Foundation" -- Auth (Entra ID), roles, permission groups, onboarding wizard, dashboard shell, enum management, PWA scaffold</td>
+          <td>"One Storm" -- Auth (Supabase email/pw), roles, onboarding, storm projects, tickets, assessment, review, dashboard</td>
+          <td class="critical">MISALIGNED</td>
+        </tr>
+        <tr>
+          <td><strong>Phase 2</strong></td>
+          <td>"Core Operations" -- Damage assessment form (design sprint), ticket lifecycle, ticket grouping, SMS, Graph API, checklists</td>
+          <td>"Battle Tested" -- Offline mode, configurable forms, JSA/incident forms, env hazard reporting, SMS, duplicate detection, photo optimization</td>
+          <td class="highlight">PARTIALLY MISALIGNED</td>
+        </tr>
+        <tr>
+          <td><strong>Phase 3</strong></td>
+          <td>"Financial & Analytics" -- Billing, time tracking, payments, inventory, analytics</td>
+          <td>"Operational Nervous System" -- Time/expense, invoicing, utility portal, analytics, Graph API</td>
+          <td><span class="good">MOSTLY ALIGNED</span></td>
+        </tr>
+        <tr>
+          <td><strong>Phase 4+</strong></td>
+          <td>"Future" -- GPS, auto-grouping, navigator view, advanced analytics, session transfer</td>
+          <td>"Market Expansion" -- Contractor marketplace, route optimization, white-label, public API</td>
+          <td><span class="good">ALIGNED (complementary visions)</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="gap-card">
+      <h4>Gap: Phase 1 Timeline</h4>
+      <p>The Brief does not specify a 30-day timeline; the PRD explicitly targets 30 days. This timeline constraint likely drove the PRD's decision to redefine the MVP as "One Storm" (operations-first) rather than "Foundation" (infrastructure-first), since a foundation-only MVP would not produce a usable storm tool within 30 days.</p>
+    </div>
+
+    <div class="gap-card">
+      <h4>Gap: Microsoft Graph API Placement</h4>
+      <p>Brief places Graph API in Phase 2 (pending Jeanie confirmation). PRD defers to Phase 3. This shifts a potentially important M365 integration by an entire phase.</p>
+    </div>
+  </div>
+
+  <!-- ========== DIVERGENCES ========== -->
+  <h2>Significant Divergences</h2>
+
+  <div class="divergence-card">
+    <h4>DIVERGENCE 1 (CRITICAL): Authentication Architecture</h4>
+    <p><strong>Brief:</strong> "Authentication via Microsoft Entra ID (Azure AD) for SSO with existing M365 tenant, with Supabase for data layer" -- this is specified as a Phase 1 core feature.</p>
+    <p><strong>PRD:</strong> "Supabase Auth (email/password)" -- no mention of Entra ID anywhere in the PRD. Auth reliability metric explicitly references "Supabase Auth (email/password)."</p>
+    <p><strong>Impact:</strong> This is a fundamental architectural choice. Entra ID provides SSO with the company's existing Microsoft 365 tenant -- employees would log in with the same credentials they use for email. Supabase email/password creates a separate credential silo. The PRD's approach is simpler to implement (important for a solo non-developer on a 30-day timeline) but abandons the Brief's SSO vision entirely. The existing codebase (grid-electric-docs) confirms Supabase Auth with email/password is the implemented approach.</p>
+    <p><strong>Resolution needed:</strong> Confirm whether Entra ID SSO is a hard requirement or if Supabase email/password is the accepted direction. If Entra ID is desired long-term, document it as a Phase 2 migration path.</p>
+  </div>
+
+  <div class="divergence-card">
+    <h4>DIVERGENCE 2 (CRITICAL): MVP Scope Philosophy</h4>
+    <p><strong>Brief Phase 1:</strong> "Foundation" -- authentication, roles, permission groups, onboarding, dashboard shell, PWA scaffold. Explicitly states "Damage assessment form" and "Ticket management" are Phase 2, OUT of scope for MVP.</p>
+    <p><strong>PRD Phase 1:</strong> "One Storm" -- a fully operational end-to-end storm workflow including ticket management, damage assessment, and review. Explicitly cuts permission groups and offline scaffold.</p>
+    <p><strong>Impact:</strong> These are opposite MVP strategies. The Brief builds infrastructure first (auth + onboarding + shell) and adds operations second. The PRD delivers a complete operational loop first (the whole storm workflow) and refines infrastructure second. Both are valid, but stakeholders referencing the Brief will have different expectations than developers referencing the PRD.</p>
+    <p><strong>Resolution needed:</strong> Decide which MVP strategy is authoritative. The PRD's "One Storm" approach is arguably more pragmatic for proving value in 30 days, but the Brief's "Foundation" approach is more architecturally sound for long-term extensibility.</p>
+  </div>
+
+  <div class="divergence-card">
+    <h4>DIVERGENCE 3 (MODERATE): Permission Groups</h4>
+    <p><strong>Brief:</strong> Permission groups (Billing, Tickets, Users, Inventory, Reports) are a Phase 1 core feature (#3 of 10). The Brief emphasizes "features hidden, not disabled" as a key UX principle and lists it as a differentiator.</p>
+    <p><strong>PRD:</strong> No permission groups in Phase 1. "Marcus operates with same capabilities as Jeanie in MVP." Permission groups are not explicitly scheduled in any phase.</p>
+    <p><strong>Impact:</strong> The Brief considers this a foundational differentiator. Its absence from the PRD entirely (not even tracked in Future Functional Requirements) is a gap.</p>
+  </div>
+
+  <div class="divergence-card">
+    <h4>DIVERGENCE 4 (MODERATE): Offline/PWA Foundation</h4>
+    <p><strong>Brief:</strong> Phase 1 includes "PWA Shell -- Installable, offline-ready scaffold -- Dexie.js, service worker, background sync foundation."</p>
+    <p><strong>PRD:</strong> Phase 1 is explicitly "Online-only. No service workers, no offline. Add in Phase 2 after core works."</p>
+    <p><strong>Impact:</strong> The Brief envisions laying the offline groundwork in Phase 1 even if full offline capability is Phase 2. The PRD defers all offline infrastructure. This means Phase 2 will require retrofitting offline support rather than activating a pre-built scaffold.</p>
+  </div>
+
+  <div class="divergence-card">
+    <h4>DIVERGENCE 5 (LOW): Onboarding Scope</h4>
+    <p><strong>Brief:</strong> Full onboarding wizard with PPE acknowledgment, training modules, safety video completion, code of conduct sign-off.</p>
+    <p><strong>PRD:</strong> "Simple Onboarding -- Name, phone, email, W-9 upload, insurance upload. One fixed form." No PPE, training, or acknowledgments in MVP.</p>
+    <p><strong>Impact:</strong> The PRD deliberately strips onboarding to minimum viable. This is a reasonable scope cut for 30 days, but the Brief's Phase 1 envisions a richer wizard. The PRD should acknowledge this as a known simplification with a Phase 2 expansion path.</p>
+  </div>
+
+  <!-- ========== CONSOLIDATED FINDINGS ========== -->
+  <h2>Consolidated Gap List</h2>
+  <div class="section">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Gap</th><th>Severity</th><th>Brief Section</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>G1</td><td>Permission groups system entirely absent from PRD -- not in any phase</td><td class="critical">High</td><td>MVP Scope #3</td></tr>
+        <tr><td>G2</td><td>North Star metric "Project Close-Out Time 40% reduction" missing from PRD Success Criteria</td><td class="highlight">Medium</td><td>North Star Metrics #3</td></tr>
+        <tr><td>G3</td><td>North Star metric "Ticket First-Attempt Acceptance Rate > 95%" not formalized in PRD Success Criteria</td><td class="highlight">Medium</td><td>North Star Metrics #1</td></tr>
+        <tr><td>G4</td><td>Baseline Capture requirement (measure from last 3 storms) not mentioned in PRD</td><td class="highlight">Medium</td><td>Baseline Capture</td></tr>
+        <tr><td>G5</td><td>"No Damage path < 60 seconds" performance target missing</td><td>Low</td><td>User Success Metrics</td></tr>
+        <tr><td>G6</td><td>Auditor/Compliance persona not acknowledged in PRD</td><td>Low</td><td>Secondary Users</td></tr>
+        <tr><td>G7</td><td>Ray (Driver) persona not tracked separately</td><td>Low</td><td>Persona 3</td></tr>
+        <tr><td>G8</td><td>Competitor analysis context (OSR, Utility Power, Storm Services, etc.) not referenced</td><td>Low</td><td>Why Existing Solutions Fall Short</td></tr>
+        <tr><td>G9</td><td>Strategic Flywheel (Better tools -> Better people -> Better output -> More data) not formalized</td><td>Low</td><td>Business Objectives</td></tr>
+        <tr><td>G10</td><td>Enum/Dropdown Management for Super Admin not in PRD MVP despite being Brief Phase 1 #9</td><td class="highlight">Medium</td><td>MVP Scope #9</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Consolidated Divergence List</h2>
+  <div class="section">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Divergence</th><th>Severity</th><th>Brief Says</th><th>PRD Says</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>D1</td><td>Authentication provider</td><td class="critical">Critical</td>
+          <td>Microsoft Entra ID (Azure AD) SSO</td><td>Supabase Auth (email/password)</td>
+        </tr>
+        <tr>
+          <td>D2</td><td>MVP scope philosophy</td><td class="critical">Critical</td>
+          <td>Phase 1 = Foundation (no tickets/assessments)</td><td>Phase 1 = One Storm (full operational loop)</td>
+        </tr>
+        <tr>
+          <td>D3</td><td>Permission groups in Phase 1</td><td class="highlight">Moderate</td>
+          <td>Core Phase 1 feature</td><td>Not in any phase</td>
+        </tr>
+        <tr>
+          <td>D4</td><td>Offline/PWA scaffold in Phase 1</td><td class="highlight">Moderate</td>
+          <td>PWA shell with Dexie.js + SW in Phase 1</td><td>Online-only, no SW, no offline in Phase 1</td>
+        </tr>
+        <tr>
+          <td>D5</td><td>Onboarding wizard scope</td><td>Low</td>
+          <td>Full wizard (PPE, training, acknowledgments)</td><td>Simple form (name, contact, W-9, insurance)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== RECOMMENDATIONS ========== -->
+  <h2>Recommendations</h2>
+  <div class="section">
+    <ol>
+      <li><strong>Resolve the authentication divergence (D1).</strong> Confirm with the product owner whether Microsoft Entra ID SSO is required or if Supabase email/password is the accepted direction. If Entra ID is desired, add it to a specific phase in the PRD. If Supabase Auth is confirmed, update the Product Brief to reflect the change.</li>
+      <li><strong>Reconcile the MVP scope (D2).</strong> The PRD's "One Storm" approach is more pragmatic for proving value quickly. If this is the accepted direction, the Product Brief should be updated to match. Alternatively, designate the PRD as the authoritative implementation plan and the Brief as the strategic vision document, with a note explaining the divergence rationale.</li>
+      <li><strong>Track permission groups (D3/G1).</strong> Add permission groups to the PRD's Future Functional Requirements with a target phase. This is identified as a differentiator in the Brief and should not disappear from the roadmap.</li>
+      <li><strong>Formalize North Star metrics (G2/G3).</strong> Add "Ticket First-Attempt Acceptance Rate > 95%" and "Project Close-Out Time 40% reduction" to PRD Success Criteria.</li>
+      <li><strong>Add Baseline Capture requirement (G4).</strong> Include the pre-launch baseline measurement mandate from the Brief. Without baselines, success metrics cannot be evaluated.</li>
+    </ol>
+  </div>
+
+  <h2>Coverage Summary Matrix</h2>
+  <div class="section">
+    <table>
+      <thead>
+        <tr><th>Area</th><th>Assessment</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1. Vision / Problem Statement</td><td><span class="badge badge-pass">FULL</span></td><td>Faithfully captured with appropriate operational detail</td></tr>
+        <tr><td>2. Target Users</td><td><span class="badge badge-warn">PARTIAL</span></td><td>All primary personas present; permission groups and some depth lost</td></tr>
+        <tr><td>3. Pain Points</td><td><span class="badge badge-pass">FULL</span></td><td>All major pain points translated into requirements</td></tr>
+        <tr><td>4. Core Features / MVP Scope</td><td><span class="badge badge-fail">GAP</span></td><td>Fundamentally different MVP definitions between documents</td></tr>
+        <tr><td>5. Success Metrics</td><td><span class="badge badge-warn">PARTIAL</span></td><td>Core metrics present; North Stars and baselines missing</td></tr>
+        <tr><td>6. Key Differentiators</td><td><span class="badge badge-pass">FULL</span></td><td>All 7 differentiators reflected in PRD requirements</td></tr>
+        <tr><td>7. Phased Roadmap</td><td><span class="badge badge-warn">PARTIAL</span></td><td>Phase structure preserved but Phase 1-2 contents diverge significantly</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

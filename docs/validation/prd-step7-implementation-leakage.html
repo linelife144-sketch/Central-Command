@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD Validation Step 7: Implementation Leakage Analysis — Grid2</title>
+<style>
+  :root {
+    --pass: #22c55e;
+    --warning: #f59e0b;
+    --critical: #ef4444;
+    --border: #e5e7eb;
+    --bg-light: #f9fafb;
+    --bg-white: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --appropriate: #3b82f6;
+    --borderline: #f59e0b;
+    --leakage: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--text-primary); line-height: 1.6; max-width: 1100px; margin: 0 auto; padding: 2rem; background: var(--bg-light); }
+  h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.35rem; margin: 2rem 0 1rem 0; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem 0; }
+  .meta { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+  .verdict-box { padding: 1.25rem 1.5rem; border-radius: 8px; font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0; }
+  .verdict-warning { background: #fef3c7; border-left: 5px solid var(--warning); color: #92400e; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0 2rem 0; }
+  .summary-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; text-align: center; }
+  .summary-card .count { font-size: 2rem; font-weight: 700; }
+  .summary-card .label { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .count-appropriate { color: var(--appropriate); }
+  .count-borderline { color: var(--borderline); }
+  .count-leakage { color: var(--leakage); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: var(--bg-white); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  th { background: #f3f4f6; text-align: left; padding: 0.65rem 0.75rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); border-bottom: 2px solid var(--border); }
+  td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+  .tag-appropriate { background: #dbeafe; color: #1e40af; }
+  .tag-borderline { background: #fef3c7; color: #92400e; }
+  .tag-leakage { background: #fee2e2; color: #991b1b; }
+  .section-tag { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; background: #e5e7eb; color: #374151; margin-left: 0.25rem; }
+  code { background: #f3f4f6; padding: 0.15rem 0.35rem; border-radius: 3px; font-size: 0.85em; font-family: 'Consolas', 'Fira Code', monospace; }
+  .fix-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.6rem 0.85rem; margin-top: 0.4rem; font-size: 0.85rem; }
+  .fix-box strong { color: #166534; }
+  .instance-block { background: var(--bg-white); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+  .instance-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
+  .line-ref { font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); }
+  .instance-text { font-size: 0.9rem; margin: 0.3rem 0; padding: 0.4rem 0.6rem; background: #fafafa; border-left: 3px solid var(--border); }
+  .justification { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.3rem; font-style: italic; }
+  .category-header { background: var(--bg-white); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; margin: 1.5rem 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem; }
+  .category-header .num { background: #e5e7eb; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+  .note-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .section-breakdown { margin: 1rem 0; }
+  .section-breakdown td:first-child { font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+</style>
+</head>
+<body>
+
+<h1>PRD Validation Step 7: Implementation Leakage Analysis</h1>
+<p class="meta">
+  <strong>Document:</strong> <code>_bmad-output/planning-artifacts/prd.md</code><br>
+  <strong>Date:</strong> 2026-02-11<br>
+  <strong>Validator:</strong> Claude Opus 4.6 (Automated PRD Validation)
+</p>
+
+<div class="verdict-box verdict-warning">
+  OVERALL SEVERITY: WARNING — Significant implementation leakage detected in FRs, NFRs, and the Web App Specific Requirements section. The document mixes product requirements with architecture/implementation decisions throughout.
+</div>
+
+<h2>Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="count count-appropriate">19</div>
+    <div class="label">Appropriate</div>
+  </div>
+  <div class="summary-card">
+    <div class="count count-borderline">11</div>
+    <div class="label">Borderline</div>
+  </div>
+  <div class="summary-card">
+    <div class="count count-leakage">22</div>
+    <div class="label">Leakage</div>
+  </div>
+</div>
+
+<h3>Instances by PRD Section</h3>
+<table class="section-breakdown">
+  <thead>
+    <tr><th>Section</th><th>Appropriate</th><th>Borderline</th><th>Leakage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Executive Summary</td><td>3</td><td>0</td><td>0</td></tr>
+    <tr><td>Success Criteria</td><td>0</td><td>1</td><td>2</td></tr>
+    <tr><td>Product Scope (Phase Roadmap)</td><td>4</td><td>2</td><td>3</td></tr>
+    <tr><td>User Journeys</td><td>3</td><td>1</td><td>1</td></tr>
+    <tr><td>Domain-Specific Requirements</td><td>0</td><td>0</td><td>1</td></tr>
+    <tr><td>Web App (PWA) Specific Requirements</td><td>8</td><td>4</td><td>9</td></tr>
+    <tr><td>Project Scoping &amp; Phased Development</td><td>1</td><td>1</td><td>2</td></tr>
+    <tr><td>Functional Requirements</td><td>0</td><td>0</td><td>0</td></tr>
+    <tr><td>Non-Functional Requirements</td><td>0</td><td>2</td><td>4</td></tr>
+  </tbody>
+</table>
+
+<div class="note-box">
+  <strong>Key finding:</strong> The Functional Requirements (FR1-FR36) are clean — zero implementation leakage detected. They describe capabilities without prescribing technology. The leakage is concentrated in (1) the Web App Specific Requirements section, which functions as a hybrid requirements/architecture document, (2) the NFRs where Supabase is named as the mechanism rather than the capability, and (3) scope/roadmap sections that name specific libraries.
+</div>
+
+<hr>
+
+<h2>Leakage Instances (22) — Requires Remediation</h2>
+
+<p>Each instance below names a specific technology, library, or implementation detail in a context where the PRD should describe the <em>capability</em> instead.</p>
+
+<!-- LEAKAGE 1 -->
+<div class="category-header"><div class="num">1</div><strong>Technology Names in Functional/Non-Functional Requirements</strong></div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 66</span>
+    <span class="section-tag">Success Criteria</span>
+  </div>
+  <div class="instance-text"><code>Auth Reliability: &lt; 1% login failure rate via Supabase Auth (email/password).</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Auth Reliability: &lt; 1% login failure rate for email/password authentication."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 67</span>
+    <span class="section-tag">Success Criteria</span>
+  </div>
+  <div class="instance-text"><code>Observability: Critical errors logged to Supabase/monitoring immediately.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Observability: Critical errors logged to the monitoring system immediately."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 523</span>
+    <span class="section-tag">NFR7 — Security</span>
+  </div>
+  <div class="instance-text"><code>NFR7: All data at rest is encrypted (Supabase default encryption).</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "NFR7: All data at rest is encrypted using industry-standard encryption (AES-256 or equivalent)."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 525</span>
+    <span class="section-tag">NFR9 — Security</span>
+  </div>
+  <div class="instance-text"><code>NFR9: Row-Level Security (RLS) enforced at the database level — contractors can only access their own data and assigned tickets.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "NFR9: Data access is enforced at the persistence layer — contractors can only access their own data and assigned tickets." <br><em>Note: RLS is a Supabase/PostgreSQL-specific mechanism. The requirement is data isolation, not the method.</em></div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 538</span>
+    <span class="section-tag">NFR16 — Reliability</span>
+  </div>
+  <div class="instance-text"><code>NFR16: System targets 99.5% uptime during active storm projects (Supabase-managed infrastructure).</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "NFR16: System targets 99.5% uptime during active storm projects."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 539</span>
+    <span class="section-tag">NFR17 — Reliability</span>
+  </div>
+  <div class="instance-text"><code>NFR17: Data written to Supabase on each ticket submission is immediately durable...</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "NFR17: Data written on each ticket submission is immediately durable — no data loss on completed submissions."</div>
+</div>
+
+<!-- LEAKAGE 2 -->
+<div class="category-header"><div class="num">2</div><strong>Library/Package Names in Requirements Context</strong></div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 87</span>
+    <span class="section-tag">Product Scope — Phase 2</span>
+  </div>
+  <div class="instance-text"><code>Offline Mode: Dexie.js + service worker for field operation without connectivity.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Offline Mode: Local data persistence and background synchronization for field operation without connectivity."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 90</span>
+    <span class="section-tag">Product Scope — Phase 2</span>
+  </div>
+  <div class="instance-text"><code>SMS Notifications: Twilio integration for ticket dispatch.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "SMS Notifications: Automated text messaging for ticket dispatch."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 91</span>
+    <span class="section-tag">Product Scope — Phase 2</span>
+  </div>
+  <div class="instance-text"><code>Photo Optimization: Client-side compression, WebP format.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Photo Optimization: Client-side compression with modern image format support."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 331</span>
+    <span class="section-tag">Performance Targets</span>
+  </div>
+  <div class="instance-text"><code>Assessment form load | &lt; 1s | From local Dexie.js cache</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Assessment form load | &lt; 1s | From local cache"</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 350</span>
+    <span class="section-tag">Implementation Considerations</span>
+  </div>
+  <div class="instance-text"><code>Dexie.js: IndexedDB wrapper for structured offline storage. Schema versioning and migration strategy required from day one...</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> Move entirely to an architecture decision document. If retained, reword: "Structured offline storage with schema versioning and migration strategy required from day one."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 406</span>
+    <span class="section-tag">Phase 2 Feature List</span>
+  </div>
+  <div class="instance-text"><code>Offline mode (Dexie.js + service worker)</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Offline mode (local persistence and background sync)"</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 410</span>
+    <span class="section-tag">Phase 2 Feature List</span>
+  </div>
+  <div class="instance-text"><code>SMS notifications (Twilio or similar)</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "SMS notifications (automated ticket dispatch)"</div>
+</div>
+
+<!-- LEAKAGE 3 -->
+<div class="category-header"><div class="num">3</div><strong>Architecture Patterns Dictated</strong></div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Lines 346-349</span>
+    <span class="section-tag">Implementation Considerations</span>
+  </div>
+  <div class="instance-text"><code>Service Worker caching strategy: Cache-First for app shell (HTML, CSS, JS). Network-First for data API calls. Stale-While-Revalidate for static assets (icons, images).</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> Remove entirely from PRD. Move to architecture/design document. The PRD should state: "Application shell and static assets must be cacheable for fast repeat loads. Data must always reflect the latest server state when online."</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 281</span>
+    <span class="section-tag">Project-Type Overview</span>
+  </div>
+  <div class="instance-text"><code>Architecture: Single codebase with role-based routing. Admin and contractor paths cleanly separated at the route level for potential future split into independent apps.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Architecture: Admin and contractor experiences are logically separated, enabling independent evolution if needed." The routing-level detail is implementation.</div>
+</div>
+
+<!-- LEAKAGE 4 -->
+<div class="category-header"><div class="num">4</div><strong>API/Protocol/Implementation Details</strong></div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 295</span>
+    <span class="section-tag">Platform Constraints</span>
+  </div>
+  <div class="instance-text"><code>PWA manifest: `display: standalone` — preserves status bar (clock, battery) visibility for field workers.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "PWA installation mode must preserve device status bar (clock, battery) visibility for field workers." The manifest property name is implementation detail.</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 300</span>
+    <span class="section-tag">Platform Constraints</span>
+  </div>
+  <div class="instance-text"><code>Camera access: `&lt;input type="file" accept="image/*" capture="environment"&gt;` is the primary method (most reliable on Safari). `getUserMedia` as progressive enhancement only.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Camera access must use the most reliable method available on the target platform (Safari/iPadOS), with progressive enhancement for advanced camera features." HTML element and API names are implementation details.</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 336</span>
+    <span class="section-tag">Photo Handling</span>
+  </div>
+  <div class="instance-text"><code>Format: WebP preferred (better compression at equivalent quality). JPEG fallback for older devices.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Format: Modern compressed image format preferred, with broad-compatibility fallback for older devices." Specific format names constrain implementation.</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 375</span>
+    <span class="section-tag">MVP Feature Table</span>
+  </div>
+  <div class="instance-text"><code>Auth + 3 Roles | Can't do anything without login. Supabase Auth handles 90%.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Auth + 3 Roles | Can't do anything without login. Managed auth service handles most complexity." The "90%" and Supabase name are implementation commentary.</div>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-leakage">Leakage</span>
+    <span class="line-ref">Line 397</span>
+    <span class="section-tag">Deliberately Cut Table</span>
+  </div>
+  <div class="instance-text"><code>Analytics / Reporting | Supabase dashboard for raw data.</code></div>
+  <div class="fix-box"><strong>Suggested fix:</strong> "Analytics / Reporting | Direct database queries for raw data in interim."</div>
+</div>
+
+<hr>
+
+<h2>Borderline Instances (11) — Review Recommended</h2>
+
+<p>These instances reference specific technologies but have reasonable justification for inclusion in a PRD. They may be acceptable depending on organizational standards.</p>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 80</span>
+    <span class="section-tag">Product Scope — MVP</span>
+  </div>
+  <div class="instance-text"><code>Authentication: Supabase Auth (email/password), role-based access (Super Admin, Admin, Contractor).</code></div>
+  <p class="justification">Justification: Product Scope is a reasonable place for strategic technology naming, but "Supabase Auth" is more specific than necessary. The Executive Summary line 44 already establishes Supabase as the platform. This line could simply say "Email/password authentication with role-based access."</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 95</span>
+    <span class="section-tag">Product Scope — Phase 3</span>
+  </div>
+  <div class="instance-text"><code>Phase 3: Time/expense tracking, invoicing, analytics, Microsoft Graph integration.</code></div>
+  <p class="justification">Justification: Microsoft Graph is a specific API/platform. In a roadmap context it signals strategic intent (email/calendar integration with Microsoft ecosystem), but could be reworded as "email/calendar platform integration" to avoid locking in an implementation choice years out.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 132</span>
+    <span class="section-tag">User Journey 2</span>
+  </div>
+  <div class="instance-text"><code>Marcus logs in via Entra ID.</code></div>
+  <p class="justification">Justification: User journeys sometimes include concrete details for narrative realism. However, Entra ID is a specific Microsoft identity provider — and it is not even the auth mechanism chosen for the product (Supabase Auth email/password is). This appears to be a contradiction and should be reviewed for accuracy.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 235</span>
+    <span class="section-tag">Domain Requirements — Assessment Form Variability</span>
+  </div>
+  <div class="instance-text"><code>Forms engine architecture: Assessment forms, safety forms, incident forms share one configurable structured data capture engine with different schemas.</code></div>
+  <p class="justification">Justification: Describing a "forms engine architecture" with "schemas" is an architecture pattern prescription. The capability is: "All form types (assessment, safety, incident) share a common configurable data capture framework." The word "engine" and "schemas" push toward implementation.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 299</span>
+    <span class="section-tag">Platform Constraints</span>
+  </div>
+  <div class="instance-text"><code>Background Sync API is not supported in Safari. Sync is foreground-triggered...</code></div>
+  <p class="justification">Justification: This names a specific Web API. However, it documents a real platform constraint that directly affects the product experience. The capability statement ("sync is foreground-triggered") is appropriate; the API name is borderline — it helps developers understand the why.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 335</span>
+    <span class="section-tag">Photo Handling</span>
+  </div>
+  <div class="instance-text"><code>Client-side compression before upload: Target 800KB max per image.</code></div>
+  <p class="justification">Justification: "Client-side" is an implementation detail (vs. server-side). The requirement is: "Photos are compressed to a maximum of 800KB before reaching the server." Where the compression happens is an architecture decision.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 337</span>
+    <span class="section-tag">Photo Handling</span>
+  </div>
+  <div class="instance-text"><code>Resolution cap: 2048px on longest edge — sufficient for damage documentation, dramatically reduces file size.</code></div>
+  <p class="justification">Justification: Pixel-level specification is an implementation detail, but for a damage assessment product, image resolution is a domain requirement (photos must be high enough quality for utility review). This is arguably a valid product specification.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 359</span>
+    <span class="section-tag">MVP Strategy</span>
+  </div>
+  <div class="instance-text"><code>Builder Profile: Solo non-developer using AI-assisted development (Gemini/BMAD). Leveraging Supabase (Auth, Database, Storage, Row-Level Security)...</code></div>
+  <p class="justification">Justification: Builder profile is project context, not a requirement. Naming Gemini/BMAD and Supabase here explains project constraints. However, "Row-Level Security" is an implementation mechanism that does not belong in a builder profile. Acceptable as project context if the RLS detail is removed.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 522</span>
+    <span class="section-tag">NFR6 — Security</span>
+  </div>
+  <div class="instance-text"><code>NFR6: All data transmitted between client and server is encrypted in transit (TLS 1.2+).</code></div>
+  <p class="justification">Justification: TLS 1.2+ is an industry-standard security protocol. Naming it in a security NFR is common practice and widely accepted. It sets a minimum bar rather than constraining implementation. Most validators would mark this as appropriate.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 528</span>
+    <span class="section-tag">NFR12 — Security</span>
+  </div>
+  <div class="instance-text"><code>NFR12: File uploads are restricted to expected formats (PDF, JPEG, PNG, WebP) with server-side validation to prevent malicious uploads.</code></div>
+  <p class="justification">Justification: File format names (PDF, JPEG, PNG) are acceptable in requirements as they describe the product capability. However, "server-side validation" prescribes where validation occurs, and "WebP" is a specific modern format that may or may not be relevant at time of implementation. Mixed — the format list is fine, the server-side detail is borderline.</p>
+</div>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Borderline</span>
+    <span class="line-ref">Line 434</span>
+    <span class="section-tag">Risk Mitigation</span>
+  </div>
+  <div class="instance-text"><code>Technical: PWA complexity | Phase 1 is online-only. No service workers, no offline.</code></div>
+  <p class="justification">Justification: Risk mitigation is a project management section where naming technologies helps communicate scope decisions. "No service workers" is implementation-specific but effectively communicates "no offline capability" to the team. Acceptable in context.</p>
+</div>
+
+<hr>
+
+<h2>Appropriate Instances (19) — No Action Required</h2>
+
+<p>These are strategic technology decisions, platform context, or industry-standard references that belong in a PRD.</p>
+
+<table>
+  <thead>
+    <tr><th>Line</th><th>Technology</th><th>Section</th><th>Rationale</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>32</td><td>Progressive Web App</td><td>Executive Summary</td><td>Strategic product type decision</td></tr>
+    <tr><td>44</td><td>PWA (SPA) on Supabase</td><td>Executive Summary</td><td>Strategic technology platform decision in exec summary</td></tr>
+    <tr><td>44</td><td>Online-only for MVP</td><td>Executive Summary</td><td>Scope constraint, not implementation</td></tr>
+    <tr><td>155</td><td>PWA</td><td>User Journey 3</td><td>Product type reference in narrative context</td></tr>
+    <tr><td>251</td><td>CSV, API</td><td>Domain Requirements</td><td>Future integration capabilities — describes what, not how</td></tr>
+    <tr><td>273-277</td><td>PWA, SPA</td><td>Web App Requirements</td><td>Product architecture type — section header defines scope</td></tr>
+    <tr><td>279-280</td><td>iPad, macOS</td><td>Web App Requirements</td><td>Target platform specification — valid product decision</td></tr>
+    <tr><td>287-290</td><td>Safari, Chrome, Edge, iPadOS</td><td>Browser Matrix</td><td>Browser compatibility matrix — essential product scope</td></tr>
+    <tr><td>293</td><td>Safari 17+</td><td>Platform Requirements</td><td>Minimum platform version — valid product constraint</td></tr>
+    <tr><td>294</td><td>PWA installation</td><td>Platform Requirements</td><td>Distribution method — product decision</td></tr>
+    <tr><td>301</td><td>iPadOS 17+</td><td>Platform Constraints</td><td>Platform version requirement</td></tr>
+    <tr><td>305-308</td><td>iPad landscape/portrait, Desktop, Phone viewports</td><td>Responsive Design</td><td>Target viewport specifications — valid UX requirements</td></tr>
+    <tr><td>309</td><td>48x48pt, 44x44pt touch targets</td><td>Responsive Design</td><td>Accessibility requirement for field conditions</td></tr>
+    <tr><td>313-314</td><td>WCAG 2.1 AA / AAA</td><td>Field Usability</td><td>Industry accessibility standard</td></tr>
+    <tr><td>351</td><td>QR code, SMS link</td><td>Distribution</td><td>Distribution channels — product decision</td></tr>
+    <tr><td>398</td><td>Microsoft Graph</td><td>Deliberately Cut Table</td><td>Named integration in roadmap context</td></tr>
+    <tr><td>420</td><td>Microsoft Graph</td><td>Phase 3 List</td><td>Named integration in roadmap context</td></tr>
+    <tr><td>427</td><td>Public API</td><td>Phase 4 List</td><td>Capability description, not implementation</td></tr>
+    <tr><td>514-515</td><td>4G/LTE</td><td>NFR1-NFR2</td><td>Network condition specification — defines the test environment, not implementation</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>Structural Observation</h2>
+
+<p>The section titled <strong>"Web App (PWA) Specific Requirements"</strong> (lines 273-351) is the single largest source of implementation leakage in the document. This section conflates three distinct concerns:</p>
+
+<ol style="margin: 0.75rem 0; padding-left: 1.5rem;">
+  <li><strong>Product requirements</strong> (browser support matrix, responsive breakpoints, accessibility standards) — these belong in the PRD.</li>
+  <li><strong>Platform constraints</strong> (Safari Background Sync limitation, camera API reliability) — these are borderline and could be in the PRD as context or in an architecture document as constraints.</li>
+  <li><strong>Implementation decisions</strong> (caching strategies, Dexie.js, HTML elements, manifest properties) — these do not belong in the PRD and should be moved to an architecture/design document.</li>
+</ol>
+
+<h3>Recommendation</h3>
+<p>Split this section. Keep items 1 and 2 in the PRD. Move item 3 to a separate architecture decision record (ADR) or technical design document. The existing <code>grid-electric-docs/07-OFFLINE-PWA-STRATEGY.md</code> and <code>grid-electric-docs/06-COMPONENT-ARCHITECTURE.md</code> are natural homes for the implementation content.</p>
+
+<hr>
+
+<h2>Contradictions Detected</h2>
+
+<div class="instance-block">
+  <div class="instance-header">
+    <span class="tag tag-borderline">Contradiction</span>
+    <span class="line-ref">Line 132 vs. Lines 44, 66, 80</span>
+  </div>
+  <div class="instance-text">User Journey 2 states Marcus "logs in via <strong>Entra ID</strong>" but the product uses <strong>Supabase Auth (email/password)</strong> as established in Executive Summary (line 44), Success Criteria (line 66), and Product Scope (line 80). These are different authentication providers. This should be reconciled.</div>
+</div>
+
+<hr>
+
+<h2>Functional Requirements Assessment</h2>
+
+<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0;">
+  <strong style="color: #166534;">CLEAN:</strong> All 36 Functional Requirements (FR1-FR36) and all 9 Future Functional Requirements (FFR1-FFR9) are free of implementation leakage. They describe capabilities ("Users can...", "System enforces...", "Super Admin can...") without prescribing technology. This is the gold standard for PRD requirements writing.
+</div>
+
+<hr>
+
+<h2>Final Assessment</h2>
+
+<table>
+  <thead>
+    <tr><th>Criterion</th><th>Result</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Overall Severity</td><td><span class="tag tag-borderline" style="font-size: 0.9rem;">WARNING</span></td></tr>
+    <tr><td>Total Technology Instances</td><td>52</td></tr>
+    <tr><td>Appropriate (no action)</td><td>19 (36.5%)</td></tr>
+    <tr><td>Borderline (review recommended)</td><td>11 (21.2%)</td></tr>
+    <tr><td>Leakage (remediation needed)</td><td>22 (42.3%)</td></tr>
+    <tr><td>Functional Requirements</td><td><span class="tag tag-appropriate" style="font-size: 0.85rem;">PASS</span> — Zero leakage in FR1-FR36</td></tr>
+    <tr><td>Non-Functional Requirements</td><td><span class="tag tag-leakage" style="font-size: 0.85rem;">FAIL</span> — 4 leakage + 2 borderline in NFR6-NFR17</td></tr>
+    <tr><td>Web App Section</td><td><span class="tag tag-leakage" style="font-size: 0.85rem;">FAIL</span> — 9 leakage + 4 borderline; hybrid requirements/architecture document</td></tr>
+    <tr><td>Contradictions</td><td>1 detected (Entra ID vs. Supabase Auth)</td></tr>
+  </tbody>
+</table>
+
+<h3>Priority Remediation Path</h3>
+<ol style="margin: 0.75rem 0; padding-left: 1.5rem;">
+  <li><strong>High priority:</strong> Remove "Supabase" from all NFRs (NFR7, NFR9, NFR16, NFR17). Restate as capability requirements.</li>
+  <li><strong>High priority:</strong> Remove "Supabase Auth" from Success Criteria (lines 66-67). Restate as measurable outcomes.</li>
+  <li><strong>Medium priority:</strong> Extract Implementation Considerations subsection (lines 344-351) entirely into an architecture document.</li>
+  <li><strong>Medium priority:</strong> Replace library names (Dexie.js, Twilio) in scope/roadmap with capability descriptions.</li>
+  <li><strong>Low priority:</strong> Resolve the Entra ID contradiction in User Journey 2.</li>
+  <li><strong>Low priority:</strong> Review borderline instances and decide organizational standard for acceptable PRD specificity.</li>
+</ol>
+
+<footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.8rem;">
+  Generated by Claude Opus 4.6 — PRD Validation Pipeline Step 7 — 2026-02-11
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD Validation Step 9 - Project-Type Compliance (web_app)</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 960px; margin: 0 auto; padding: 2rem; background: #f9fafb; color: #1f2937; line-height: 1.6; }
+    h1 { color: #002168; border-bottom: 3px solid #2ea3f2; padding-bottom: 0.5rem; }
+    h2 { color: #002168; margin-top: 2rem; }
+    h3 { color: #374151; }
+    .meta { background: #eef2ff; padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 2rem; }
+    .meta dt { font-weight: 600; color: #374151; }
+    .meta dd { margin-left: 0; margin-bottom: 0.5rem; }
+    .verdict { font-size: 1.25rem; font-weight: 700; padding: 1rem 1.5rem; border-radius: 8px; margin: 1.5rem 0; }
+    .verdict.pass { background: #d1fae5; color: #065f46; border: 2px solid #10b981; }
+    .verdict.warning { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
+    .verdict.critical { background: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border: 1px solid #e5e7eb; }
+    th { background: #f3f4f6; font-weight: 600; color: #374151; }
+    .adequate { color: #059669; font-weight: 600; }
+    .partial { color: #d97706; font-weight: 600; }
+    .missing { color: #dc2626; font-weight: 600; }
+    .na-justified { color: #6b7280; font-weight: 600; }
+    .section-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+    .section-card h3 { margin-top: 0; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.875rem; font-weight: 600; }
+    .badge.green { background: #d1fae5; color: #065f46; }
+    .badge.yellow { background: #fef3c7; color: #92400e; }
+    .badge.red { background: #fee2e2; color: #991b1b; }
+    .badge.gray { background: #f3f4f6; color: #4b5563; }
+    ul { padding-left: 1.5rem; }
+    li { margin-bottom: 0.4rem; }
+    .strength { color: #059669; }
+    .gap { color: #dc2626; }
+    .rec { color: #2563eb; }
+    blockquote { border-left: 4px solid #2ea3f2; padding: 0.5rem 1rem; margin: 1rem 0; background: #eff6ff; }
+    .skip-note { background: #f3f4f6; border: 1px dashed #9ca3af; padding: 1rem; border-radius: 8px; color: #6b7280; }
+  </style>
+</head>
+<body>
+
+<h1>PRD Validation -- Step 9: Project-Type Compliance</h1>
+
+<div class="meta">
+  <dl>
+    <dt>Document:</dt>
+    <dd><code>/mnt/c/Users/david/Desktop/Grid2/_bmad-output/planning-artifacts/prd.md</code></dd>
+    <dt>Project Type:</dt>
+    <dd><strong>web_app</strong> (Progressive Web App -- SPA)</dd>
+    <dt>Validation Date:</dt>
+    <dd>2026-02-11</dd>
+    <dt>Validator:</dt>
+    <dd>BMAD PRD Validation Pipeline -- Step 9</dd>
+  </dl>
+</div>
+
+<div class="verdict pass">
+  Overall Project-Type Compliance: PASS
+</div>
+
+<p>The PRD demonstrates strong project-type compliance for a <code>web_app</code> classification. All five required sections are present, four with thorough coverage and one (SEO) explicitly and justifiably marked as not applicable. The PRD goes beyond baseline requirements in several areas, particularly field usability and performance targets tailored to real-world operational conditions.</p>
+
+<h2>Summary Assessment</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Required Section</th>
+      <th>Rating</th>
+      <th>PRD Location</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Browser Matrix (<code>browser_matrix</code>)</td>
+      <td><span class="adequate">Adequate</span></td>
+      <td>"Browser &amp; Platform Matrix" table + "Platform Constraints (Safari/iPadOS)" section</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Responsive Design (<code>responsive_design</code>)</td>
+      <td><span class="adequate">Adequate</span></td>
+      <td>"Responsive Design" section under "Web App (PWA) Specific Requirements"</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Performance Targets (<code>performance_targets</code>)</td>
+      <td><span class="adequate">Adequate</span></td>
+      <td>"Performance Targets" table + NFR1-NFR5</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>SEO Strategy (<code>seo_strategy</code>)</td>
+      <td><span class="na-justified">N/A (Justified)</span></td>
+      <td>"SEO Strategy" subsection -- explicitly marked "Not applicable"</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Accessibility Level (<code>accessibility_level</code>)</td>
+      <td><span class="adequate">Adequate</span></td>
+      <td>"Field Usability &amp; Accessibility" section</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Sections Skipped (Not Applicable for web_app)</h2>
+
+<div class="skip-note">
+  <p><strong>native_features</strong> -- Skipped. Not applicable to web_app project type.</p>
+  <p><strong>cli_commands</strong> -- Skipped. Not applicable to web_app project type.</p>
+</div>
+
+<hr>
+
+<h2>Detailed Section Assessments</h2>
+
+<!-- SECTION 1: Browser Matrix -->
+<div class="section-card">
+  <h3>1. Browser Matrix (<code>browser_matrix</code>) <span class="badge green">Adequate</span></h3>
+
+  <h4>Coverage Assessment</h4>
+  <table>
+    <thead>
+      <tr><th>Criterion</th><th>Present?</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Supported browsers and versions</td>
+        <td class="adequate">Yes</td>
+        <td>Safari 17+, Chrome specified. Minimum Safari version explicitly called out with rationale (Web Push, service worker stability, modern PWA features).</td>
+      </tr>
+      <tr>
+        <td>Platform/OS combinations</td>
+        <td class="adequate">Yes</td>
+        <td>Four platform rows: iPadOS 17+ (iPad), macOS (laptop/desktop), Android phones, Windows desktop. Each mapped to a specific browser.</td>
+      </tr>
+      <tr>
+        <td>Priority levels assigned</td>
+        <td class="adequate">Yes</td>
+        <td>Three tiers: <strong>Primary</strong> (iPadOS Safari, macOS Safari), <strong>Secondary</strong> (Android Chrome), <strong>Tertiary</strong> (Windows Chrome/Edge).</td>
+      </tr>
+      <tr>
+        <td>Exclusions documented</td>
+        <td class="adequate">Yes</td>
+        <td>"Not supported: Internet Explorer, legacy browsers" explicitly stated.</td>
+      </tr>
+      <tr>
+        <td>User-to-platform mapping</td>
+        <td class="adequate">Yes</td>
+        <td>Each platform row maps to user role (e.g., Contractors+Admins for iPad, Super Admin for macOS).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Strengths</h4>
+  <ul>
+    <li class="strength">Exceptional Safari/iPadOS constraint documentation -- the PRD calls out specific Safari limitations (no Background Sync API, camera access method, push notification requirements) that directly impact architecture.</li>
+    <li class="strength">Priority tiers are user-driven, not generic -- tied to real operational scenarios.</li>
+    <li class="strength">PWA installation details included (<code>display: standalone</code>, home screen install behavior per platform).</li>
+  </ul>
+
+  <h4>Gaps</h4>
+  <ul>
+    <li class="gap">No specific Chrome or Edge version minimums listed for Secondary/Tertiary platforms. While "modern" is implied, an explicit Chrome 110+ or similar baseline would strengthen testability.</li>
+  </ul>
+
+  <h4>Recommendations</h4>
+  <ul>
+    <li class="rec">Add explicit minimum Chrome version (e.g., Chrome 110+) for Android and Windows rows.</li>
+    <li class="rec">Consider noting whether Firefox is explicitly unsupported or untested.</li>
+  </ul>
+</div>
+
+<!-- SECTION 2: Responsive Design -->
+<div class="section-card">
+  <h3>2. Responsive Design (<code>responsive_design</code>) <span class="badge green">Adequate</span></h3>
+
+  <h4>Coverage Assessment</h4>
+  <table>
+    <thead>
+      <tr><th>Criterion</th><th>Present?</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Breakpoints / viewport targets</td>
+        <td class="adequate">Yes</td>
+        <td>Four viewport targets: iPad landscape (1024x768+), iPad portrait (768x1024), Desktop (1280x800+), Phone (375x667+). Design System adds formal breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px).</td>
+      </tr>
+      <tr>
+        <td>Different device form factors</td>
+        <td class="adequate">Yes</td>
+        <td>iPad landscape (primary), iPad portrait (field use), desktop (admin dashboard), phone (contractor fallback). Each form factor mapped to a use case.</td>
+      </tr>
+      <tr>
+        <td>Touch targets and interaction patterns</td>
+        <td class="adequate">Yes</td>
+        <td>48x48pt minimum for primary field actions, 44x44pt for secondary actions. Explicitly designed for "gloved operation in wet/stressful conditions."</td>
+      </tr>
+      <tr>
+        <td>Primary design target identified</td>
+        <td class="adequate">Yes</td>
+        <td>"iPad landscape (1024x768+): Primary design target" clearly stated.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Strengths</h4>
+  <ul>
+    <li class="strength">Exceptional field-context awareness -- touch targets specified for gloved operation in wet/stressful conditions (48x48pt primary, 44x44pt secondary). This goes well beyond typical responsive design specs.</li>
+    <li class="strength">Each viewport target is mapped to a functional purpose (dashboards vs. forms vs. ticket viewing), not just device size.</li>
+    <li class="strength">Clear primary/secondary/fallback hierarchy: iPad landscape is primary, phone is explicitly "not the primary target" but supported.</li>
+    <li class="strength">The Design System document provides complementary breakpoint specifications with code examples, ensuring developer-ready specs.</li>
+  </ul>
+
+  <h4>Gaps</h4>
+  <ul>
+    <li class="gap">No explicit mention of landscape vs. portrait handling on phone-sized devices -- does the contractor portal lock orientation?</li>
+    <li class="gap">No specification for minimum font sizes at different breakpoints (the Design System has a type scale but does not define responsive scaling behavior).</li>
+  </ul>
+
+  <h4>Recommendations</h4>
+  <ul>
+    <li class="rec">Clarify phone orientation handling -- whether landscape is supported or if the contractor portal should be portrait-locked on phones.</li>
+    <li class="rec">Add responsive typography guidance (minimum body text size at phone breakpoint).</li>
+  </ul>
+</div>
+
+<!-- SECTION 3: Performance Targets -->
+<div class="section-card">
+  <h3>3. Performance Targets (<code>performance_targets</code>) <span class="badge green">Adequate</span></h3>
+
+  <h4>Coverage Assessment</h4>
+  <table>
+    <thead>
+      <tr><th>Criterion</th><th>Present?</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Specific performance metrics defined</td>
+        <td class="adequate">Yes</td>
+        <td>9 metrics in the Performance Targets table + 5 NFRs (NFR1-NFR5). Covers FCP, TTI, sync times, photo upload, form load, concurrent users, and response times.</td>
+      </tr>
+      <tr>
+        <td>Measurement conditions specified</td>
+        <td class="adequate">Yes</td>
+        <td>"On 4G/LTE connection (field conditions)" specified for network-dependent metrics. "From local Dexie.js cache" for offline metrics.</td>
+      </tr>
+      <tr>
+        <td>FCP target</td>
+        <td class="adequate">Yes</td>
+        <td>&lt; 2s on 4G/LTE</td>
+      </tr>
+      <tr>
+        <td>TTI target</td>
+        <td class="adequate">Yes</td>
+        <td>&lt; 4s -- noted as "Critical for field workers opening tickets"</td>
+      </tr>
+      <tr>
+        <td>Other web vitals</td>
+        <td class="partial">Partial</td>
+        <td>CLS and LCP not explicitly named. However, domain-relevant metrics (sync resume, environmental alert sync, photo upload, assessment form load) are specified instead.</td>
+      </tr>
+      <tr>
+        <td>Concurrency/scale targets</td>
+        <td class="adequate">Yes</td>
+        <td>NFR4: "50 concurrent users without performance degradation." NFR13: "rapid user growth from 0 to 200+ contractors."</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Full Metrics Inventory</h4>
+  <table>
+    <thead>
+      <tr><th>Metric</th><th>Target</th><th>Condition</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>First Contentful Paint</td><td>&lt; 2s</td><td>4G/LTE</td><td>Perf Table</td></tr>
+      <tr><td>Time to Interactive</td><td>&lt; 4s</td><td>4G/LTE</td><td>Perf Table</td></tr>
+      <tr><td>Offline assessment completion</td><td>Zero network dependency</td><td>No connectivity</td><td>Perf Table</td></tr>
+      <tr><td>Local queue depth</td><td>Unlimited</td><td>Offline</td><td>Perf Table</td></tr>
+      <tr><td>Sync resume</td><td>Automatic</td><td>Connectivity restored</td><td>Perf Table</td></tr>
+      <tr><td>Offline-to-online sync</td><td>&lt; 30s</td><td>Foreground, connectivity restored</td><td>Perf Table</td></tr>
+      <tr><td>Environmental alert sync</td><td>&lt; 5s</td><td>Priority channel, when online</td><td>Perf Table</td></tr>
+      <tr><td>Photo upload (per image)</td><td>&lt; 10s</td><td>4G/LTE, after compression</td><td>Perf Table</td></tr>
+      <tr><td>Assessment form load</td><td>&lt; 1s</td><td>From local Dexie.js cache</td><td>Perf Table</td></tr>
+      <tr><td>Form submission</td><td>&lt; 3s</td><td>4G/LTE (excl. photos)</td><td>NFR1</td></tr>
+      <tr><td>Dashboard/ticket list load</td><td>&lt; 2s</td><td>Standard conditions</td><td>NFR3</td></tr>
+      <tr><td>User-initiated action response</td><td>&lt; 1s</td><td>Standard conditions</td><td>NFR5</td></tr>
+      <tr><td>Concurrent users</td><td>50 without degradation</td><td>Active storm</td><td>NFR4</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Strengths</h4>
+  <ul>
+    <li class="strength">Domain-tailored metrics -- environmental alert sync (&lt; 5s priority channel) and offline-to-online sync (&lt; 30s) are operationally critical and uniquely specified for this field service context.</li>
+    <li class="strength">Measurement conditions are realistic -- "4G/LTE (field conditions)" rather than idealized lab conditions.</li>
+    <li class="strength">Both Technical Success criteria and NFRs reinforce performance targets from different angles, providing defense in depth.</li>
+    <li class="strength">Scalability targets (NFR13: 0 to 200+ contractors in hours) address the storm activation surge pattern.</li>
+  </ul>
+
+  <h4>Gaps</h4>
+  <ul>
+    <li class="gap">CLS (Cumulative Layout Shift) and LCP (Largest Contentful Paint) are not specified. While less critical for an internal tool, CLS can impact field form usability (unexpected layout shifts while filling forms).</li>
+    <li class="gap">No device-specific performance baseline -- targets are network-condition-based but do not specify a reference device (e.g., "iPad 9th gen" or "mid-range Android phone").</li>
+  </ul>
+
+  <h4>Recommendations</h4>
+  <ul>
+    <li class="rec">Add a CLS target (e.g., &lt; 0.1) for assessment forms -- layout shifts during data entry could cause mis-taps on field devices.</li>
+    <li class="rec">Specify a reference device baseline for performance testing (e.g., "iPad 9th generation, iPadOS 17").</li>
+    <li class="rec">Consider adding a LCP target for dashboard views, where large data tables or map components are the dominant visual element.</li>
+  </ul>
+</div>
+
+<!-- SECTION 4: SEO Strategy -->
+<div class="section-card">
+  <h3>4. SEO Strategy (<code>seo_strategy</code>) <span class="badge gray">N/A (Justified)</span></h3>
+
+  <h4>Coverage Assessment</h4>
+  <blockquote>
+    <strong>PRD states:</strong> "Not applicable. Internal operational tool. No public-facing content requiring search indexing."
+  </blockquote>
+
+  <table>
+    <thead>
+      <tr><th>Criterion</th><th>Present?</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>SEO addressed</td>
+        <td class="na-justified">N/A -- Justified</td>
+        <td>Explicitly marked as not applicable with a clear, valid reason. Grid2 is a private, authenticated internal operational tool with no public-facing content.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Assessment</h4>
+  <p>This is a correct and well-justified exemption. The product is:</p>
+  <ul>
+    <li>An authenticated application (all routes require login)</li>
+    <li>An internal operational tool (no public marketing pages, no content discovery needs)</li>
+    <li>Distributed via direct URL/QR code/SMS link -- not via search engines</li>
+  </ul>
+  <p>The PRD explicitly addresses SEO rather than omitting it silently, which is the correct pattern for project-type compliance.</p>
+
+  <h4>Strengths</h4>
+  <ul>
+    <li class="strength">Explicit acknowledgment with clear rationale rather than silent omission.</li>
+  </ul>
+
+  <h4>Gaps</h4>
+  <ul>
+    <li>None. This is correctly handled.</li>
+  </ul>
+</div>
+
+<!-- SECTION 5: Accessibility Level -->
+<div class="section-card">
+  <h3>5. Accessibility Level (<code>accessibility_level</code>) <span class="badge green">Adequate</span></h3>
+
+  <h4>Coverage Assessment</h4>
+  <table>
+    <thead>
+      <tr><th>Criterion</th><th>Present?</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>WCAG level specified</td>
+        <td class="adequate">Yes</td>
+        <td><strong>WCAG 2.1 Level AA</strong> as baseline. <strong>WCAG AAA (7:1 contrast)</strong> targeted for critical field elements.</td>
+      </tr>
+      <tr>
+        <td>Specific accessibility considerations</td>
+        <td class="adequate">Yes</td>
+        <td>Four specific areas: (1) Field UI contrast at 7:1, (2) Sunlight readability guidance, (3) Color-blind safety (icon + color + position), (4) Screen reader support for admin interfaces.</td>
+      </tr>
+      <tr>
+        <td>Field-specific accessibility needs</td>
+        <td class="adequate">Yes</td>
+        <td>Sunlight readability, gloved operation (touch targets 48x48pt), "Field Mode" toggle concept, color-blind consideration with 8% male prevalence cited.</td>
+      </tr>
+      <tr>
+        <td>Contrast ratios documented</td>
+        <td class="adequate">Yes</td>
+        <td>Design System provides measured contrast ratios (e.g., Navy on White: 16.2:1, Grid Blue on White: 3.0:1 large text). PRD targets 7:1 for critical field elements.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Strengths</h4>
+  <ul>
+    <li class="strength">Exceptional field-context accessibility -- the PRD goes beyond standard WCAG compliance to address real-world field conditions: sunlight readability, gloved operation, wet/stressful conditions.</li>
+    <li class="strength">The "Field Mode" toggle concept (maximum contrast, stripped-down UI) is an innovative accessibility feature tailored to the domain.</li>
+    <li class="strength">Color-blind safety is addressed with a triple-indicator pattern (icon + color + position) with statistical justification (~8% male color-blindness prevalence).</li>
+    <li class="strength">Two-tier approach: WCAG AA baseline for the whole application, WCAG AAA (7:1 contrast) elevated for critical field-facing elements. This is pragmatic and well-reasoned.</li>
+    <li class="strength">Design System supplements with measured contrast ratios for specific color combinations, making the accessibility spec verifiable.</li>
+  </ul>
+
+  <h4>Gaps</h4>
+  <ul>
+    <li class="gap">Screen reader support is mentioned only for "administrative interfaces" -- no mention of screen reader behavior for the contractor portal. While field contractors are unlikely screen reader users, the specification should explicitly note this scope decision.</li>
+    <li class="gap">No mention of reduced-motion preferences (<code>prefers-reduced-motion</code>) -- the Design System specifies animations (fadeIn 500ms, slideIn 400ms, pulse-ring 2s) but does not address motion sensitivity.</li>
+    <li class="gap">Keyboard navigation is mentioned in the Wireframes document (Section 1.2) but not in the PRD itself.</li>
+  </ul>
+
+  <h4>Recommendations</h4>
+  <ul>
+    <li class="rec">Explicitly state screen reader support scope: "Full screen reader support for admin interfaces. Contractor field interface prioritizes visual and touch accessibility; screen reader support is secondary."</li>
+    <li class="rec">Add <code>prefers-reduced-motion</code> requirement -- all animations should respect this media query.</li>
+    <li class="rec">Include keyboard navigation requirement in the PRD (not just the Wireframes doc) for admin interfaces.</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>Consolidated Findings</h2>
+
+<h3>Overall Strengths</h3>
+<ol>
+  <li><strong>Domain-tailored specifications:</strong> Every section is adapted to the utility damage assessment field context, not generic boilerplate. Browser priorities reflect actual user devices, responsive design targets field form factors, performance metrics include operational scenarios (sync, environmental alerts), and accessibility addresses outdoor/gloved/sunlight conditions.</li>
+  <li><strong>Dedicated PWA section:</strong> The PRD has a comprehensive "Web App (PWA) Specific Requirements" section that consolidates all web_app project-type concerns in one place, making compliance easy to verify.</li>
+  <li><strong>Safari/iPadOS constraint awareness:</strong> The PRD demonstrates deep platform knowledge by documenting specific Safari limitations (Background Sync API, camera access methods, push notification requirements) that will directly impact architectural decisions.</li>
+  <li><strong>Two-tier accessibility:</strong> The AA baseline + AAA for critical field elements approach is both pragmatic and ambitious.</li>
+  <li><strong>Explicit SEO exemption:</strong> Properly documented as N/A with justification rather than silently omitted.</li>
+</ol>
+
+<h3>Consolidated Gaps</h3>
+<table>
+  <thead>
+    <tr><th>Gap</th><th>Section</th><th>Severity</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>No Chrome/Edge minimum version for Secondary/Tertiary platforms</td><td>Browser Matrix</td><td>Low</td></tr>
+    <tr><td>No CLS (Cumulative Layout Shift) target</td><td>Performance Targets</td><td>Low</td></tr>
+    <tr><td>No LCP (Largest Contentful Paint) target</td><td>Performance Targets</td><td>Low</td></tr>
+    <tr><td>No reference device baseline for performance testing</td><td>Performance Targets</td><td>Low</td></tr>
+    <tr><td>No phone orientation handling specification</td><td>Responsive Design</td><td>Low</td></tr>
+    <tr><td>Screen reader scope limited to admin interfaces; contractor portal not addressed</td><td>Accessibility</td><td>Low</td></tr>
+    <tr><td>No <code>prefers-reduced-motion</code> specification</td><td>Accessibility</td><td>Low</td></tr>
+    <tr><td>Keyboard navigation not mentioned in PRD (only in Wireframes)</td><td>Accessibility</td><td>Low</td></tr>
+  </tbody>
+</table>
+
+<h3>Recommendations Priority</h3>
+<table>
+  <thead>
+    <tr><th>Priority</th><th>Recommendation</th><th>Section</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Medium</td><td>Add <code>prefers-reduced-motion</code> requirement and keyboard navigation to PRD accessibility section</td><td>Accessibility</td></tr>
+    <tr><td>Medium</td><td>Add CLS target (&lt; 0.1) for assessment forms to prevent mis-taps during field data entry</td><td>Performance</td></tr>
+    <tr><td>Low</td><td>Add minimum Chrome version (e.g., 110+) for Secondary/Tertiary platforms</td><td>Browser Matrix</td></tr>
+    <tr><td>Low</td><td>Define a reference device for performance testing (e.g., iPad 9th gen, iPadOS 17)</td><td>Performance</td></tr>
+    <tr><td>Low</td><td>Clarify phone screen orientation handling for contractor portal</td><td>Responsive Design</td></tr>
+    <tr><td>Low</td><td>Explicitly scope screen reader support for contractor portal</td><td>Accessibility</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>Final Verdict</h2>
+
+<div class="verdict pass">
+  PASS -- All 5 required web_app sections are present and adequately covered. No critical or high-severity gaps identified.
+</div>
+
+<p>The PRD exceeds baseline project-type compliance requirements. The identified gaps are all low-severity refinements that would further strengthen an already thorough specification. The PRD is particularly strong in its domain-specific adaptations of standard web_app requirements, demonstrating clear understanding of how generic web standards apply to the specific operational context of utility damage assessment field work.</p>
+
+<footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 0.875rem;">
+  <p>Generated by BMAD PRD Validation Pipeline -- Step 9: Project-Type Compliance | 2026-02-11</p>
+</footer>
+
+</body>
+</html>

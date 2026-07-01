@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD Traceability Validation - Grid2 - Step 6</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242836;
+      --border: #2e3348;
+      --text: #e1e4ed;
+      --text-muted: #8b90a5;
+      --accent: #6c8cff;
+      --accent-dim: #3d5299;
+      --green: #4caf7d;
+      --green-bg: rgba(76,175,125,0.1);
+      --yellow: #e8b931;
+      --yellow-bg: rgba(232,185,49,0.1);
+      --red: #e05555;
+      --red-bg: rgba(224,85,85,0.1);
+      --orange: #e08a3e;
+      --orange-bg: rgba(224,138,62,0.1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 1.8rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.35rem; color: var(--accent); margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.1rem; color: var(--text); margin-top: 1.25rem; margin-bottom: 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--text-muted); margin-top: 1rem; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    p { margin-bottom: 0.75rem; }
+    .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .meta-row { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .meta-item { background: var(--surface); padding: 0.75rem 1.25rem; border-radius: 8px; border: 1px solid var(--border); }
+    .meta-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .meta-value { font-size: 1.1rem; font-weight: 600; }
+    .verdict-pass { color: var(--green); }
+    .verdict-warning { color: var(--yellow); }
+    .verdict-critical { color: var(--red); }
+    .score-box { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 700; }
+    .score-bar { display: flex; gap: 4px; }
+    .score-pip { width: 18px; height: 18px; border-radius: 3px; background: var(--border); }
+    .score-pip.filled { background: var(--accent); }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .tag { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .tag-pass { background: var(--green-bg); color: var(--green); }
+    .tag-warning { background: var(--yellow-bg); color: var(--yellow); }
+    .tag-critical { background: var(--red-bg); color: var(--red); }
+    .tag-info { background: rgba(108,140,255,0.12); color: var(--accent); }
+    .tag-orphan { background: var(--orange-bg); color: var(--orange); }
+
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; }
+    th { background: var(--surface2); color: var(--text-muted); text-align: left; padding: 0.6rem 0.75rem; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--border); }
+    td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: rgba(108,140,255,0.03); }
+
+    ul, ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.3rem; }
+
+    .finding { border-left: 3px solid var(--accent-dim); padding-left: 1rem; margin: 0.75rem 0; }
+    .finding-pass { border-left-color: var(--green); }
+    .finding-warning { border-left-color: var(--yellow); }
+    .finding-critical { border-left-color: var(--red); }
+
+    .matrix-table td:first-child { font-weight: 600; white-space: nowrap; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+    .summary-card h4 { margin-top: 0; }
+    .stat-big { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+    .stat-big.green { color: var(--green); }
+    .stat-big.yellow { color: var(--yellow); }
+    .stat-big.red { color: var(--red); }
+
+    .chain-viz { display: flex; align-items: center; gap: 0.5rem; margin: 1.5rem 0; flex-wrap: wrap; }
+    .chain-node { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.85rem; }
+    .chain-arrow { color: var(--accent); font-size: 1.2rem; }
+    .chain-node.strong { border-color: var(--green); color: var(--green); }
+    .chain-node.weak { border-color: var(--yellow); color: var(--yellow); }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Step 6: Traceability Validation</h1>
+  <p class="subtitle">Grid2 PRD &mdash; BMAD Validation Pipeline &mdash; 2026-02-11</p>
+
+  <div class="meta-row">
+    <div class="meta-item">
+      <div class="meta-label">Overall Severity</div>
+      <div class="meta-value verdict-warning">WARNING</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Chain Integrity Score</div>
+      <div class="meta-value">
+        <span class="score-box">
+          3.5 / 5
+          <span class="score-bar">
+            <span class="score-pip filled"></span>
+            <span class="score-pip filled"></span>
+            <span class="score-pip filled"></span>
+            <span class="score-pip" style="background: linear-gradient(90deg, var(--accent) 50%, var(--border) 50%);"></span>
+            <span class="score-pip"></span>
+          </span>
+        </span>
+      </div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">FRs Analyzed</div>
+      <div class="meta-value">36 (FR1&ndash;FR36)</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Journeys Analyzed</div>
+      <div class="meta-value">4</div>
+    </div>
+  </div>
+
+  <!-- Traceability Chain Visualization -->
+  <div class="chain-viz">
+    <div class="chain-node strong">Executive Summary</div>
+    <div class="chain-arrow">&rarr;</div>
+    <div class="chain-node strong">Success Criteria</div>
+    <div class="chain-arrow">&rarr;</div>
+    <div class="chain-node weak">User Journeys</div>
+    <div class="chain-arrow">&rarr;</div>
+    <div class="chain-node strong">Functional Requirements</div>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>1. Executive Summary &rarr; Success Criteria Alignment</h2>
+  <!-- ========================================================= -->
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Assessment</h3>
+      <span class="tag tag-warning">Minor Gaps</span>
+    </div>
+
+    <p>The Executive Summary makes several core claims. Below is the mapping of each claim to its corresponding Success Criteria.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Executive Summary Claim</th>
+          <th>Success Criteria Coverage</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>"Replace fragmented chaos of paper forms, Excel, phone calls with a single digital platform"</td>
+          <td><strong>User Success (Jeanie):</strong> "Trusts the dashboard data implicitly (no manual Excel checks)." <br><strong>Business Success:</strong> Reduce Admin hours by 50%.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>"Enforces data quality at the point of entry"</td>
+          <td><strong>Business Success:</strong> "&lt; 5% ticket rejection/rework rate (Quality First)."</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>"Built for specific operational reality of utility damage assessment" (differentiator)</td>
+          <td>No explicit SC measures "specificity to utility damage assessment domain." The differentiator is assumed implicitly through the domain-specific FRs and journey design.</td>
+          <td><span class="tag tag-warning">Implicit Only</span></td>
+        </tr>
+        <tr>
+          <td>"Chaotic ticket intake"</td>
+          <td>No SC directly measures ticket intake normalization speed or accuracy.</td>
+          <td><span class="tag tag-warning">Not Measured</span></td>
+        </tr>
+        <tr>
+          <td>"Seasonal workforce activation"</td>
+          <td><strong>User Success (Marcus):</strong> "Re-onboard and be productive within 30 minutes."</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>"Hazardous field conditions"</td>
+          <td>No SC measures field safety UX effectiveness (e.g., gloved operation success rate, sunlight readability).</td>
+          <td><span class="tag tag-warning">Not Measured</span></td>
+        </tr>
+        <tr>
+          <td>"Strict utility client data requirements"</td>
+          <td><strong>Business Success:</strong> "&lt; 5% rejection/rework rate" captures this indirectly. <strong>Technical:</strong> "Zero data loss."</td>
+          <td><span class="tag tag-pass">Covered (indirect)</span></td>
+        </tr>
+        <tr>
+          <td>"Super Admin (Jeanie)" persona</td>
+          <td><strong>User Success (Jeanie):</strong> Trusts dashboard, &lt; 2 hrs/week on corrections.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>"Admin (Marcus)" persona</td>
+          <td><strong>User Success (Marcus):</strong> 30 min re-activation.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>"Contractor (DeShawn)" persona</td>
+          <td><strong>User Success (DeShawn):</strong> Onboarding &lt; 15 min, app "just works." <br><strong>Measurable Outcomes:</strong> Onboarding &lt; 15 min.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>"PWA on Supabase, Online-only for MVP"</td>
+          <td><strong>Technical:</strong> Auth reliability &lt; 1% failure, Perceived performance &lt; 1s, Observability.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td>"30-day MVP timeline, solo non-developer"</td>
+          <td>No SC measures delivery timeline adherence or builder velocity.</td>
+          <td><span class="tag tag-info">N/A (project meta)</span></td>
+        </tr>
+        <tr>
+          <td>"Financial: Reduce unrecovered costs by 20%"</td>
+          <td><strong>Business Success:</strong> "Reduce unrecovered costs by 20% via better tracking."</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="finding finding-warning">
+      <strong>Gaps Identified:</strong>
+      <ul>
+        <li><strong>Differentiator claim</strong> ("built for specific operational reality") has no measurable SC. Consider a SC like "Utility client satisfaction score" or "Assessment form completion rate vs. generic tools."</li>
+        <li><strong>"Chaotic ticket intake"</strong> is highlighted as a key problem but has no SC measuring normalization effectiveness. Suggestion: "Time to normalize ticket from any source into system &lt; X minutes."</li>
+        <li><strong>"Hazardous field conditions"</strong> UX claims (field readability, gloved operation) lack measurable criteria. The NFR section addresses accessibility (WCAG AA, 7:1 contrast) but these are not reflected in the Success Criteria section.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>2. Success Criteria &rarr; User Journey Coverage</h2>
+  <!-- ========================================================= -->
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Assessment</h3>
+      <span class="tag tag-warning">Partial Gaps</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Success Criterion</th>
+          <th>Exercised By Journey(s)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>User: Jeanie</strong> &mdash; Trusts dashboard data, &lt; 2 hrs/week on corrections</td>
+          <td>Journey 1 (Jeanie): Monitor Progress, Review &amp; Approve steps. Climax: "trusts what she sees."</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td><strong>User: Marcus</strong> &mdash; Productive within 30 min of seasonal return</td>
+          <td>Journey 2 (Marcus): Entire journey is about 3-month return re-activation. Climax: "productive within 30 minutes."</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td><strong>User: DeShawn</strong> &mdash; Onboarding &lt; 15 min, no support call. "App just works" offline.</td>
+          <td>Journey 3 (DeShawn): Onboarding wizard step (1). Climax: first assessment correct on first attempt. <br><em>Note: "offline with no data anxiety" is NOT exercised &mdash; MVP is online-only, and the journey describes online-only flow.</em></td>
+          <td><span class="tag tag-warning">Partial</span></td>
+        </tr>
+        <tr>
+          <td><strong>Business: Reduce Admin hours by 50%</strong></td>
+          <td>Journey 1 (Jeanie): System-validated tickets, dashboard trust, reduced manual reconciliation. Journey 2 (Marcus): automated re-onboarding reduces training overhead.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td><strong>Business: &lt; 5% rejection/rework rate</strong></td>
+          <td>Journey 3 (DeShawn): Conditional form with validation, "first-attempt acceptance rate &gt; 95%." Journey 4 (Utility Client): Data quality comparison.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td><strong>Business: Reduce unrecovered costs by 20%</strong></td>
+          <td>Journey 1 (Jeanie): "Invoice &amp; Close" step. But time/expense tracking is Phase 3 &mdash; this SC cannot be measured in MVP.</td>
+          <td><span class="tag tag-warning">Not MVP-measurable</span></td>
+        </tr>
+        <tr>
+          <td><strong>Technical: Zero data loss</strong></td>
+          <td>Implicitly exercised across all journeys (submission flow). No journey explicitly tests failure/recovery scenarios.</td>
+          <td><span class="tag tag-warning">Implicit Only</span></td>
+        </tr>
+        <tr>
+          <td><strong>Technical: &lt; 1s response time</strong></td>
+          <td>Implicitly exercised in all form interactions. No journey narrates performance experience.</td>
+          <td><span class="tag tag-pass">Covered (NFR-level)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Technical: &lt; 1% login failure rate</strong></td>
+          <td>Journey 2 (Marcus): "Logs in via Entra ID." Journey 3 (DeShawn): Account creation. <em>Note: Exec Summary says "Supabase Auth (email/password)" but Journey 2 says "Entra ID" &mdash; inconsistency.</em></td>
+          <td><span class="tag tag-warning">Inconsistency</span></td>
+        </tr>
+        <tr>
+          <td><strong>Technical: Critical errors logged immediately</strong></td>
+          <td>No journey exercises error/observability scenarios.</td>
+          <td><span class="tag tag-warning">Not Exercised</span></td>
+        </tr>
+        <tr>
+          <td><strong>Measurable: Onboarding &lt; 15 min</strong></td>
+          <td>Journey 3 (DeShawn): Onboarding wizard sequence.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+        <tr>
+          <td><strong>Measurable: Dashboard load &lt; 2s</strong></td>
+          <td>Journey 1 (Jeanie): "Opens the dashboard during an active storm." Implicitly covered.</td>
+          <td><span class="tag tag-pass">Covered</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="finding finding-warning">
+      <strong>Gaps Identified:</strong>
+      <ul>
+        <li><strong>DeShawn's SC mentions "offline with no data anxiety"</strong> but the MVP is online-only and no journey exercises offline scenarios. The SC is aspirational beyond MVP scope.</li>
+        <li><strong>"Reduce unrecovered costs by 20%"</strong> cannot be measured in MVP since time/expense tracking is Phase 3. This SC should be explicitly marked as a post-MVP measurable.</li>
+        <li><strong>"Zero data loss"</strong> and <strong>"Critical errors logged"</strong> are never narratively exercised. No journey shows what happens when things go wrong.</li>
+        <li><strong>Auth inconsistency:</strong> Executive Summary specifies "Supabase Auth (email/password)." Journey 2 (Marcus) says "Logs in via Entra ID." These contradict &mdash; Entra ID is not mentioned anywhere else.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>3. User Journey &rarr; Functional Requirement Mapping</h2>
+  <!-- ========================================================= -->
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Journey 1: Jeanie (Super Admin) &mdash; Storm Activation to Close-Out</h3>
+      <span class="tag tag-warning">Partial Coverage</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Journey Capability</th><th>FR(s)</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Activate Admins / Mark active</td><td>FR1 (create accounts), FR3 (activate/deactivate)</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Assign permission groups</td><td>FR4 (role-based access), FR5 (admin vs super admin)</td><td><span class="tag tag-warning">Partial</span></td></tr>
+        <tr><td>Contractor Readiness Dashboard</td><td>FR9 (view onboarding submissions), FR35 (contractor list + assignments)</td><td><span class="tag tag-warning">Partial</span></td></tr>
+        <tr><td>Send sign-up links via SMS</td><td>None &mdash; cut from MVP (FFR5)</td><td><span class="tag tag-info">Deferred</span></td></tr>
+        <tr><td>Import utility tickets</td><td>FR15 (manual ticket create). No import/batch capability.</td><td><span class="tag tag-warning">Partial</span></td></tr>
+        <tr><td>Group tickets by geography</td><td>None &mdash; no grouping FR exists</td><td><span class="tag tag-critical">No FR</span></td></tr>
+        <tr><td>Assign grouped ticket batches to crews</td><td>FR17 (assign ticket to one contractor). No batch/crew assignment.</td><td><span class="tag tag-warning">Partial</span></td></tr>
+        <tr><td>Monitor real-time submission status</td><td>FR34 (dashboard ticket counts by status), FR20 (ticket status)</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>System-validated tickets</td><td>FR25 (required fields enforcement)</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Review &amp; Approve assessments</td><td>FR28&ndash;FR33 (full review workflow)</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Review time entries / expenses</td><td>None &mdash; cut from MVP (FFR7)</td><td><span class="tag tag-info">Deferred</span></td></tr>
+        <tr><td>Invoice &amp; Close</td><td>FR12 (set project status to Closed), FR13 (archive). No invoicing FR (FFR8).</td><td><span class="tag tag-warning">Partial</span></td></tr>
+        <tr><td>Analytics for bid projections</td><td>None &mdash; cut from MVP (FFR9)</td><td><span class="tag tag-info">Deferred</span></td></tr>
+        <tr><td>User management (CRUD)</td><td>FR1, FR3</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Create storm project</td><td>FR11</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Journey 2: Marcus (Admin Re-Activation)</h3>
+      <span class="tag tag-critical">Significant Gaps</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Journey Capability</th><th>FR(s)</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dormant account re-activation flow</td><td>None &mdash; no FR addresses dormancy detection or re-activation UX</td><td><span class="tag tag-critical">No FR</span></td></tr>
+        <tr><td>"Welcome Back" summary with change log</td><td>None</td><td><span class="tag tag-critical">No FR</span></td></tr>
+        <tr><td>Pre-prompted profile update questions</td><td>None (FR6 covers initial onboarding only)</td><td><span class="tag tag-critical">No FR</span></td></tr>
+        <tr><td>Storm context display (utility, location, role)</td><td>None &mdash; no FR provides contextual landing page</td><td><span class="tag tag-critical">No FR</span></td></tr>
+        <tr><td>Pre-storm checklists</td><td>None</td><td><span class="tag tag-critical">No FR</span></td></tr>
+        <tr><td>Login via Entra ID</td><td>FR2 (email/password only) &mdash; <strong>contradicts journey</strong></td><td><span class="tag tag-critical">Conflict</span></td></tr>
+        <tr><td>Contractor readiness dashboard</td><td>FR35 (contractor list + assignments)</td><td><span class="tag tag-warning">Partial</span></td></tr>
+        <tr><td>Ticket validation tools</td><td>FR28&ndash;FR31 (review workflow). FR25 (form validation).</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Post-storm close-out workflows</td><td>FR12 (status change), FR13 (archive). No close-out workflow FR.</td><td><span class="tag tag-warning">Partial</span></td></tr>
+      </tbody>
+    </table>
+    <div class="finding finding-critical">
+      <strong>Critical Finding:</strong> Journey 2 describes an elaborate re-activation UX (Welcome Back, change summary, profile prompts, storm context, checklists) that has <strong>zero corresponding FRs in the MVP</strong>. Either (a) the journey describes Phase 2+ aspirational UX that should be labeled as such, or (b) the FR section needs 4&ndash;6 additional requirements to cover these capabilities. This is the single largest traceability gap in the PRD.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Journey 3: DeShawn (Contractor Onboarding &amp; Field Work)</h3>
+      <span class="tag tag-pass">Strong Coverage</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Journey Capability</th><th>FR(s)</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>SMS-driven sign-up link</td><td>None &mdash; cut from MVP (FFR5). Distribution via URL/QR noted in PWA section.</td><td><span class="tag tag-info">Deferred</span></td></tr>
+        <tr><td>Onboarding wizard (profile, docs)</td><td>FR6, FR7, FR8</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>PPE acknowledgment</td><td>None &mdash; no FR for PPE acknowledgment step</td><td><span class="tag tag-warning">No FR</span></td></tr>
+        <tr><td>Training modules / safety videos</td><td>None &mdash; no FR for in-app training</td><td><span class="tag tag-warning">No FR</span></td></tr>
+        <tr><td>SOP / code of conduct acknowledgments</td><td>None &mdash; no FR for acknowledgment signatures</td><td><span class="tag tag-warning">No FR</span></td></tr>
+        <tr><td>Admin verifies onboarding</td><td>FR9, FR10</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Team/crew assignment</td><td>FR14 (assign to project), FR17 (assign ticket to contractor). No crew/team concept FR.</td><td><span class="tag tag-warning">Partial</span></td></tr>
+        <tr><td>PPE/tooling issuance tracking</td><td>None</td><td><span class="tag tag-warning">No FR</span></td></tr>
+        <tr><td>Receive tickets via SMS</td><td>FR19 (view assigned tickets). No SMS notification (FFR5).</td><td><span class="tag tag-info">Deferred</span></td></tr>
+        <tr><td>Conditional assessment form with validation</td><td>FR21, FR22, FR25</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Photo capture with GPS/timestamp</td><td>FR23, FR24</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Save draft assessment</td><td>FR26</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Submit for review</td><td>FR27</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Time/expense logging</td><td>None &mdash; cut from MVP (FFR7)</td><td><span class="tag tag-info">Deferred</span></td></tr>
+        <tr><td>Offline-capable submission</td><td>None &mdash; cut from MVP (FFR1)</td><td><span class="tag tag-info">Deferred</span></td></tr>
+        <tr><td>In-app approval/rejection notification</td><td>FR32</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Revise &amp; resubmit rejected assessment</td><td>FR33</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Personal dashboard</td><td>FR36</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Journey 4: Utility Client (Indirect)</h3>
+      <span class="tag tag-pass">Adequately Covered</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Journey Capability</th><th>FR(s)</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Data quality enforcement</td><td>FR25 (required fields), FR22 (structured data)</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Complete assessment data</td><td>FR22, FR23, FR24</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Photo documentation</td><td>FR23</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>GPS capture</td><td>FR24</td><td><span class="tag tag-pass">Mapped</span></td></tr>
+        <tr><td>Exportable/reportable assessment data</td><td>None &mdash; no FR for data export. Noted as FFR9 (Phase 3).</td><td><span class="tag tag-info">Deferred</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>4. Unmapped Journey Capabilities (No FR and Not Explicitly Deferred)</h2>
+  <!-- ========================================================= -->
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Capabilities in User Journeys with No Corresponding FR or FFR</h3>
+      <span class="tag tag-critical">Action Required</span>
+    </div>
+    <p>These capabilities appear in User Journeys as expected MVP behavior but have no FR, and are not listed in the "Deliberately Cut" or FFR sections. They exist in a traceability void.</p>
+    <table>
+      <thead>
+        <tr><th>Capability</th><th>Journey</th><th>Severity</th><th>Recommendation</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ticket grouping by geography/location</td>
+          <td>J1 (Jeanie) step 4</td>
+          <td><span class="tag tag-warning">Medium</span></td>
+          <td>Add FR or explicitly note as "manual process" in MVP. The journey says "Manual in Phase 1" but no FR captures even the display of location data for manual grouping.</td>
+        </tr>
+        <tr>
+          <td>Dormant account detection &amp; re-activation flow</td>
+          <td>J2 (Marcus) step 2</td>
+          <td><span class="tag tag-critical">High</span></td>
+          <td>Either add FRs for re-activation UX or explicitly defer the entire Journey 2 re-activation UX to Phase 2 with a note.</td>
+        </tr>
+        <tr>
+          <td>"Welcome Back" summary with change log</td>
+          <td>J2 (Marcus) step 2</td>
+          <td><span class="tag tag-critical">High</span></td>
+          <td>Same as above.</td>
+        </tr>
+        <tr>
+          <td>Pre-prompted profile update verification</td>
+          <td>J2 (Marcus) step 2</td>
+          <td><span class="tag tag-critical">High</span></td>
+          <td>Same as above.</td>
+        </tr>
+        <tr>
+          <td>Storm context landing page (utility, location, role)</td>
+          <td>J2 (Marcus) step 3</td>
+          <td><span class="tag tag-critical">High</span></td>
+          <td>Same as above.</td>
+        </tr>
+        <tr>
+          <td>Pre-storm checklists</td>
+          <td>J2 (Marcus) step 4</td>
+          <td><span class="tag tag-critical">High</span></td>
+          <td>Same as above. This is a standalone feature not mentioned anywhere else.</td>
+        </tr>
+        <tr>
+          <td>PPE acknowledgment step in onboarding</td>
+          <td>J3 (DeShawn) step 1</td>
+          <td><span class="tag tag-warning">Medium</span></td>
+          <td>The onboarding FRs (FR6&ndash;FR8) cover profile, W-9, and insurance only. PPE acknowledgment, training, and SOP sign-off are in the journey but not in any FR. Add FRs or trim the journey description.</td>
+        </tr>
+        <tr>
+          <td>In-app training modules / safety videos</td>
+          <td>J3 (DeShawn) step 1</td>
+          <td><span class="tag tag-warning">Medium</span></td>
+          <td>Same as above.</td>
+        </tr>
+        <tr>
+          <td>SOP / Code of conduct acknowledgment signatures</td>
+          <td>J3 (DeShawn) step 1</td>
+          <td><span class="tag tag-warning">Medium</span></td>
+          <td>Same as above.</td>
+        </tr>
+        <tr>
+          <td>Team/crew concept (paired driver, team lead)</td>
+          <td>J3 (DeShawn) step 3</td>
+          <td><span class="tag tag-warning">Medium</span></td>
+          <td>No FR models the concept of "crews" or "team leads." FR14 assigns contractors to projects and FR17 assigns tickets to individual contractors. The team/crew concept is a data model gap.</td>
+        </tr>
+        <tr>
+          <td>PPE/tooling issuance tracking</td>
+          <td>J3 (DeShawn) step 3</td>
+          <td><span class="tag tag-warning">Medium</span></td>
+          <td>Add FR or defer explicitly. Not in "Deliberately Cut" list.</td>
+        </tr>
+        <tr>
+          <td>Permission groups (beyond 3 roles)</td>
+          <td>J1 (Jeanie) step 1</td>
+          <td><span class="tag tag-warning">Low</span></td>
+          <td>Journey mentions "assigns permission groups based on this storm's needs." FRs define only 3 fixed roles. Clarify that MVP uses fixed roles, not configurable permission groups.</td>
+        </tr>
+        <tr>
+          <td>Entra ID login</td>
+          <td>J2 (Marcus) step 2</td>
+          <td><span class="tag tag-critical">High</span></td>
+          <td>Journey 2 says "Logs in via Entra ID." FR2 says "email and password." Executive Summary says "Supabase Auth (email/password)." This is a direct contradiction that must be resolved.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>5. Orphan FR Detection</h2>
+  <!-- ========================================================= -->
+
+  <div class="card">
+    <div class="card-header">
+      <h3>FRs Not Traceable to Any User Journey</h3>
+      <span class="tag tag-pass">All Justified</span>
+    </div>
+    <p>Every FR was checked against the four User Journeys. The following FRs do not appear in any journey narrative but are still justified:</p>
+    <table>
+      <thead>
+        <tr><th>FR</th><th>Description</th><th>Journey Reference</th><th>Justification</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>FR5</strong></td>
+          <td>Admin can view dashboards, tickets, assessments but cannot create storm projects, enter tickets, or assign contractors.</td>
+          <td>Journey 2 (Marcus) mentions ticket review but not the negative constraint (cannot create projects/tickets).</td>
+          <td><span class="tag tag-pass">Justified</span> &mdash; Role constraint is a system design decision. Derived from the MVP scoping note: "Marcus operates with same capabilities as Jeanie in MVP (no separate admin layer)." <em>Note: This FR and the scoping note contradict each other. FR5 restricts Admin; the scoping note says no separate layer.</em></td>
+        </tr>
+        <tr>
+          <td><strong>FR16</strong></td>
+          <td>Super Admin can edit existing ticket details.</td>
+          <td>No journey explicitly shows ticket editing after creation.</td>
+          <td><span class="tag tag-pass">Justified</span> &mdash; Standard CRUD capability. Implicitly needed when ticket data arrives from chaotic sources and may need correction.</td>
+        </tr>
+        <tr>
+          <td><strong>FR18</strong></td>
+          <td>System logs all ticket assignments with timestamp and acting user.</td>
+          <td>No journey narrates the audit trail explicitly.</td>
+          <td><span class="tag tag-pass">Justified</span> &mdash; Directly derived from Domain Requirements: "Communication audit trail." Essential for operational accountability.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="finding finding-pass">
+      <strong>Result:</strong> No true orphan FRs. All FRs trace to either a journey capability, a domain requirement, or a standard CRUD operation. FR5 has a noted contradiction with the MVP scoping statement that should be resolved.
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>6. Traceability Matrix</h2>
+  <!-- ========================================================= -->
+
+  <div class="card">
+    <p>Each FR mapped to the Journey(s) it supports and the Success Criteria it serves. <strong>J1</strong> = Jeanie, <strong>J2</strong> = Marcus, <strong>J3</strong> = DeShawn, <strong>J4</strong> = Utility Client.</p>
+    <table class="matrix-table">
+      <thead>
+        <tr><th>FR</th><th>Description (abbreviated)</th><th>Journey(s)</th><th>Success Criteria</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>FR1</td><td>Create user accounts with roles</td><td>J1</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR2</td><td>Login with email/password</td><td>J1, J2, J3</td><td>Technical (auth reliability)</td></tr>
+        <tr><td>FR3</td><td>Deactivate/reactivate accounts</td><td>J1</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR4</td><td>Role-based access enforcement</td><td>J1, J2, J3</td><td>Technical (auth), User (all)</td></tr>
+        <tr><td>FR5</td><td>Admin view-only restrictions</td><td>J2</td><td>Business (efficiency)</td></tr>
+        <tr><td>FR6</td><td>Contractor onboarding form</td><td>J3</td><td>User (DeShawn), Measurable (onboarding speed)</td></tr>
+        <tr><td>FR7</td><td>W-9 upload</td><td>J3</td><td>User (DeShawn), Measurable (onboarding speed)</td></tr>
+        <tr><td>FR8</td><td>Insurance upload</td><td>J3</td><td>User (DeShawn), Measurable (onboarding speed)</td></tr>
+        <tr><td>FR9</td><td>Admin views onboarding submissions</td><td>J1, J3</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR10</td><td>Block unverified contractors</td><td>J3</td><td>Business (data quality)</td></tr>
+        <tr><td>FR11</td><td>Create storm project</td><td>J1</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR12</td><td>Set project status</td><td>J1</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR13</td><td>Archive closed project</td><td>J1</td><td>Business (financial), Technical (data integrity)</td></tr>
+        <tr><td>FR14</td><td>Assign contractors to project</td><td>J1, J3</td><td>Business (efficiency)</td></tr>
+        <tr><td>FR15</td><td>Manual ticket creation</td><td>J1</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR16</td><td>Edit ticket details</td><td>J1 (implicit)</td><td>Business (data quality)</td></tr>
+        <tr><td>FR17</td><td>Assign ticket to contractor</td><td>J1, J3</td><td>Business (efficiency)</td></tr>
+        <tr><td>FR18</td><td>Log ticket assignments</td><td>Domain req.</td><td>Technical (data integrity)</td></tr>
+        <tr><td>FR19</td><td>Contractors view own tickets</td><td>J3</td><td>User (DeShawn)</td></tr>
+        <tr><td>FR20</td><td>Ticket status visibility</td><td>J1, J3</td><td>User (Jeanie, DeShawn), Business (efficiency)</td></tr>
+        <tr><td>FR21</td><td>Complete assessment form</td><td>J3</td><td>User (DeShawn), Business (data quality)</td></tr>
+        <tr><td>FR22</td><td>Structured assessment data</td><td>J3, J4</td><td>Business (data quality, &lt;5% rejection)</td></tr>
+        <tr><td>FR23</td><td>Photo upload in assessment</td><td>J3, J4</td><td>Business (data quality)</td></tr>
+        <tr><td>FR24</td><td>GPS + timestamp on photos</td><td>J3, J4</td><td>Business (data quality)</td></tr>
+        <tr><td>FR25</td><td>Required field enforcement</td><td>J3, J4</td><td>Business (&lt;5% rejection), User (DeShawn)</td></tr>
+        <tr><td>FR26</td><td>Save draft assessment</td><td>J3</td><td>User (DeShawn), Technical (data integrity)</td></tr>
+        <tr><td>FR27</td><td>Submit completed assessment</td><td>J3</td><td>User (DeShawn), Business (efficiency)</td></tr>
+        <tr><td>FR28</td><td>View all submitted assessments</td><td>J1</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR29</td><td>Review individual assessment</td><td>J1</td><td>User (Jeanie), Business (data quality)</td></tr>
+        <tr><td>FR30</td><td>Approve assessment</td><td>J1</td><td>User (Jeanie), Business (efficiency, data quality)</td></tr>
+        <tr><td>FR31</td><td>Reject with required notes</td><td>J1</td><td>User (Jeanie), Business (data quality)</td></tr>
+        <tr><td>FR32</td><td>In-app notification (approved/rejected)</td><td>J3</td><td>User (DeShawn), Business (efficiency)</td></tr>
+        <tr><td>FR33</td><td>Revise &amp; resubmit rejected assessment</td><td>J3</td><td>User (DeShawn), Business (&lt;5% rejection)</td></tr>
+        <tr><td>FR34</td><td>Project dashboard (ticket counts by status)</td><td>J1</td><td>User (Jeanie), Measurable (dashboard &lt;2s)</td></tr>
+        <tr><td>FR35</td><td>Contractor list + current assignments</td><td>J1, J2</td><td>User (Jeanie), Business (efficiency)</td></tr>
+        <tr><td>FR36</td><td>Contractor personal dashboard</td><td>J3</td><td>User (DeShawn)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>7. Summary of Findings</h2>
+  <!-- ========================================================= -->
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4>Executive Summary &rarr; Success Criteria</h4>
+      <div class="stat-big green">8 / 11</div>
+      <p>claims have measurable SC coverage. 3 claims (differentiator, ticket chaos, field conditions) lack explicit SC.</p>
+    </div>
+    <div class="summary-card">
+      <h4>Success Criteria &rarr; User Journeys</h4>
+      <div class="stat-big yellow">8 / 12</div>
+      <p>criteria fully exercised. 4 criteria have gaps: DeShawn offline (aspirational), financial reduction (Phase 3), zero data loss (no failure journey), auth method (contradictory).</p>
+    </div>
+    <div class="summary-card">
+      <h4>User Journeys &rarr; FRs</h4>
+      <div class="stat-big yellow">13</div>
+      <p>journey capabilities have no FR and are not explicitly deferred. Journey 2 (Marcus) accounts for 6 of these. Journey 3 (DeShawn onboarding) accounts for 5.</p>
+    </div>
+    <div class="summary-card">
+      <h4>Orphan FRs</h4>
+      <div class="stat-big green">0</div>
+      <p>true orphans. 3 FRs (FR5, FR16, FR18) have weak journey ties but strong domain/system justification.</p>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>8. Critical Issues Requiring Resolution</h2>
+  <!-- ========================================================= -->
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Issue #1: Journey 2 (Marcus) is Almost Entirely Aspirational</h3>
+      <span class="tag tag-critical">Critical</span>
+    </div>
+    <p>Journey 2 describes an elaborate re-activation UX with 6 capabilities (dormancy detection, welcome-back summary, profile prompts, storm context display, checklists, Entra ID) that have <strong>zero FRs in the MVP</strong>. This entire journey is essentially a Phase 2+ vision document embedded in a section that reads as MVP scope. Either:</p>
+    <ul>
+      <li>(a) Add explicit phase labels within Journey 2 separating MVP capabilities from future capabilities, or</li>
+      <li>(b) Add FRs for the capabilities that are genuinely MVP (e.g., storm context display is arguably essential), or</li>
+      <li>(c) Rewrite Journey 2 to reflect actual MVP reality: Marcus logs in, sees dashboard, reviews tickets.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Issue #2: Authentication Method Contradiction</h3>
+      <span class="tag tag-critical">Critical</span>
+    </div>
+    <p>Three sections give three different auth stories:</p>
+    <ul>
+      <li><strong>Executive Summary:</strong> "Supabase Auth (email/password)"</li>
+      <li><strong>FR2:</strong> "Users can log in with email and password"</li>
+      <li><strong>Journey 2:</strong> "Marcus logs in via Entra ID"</li>
+    </ul>
+    <p>Entra ID (Microsoft) is a fundamentally different auth integration that would add significant MVP scope. This must be resolved to one consistent auth method.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Issue #3: FR5 vs. MVP Scoping Statement Contradiction</h3>
+      <span class="tag tag-warning">Warning</span>
+    </div>
+    <p>FR5 states: "Admin can view dashboards, tickets, and assessments but <strong>cannot</strong> create storm projects, enter tickets, or assign contractors."</p>
+    <p>MVP Scoping states: "Marcus operates with <strong>same capabilities as Jeanie</strong> in MVP (no separate admin layer)."</p>
+    <p>These directly contradict. Either FR5 is the correct MVP scope (Admin is restricted) or the scoping note is correct (Admin = Super Admin in MVP). Resolve which is intended.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Issue #4: DeShawn Onboarding Journey Exceeds FR Coverage</h3>
+      <span class="tag tag-warning">Warning</span>
+    </div>
+    <p>Journey 3's onboarding wizard has 5 steps (Profile, Documents, PPE Acknowledgment, Training, Acknowledgments) but the FRs only cover 3 (Profile [FR6], W-9 [FR7], Insurance [FR8]). The MVP scoping section says "Simple Onboarding: Name, phone, email, W-9 upload, insurance upload. One fixed form." Either:</p>
+    <ul>
+      <li>Trim Journey 3's onboarding description to match the "simple onboarding" MVP spec, or</li>
+      <li>Add FRs for PPE acknowledgment, training modules, and SOP sign-off if they are truly MVP.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Issue #5: DeShawn's "Offline" Success Criterion</h3>
+      <span class="tag tag-warning">Warning</span>
+    </div>
+    <p>DeShawn's User Success criterion says: "Validates 'app just works' offline with no data anxiety." But the MVP is explicitly online-only (offline is Phase 2). This SC cannot be validated in MVP and should be either removed from MVP SC or explicitly labeled as "Phase 2 target."</p>
+  </div>
+
+  <!-- ========================================================= -->
+  <h2>9. Overall Assessment</h2>
+  <!-- ========================================================= -->
+
+  <div class="card" style="border: 1px solid var(--yellow);">
+    <div class="card-header">
+      <h3>Chain Integrity Score: 3.5 / 5</h3>
+      <span class="tag tag-warning">WARNING</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Chain Link</th><th>Score</th><th>Assessment</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Executive Summary &rarr; Success Criteria</td>
+          <td><strong>4 / 5</strong></td>
+          <td>Strong alignment. Minor gaps in measuring differentiator claims and field-condition UX. Most claims have corresponding SC.</td>
+        </tr>
+        <tr>
+          <td>Success Criteria &rarr; User Journeys</td>
+          <td><strong>3.5 / 5</strong></td>
+          <td>Good coverage for Jeanie and DeShawn. Weakened by aspirational SC (offline, financial) that cannot be measured in MVP, and the Entra ID contradiction.</td>
+        </tr>
+        <tr>
+          <td>User Journeys &rarr; Functional Requirements</td>
+          <td><strong>3 / 5</strong></td>
+          <td>Journey 1 (Jeanie) and Journey 3 (DeShawn) have good FR coverage with some gaps. Journey 2 (Marcus) has critical coverage failure &mdash; nearly all its unique capabilities lack FRs. Journey 4 is well-covered.</td>
+        </tr>
+        <tr>
+          <td>Orphan FR Detection</td>
+          <td><strong>5 / 5</strong></td>
+          <td>No unexplained orphan FRs. All FRs are justified.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4 style="margin-top: 1.25rem;">Key Takeaway</h4>
+    <p>The PRD has a <strong>strong core traceability chain</strong> for the primary flows (Jeanie creating/managing storms, DeShawn completing assessments). The chain breaks down at Journey 2 (Marcus), where the narrative describes a sophisticated re-activation UX that is essentially an unfunded mandate &mdash; vivid in the journey, absent from the FRs, and not mentioned in any phasing plan. The authentication contradiction (Supabase Auth vs. Entra ID) and the FR5 vs. scoping note contradiction are factual conflicts that must be resolved before development.</p>
+
+    <p>The document would reach a <strong>4.5 / 5</strong> with three actions: (1) phase-label Journey 2 capabilities, (2) resolve the auth contradiction, and (3) reconcile FR5 with the MVP scoping statement.</p>
+  </div>
+
+  <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+  <p style="color: var(--text-muted); font-size: 0.8rem;">Generated by BMAD PRD Validation Pipeline &mdash; Step 6: Traceability Validation &mdash; 2026-02-11</p>
+
+</div>
+</body>
+</html>

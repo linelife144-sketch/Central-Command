@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD Validation — Step 3: Information Density</title>
+<style>
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; background: #fafafa; color: #1a1a1a; line-height: 1.6; }
+  h1 { border-bottom: 3px solid #16a34a; padding-bottom: 0.5rem; }
+  h2 { color: #1e3a5f; margin-top: 2rem; }
+  h3 { color: #374151; }
+  .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 700; font-size: 0.9rem; }
+  .pass { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .warning { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+  .critical { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: #1e3a5f; color: #fff; padding: 0.6rem 0.75rem; text-align: left; }
+  td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e7eb; }
+  tr:nth-child(even) { background: #f3f4f6; }
+  .score-box { display: flex; align-items: center; gap: 1rem; background: #f0fdf4; border: 2px solid #16a34a; border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; }
+  .score-number { font-size: 2.5rem; font-weight: 800; color: #16a34a; }
+  .score-label { font-size: 1rem; color: #374151; }
+  .violation-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1rem; margin: 0.75rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .violation-card .line { font-family: monospace; color: #6b7280; font-size: 0.85rem; }
+  .violation-card .text { margin: 0.4rem 0; padding: 0.4rem 0.6rem; background: #fef3c7; border-left: 3px solid #f59e0b; font-style: italic; }
+  .violation-card .fix { color: #166534; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .summary-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; text-align: center; }
+  .summary-card .count { font-size: 2rem; font-weight: 700; }
+  .zero { color: #16a34a; }
+  .low { color: #ca8a04; }
+  .meta { color: #6b7280; font-size: 0.9rem; margin-bottom: 2rem; }
+  code { background: #f3f4f6; padding: 0.15rem 0.35rem; border-radius: 3px; font-size: 0.9em; }
+  .highlight { background: #fef08a; padding: 0.1rem 0.3rem; }
+</style>
+</head>
+<body>
+
+<h1>PRD Validation &mdash; Step 3: Information Density</h1>
+<p class="meta">
+  <strong>Document:</strong> <code>_bmad-output/planning-artifacts/prd.md</code><br>
+  <strong>Date:</strong> 2026-02-11<br>
+  <strong>Validator:</strong> Claude Opus 4.6 (Automated PRD Validation)<br>
+  <strong>Document Lines:</strong> 547
+</p>
+
+<!-- ============================================ -->
+<h2>Overall Severity</h2>
+
+<span class="badge pass">PASS</span>
+
+<p>Total violations found: <strong>3</strong> (threshold for PASS: &lt; 5)</p>
+
+<!-- ============================================ -->
+<h2>Information Density Score</h2>
+
+<div class="score-box">
+  <div class="score-number">4.5 / 5</div>
+  <div class="score-label">
+    <strong>Excellent density.</strong> This PRD is notably tight. Requirements are direct, declarative, and action-oriented. The document uses active voice consistently, avoids conversational filler almost entirely, and delivers high signal-to-noise throughout its 547 lines. The narrative user journey sections are appropriately story-driven without devolving into padding. Functional and non-functional requirements use crisp "Actor can verb object" patterns.
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2>Violation Count by Category</h2>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="count zero">0</div>
+    <div>Conversational Filler</div>
+  </div>
+  <div class="summary-card">
+    <div class="count zero">0</div>
+    <div>Wordy Phrases</div>
+  </div>
+  <div class="summary-card">
+    <div class="count zero">0</div>
+    <div>Redundant/Padding</div>
+  </div>
+  <div class="summary-card">
+    <div class="count low">1</div>
+    <div>Passive Voice</div>
+  </div>
+  <div class="summary-card">
+    <div class="count low">2</div>
+    <div>Hedging Language</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2>All Violations (3 Total)</h2>
+
+<div class="violation-card">
+  <div class="line">Line 316 &mdash; <span class="badge info">Hedging</span></div>
+  <div class="text">"~8% of male field workers <span class="highlight">may be</span> color-blind."</div>
+  <p><strong>Assessment:</strong> "May be" introduces uncertainty where established medical data exists. Approximately 8% of males <em>are</em> affected by color vision deficiency &mdash; this is a well-documented statistic.</p>
+  <p class="fix"><strong>Suggested fix:</strong> "~8% of male field workers have some form of color-vision deficiency."</p>
+</div>
+
+<div class="violation-card">
+  <div class="line">Line 524 &mdash; <span class="badge info">Passive Voice</span></div>
+  <div class="text">"Contractor PII (W-9 documents, insurance documents) <span class="highlight">is stored in</span> a secured storage bucket with restricted access &mdash; only Super Admin can view."</div>
+  <p><strong>Assessment:</strong> Passive construction ("is stored in") obscures the actor. However, this is an NFR describing a system storage property, so passive voice is marginally acceptable. A more direct form strengthens the requirement.</p>
+  <p class="fix"><strong>Suggested fix:</strong> "NFR8: Supabase stores contractor PII (W-9, insurance) in a secured storage bucket &mdash; only Super Admin can access."</p>
+</div>
+
+<div class="violation-card">
+  <div class="line">Lines 207, 231, 262 &mdash; <span class="badge info">Hedging</span></div>
+  <div class="text">
+    L207: "utility contracts <span class="highlight">may</span> specify longer periods"<br>
+    L231: "Form structure and entry process <span class="highlight">may</span> vary by utility"<br>
+    L262: "Each utility project <span class="highlight">may</span> impose unique requirements"
+  </div>
+  <p><strong>Assessment:</strong> These uses of "may" are <strong>contextually appropriate</strong> &mdash; they describe genuine variability in external business conditions, not uncertain requirements. These are not true violations but are noted for completeness. The PRD correctly acknowledges that utility clients have different contracts with different terms, and the word "may" accurately reflects conditional reality rather than internal uncertainty.</p>
+  <p class="fix"><strong>Suggested fix:</strong> No change required. These are legitimate uses of "may" to express possibility in external conditions. If tighter language is desired: "utility contracts can specify..." or "form structure varies by utility."</p>
+</div>
+
+<!-- ============================================ -->
+<h2>Top 5 Most Impactful Observations</h2>
+
+<p>Given the extremely low violation count, this section highlights the most impactful <em>observations</em> rather than violations &mdash; three are actual violations, two are positive commendations.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Line(s)</th>
+      <th>Type</th>
+      <th>Observation</th>
+      <th>Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>316</td>
+      <td>Hedging</td>
+      <td>"may be color-blind" &mdash; softens a known statistic</td>
+      <td>Low &mdash; cosmetic imprecision in a supporting detail</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>524</td>
+      <td>Passive</td>
+      <td>"is stored in a secured storage bucket" &mdash; passive construction in NFR</td>
+      <td>Low &mdash; slightly obscures responsibility, but context is clear</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>207, 231, 262</td>
+      <td>Hedging (borderline)</td>
+      <td>"may" used for legitimate external variability</td>
+      <td>Negligible &mdash; contextually correct</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>443&ndash;496</td>
+      <td><strong>Commendation</strong></td>
+      <td>All 36 functional requirements use the pattern "Actor can verb object" &mdash; maximally dense, unambiguous requirement format</td>
+      <td>High positive &mdash; sets an excellent standard for implementation</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>30&ndash;46</td>
+      <td><strong>Commendation</strong></td>
+      <td>Executive Summary packs vision, differentiator, user definitions, tech stack, and timeline into 16 lines with zero filler</td>
+      <td>High positive &mdash; immediately orients any reader</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================ -->
+<h2>Anti-Pattern Scan Summary</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Anti-Pattern Category</th>
+      <th>Patterns Checked</th>
+      <th>Violations Found</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Conversational Filler</td>
+      <td>"It is important to note that...", "As mentioned earlier...", "It should be noted...", "As we discussed...", "Please note that..."</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Wordy Phrases</td>
+      <td>"The system will allow users to...", "In order to...", "is able to", "make use of", "at this point in time", "due to the fact that"</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Redundant/Padding</td>
+      <td>"basically", "essentially", "actually", "certainly", "obviously", "clearly", "simply put", "needless to say"</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Passive Voice Overuse</td>
+      <td>"will be processed by", "is managed by", "is stored in" (where active voice is clearer)</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Hedging Language</td>
+      <td>"might", "perhaps", "possibly", "it seems", "we think", "we believe", "may be" (where certainty is needed)</td>
+      <td>2 (1 true violation + 1 borderline group of 3 contextually valid uses)</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================ -->
+<h2>Density Strengths</h2>
+
+<ul>
+  <li><strong>Zero conversational filler.</strong> No instances of "it is important to note," "as mentioned earlier," or similar padding phrases across 547 lines.</li>
+  <li><strong>Zero wordy constructions.</strong> No "in order to," "is able to," "make use of," or "the system will allow users to" &mdash; the PRD uses direct active constructions throughout.</li>
+  <li><strong>Zero redundant modifiers.</strong> No "basically," "essentially," "obviously," or "clearly" &mdash; every sentence carries payload.</li>
+  <li><strong>Consistent requirement format.</strong> FR1&ndash;FR36 and NFR1&ndash;NFR21 follow a tight "Subject verb object" or "Subject verb condition" pattern.</li>
+  <li><strong>Tables used effectively.</strong> Feature tables, risk matrices, browser matrices, and performance targets compress complex information into scannable formats.</li>
+  <li><strong>User journeys are narrative but dense.</strong> The story format serves a legitimate UX purpose (surfacing capabilities from user perspective) without padding or repetition.</li>
+  <li><strong>Explicit scoping via cut lists.</strong> The "Deliberately Cut from MVP" table is a density multiplier &mdash; it communicates scope by negation, eliminating ambiguity about what is NOT included.</li>
+</ul>
+
+<!-- ============================================ -->
+<h2>Conclusion</h2>
+
+<p>This PRD demonstrates <strong>excellent information density</strong>. With only 3 minor violations across 547 lines (a violation rate of 0.55%), the document is remarkably clean. The writing is direct, active-voiced, and free of the conversational padding that commonly inflates requirements documents. The functional and non-functional requirements sections are particularly well-crafted, using consistent declarative patterns that will translate directly into implementation tasks.</p>
+
+<p><strong>No remediation action required.</strong> The identified violations are cosmetic and do not impact clarity or implementability.</p>
+
+</body>
+</html>

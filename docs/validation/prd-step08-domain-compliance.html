@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD Validation Step 8 - Domain Compliance | Grid2</title>
+<style>
+  :root {
+    --pass: #16a34a;
+    --warning: #ca8a04;
+    --critical: #dc2626;
+    --na: #6b7280;
+    --bg: #f9fafb;
+    --card-bg: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.35rem; margin: 2rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+  h3 { font-size: 1.1rem; margin: 1.25rem 0 0.5rem; }
+  .meta { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .card-header h3 { margin: 0; }
+  .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  .badge-pass { background: #dcfce7; color: var(--pass); }
+  .badge-partial { background: #fef9c3; color: var(--warning); }
+  .badge-missing { background: #fee2e2; color: var(--critical); }
+  .badge-na { background: #f3f4f6; color: var(--na); }
+  .severity-box { display: inline-block; padding: 0.5rem 1.25rem; border-radius: 6px; font-size: 1.1rem; font-weight: 700; }
+  .severity-warning { background: #fef9c3; color: var(--warning); border: 2px solid var(--warning); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+  th { background: #f3f4f6; font-weight: 600; }
+  ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+  li { margin-bottom: 0.35rem; }
+  .evidence { background: #f0f9ff; border-left: 3px solid #3b82f6; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.9rem; }
+  .gap { background: #fef2f2; border-left: 3px solid var(--critical); padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.9rem; }
+  .recommendation { background: #f0fdf4; border-left: 3px solid var(--pass); padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.9rem; }
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  @media (max-width: 700px) { .summary-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+  .score-row { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0; }
+  .score-label { font-weight: 600; min-width: 220px; }
+  .prd-ref { font-family: monospace; background: #f3f4f6; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.85rem; }
+  .footnote { font-size: 0.85rem; color: var(--text-muted); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<h1>PRD Validation -- Step 8: Domain Compliance</h1>
+<p class="meta">
+  <strong>Product:</strong> Grid2 -- Utility Damage Assessment PWA &nbsp;|&nbsp;
+  <strong>Domain:</strong> Energy &nbsp;|&nbsp;
+  <strong>Complexity:</strong> High &nbsp;|&nbsp;
+  <strong>Date:</strong> 2026-02-11
+</p>
+
+<!-- ============================================================ -->
+<h2>Overall Domain Compliance Verdict</h2>
+
+<div class="card">
+  <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <div class="severity-box severity-warning">WARNING</div>
+    <div>
+      <p>The PRD provides <strong>strong coverage</strong> of safety protocols and environmental compliance as domain-specific sections, and it <strong>correctly scopes</strong> operational requirements for a field assessment app. Grid compliance (NERC CIP) is <strong>not applicable</strong> to this product's scope. However, two of the four required sections carry gaps that should be addressed before architecture begins.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Section Assessment Summary</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Required Section</th>
+      <th>BMAD Key</th>
+      <th>Rating</th>
+      <th>Rationale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Grid Compliance</td>
+      <td><code>grid_compliance</code></td>
+      <td><span class="badge badge-na">Not Applicable</span></td>
+      <td>Grid2 is a damage assessment and workforce management app. It does not connect to, control, or monitor any grid infrastructure. NERC CIP is scoped to bulk electric system cyber assets.</td>
+    </tr>
+    <tr>
+      <td>Safety Protocols</td>
+      <td><code>safety_protocols</code></td>
+      <td><span class="badge badge-partial">Partial</span></td>
+      <td>JSA, incident, and accident forms are described but deliberately deferred to Phase 2. Field hazard awareness is mentioned but worker safety protocols during MVP are not addressed.</td>
+    </tr>
+    <tr>
+      <td>Environmental Compliance</td>
+      <td><code>environmental_compliance</code></td>
+      <td><span class="badge badge-partial">Partial</span></td>
+      <td>Strong Phase 2 specification (escalation chain, priority sync, hazard forms). Phase 1 fallback process is mentioned but lacks detail. No regulatory citations.</td>
+    </tr>
+    <tr>
+      <td>Operational Requirements</td>
+      <td><code>operational_requirements</code></td>
+      <td><span class="badge badge-pass">Adequate</span></td>
+      <td>Storm activation, concurrent operations, scalability, data durability, and reliability under field conditions are thoroughly specified.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2>Detailed Section Assessments</h2>
+
+<!-- SECTION 1 -->
+<div class="card">
+  <div class="card-header">
+    <h3>1. Grid Compliance (<code>grid_compliance</code>)</h3>
+    <span class="badge badge-na">Not Applicable</span>
+  </div>
+
+  <p><strong>BMAD Requirement:</strong> NERC standards, grid compliance, SCADA systems integration.</p>
+
+  <h3>Assessment</h3>
+  <p>Grid2 is a <strong>damage assessment and contractor management application</strong>. It does not:</p>
+  <ul>
+    <li>Connect to, control, or monitor any Bulk Electric System (BES) cyber assets.</li>
+    <li>Interact with SCADA, EMS, or any operational technology systems.</li>
+    <li>Transmit control signals or receive real-time telemetry from grid infrastructure.</li>
+    <li>Process or store Critical Energy Infrastructure Information (CEII) as defined by FERC.</li>
+  </ul>
+
+  <div class="evidence">
+    <strong>PRD Evidence (Executive Summary):</strong> "Grid2 is not a generic field service app. It is built for the specific operational reality of utility damage assessment contracting -- chaotic ticket intake, seasonal workforce activation, hazardous field conditions, and strict utility client data requirements."
+  </div>
+
+  <p>NERC CIP standards (CIP-002 through CIP-014) apply to entities that own, operate, or maintain BES cyber systems. Grid2 is used by a <em>contracting company</em> that assesses damage for utilities; it is not a BES cyber asset, nor does it have electronic access to any BES cyber system. The domain signal "energy" is a broad classifier, and the <code>grid_compliance</code> section is designed for applications that directly interface with grid infrastructure.</p>
+
+  <h3>Justification for N/A Rating</h3>
+  <ul>
+    <li>Grid2 is a <strong>business operations tool</strong> (workforce management + field data collection), not a grid operations tool.</li>
+    <li>Utility ticket data (circuit IDs, addresses) is operational context, not CEII or BES cyber asset data.</li>
+    <li>The PRD correctly addresses data security for sensitive utility information under <span class="prd-ref">NFR10</span> without over-claiming grid compliance.</li>
+  </ul>
+
+  <div class="recommendation">
+    <strong>Recommendation:</strong> No action required. However, consider adding a single sentence to the Domain-Specific Requirements section explicitly noting: "Grid2 does not interface with grid control systems and is not subject to NERC CIP standards." This preempts the question during architecture review.
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="card">
+  <div class="card-header">
+    <h3>2. Safety Protocols (<code>safety_protocols</code>)</h3>
+    <span class="badge badge-partial">Partial</span>
+  </div>
+
+  <p><strong>BMAD Requirement:</strong> Safety requirements, safety protocols for workers in hazardous environments.</p>
+
+  <h3>What the PRD Covers</h3>
+
+  <div class="evidence">
+    <strong>PRD Evidence -- Safety &amp; Compliance Documentation (Domain-Specific Requirements):</strong>
+    <ul style="margin-top:0.5rem;">
+      <li>Job Safety Analyses (JSAs) integrated into the app -- daily safety briefing documentation per team/crew.</li>
+      <li>Accident Reports -- standardized form, triggerable from any active storm session.</li>
+      <li>Incident Reports -- separate form for near-misses and safety concerns.</li>
+      <li>Safety forms are "emergency-context UX" -- always accessible ("panic button"), minimal taps, auto-capture of GPS/timestamp/user context.</li>
+      <li>All safety documentation tied to project, date, crew, and location for audit trail.</li>
+    </ul>
+  </div>
+
+  <div class="evidence">
+    <strong>PRD Evidence -- Field Usability:</strong>
+    <ul style="margin-top:0.5rem;">
+      <li>Touch targets: 48x48pt minimum for primary field actions, designed for gloved operation in wet/stressful conditions.</li>
+      <li>PPE Acknowledgment step in onboarding wizard.</li>
+      <li>"Field Mode" toggle for maximum contrast outdoor conditions.</li>
+    </ul>
+  </div>
+
+  <h3>Gaps Identified</h3>
+
+  <div class="gap">
+    <strong>Gap 2.1 -- MVP Safety Gap:</strong> JSA, incident, and accident forms are <strong>explicitly deferred to Phase 2</strong> (see "Deliberately Cut from MVP" table: "JSA / Incident / Accident forms -- Use paper for safety forms in first storm"). The PRD does not define what the <strong>MVP fallback process</strong> looks like. Workers will be in hazardous environments (downed power lines, storm debris) during Phase 1 with no in-app safety documentation capability.
+  </div>
+
+  <div class="gap">
+    <strong>Gap 2.2 -- No Safety SOP Reference:</strong> While the PRD mentions "SOPs" and "code of conduct" in the onboarding journey, there is no reference to the specific safety protocols that govern work around downed power lines, energized equipment, or hazardous weather conditions. The domain inherently involves life-safety risks.
+  </div>
+
+  <div class="gap">
+    <strong>Gap 2.3 -- No Emergency Contact / Escalation for Safety Incidents:</strong> The environmental hazard section defines an escalation chain (Contractor -> Team Lead -> Admin -> Super Admin -> Utility). No equivalent escalation chain is defined for <strong>worker safety incidents</strong> (injury, near-miss, medical emergency).
+  </div>
+
+  <div class="gap">
+    <strong>Gap 2.4 -- No Downed Line / Energized Equipment Protocol:</strong> The PRD mentions "hazardous field conditions" in the executive summary but does not specify how the app handles the most common field hazard: encountering downed or potentially energized lines during assessment.
+  </div>
+
+  <h3>Recommendations</h3>
+
+  <div class="recommendation">
+    <strong>R2.1:</strong> Add a "Phase 1 Safety Fallback" subsection to Domain-Specific Requirements. Document that paper-based JSA/incident/accident forms will be used during MVP, and specify that the <em>Super Admin is responsible for distributing and collecting paper safety forms</em>. This makes the gap intentional and documented rather than an oversight.
+  </div>
+  <div class="recommendation">
+    <strong>R2.2:</strong> Add a reference to the company's existing safety SOP documentation. Even if the SOP lives outside Grid2 in Phase 1, the PRD should acknowledge its existence and note that Phase 2 will digitize it.
+  </div>
+  <div class="recommendation">
+    <strong>R2.3:</strong> Define a worker safety incident escalation chain parallel to the environmental hazard chain. Include emergency services (911) as the first step for injuries.
+  </div>
+  <div class="recommendation">
+    <strong>R2.4:</strong> Consider adding a minimal "Emergency / Safety Alert" feature to the MVP -- even if it is just a prominent button that calls a pre-configured emergency phone number and auto-sends GPS coordinates via SMS. This is a low-complexity, high-value safety feature.
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="card">
+  <div class="card-header">
+    <h3>3. Environmental Compliance (<code>environmental_compliance</code>)</h3>
+    <span class="badge badge-partial">Partial</span>
+  </div>
+
+  <p><strong>BMAD Requirement:</strong> Environmental regulations, hazard reporting, contamination protocols.</p>
+
+  <h3>What the PRD Covers</h3>
+
+  <div class="evidence">
+    <strong>PRD Evidence -- Environmental Hazard Reporting (Domain-Specific Requirements):</strong>
+    <ul style="margin-top:0.5rem;">
+      <li>Immediate notification chain when environmental hazard identified (leaking transformer, PCB exposure).</li>
+      <li>Structured form enforced -- dropdown for hazard type, required photo, auto-captured GPS + timestamp.</li>
+      <li>Escalation path: Contractor -> Team Lead/Admin -> Super Admin -> Utility (per their protocol).</li>
+      <li>Environmental reports flagged separately from standard damage assessments.</li>
+      <li>Priority sync channel -- environmental reports jump the offline sync queue.</li>
+    </ul>
+  </div>
+
+  <div class="evidence">
+    <strong>PRD Evidence -- Data Retention:</strong> "Environmental hazard reports flagged for extended retention -- contamination claims can surface years later."
+  </div>
+
+  <h3>Gaps Identified</h3>
+
+  <div class="gap">
+    <strong>Gap 3.1 -- Phase 1 Deferral:</strong> Environmental hazard alerts are <strong>explicitly cut from MVP</strong> ("Environmental hazard alerts -- Call utility directly (existing process). Returns in Phase 2"). The PRD does not document what the existing manual process looks like or what responsibilities the app leaves to the user during Phase 1.
+  </div>
+
+  <div class="gap">
+    <strong>Gap 3.2 -- No Regulatory Citations:</strong> The PRD does not reference specific environmental regulations that govern hazardous material reporting in the utility sector (e.g., EPA TSCA regulations for PCBs, CERCLA/Superfund notification requirements, state environmental agency reporting obligations). These regulations may impose <strong>mandatory reporting timelines</strong> (e.g., immediate notification to the National Response Center for PCB spills above certain thresholds).
+  </div>
+
+  <div class="gap">
+    <strong>Gap 3.3 -- No Hazard Classification Taxonomy:</strong> The PRD mentions "dropdown for hazard type" but does not define the taxonomy. For environmental compliance, the classification system matters because different hazard types trigger different regulatory reporting requirements and timelines.
+  </div>
+
+  <div class="gap">
+    <strong>Gap 3.4 -- Utility Notification Protocol Undefined:</strong> The escalation path ends with "Utility notified per their protocol" but does not address what happens if the utility protocol is unknown or if the environmental hazard exceeds what the utility protocol covers (e.g., a spill requiring EPA notification independent of the utility).
+  </div>
+
+  <h3>Recommendations</h3>
+
+  <div class="recommendation">
+    <strong>R3.1:</strong> Document the Phase 1 manual environmental hazard reporting process. Specify: who calls the utility, what information must be communicated, and whether Grid2 captures any record of the event (even a ticket note) during MVP.
+  </div>
+  <div class="recommendation">
+    <strong>R3.2:</strong> Add a brief regulatory reference section noting applicable environmental regulations (EPA TSCA for PCBs, state-level reporting requirements). This does not need to be exhaustive but should demonstrate awareness of the regulatory landscape and inform Phase 2 form design.
+  </div>
+  <div class="recommendation">
+    <strong>R3.3:</strong> Define a preliminary hazard classification taxonomy for Phase 2 planning: (1) PCB/chemical contamination, (2) oil/fluid spill, (3) vegetation/wildlife impact, (4) water body contamination, (5) soil contamination. This taxonomy drives the structured form design.
+  </div>
+  <div class="recommendation">
+    <strong>R3.4:</strong> Clarify the boundary of Grid Electric's environmental reporting responsibility vs. the utility client's responsibility. This is a business process question that impacts Phase 2 feature design.
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="card">
+  <div class="card-header">
+    <h3>4. Operational Requirements (<code>operational_requirements</code>)</h3>
+    <span class="badge badge-pass">Adequate</span>
+  </div>
+
+  <p><strong>BMAD Requirement:</strong> Real-time operations requirements, field conditions, data durability.</p>
+
+  <h3>What the PRD Covers</h3>
+
+  <div class="evidence">
+    <strong>Storm Activation &amp; Concurrent Operations:</strong>
+    <ul style="margin-top:0.5rem;">
+      <li><span class="prd-ref">FR11-FR14</span>: Storm project creation, status management, contractor assignment.</li>
+      <li><span class="prd-ref">NFR13</span>: Rapid scaling from 0 to 200+ contractors during storm activation within hours.</li>
+      <li><span class="prd-ref">NFR14</span>: Multiple concurrent storm projects across different utility clients.</li>
+      <li>Journey 1 (Jeanie): Full storm activation lifecycle documented.</li>
+      <li>Journey 2 (Marcus): Seasonal re-activation with 30-minute productivity target.</li>
+    </ul>
+  </div>
+
+  <div class="evidence">
+    <strong>Field Conditions &amp; Real-Time Performance:</strong>
+    <ul style="margin-top:0.5rem;">
+      <li><span class="prd-ref">NFR1-NFR5</span>: Specific latency targets for 4G/LTE field conditions.</li>
+      <li>Performance targets table: FCP &lt; 2s, TTI &lt; 4s, sync &lt; 30s, environmental alert sync &lt; 5s.</li>
+      <li>Touch targets for gloved operation, sunlight readability, Field Mode toggle.</li>
+      <li><span class="prd-ref">NFR4</span>: 50 concurrent users without degradation.</li>
+    </ul>
+  </div>
+
+  <div class="evidence">
+    <strong>Data Durability &amp; Reliability:</strong>
+    <ul style="margin-top:0.5rem;">
+      <li><span class="prd-ref">NFR16</span>: 99.5% uptime during active storm projects.</li>
+      <li><span class="prd-ref">NFR17</span>: Data immediately durable on submission -- no data loss on completed submissions.</li>
+      <li><span class="prd-ref">NFR18</span>: Draft preservation on session interruption.</li>
+      <li><span class="prd-ref">NFR19</span>: Clear error messages with retry guidance.</li>
+      <li>Offline queue depth: unlimited (Phase 2). Environmental reports: priority sync channel.</li>
+      <li>Data retention: 1+ year minimum, configurable per project, queryable archives.</li>
+    </ul>
+  </div>
+
+  <div class="evidence">
+    <strong>Scalability Under Storm Conditions:</strong>
+    <ul style="margin-top:0.5rem;">
+      <li><span class="prd-ref">NFR15</span>: Photo storage scales elastically (thousands of images per event).</li>
+      <li>Supabase-managed infrastructure for database, auth, and storage.</li>
+      <li>Ticket provenance tracking, duplicate detection (Phase 2), communication audit trail.</li>
+    </ul>
+  </div>
+
+  <h3>Minor Observations (Not Gaps)</h3>
+  <ul>
+    <li>The 50 concurrent user limit (<span class="prd-ref">NFR4</span>) is appropriate for MVP but should be explicitly flagged as a Phase 2 scaling target (200+ contractors implies higher concurrency needs).</li>
+    <li>No explicit mention of database connection pooling or API rate limiting under storm load, but this is an architecture concern, not a PRD gap.</li>
+  </ul>
+
+  <div class="recommendation">
+    <strong>R4.1 (Minor):</strong> Add a note to NFR4 clarifying the scaling trajectory: "50 concurrent users for MVP Phase 1. Phase 2 architecture must support 200+ concurrent users during peak storm activation."
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Cross-Section Analysis</h2>
+
+<div class="card">
+  <h3>Phase 1 vs. Phase 2 Deferral Risk</h3>
+  <p>The PRD makes a deliberate and well-documented decision to defer safety forms and environmental hazard reporting to Phase 2. This is a <strong>reasonable MVP scoping decision</strong> given the 30-day solo-developer timeline. However, the deferral creates a documentation gap: the PRD thoroughly describes <em>what Phase 2 will do</em> but does not adequately describe <em>how Phase 1 handles these situations manually</em>.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>Phase 1 (MVP)</th>
+        <th>Phase 2</th>
+        <th>Manual Fallback Documented?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>JSA / Safety Briefings</td>
+        <td>Paper forms</td>
+        <td>In-app forms</td>
+        <td>Mentioned but not detailed</td>
+      </tr>
+      <tr>
+        <td>Accident Reports</td>
+        <td>Paper forms</td>
+        <td>In-app forms</td>
+        <td>Mentioned but not detailed</td>
+      </tr>
+      <tr>
+        <td>Incident Reports</td>
+        <td>Paper forms</td>
+        <td>In-app forms</td>
+        <td>Mentioned but not detailed</td>
+      </tr>
+      <tr>
+        <td>Environmental Hazard Alerts</td>
+        <td>Direct phone call</td>
+        <td>Priority notification chain</td>
+        <td>One-line mention only</td>
+      </tr>
+      <tr>
+        <td>Worker Emergency</td>
+        <td>Not addressed</td>
+        <td>Not addressed</td>
+        <td>No</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Domain Applicability Calibration</h3>
+  <p>The BMAD domain-complexity matrix classifies "energy" as a broad domain. Grid2 occupies a <strong>narrow sub-domain</strong>: utility damage assessment contracting. Of the four required special sections:</p>
+  <ul>
+    <li><strong>Grid Compliance:</strong> Designed for grid control/monitoring software. Correctly N/A for a field assessment app.</li>
+    <li><strong>Safety Protocols:</strong> Directly applicable. Workers operate in post-storm environments with life-safety hazards.</li>
+    <li><strong>Environmental Compliance:</strong> Directly applicable. Assessors encounter contaminated equipment (PCBs, oil) and must report.</li>
+    <li><strong>Operational Requirements:</strong> Directly applicable. Storm operations have unique scalability, durability, and real-time demands.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2>Consolidated Recommendations</h2>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Priority</th>
+        <th>Section</th>
+        <th>Recommendation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>R2.1</td>
+        <td><strong>High</strong></td>
+        <td>Safety</td>
+        <td>Document Phase 1 safety fallback process (paper forms, responsibility assignments).</td>
+      </tr>
+      <tr>
+        <td>R2.3</td>
+        <td><strong>High</strong></td>
+        <td>Safety</td>
+        <td>Define worker safety incident escalation chain (parallel to environmental chain).</td>
+      </tr>
+      <tr>
+        <td>R2.4</td>
+        <td><strong>High</strong></td>
+        <td>Safety</td>
+        <td>Consider minimal MVP emergency alert feature (prominent button, GPS, phone call).</td>
+      </tr>
+      <tr>
+        <td>R3.1</td>
+        <td><strong>High</strong></td>
+        <td>Environmental</td>
+        <td>Document Phase 1 manual environmental hazard reporting process.</td>
+      </tr>
+      <tr>
+        <td>R2.2</td>
+        <td>Medium</td>
+        <td>Safety</td>
+        <td>Reference existing company safety SOPs; note Phase 2 digitization plan.</td>
+      </tr>
+      <tr>
+        <td>R3.2</td>
+        <td>Medium</td>
+        <td>Environmental</td>
+        <td>Add regulatory reference section (EPA TSCA, state reporting requirements).</td>
+      </tr>
+      <tr>
+        <td>R3.3</td>
+        <td>Medium</td>
+        <td>Environmental</td>
+        <td>Define preliminary hazard classification taxonomy for Phase 2 form design.</td>
+      </tr>
+      <tr>
+        <td>R3.4</td>
+        <td>Medium</td>
+        <td>Environmental</td>
+        <td>Clarify boundary of Grid Electric vs. utility environmental reporting responsibility.</td>
+      </tr>
+      <tr>
+        <td>R1.1</td>
+        <td>Low</td>
+        <td>Grid Compliance</td>
+        <td>Add explicit statement that NERC CIP is not applicable to preempt architecture questions.</td>
+      </tr>
+      <tr>
+        <td>R4.1</td>
+        <td>Low</td>
+        <td>Operational</td>
+        <td>Clarify NFR4 scaling trajectory from 50 (MVP) to 200+ (Phase 2) concurrent users.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2>Scoring Summary</h2>
+
+<div class="card">
+  <div class="summary-grid">
+    <div>
+      <div class="score-row">
+        <span class="score-label">Grid Compliance:</span>
+        <span class="badge badge-na">Not Applicable</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Safety Protocols:</span>
+        <span class="badge badge-partial">Partial</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Environmental Compliance:</span>
+        <span class="badge badge-partial">Partial</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Operational Requirements:</span>
+        <span class="badge badge-pass">Adequate</span>
+      </div>
+    </div>
+    <div>
+      <div class="score-row">
+        <span class="score-label">Applicable Sections Passing:</span>
+        <strong>1 of 3</strong>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Applicable Sections Partial:</span>
+        <strong>2 of 3</strong>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Applicable Sections Missing:</span>
+        <strong>0 of 3</strong>
+      </div>
+      <div class="score-row">
+        <span class="score-label">High-Priority Recommendations:</span>
+        <strong>4</strong>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem; text-align: center;">
+    <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">Overall Domain Compliance Severity</p>
+    <div class="severity-box severity-warning">WARNING</div>
+  </div>
+
+  <p style="margin-top: 1rem; font-size: 0.92rem;">
+    <strong>Rationale:</strong> The PRD demonstrates genuine domain awareness -- safety and environmental sections exist with meaningful detail for Phase 2. The WARNING rating reflects that (a) Phase 1 manual fallback processes are not documented, (b) worker safety incident escalation is absent, and (c) environmental regulatory context is missing. None of these are blockers for development, but they should be addressed before the PRD is considered complete for architectural planning, especially since the product operates in a life-safety-adjacent domain.
+  </p>
+</div>
+
+<p class="footnote">
+  Generated by BMAD PRD Validation Pipeline -- Step 8: Domain Compliance Validation<br>
+  Source PRD: <code>/mnt/c/Users/david/Desktop/Grid2/_bmad-output/planning-artifacts/prd.md</code><br>
+  Domain reference: <code>/mnt/c/Users/david/Desktop/Grid2/_bmad/bmm/workflows/2-plan-workflows/create-prd/data/domain-complexity.csv</code>
+</p>
+
+</body>
+</html>

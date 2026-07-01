@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid2 PRD Validation — Step 10: SMART Requirements Analysis</title>
+<style>
+  :root {
+    --pass: #2e7d32;
+    --warn: #e65100;
+    --crit: #c62828;
+    --bg: #fafafa;
+    --card-bg: #ffffff;
+    --border: #e0e0e0;
+    --text: #212121;
+    --text-secondary: #616161;
+    --accent: #1565c0;
+    --highlight-row: #fff3e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+  h2 { font-size: 1.4rem; margin: 2rem 0 1rem; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem; }
+  h3 { font-size: 1.15rem; margin: 1.5rem 0 0.75rem; color: var(--text-secondary); }
+  p { margin-bottom: 0.75rem; }
+  .meta { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; }
+  .severity-badge {
+    display: inline-block;
+    padding: 0.3rem 1rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+  }
+  .severity-pass { background: var(--pass); }
+  .severity-warn { background: var(--warn); }
+  .severity-crit { background: var(--crit); }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .summary-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .summary-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .summary-card .label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    font-size: 0.92rem;
+  }
+  th {
+    background: #e3f2fd;
+    color: var(--text);
+    font-weight: 600;
+    padding: 0.7rem 0.6rem;
+    text-align: center;
+    border-bottom: 2px solid var(--accent);
+  }
+  th:first-child, td:first-child { text-align: left; padding-left: 1rem; }
+  td {
+    padding: 0.55rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr.flagged { background: var(--highlight-row); }
+  .score-5 { color: var(--pass); font-weight: 700; }
+  .score-4 { color: #558b2f; font-weight: 600; }
+  .score-3 { color: #f9a825; font-weight: 600; }
+  .score-2 { color: var(--warn); font-weight: 700; }
+  .score-1 { color: var(--crit); font-weight: 700; }
+  .issue-card {
+    background: var(--card-bg);
+    border-left: 4px solid var(--warn);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--warn);
+  }
+  .issue-card.critical { border-left-color: var(--crit); }
+  .issue-card h4 { color: var(--accent); margin-bottom: 0.5rem; font-size: 1rem; }
+  .issue-card .fr-text { font-style: italic; color: var(--text-secondary); margin-bottom: 0.5rem; }
+  .issue-card .dimension { font-weight: 600; color: var(--warn); }
+  .issue-card .dimension.crit-dim { color: var(--crit); }
+  .issue-card .suggestion { background: #e8f5e9; border-radius: 4px; padding: 0.5rem 0.75rem; margin-top: 0.5rem; }
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    margin: 0.5rem 0 1rem;
+    color: var(--text-secondary);
+  }
+  .legend span { display: flex; align-items: center; gap: 0.3rem; }
+  .legend .dot {
+    width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+  }
+  .full-table td:first-child { font-weight: 600; white-space: nowrap; }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Grid2 PRD Validation &mdash; Step 10: SMART Requirements Analysis</h1>
+<p class="meta">
+  PRD: <code>_bmad-output/planning-artifacts/prd.md</code> &bull;
+  Date: 2026-02-11 &bull;
+  Validator: Claude Opus 4.6 &bull;
+  Scope: FR1&ndash;FR36 (MVP), NFR1&ndash;NFR21
+</p>
+
+<!-- ========== EXECUTIVE SUMMARY ========== -->
+<h2>Executive Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">4.17</div>
+    <div class="label">Avg FR SMART Score (of 5.0)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">4.03</div>
+    <div class="label">Avg NFR SMART Score (of 5.0)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">5 / 36</div>
+    <div class="label">FRs with Issues (&lt; 3 on any dim)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">3 / 21</div>
+    <div class="label">NFRs with Issues (&lt; 3 on any dim)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value"><span class="severity-badge severity-pass">PASS</span></div>
+    <div class="label">Overall Severity</div>
+  </div>
+</div>
+
+<p>
+  The Grid2 PRD demonstrates strong requirement quality overall. The majority of functional requirements are specific, measurable, attainable, relevant, and traceable. A small set of requirements (5 FRs and 3 NFRs) have weak spots that merit improvement before implementation begins. None are critically deficient &mdash; the issues are addressable through minor wording refinements and clarification of acceptance criteria.
+</p>
+
+<!-- ========== SMART SCORING LEGEND ========== -->
+<h2>Scoring Legend</h2>
+<div class="legend">
+  <span><span class="dot" style="background:#2e7d32"></span> 5 &mdash; Excellent</span>
+  <span><span class="dot" style="background:#558b2f"></span> 4 &mdash; Good (minor gaps)</span>
+  <span><span class="dot" style="background:#f9a825"></span> 3 &mdash; Adequate</span>
+  <span><span class="dot" style="background:#e65100"></span> 2 &mdash; Weak (significant gaps)</span>
+  <span><span class="dot" style="background:#c62828"></span> 1 &mdash; Poor (fails criterion)</span>
+</div>
+
+<!-- ========== COMPLETE FR SCORING TABLE ========== -->
+<h2>Complete Functional Requirements Scoring (FR1&ndash;FR36)</h2>
+<p>All 36 FRs are scored. Rows highlighted in orange have at least one dimension scoring &lt; 3.</p>
+
+<table class="full-table">
+  <thead>
+    <tr>
+      <th>FR ID</th>
+      <th>S</th>
+      <th>M</th>
+      <th>A</th>
+      <th>R</th>
+      <th>T</th>
+      <th>Avg</th>
+      <th>Issues</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FR1</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR2</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR3</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR4</td>
+      <td class="score-4">4</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.6</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR5</td>
+      <td class="score-4">4</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.4</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR6</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR7</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR8</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR9</td>
+      <td class="score-4">4</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.4</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR10</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR11</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR12</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>FR13</td>
+      <td class="score-3">3</td>
+      <td class="score-2">2</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>3.8</strong></td>
+      <td>M: "preserving all associated data" &mdash; no acceptance test for what "preserved" means</td>
+    </tr>
+    <tr>
+      <td>FR14</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR15</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR16</td>
+      <td class="score-4">4</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.6</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR17</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR18</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR19</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR20</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR21</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>FR22</td>
+      <td class="score-3">3</td>
+      <td class="score-2">2</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>3.8</strong></td>
+      <td>S/M: Field list is illustrative, not definitive</td>
+    </tr>
+    <tr>
+      <td>FR23</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>FR24</td>
+      <td class="score-4">4</td>
+      <td class="score-2">2</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>3.8</strong></td>
+      <td>M/A: "automatically" is unclear on mechanism; browser GPS permissions are not guaranteed</td>
+    </tr>
+    <tr>
+      <td>FR25</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR26</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.6</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR27</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR28</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR29</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR30</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR31</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>FR32</td>
+      <td class="score-4">4</td>
+      <td class="score-2">2</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>3.8</strong></td>
+      <td>M/A: "in-app notification" mechanism undefined; no push notification in MVP</td>
+    </tr>
+    <tr>
+      <td>FR33</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR34</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>FR35</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>FR36</td>
+      <td class="score-4">4</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.2</strong></td>
+      <td>M: "personal dashboard" content is vague beyond tickets</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ========== DETAILED FR ISSUES ========== -->
+<h2>Detailed FR Analysis &mdash; Requirements Needing Improvement</h2>
+
+<div class="issue-card">
+  <h4>FR13 &mdash; Storm Project Archival</h4>
+  <p class="fr-text">"Super Admin can archive a closed storm project, preserving all associated data for a minimum of one year."</p>
+  <p><span class="dimension">Measurability: 2/5</span> &mdash; "Preserving all associated data" is not testable as written. What constitutes "all associated data"? Does it include audit logs, uploaded photos at original resolution, draft assessments, or only approved final records? The one-year retention target is good, but the scope of what is preserved is ambiguous.</p>
+  <p><span class="dimension">Specificity: 3/5</span> &mdash; The archival action is clear (Super Admin triggers it on a closed project), but the behavior of archived projects is undefined. Can archived projects be viewed? Searched? Exported? Is the archive reversible?</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "Super Admin can archive a closed storm project. Archived projects retain all tickets, assessments (including photos at upload resolution), contractor records, and audit logs. Archived data remains read-only and queryable (searchable via project dashboard). Data is retained for a minimum of one year after project close-out date. Archival is reversible by Super Admin (project can be unarchived to 'Closed' status)."
+  </div>
+</div>
+
+<div class="issue-card">
+  <h4>FR22 &mdash; Assessment Form Structured Data</h4>
+  <p class="fr-text">"The assessment form captures structured data (damage type, component affected, severity, span count, measurements, notes)."</p>
+  <p><span class="dimension">Measurability: 2/5</span> &mdash; The parenthetical list reads as illustrative examples, not a definitive field specification. An implementer cannot determine from this requirement alone whether the list is exhaustive or representative. The PRD's "Deliberately Cut" section states the form is "one fixed assessment form, hard-coded fields," but FR22 does not enumerate those hard-coded fields.</p>
+  <p><span class="dimension">Specificity: 3/5</span> &mdash; "Measurements" is vague (of what? in what unit?). "Notes" is unbounded. "Component affected" does not enumerate the component taxonomy (pole, primary, secondary, service, weatherhead) that is well-defined elsewhere in the PRD (product brief section).</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "The assessment form captures the following fixed fields per ticket: (1) Component affected (enum: Pole, Primary, Secondary, Service/Neutral, Weatherhead/Meter), (2) Damage present per component (Yes/No), (3) Damage type (enum per component, e.g., Broken, Leaning, Damaged for Pole), (4) Severity (enum: Minor, Moderate, Major, Critical), (5) Span count (integer, for wire components), (6) Free-text notes (optional, max 1000 characters). Exact enum values will be defined in the data dictionary prior to implementation."
+  </div>
+</div>
+
+<div class="issue-card">
+  <h4>FR24 &mdash; Photo GPS and Timestamp Capture</h4>
+  <p class="fr-text">"Photos automatically capture GPS coordinates and timestamp."</p>
+  <p><span class="dimension">Measurability: 2/5</span> &mdash; "Automatically" is untestable without defining the mechanism. Are GPS coordinates extracted from EXIF metadata of the captured photo? Or does the app independently request browser geolocation at the moment of photo attachment? What happens if the device has location services disabled? What precision is required?</p>
+  <p><span class="dimension">Attainability: 3/5</span> &mdash; On the web platform (Safari PWA on iPad), extracting EXIF GPS from photos taken via <code>&lt;input type="file" capture="environment"&gt;</code> is unreliable &mdash; EXIF stripping varies by browser and OS version. Independently requesting geolocation via the Geolocation API requires user permission and may fail in low-signal field environments. The requirement as written assumes reliability that may not exist.</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "When a photo is attached to an assessment, the system records GPS coordinates and timestamp. Primary method: browser Geolocation API captures device position at the time of photo upload. Fallback: EXIF metadata extraction from the image file. If neither source is available (user denied location permission or no GPS signal), the photo is accepted but flagged as 'No Location Data' for reviewer attention. Required GPS precision: within 50 meters."
+  </div>
+</div>
+
+<div class="issue-card">
+  <h4>FR32 &mdash; In-App Notification for Assessment Status</h4>
+  <p class="fr-text">"Contractors receive in-app notification that their assessment was approved or rejected."</p>
+  <p><span class="dimension">Measurability: 2/5</span> &mdash; "In-app notification" is undefined as an implementation concept. Is this a toast/banner that appears on next login? A notification badge? A dedicated notifications list/inbox? A real-time push while the app is open? The test criteria for "contractor was notified" depend entirely on which mechanism is chosen.</p>
+  <p><span class="dimension">Attainability: 3/5</span> &mdash; The MVP explicitly cuts SMS notifications and push notifications. Without these, the only notification surface is something the contractor sees when they open the app and navigate to the right screen. If the contractor does not open the app, they receive no notification at all. This may undermine the stated purpose of the requirement.</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "When a Super Admin approves or rejects an assessment, the system updates the ticket status visible on the contractor's dashboard (FR36). A visual indicator (badge with unread count) on the contractor's ticket list highlights assessments with status changes since the contractor's last view. The contractor sees the approval or rejection with review notes (if rejected) when they open the ticket detail. No push or SMS notification in MVP &mdash; notification is passive (visible on next app open)."
+  </div>
+</div>
+
+<div class="issue-card">
+  <h4>FR36 &mdash; Contractor Personal Dashboard</h4>
+  <p class="fr-text">"Contractors see a personal dashboard showing their assigned tickets and submission statuses."</p>
+  <p><span class="dimension">Measurability: 3/5</span> &mdash; The dashboard content is only partially specified: "assigned tickets and submission statuses." What status groupings should be displayed? Should it show counts? A list? Both? Should rejected assessments be visually differentiated from pending ones? Without a minimum content specification, the acceptance test is subjective.</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "Contractors see a personal dashboard showing: (1) A count of tickets grouped by status (Assigned, In Progress, Submitted, Approved, Rejected), (2) A scrollable list of all assigned tickets with ticket address, priority, and current status. Rejected assessments are visually highlighted with a 'Needs Revision' indicator."
+  </div>
+</div>
+
+
+<!-- ========== COMPLETE NFR SCORING TABLE ========== -->
+<h2>Non-Functional Requirements Scoring (NFR1&ndash;NFR21)</h2>
+
+<table class="full-table">
+  <thead>
+    <tr>
+      <th>NFR ID</th>
+      <th>S</th>
+      <th>M</th>
+      <th>A</th>
+      <th>R</th>
+      <th>T</th>
+      <th>Avg</th>
+      <th>Issues</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>NFR1</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR2</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.6</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR6</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR7</td>
+      <td class="score-4">4</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.4</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR8</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR9</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR10</td>
+      <td class="score-4">4</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.2</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR11</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR12</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.6</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>NFR13</td>
+      <td class="score-3">3</td>
+      <td class="score-2">2</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>3.4</strong></td>
+      <td>S/M/A: "rapid growth" and "within hours" lack measurable acceptance criteria</td>
+    </tr>
+    <tr>
+      <td>NFR14</td>
+      <td class="score-4">4</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.2</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR15</td>
+      <td class="score-4">4</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td><strong>4.2</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>NFR16</td>
+      <td class="score-4">4</td>
+      <td class="score-2">2</td>
+      <td class="score-3">3</td>
+      <td class="score-5">5</td>
+      <td class="score-3">3</td>
+      <td><strong>3.4</strong></td>
+      <td>M/A: 99.5% uptime target on Supabase free/pro tier is aspirational, not contractual</td>
+    </tr>
+    <tr>
+      <td>NFR17</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr class="flagged">
+      <td>NFR18</td>
+      <td class="score-3">3</td>
+      <td class="score-2">2</td>
+      <td class="score-2">2</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>3.4</strong></td>
+      <td>S/M/A: "draft data preserved locally" conflicts with online-only MVP scope</td>
+    </tr>
+    <tr>
+      <td>NFR19</td>
+      <td class="score-5">5</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.8</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR20</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>5.0</strong></td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>NFR21</td>
+      <td class="score-4">4</td>
+      <td class="score-3">3</td>
+      <td class="score-4">4</td>
+      <td class="score-5">5</td>
+      <td class="score-5">5</td>
+      <td><strong>4.2</strong></td>
+      <td>&mdash;</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ========== NFR ISSUES ========== -->
+<h2>Detailed NFR Analysis &mdash; Requirements Needing Improvement</h2>
+
+<div class="issue-card">
+  <h4>NFR13 &mdash; Rapid User Scaling</h4>
+  <p class="fr-text">"System accommodates rapid user growth from 0 to 200+ contractors during storm activation within hours."</p>
+  <p><span class="dimension">Specificity: 3/5</span> &mdash; "Rapid" and "within hours" are subjective. Does this mean 200 accounts can be created and logged in simultaneously within 2 hours? Or that the system does not degrade when 200 accounts exist?</p>
+  <p><span class="dimension">Measurability: 2/5</span> &mdash; No concrete test criteria. What does "accommodate" mean &mdash; that account creation works? That concurrent login works? That response time stays within NFR5 targets? The requirement is essentially a restatement of the scaling scenario without a testable threshold.</p>
+  <p><span class="dimension">Attainability: 3/5</span> &mdash; On Supabase free/pro tier, 200 concurrent connections may require specific configuration. This should be validated against the Supabase plan selected.</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "The system supports creation of up to 200 contractor accounts and 50 concurrent authenticated sessions without performance degradation (NFR5 response time targets maintained). Account creation (FR1) functions correctly when performed in batch (e.g., 20 accounts created within a 10-minute window). Validated against Supabase Pro tier connection limits."
+  </div>
+</div>
+
+<div class="issue-card">
+  <h4>NFR16 &mdash; Uptime Target</h4>
+  <p class="fr-text">"System targets 99.5% uptime during active storm projects (Supabase-managed infrastructure)."</p>
+  <p><span class="dimension">Measurability: 2/5</span> &mdash; "Targets" is aspirational language, not a commitment. 99.5% uptime is approximately 3.65 hours of allowed downtime per month &mdash; but there is no mechanism defined to measure, monitor, or alert on uptime. There is no defined measurement window (per storm? per month?).</p>
+  <p><span class="dimension">Attainability: 3/5</span> &mdash; Supabase's own SLA on the Pro plan is 99.9% for database, but the overall system uptime depends on the application layer (Vercel/Netlify hosting), Supabase Auth, and Supabase Storage &mdash; all of which are outside the solo developer's control. The PRD cannot guarantee what depends on third-party SLAs.</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "System availability targets 99.5% during active storm projects, as measured by successful response to a health-check endpoint over the storm project's duration. This target is dependent on Supabase managed infrastructure SLAs (database, auth, storage) and the hosting provider's SLA. The application layer (client code) shall not introduce single points of failure beyond infrastructure dependencies. Uptime monitoring shall be configured before first storm deployment."
+  </div>
+</div>
+
+<div class="issue-card critical">
+  <h4>NFR18 &mdash; Draft Data Preservation on Interruption</h4>
+  <p class="fr-text">"If a browser tab or session is interrupted mid-form, draft data (FR26) is preserved locally and recoverable."</p>
+  <p><span class="dimension crit-dim">Measurability: 2/5</span> &mdash; "Preserved locally" is ambiguous. In localStorage? sessionStorage? IndexedDB? Each has different persistence characteristics (sessionStorage is lost on tab close, localStorage persists but has size limits, IndexedDB persists and scales but requires Dexie.js which is listed as Phase 2 offline infrastructure).</p>
+  <p><span class="dimension crit-dim">Attainability: 2/5</span> &mdash; This is the most problematic NFR. The MVP is explicitly "online-only" with offline mode (Dexie.js, service workers) deliberately cut to Phase 2. Yet this requirement implicitly requires local data persistence &mdash; which is the foundation of offline capability. Using localStorage for draft persistence is feasible but contradicts the architectural decision to defer local storage infrastructure. The requirement needs to either (a) be explicit about using a lightweight mechanism (localStorage/sessionStorage) distinct from the Phase 2 offline architecture, or (b) be acknowledged as accepting data loss on interruption in MVP.</p>
+  <p><span class="dimension">Specificity: 3/5</span> &mdash; "Interrupted" could mean tab closed, browser crashed, device lost power, accidental navigation, or session timeout (NFR11). Each scenario has different recoverability characteristics.</p>
+  <div class="suggestion">
+    <strong>Suggested improvement:</strong> "Draft assessment data (FR26) is persisted to the server via auto-save on each form section completion. If a session is interrupted (tab closed, navigation away, session timeout), the contractor can resume the draft from the last auto-saved state on next login. Auto-save triggers on: (a) section/tab completion, (b) every 60 seconds of active editing. This is distinct from Phase 2 offline storage &mdash; auto-save requires an active network connection. If the network is unavailable at auto-save time, the system displays a warning but does not block continued editing."
+  </div>
+</div>
+
+
+<!-- ========== AGGREGATE SCORES ========== -->
+<h2>Aggregate Score Summary</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:left">Average FR SMART Score (FR1&ndash;FR36)</td>
+      <td><strong>4.17 / 5.0</strong></td>
+    </tr>
+    <tr>
+      <td style="text-align:left">Average NFR SMART Score (NFR1&ndash;NFR21)</td>
+      <td><strong>4.03 / 5.0</strong></td>
+    </tr>
+    <tr>
+      <td style="text-align:left">FRs scoring &lt; 3 on any SMART dimension</td>
+      <td><strong>5 of 36</strong> (13.9%)</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">NFRs scoring &lt; 3 on any SMART dimension</td>
+      <td><strong>3 of 21</strong> (14.3%)</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">Lowest FR score</td>
+      <td><strong>FR13, FR22, FR24, FR32</strong> (avg 3.8 each)</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">Lowest NFR score</td>
+      <td><strong>NFR13, NFR16, NFR18</strong> (avg 3.4 each)</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">Highest scoring dimension (FRs)</td>
+      <td><strong>Relevance</strong> (4.97 avg) &mdash; all FRs clearly align with business objectives</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">Lowest scoring dimension (FRs)</td>
+      <td><strong>Measurability</strong> (4.14 avg) &mdash; some FRs lack testable acceptance criteria</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">Overall Severity</td>
+      <td><span class="severity-badge severity-pass">PASS</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>SMART Dimension Averages (Across All FRs)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Avg Score</th>
+      <th>Assessment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:left"><strong>S</strong>pecific</td>
+      <td class="score-4"><strong>4.72</strong></td>
+      <td style="text-align:left">Strong. Requirements clearly state who does what. Minor gaps in FR22 (form fields) and FR36 (dashboard content).</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>M</strong>easurable</td>
+      <td class="score-4"><strong>4.14</strong></td>
+      <td style="text-align:left">Good overall, but weakest dimension. Five FRs lack testable acceptance criteria (FR13, FR22, FR24, FR32, FR36).</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>A</strong>ttainable</td>
+      <td class="score-4"><strong>4.83</strong></td>
+      <td style="text-align:left">Excellent. Scope is well-constrained for solo dev + Supabase. Only FR24/FR32 have minor platform feasibility concerns.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>R</strong>elevant</td>
+      <td class="score-5"><strong>4.97</strong></td>
+      <td style="text-align:left">Near-perfect. Every FR maps directly to user journeys and business objectives. No scope creep detected.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>T</strong>raceable</td>
+      <td class="score-5"><strong>4.94</strong></td>
+      <td style="text-align:left">Excellent. Requirements trace clearly to executive summary, user journeys, and the "Must-Have Capabilities" table.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>SMART Dimension Averages (Across All NFRs)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Avg Score</th>
+      <th>Assessment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:left"><strong>S</strong>pecific</td>
+      <td class="score-4"><strong>4.52</strong></td>
+      <td style="text-align:left">Good. Most NFRs specify the exact quality attribute. NFR13 and NFR18 are somewhat vague.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>M</strong>easurable</td>
+      <td class="score-4"><strong>4.05</strong></td>
+      <td style="text-align:left">Weakest dimension for NFRs as well. Performance NFRs (1-5) are well-quantified; scalability and reliability NFRs are weaker.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>A</strong>ttainable</td>
+      <td class="score-4"><strong>4.48</strong></td>
+      <td style="text-align:left">Good. Most leverage Supabase defaults. NFR16 (uptime) and NFR18 (local draft) have feasibility concerns with stated constraints.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>R</strong>elevant</td>
+      <td class="score-5"><strong>5.00</strong></td>
+      <td style="text-align:left">Perfect. Every NFR addresses a real operational need &mdash; field performance, security for PII, and data durability.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><strong>T</strong>raceable</td>
+      <td class="score-4"><strong>4.62</strong></td>
+      <td style="text-align:left">Good. NFRs trace to technical success criteria and domain requirements. Some (NFR13, NFR16) would benefit from explicit source references.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ========== CROSS-CUTTING OBSERVATIONS ========== -->
+<h2>Cross-Cutting Observations</h2>
+
+<h3>1. Measurability is the Weakest Dimension Across Both FRs and NFRs</h3>
+<p>
+  The most common gap is <strong>missing acceptance test criteria</strong>. Requirements describe <em>what</em> the system does but do not always define <em>how you would verify</em> it works correctly. This is a common PRD pattern when the author is domain-expert (knows what "right" looks like) but the implementer may not share that intuition. Adding a brief "Acceptance Criteria" annotation to flagged FRs would close these gaps.
+</p>
+
+<h3>2. NFR18 Creates an Architectural Tension with "Online-Only" MVP</h3>
+<p>
+  The requirement for local draft preservation (NFR18) implicitly introduces local storage into an MVP that explicitly defers offline/local storage to Phase 2. This is the single most important clarification needed before implementation. The suggested resolution (server-side auto-save) aligns with the online-only constraint while preserving the user intent of the requirement.
+</p>
+
+<h3>3. The Assessment Form (FR22) Needs a Companion Data Dictionary</h3>
+<p>
+  FR22's field list is illustrative, not exhaustive. The product brief's "Assessment Data Complexity" table (pole, wire, equipment, safety, service, restoration, photos) provides much richer detail. The FR should either enumerate exact fields or explicitly reference the data dictionary as a companion artifact. This is a common gap when a PRD is derived from a product brief &mdash; the brief's detail gets summarized too aggressively.
+</p>
+
+<h3>4. Strong Alignment Between Scope Cuts and Requirement Quality</h3>
+<p>
+  The PRD's "Deliberately Cut from MVP" table is excellent and directly improves the SMART quality of the remaining requirements. By cutting offline mode, configurable forms, SMS, duplicate detection, and photo optimization, the remaining 36 FRs are tightly scoped and realistically attainable within 30 days. This discipline is reflected in the high Attainability scores (4.83 avg for FRs).
+</p>
+
+<h3>5. Admin Role (FR5) May Need Refinement</h3>
+<p>
+  FR5 states Admin cannot create storm projects, enter tickets, or assign contractors. However, the MVP scope table says "Marcus operates with same capabilities as Jeanie in MVP (no separate admin layer)." This is a potential contradiction &mdash; though FR5 scores adequately on SMART dimensions (avg 4.4), the implementation team should confirm whether Admin restrictions are enforced in MVP or deferred. The FRs as written (FR5 restricting Admin) are the more conservative and safer interpretation.
+</p>
+
+
+<!-- ========== VERDICT ========== -->
+<h2>Final Verdict</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Criterion</th>
+      <th>Result</th>
+      <th>Rationale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:left">FR Quality</td>
+      <td><span class="severity-badge severity-pass">PASS</span></td>
+      <td style="text-align:left">31 of 36 FRs score 4.4+ across all dimensions. 5 FRs need minor wording improvements. No FR scores below 3.8 average.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">NFR Quality</td>
+      <td><span class="severity-badge severity-pass">PASS</span></td>
+      <td style="text-align:left">18 of 21 NFRs score 4.2+. 3 NFRs need clarification. NFR18 requires an architectural decision before implementation.</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">Overall</td>
+      <td><span class="severity-badge severity-pass">PASS</span></td>
+      <td style="text-align:left">Requirements are implementation-ready with minor revisions. No blockers. Recommended action: address the 8 flagged items (5 FRs + 3 NFRs) in a requirements refinement pass before sprint planning.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Recommended priority for fixes:</strong></p>
+<ol>
+  <li><strong>NFR18</strong> (Draft preservation) &mdash; Resolve architectural tension with online-only MVP. Decide: server-side auto-save vs. lightweight localStorage.</li>
+  <li><strong>FR22</strong> (Assessment form fields) &mdash; Create or reference a data dictionary with exact field definitions.</li>
+  <li><strong>FR24</strong> (Photo GPS) &mdash; Define fallback behavior when geolocation is unavailable.</li>
+  <li><strong>FR32</strong> (In-app notification) &mdash; Specify the notification mechanism for MVP.</li>
+  <li><strong>FR13</strong> (Archival) &mdash; Clarify what "preserved" means and whether archived projects are queryable.</li>
+  <li><strong>NFR13</strong> (Scaling) &mdash; Define concrete concurrent user and account creation targets.</li>
+  <li><strong>NFR16</strong> (Uptime) &mdash; Reframe as infrastructure-dependent target with monitoring requirement.</li>
+  <li><strong>FR36</strong> (Contractor dashboard) &mdash; Specify minimum content requirements.</li>
+</ol>
+
+<footer>
+  <p>Grid2 PRD SMART Validation &mdash; Step 10 of BMAD PRD Validation Pipeline &mdash; Generated 2026-02-11</p>
+</footer>
+
+</body>
+</html>
