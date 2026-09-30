@@ -16,12 +16,12 @@ interface MetricCardProps {
   variant?: 'default' | 'accent' | 'success' | 'warning' | 'danger';
 }
 
-const variantStyles = {
-  default: 'bg-white dark:bg-slate-800',
-  accent: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
-  success: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
-  warning: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
-  danger: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+const variantStyles: Record<NonNullable<MetricCardProps['variant']>, string> = {
+  default: '',
+  accent: 'bg-grid-blue-soft border-grid-brand',
+  success: 'bg-grid-success-soft border-grid-success',
+  warning: 'bg-grid-warning-soft border-grid-warning',
+  danger: 'bg-grid-danger-soft border-grid-danger',
 };
 
 export function MetricCard({
@@ -35,26 +35,26 @@ export function MetricCard({
   variant = 'default',
 }: MetricCardProps) {
   const TrendIcon = trend === 'up' ? ArrowUp : trend === 'down' ? ArrowDown : Minus;
-  const trendColor = trend === 'up' 
-    ? 'text-green-600' 
-    : trend === 'down' 
-    ? 'text-red-600' 
-    : 'text-slate-400';
+  const trendColor = trend === 'up'
+    ? 'text-grid-success-ink'
+    : trend === 'down'
+    ? 'text-grid-danger-ink'
+    : 'text-muted-foreground';
 
   return (
-    <Card className={cn(variantStyles[variant], className)}>
+    <Card variant="interactive" className={cn(variantStyles[variant], className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
         {icon && (
-          <div className="w-8 h-8 bg-white dark:bg-slate-700 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-surface-raised text-grid-brand-ink border border-border rounded-lg flex items-center justify-center shadow-elevation-xs">
             {icon}
           </div>
         )}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-slate-900 dark:text-white">
+        <div className="text-2xl font-bold text-foreground tabular-nums">
           {value}
         </div>
         {(description || trend) && (
@@ -63,12 +63,12 @@ export function MetricCard({
               <TrendIcon className={cn('w-3 h-3', trendColor)} />
             )}
             {trendValue && (
-              <span className={cn('text-xs font-medium', trendColor)}>
+              <span className={cn('text-xs font-semibold', trendColor)}>
                 {trendValue}
               </span>
             )}
             {description && (
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-muted-foreground">
                 {description}
               </span>
             )}

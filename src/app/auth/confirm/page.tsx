@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
@@ -9,7 +10,25 @@ import Link from 'next/link';
 
 type Status = 'loading' | 'success' | 'error';
 
-export default function AuthConfirmPage() {
+function ConfirmSkeleton() {
+  return (
+    <div className="min-h-screen bg-grid-shell flex items-center justify-center p-4">
+      <div className="w-full max-w-sm text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="w-16 h-16 bg-gradient-storm rounded-2xl flex items-center justify-center shadow-brand">
+            <Loader2 className="h-8 w-8 text-white animate-spin" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-xl font-semibold text-grid-navy">Confirming your sign-in&hellip;</h1>
+          <p className="text-sm text-grid-muted">Verifying your link. You&apos;ll be redirected shortly.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthConfirmInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status>('loading');
@@ -61,20 +80,20 @@ export default function AuthConfirmPage() {
   }, [router, searchParams]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-grid-shell flex items-center justify-center p-4">
       <div className="w-full max-w-sm text-center space-y-6">
         {status === 'loading' && (
           <>
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center">
+              <div className="w-16 h-16 bg-gradient-storm rounded-2xl flex items-center justify-center shadow-brand">
                 <Loader2 className="h-8 w-8 text-white animate-spin" />
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+              <h1 className="text-xl font-semibold text-grid-navy">
                 Confirming your sign-in&hellip;
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-grid-muted">
                 Verifying your link. You&apos;ll be redirected shortly.
               </p>
             </div>
@@ -84,15 +103,15 @@ export default function AuthConfirmPage() {
         {status === 'success' && (
           <>
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-grid-success-soft border border-grid-success rounded-2xl flex items-center justify-center shadow-elevation-sm">
+                <CheckCircle className="h-8 w-8 text-grid-success-ink" />
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+              <h1 className="text-xl font-semibold text-grid-navy">
                 Signed in successfully
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-grid-muted">
                 Redirecting you now&hellip;
               </p>
             </div>
@@ -102,15 +121,15 @@ export default function AuthConfirmPage() {
         {status === 'error' && (
           <>
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center">
-                <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              <div className="w-16 h-16 bg-grid-danger-soft border border-grid-danger rounded-2xl flex items-center justify-center shadow-elevation-sm">
+                <XCircle className="h-8 w-8 text-grid-danger-ink" />
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+              <h1 className="text-xl font-semibold text-grid-navy">
                 Confirmation failed
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-grid-muted">
                 {errorMessage}
               </p>
             </div>
@@ -121,5 +140,13 @@ export default function AuthConfirmPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AuthConfirmPage() {
+  return (
+    <Suspense fallback={<ConfirmSkeleton />}>
+      <AuthConfirmInner />
+    </Suspense>
   );
 }

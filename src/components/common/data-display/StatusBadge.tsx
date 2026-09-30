@@ -23,17 +23,31 @@ interface StatusBadgeProps {
 }
 
 const variantStyles: Record<StatusVariant, string> = {
-  default: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  success: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
-  warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400',
-  danger: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400',
-  info: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
-  neutral: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-  active: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
-  inactive: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
-  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
-  approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
-  rejected: 'bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
+  default: 'bg-muted text-muted-foreground border-border-strong',
+  success: 'bg-grid-success-soft text-grid-success-ink border-grid-success',
+  warning: 'bg-grid-warning-soft text-grid-warning-ink border-grid-warning',
+  danger: 'bg-grid-danger-soft text-grid-danger-ink border-grid-danger',
+  info: 'bg-grid-info-soft text-grid-info-ink border-grid-info',
+  neutral: 'bg-muted text-muted-foreground border-border-strong',
+  active: 'bg-grid-success-soft text-grid-success-ink border-grid-success',
+  inactive: 'bg-muted text-muted-foreground border-border-strong',
+  pending: 'bg-grid-warning-soft text-grid-warning-ink border-grid-warning',
+  approved: 'bg-grid-success-soft text-grid-success-ink border-grid-success',
+  rejected: 'bg-grid-danger-soft text-grid-danger-ink border-grid-danger',
+};
+
+const dotStyles: Record<StatusVariant, string> = {
+  default: 'bg-grid-gray-400',
+  success: 'bg-grid-success',
+  warning: 'bg-grid-warning',
+  danger: 'bg-grid-danger',
+  info: 'bg-grid-info',
+  neutral: 'bg-grid-gray-400',
+  active: 'bg-grid-success',
+  inactive: 'bg-grid-gray-400',
+  pending: 'bg-grid-warning',
+  approved: 'bg-grid-success',
+  rejected: 'bg-grid-danger',
 };
 
 const sizeStyles = {
@@ -93,21 +107,19 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full font-semibold',
+        'inline-flex items-center rounded-full border font-semibold shadow-elevation-xs',
         variantStyles[determinedVariant],
         sizeStyles[size],
         className
       )}
     >
-      <span className={cn(
-        'w-1.5 h-1.5 rounded-full mr-1.5',
-        determinedVariant === 'success' && 'bg-green-500',
-        determinedVariant === 'warning' && 'bg-amber-500',
-        determinedVariant === 'danger' && 'bg-red-500',
-        determinedVariant === 'info' && 'bg-blue-500',
-        determinedVariant === 'neutral' && 'bg-slate-400',
-        determinedVariant === 'default' && 'bg-slate-400',
-      )} />
+      <span
+        aria-hidden="true"
+        className={cn(
+          'w-1.5 h-1.5 rounded-full mr-1.5 shrink-0',
+          dotStyles[determinedVariant]
+        )}
+      />
       {displayStatus}
     </span>
   );

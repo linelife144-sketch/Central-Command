@@ -54,15 +54,15 @@ export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
   const navItems = userRole === 'admin' ? adminNavItems : subcontractorNavItems;
 
   const renderNavContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-surface-raised">
       {/* Logo */}
-      <div className="flex items-center h-16 px-6 border-b">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+      <div className="flex items-center h-16 px-6 border-b border-border-strong">
+        <div className="w-8 h-8 bg-gradient-storm rounded-lg flex items-center justify-center mr-3 shadow-brand">
           <span className="text-white font-bold text-lg">G</span>
         </div>
         <div>
-          <span className="font-bold text-slate-900 dark:text-white">Grid Electric</span>
-          <span className="text-xs text-slate-500 block">{userRole === 'admin' ? 'Admin Portal' : 'Contractor Portal'}</span>
+          <span className="font-bold text-grid-navy">Grid Electric</span>
+          <span className="text-xs text-muted-foreground block">{userRole === 'admin' ? 'Admin Portal' : 'Contractor Portal'}</span>
         </div>
       </div>
 
@@ -78,14 +78,21 @@ export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
+                aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-[background-color,color,box-shadow,transform] duration-200 ease-standard',
                   isActive
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                    ? 'bg-grid-blue-soft text-grid-brand-ink shadow-elevation-xs border border-accent-hairline'
+                    : 'text-muted-foreground border border-transparent hover:bg-accent hover:text-foreground hover:shadow-elevation-xs hover:-translate-y-px'
                 )}
               >
-                <Icon className="w-5 h-5" />
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-grid-blue"
+                  />
+                )}
+                <Icon className={cn('w-5 h-5 shrink-0 transition-transform duration-200 ease-emphasized group-hover:scale-110', isActive && 'text-grid-blue')} />
                 {item.label}
               </Link>
             );
@@ -94,8 +101,8 @@ export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-4 border-t">
-        <div className="text-xs text-slate-500 text-center">
+      <div className="p-4 border-t border-border-strong">
+        <div className="text-xs text-muted-foreground text-center">
           Central Command v1.0
         </div>
       </div>
@@ -116,7 +123,7 @@ export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-64 fixed left-0 top-16 bottom-0 bg-white dark:bg-slate-800 border-r z-10">
+      <aside className="hidden lg:block w-64 fixed left-0 top-16 bottom-0 border-r border-border-strong z-10 shadow-elevation-sm">
         {renderNavContent()}
       </aside>
 

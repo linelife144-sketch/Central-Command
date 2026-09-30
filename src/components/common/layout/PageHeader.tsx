@@ -31,25 +31,25 @@ export function PageHeader({
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 animate-lift-in">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           {showBackButton && (
             <Button
               variant="ghost"
               size="sm"
-              className="mb-2 -ml-2"
+              className="mb-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-accent hover:shadow-elevation-xs"
               onClick={handleBack}
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back
             </Button>
           )}
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-grid-navy">
             {title}
           </h1>
           {description && (
-            <p className="mt-1 text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-muted-foreground">
               {description}
             </p>
           )}

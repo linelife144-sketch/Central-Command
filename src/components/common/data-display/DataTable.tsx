@@ -40,7 +40,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className={cn('rounded-md border', className)}>
+      <div className={cn('rounded-xl border border-border-strong bg-card shadow-elevation-sm overflow-hidden', className)}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -69,8 +69,8 @@ export function DataTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className={cn('rounded-md border', className)}>
-        <div className="flex items-center justify-center h-32 text-slate-500">
+      <div className={cn('rounded-xl border border-border-strong bg-card shadow-elevation-sm', className)}>
+        <div className="flex items-center justify-center h-32 text-muted-foreground">
           {emptyMessage}
         </div>
       </div>
@@ -78,15 +78,15 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={cn('rounded-md border overflow-hidden', className)}>
+    <div className={cn('rounded-xl border border-border-strong bg-card shadow-elevation-sm overflow-hidden', className)}>
       <Table>
         <TableHeader>
-          <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+          <TableRow className="bg-surface-sunken hover:bg-surface-sunken">
             {columns.map((column) => (
-              <TableHead 
-                key={column.key} 
+              <TableHead
+                key={column.key}
                 style={{ width: column.width }}
-                className="font-semibold text-slate-700 dark:text-slate-300"
+                className="font-semibold text-foreground"
               >
                 {column.header}
               </TableHead>
@@ -99,7 +99,8 @@ export function DataTable<T>({
               key={keyExtractor(row)}
               onClick={() => onRowClick?.(row)}
               className={cn(
-                onRowClick && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                'transition-colors duration-200 ease-standard',
+                onRowClick && 'cursor-pointer hover:bg-accent/60'
               )}
             >
               {columns.map((column) => (

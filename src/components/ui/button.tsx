@@ -9,17 +9,24 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default:
+          "bg-primary text-primary-foreground shadow-elevation-xs hover:bg-primary/90 hover:shadow-brand hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ease-standard duration-200",
         storm:
           "storm-contrast-button border-white text-[#0a1733] hover:text-[#0a1733] focus-visible:border-white focus-visible:ring-white/70",
+        elevated:
+          "interactive-press surface-raised text-foreground hover:border-accent-hairline hover:shadow-elevation-md hover:-translate-y-px",
+        accent:
+          "interactive-press sheen-brand border border-white/25 text-white shadow-brand hover:shadow-brand-lg hover:text-white hover:-translate-y-px focus-visible:ring-white/60",
+        glass:
+          "interactive-press border border-white/30 bg-white/10 text-foreground shadow-elevation-xs backdrop-blur-md hover:bg-white/20 hover:shadow-elevation-sm dark:border-white/20 dark:text-white",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive text-white shadow-elevation-xs hover:bg-destructive/90 hover:shadow-elevation-md hover:-translate-y-px active:translate-y-0 active:scale-[0.98] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-border-strong bg-background shadow-elevation-xs hover:border-accent-hairline hover:bg-accent hover:text-accent-foreground hover:shadow-elevation-sm hover:-translate-y-px active:translate-y-0 active:scale-[0.98] dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground shadow-elevation-xs hover:bg-secondary/80 hover:shadow-elevation-sm hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "hover:bg-accent hover:text-accent-foreground active:scale-[0.98] dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

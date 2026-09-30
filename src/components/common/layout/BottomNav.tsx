@@ -8,7 +8,6 @@ import {
   Ticket,
   Users,
   Clock,
-  Receipt,
   Map,
 } from 'lucide-react';
 
@@ -34,7 +33,7 @@ export function BottomNav({ userRole }: BottomNavProps) {
   const navItems = userRole === 'admin' ? adminNavItems : subcontractorNavItems;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t z-40 safe-area-pb">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border-strong bg-background/90 shadow-elevation-lg backdrop-blur-md safe-area-pb">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -44,14 +43,28 @@ export function BottomNav({ userRole }: BottomNavProps) {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full gap-1',
+                'relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors duration-200 ease-standard',
                 isActive
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-slate-500 dark:text-slate-400'
+                  ? 'text-grid-brand-ink'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <Icon className="w-5 h-5" />
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-0 h-0.5 w-8 rounded-b-full bg-grid-blue"
+                />
+              )}
+              <span
+                className={cn(
+                  'flex h-7 w-12 items-center justify-center rounded-full transition-[background-color,transform] duration-200 ease-emphasized',
+                  isActive ? 'bg-grid-blue-soft shadow-elevation-xs' : 'hover:bg-accent'
+                )}
+              >
+                <Icon className={cn('w-5 h-5', isActive && 'text-grid-blue')} />
+              </span>
               <span className="text-xs font-medium">{item.label}</span>
             </Link>
           );

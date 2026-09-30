@@ -13,10 +13,10 @@ interface AppShellProps {
 
 export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, profile, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-grid-shell">
       {/* Top Bar - Desktop */}
       <TopBar
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
@@ -35,7 +35,7 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
 
         {/* Main Content */}
         <main className="flex-1 min-h-[calc(100vh-4rem)] pb-20 lg:pb-8 px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto animate-lift-in">
             {children}
           </div>
         </main>

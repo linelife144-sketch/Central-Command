@@ -345,18 +345,61 @@ Grid Electric Corp is an Alaska Native American Women-Owned Business providing e
 | xl | 24px | Hero sections |
 | full | 9999px | Pills, avatars |
 
-### 4.3 Shadows
+### 4.3 Shadows (Elevation Scale)
+
+The theme uses a single navy-tinted elevation scale so raised surfaces read as
+brand-consistent layers rather than flat neutral gray. All values are declared in
+`src/app/globals.css` under `:root` and exposed through `@theme inline`, which
+generates the matching `shadow-*` utilities.
 
 ```css
-/* Card Shadow */
---shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+/* Elevation scale -> shadow-elevation-* */
+--shadow-elevation-xs: 0 1px 2px rgba(0, 33, 104, 0.06), 0 1px 1px rgba(0, 33, 104, 0.04);
+--shadow-elevation-sm: 0 2px 4px rgba(0, 33, 104, 0.07), 0 1px 2px rgba(0, 33, 104, 0.05);
+--shadow-elevation-md: 0 6px 14px rgba(0, 33, 104, 0.1), 0 2px 5px rgba(0, 33, 104, 0.06);
+--shadow-elevation-lg: 0 12px 28px rgba(0, 33, 104, 0.13), 0 4px 10px rgba(0, 33, 104, 0.07);
+--shadow-elevation-xl: 0 22px 48px rgba(0, 33, 104, 0.18), 0 8px 18px rgba(0, 33, 104, 0.09);
 
-/* Card Hover Shadow */
---shadow-card-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+/* Brand glow -> shadow-brand / shadow-brand-lg */
+--shadow-brand: 0 4px 14px rgba(46, 163, 242, 0.39);
+--shadow-brand-lg: 0 10px 26px rgba(46, 163, 242, 0.42), 0 2px 6px rgba(0, 33, 104, 0.12);
 
-/* Button Shadow */
---shadow-button: 0 4px 14px 0 rgba(46, 163, 242, 0.39);
+/* Inset top light for gradient buttons -> shadow-inset-top */
+--shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 ```
+
+| Utility | Use for |
+|---------|---------|
+| `shadow-elevation-xs` | Inputs, checkboxes, badges, small controls at rest |
+| `shadow-elevation-sm` | Cards and panels at rest |
+| `shadow-elevation-md` | Raised / hovered surfaces, elevated buttons |
+| `shadow-elevation-lg` | Popovers, dropdown menus, hover-lift state |
+| `shadow-elevation-xl` | Dialogs, sheets, command palette |
+| `shadow-brand` / `shadow-brand-lg` | Primary + accent buttons, checked controls |
+
+Legacy aliases kept for backward compatibility: `.shadow-card` maps to
+`--shadow-elevation-sm` and `.shadow-card-hover` maps to `--shadow-elevation-lg`.
+
+Dark mode overrides each elevation token with a deeper black-based stack so the
+same utility reads correctly on `--surface-sunken`.
+
+### 4.4 Surfaces, Borders, and Focus
+
+```css
+--surface-raised: #ffffff;        /* .dark: #1e293b */
+--surface-sunken: #f6f9ff;        /* .dark: #0b0f19 */
+--border-strong: #d1d5db;         /* .dark: rgba(255,255,255,0.18) */
+--accent-hairline: rgba(46, 163, 242, 0.35);
+--accent-ring: rgba(46, 163, 242, 0.20);
+--focus-ring-width: 3px;
+--focus-ring-offset: 2px;
+```
+
+Utilities: `bg-surface-raised`, `bg-surface-sunken`, `border-border-strong`,
+`border-accent-hairline`, `ring-accent-ring`.
+
+Every interactive element receives a brand-tinted `:focus-visible` outline by
+default via `@layer base`, so keyboard focus is never invisible.
 
 ---
 
@@ -544,11 +587,28 @@ Grid Electric Corp is an Alaska Native American Women-Owned Business providing e
 |-----------|----------|--------|-------|
 | fadeIn | 500ms | Opacity 0→1, translateY 10px→0 | Page content |
 | slideIn | 400ms | Opacity 0→1, translateX -20px→0 | Sidebar items |
+| lift-in | 360ms | Opacity 0→1, translateY 12px→0, scale .985→1 | Cards, alerts, staggered lists |
+| shimmer | 1600ms | Background-position sweep | Skeleton loading |
+| accent-pulse | 2000ms | Brand ring expands and fades | Live / active indicators |
 | pulse-ring | 2000ms | Scale pulse with shadow | Active indicators |
 | progress-fill | 500ms | Width transition | Progress bars |
 | card-hover | 300ms | Shadow increase, slight lift | Card interactions |
 
-### 7.3 CSS Animation Classes
+### 7.3 Motion Tokens and Easing
+
+```css
+--motion-duration-instant: 120ms;
+--motion-duration-fast: 160ms;
+--motion-duration-base: 240ms;
+--motion-duration-slow: 360ms;
+--motion-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+--motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);  /* lifts / entrances */
+--motion-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* press / release */
+```
+
+Exposed to Tailwind as `ease-standard`, `ease-emphasized`, and `ease-spring`.
+
+### 7.4 CSS Animation Classes
 
 ```css
 .animate-fade-in {
@@ -562,7 +622,47 @@ Grid Electric Corp is an Alaska Native American Women-Owned Business providing e
 .animate-pulse-ring {
   animation: pulse-ring 2s infinite;
 }
+
+.animate-lift-in {
+  animation: lift-in var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.6s linear infinite;
+}
+
+.animate-accent-pulse {
+  animation: accent-pulse 2s var(--motion-ease-standard) infinite;
+}
+
+.stagger-children > * {
+  animation: lift-in var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+}
+/* nth-child delays step by 40ms for up to 8 children */
 ```
+
+### 7.5 Reactive Interaction Classes
+
+Reusable opt-in classes for hover/press/focus behavior. They live in the
+`utilities` layer and are emitted after Tailwind's generated utilities, so they
+intentionally win over conflicting utility classes on the same element.
+
+| Class | Behavior |
+|-------|----------|
+| `.interactive-lift` | Hover: `translateY(-2px)`, elevation `sm → lg`, border → `--accent-hairline`. Active: returns and scales `0.995` |
+| `.interactive-press` | Active: `scale(0.97)` on the spring curve |
+| `.focus-ring` | `:focus-visible` brand ring built from `--accent-ring` |
+| `.sheen-brand` | Two-layer background: top-light sheen over a navy→blue gradient; brightens on hover |
+| `.surface-raised` | Raised surface: `--surface-raised` + border + `shadow-elevation-sm` |
+| `.surface-sunken` | Inset surface: `--surface-sunken` + border |
+| `.hover-lift-sm` | Subtle `translateY(-1px)` + `shadow-elevation-md` |
+| `.hover-glow-brand` | Hover: `shadow-brand-lg` glow |
+| `.skeleton-shimmer` | Brand-tinted shimmer base for `Skeleton` |
+| `.separator-fade` | Rules that fade out at both ends instead of hard edges |
+
+Every animation and interaction class is disabled under
+`@media (prefers-reduced-motion: reduce)`, in addition to the global
+animation/transition kill-switch.
 
 ---
 
@@ -653,6 +753,7 @@ Each onboarding page follows this structure:
 |---------|------|---------|--------|
 | 1.0 | 2026-02-04 | Initial design system | Agent |
 | 2.0 | 2026-02-10 | Updated to match gridelectriccorp.com | Kimi Code CLI |
+| 3.0 | 2026-09-30 | Reactive theme revamp: navy-tinted elevation scale (`shadow-elevation-xs`–`xl`, `shadow-brand`, `shadow-brand-lg`), motion/easing tokens (`ease-standard/emphasized/spring`), named animations (`lift-in`, `shimmer`, `accent-pulse`), surface/border/focus tokens, interaction classes (§7.5). Brand palette promoted into the Tailwind `--color-grid-*` namespace. Storm shadows refactored onto the shared scale. No brand hex values changed. | Cline |
 
 ---
 

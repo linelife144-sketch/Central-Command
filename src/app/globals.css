@@ -58,6 +58,46 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-border-strong: var(--border-strong);
+  --color-accent-hairline: var(--accent-hairline);
+  --color-accent-ring: var(--accent-ring);
+  /* Brand palette -> real utilities (bg-*, text-*, border-*, from-*, to-*, ring-*, ...)
+     This also makes opacity modifiers such as bg-grid-navy-dark/70 available. */
+  --color-grid-blue: var(--grid-blue);
+  --color-grid-blue-dark: var(--grid-blue-dark);
+  --color-grid-blue-light: var(--grid-blue-light);
+  --color-grid-navy: var(--grid-navy);
+  --color-grid-navy-dark: var(--grid-navy-dark);
+  --color-grid-navy-light: var(--grid-navy-light);
+  --color-grid-storm-50: var(--grid-storm-50);
+  --color-grid-storm-100: var(--grid-storm-100);
+  --color-grid-storm-200: var(--grid-storm-200);
+  --color-grid-lightning: var(--grid-lightning);
+  --color-grid-lightning-soft: var(--grid-lightning-soft);
+  --color-grid-success: var(--grid-success);
+  --color-grid-warning: var(--grid-warning);
+  --color-grid-danger: var(--grid-danger);
+  --color-grid-info: var(--grid-info);
+  --color-grid-gray-50: var(--grid-gray-50);
+  --color-grid-gray-100: var(--grid-gray-100);
+  --color-grid-gray-200: var(--grid-gray-200);
+  --color-grid-gray-400: var(--grid-gray-400);
+  --color-grid-gray-500: var(--grid-gray-500);
+  --color-grid-gray-700: var(--grid-gray-700);
+  /* Soft status fills + readable ink shades */
+  --color-grid-blue-soft: color-mix(in srgb, var(--grid-blue) 12%, white);
+  --color-grid-brand-soft: color-mix(in srgb, var(--grid-blue) 14%, white);
+  --color-grid-success-soft: color-mix(in srgb, var(--grid-success) 14%, white);
+  --color-grid-warning-soft: color-mix(in srgb, var(--grid-warning) 16%, white);
+  --color-grid-danger-soft: color-mix(in srgb, var(--grid-danger) 14%, white);
+  --color-grid-info-soft: color-mix(in srgb, var(--grid-info) 14%, white);
+  --color-grid-success-ink: var(--grid-success-ink);
+  --color-grid-warning-ink: var(--grid-warning-ink);
+  --color-grid-danger-ink: var(--grid-danger-ink);
+  --color-grid-info-ink: var(--grid-info-ink);
+  --color-grid-brand-ink: var(--grid-brand-ink);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -65,6 +105,23 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* Elevation scale -> shadow-elevation-* utilities */
+  --shadow-elevation-xs: var(--shadow-elevation-xs);
+  --shadow-elevation-sm: var(--shadow-elevation-sm);
+  --shadow-elevation-md: var(--shadow-elevation-md);
+  --shadow-elevation-lg: var(--shadow-elevation-lg);
+  --shadow-elevation-xl: var(--shadow-elevation-xl);
+  --shadow-brand: var(--shadow-brand);
+  --shadow-brand-lg: var(--shadow-brand-lg);
+  --shadow-inset-top: var(--shadow-inset-top);
+  /* Easing curves -> ease-* utilities */
+  --ease-standard: var(--motion-ease-standard);
+  --ease-emphasized: var(--motion-ease-emphasized);
+  --ease-spring: var(--motion-ease-spring);
+  /* Named animations -> animate-* utilities */
+  --animate-lift-in: lift-in var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-accent-pulse: accent-pulse 2s var(--motion-ease-standard) infinite;
 }
 
 :root {
@@ -76,11 +133,57 @@
   --safe-area-bottom: env(safe-area-inset-bottom);
   --safe-area-left: env(safe-area-inset-left);
   --safe-area-right: env(safe-area-inset-right);
+  --motion-duration-instant: 120ms;
   --motion-duration-fast: 160ms;
   --motion-duration-base: 240ms;
   --motion-duration-slow: 360ms;
   --motion-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-  
+  --motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ============================================
+     ELEVATION SCALE
+     Navy-tinted rather than neutral gray so raised
+     surfaces read as brand-consistent layers.
+     ============================================ */
+  --shadow-elevation-xs: 0 1px 2px rgba(0, 33, 104, 0.06), 0 1px 1px rgba(0, 33, 104, 0.04);
+  --shadow-elevation-sm: 0 2px 4px rgba(0, 33, 104, 0.07), 0 1px 2px rgba(0, 33, 104, 0.05);
+  --shadow-elevation-md: 0 6px 14px rgba(0, 33, 104, 0.1), 0 2px 5px rgba(0, 33, 104, 0.06);
+  --shadow-elevation-lg: 0 12px 28px rgba(0, 33, 104, 0.13), 0 4px 10px rgba(0, 33, 104, 0.07);
+  --shadow-elevation-xl: 0 22px 48px rgba(0, 33, 104, 0.18), 0 8px 18px rgba(0, 33, 104, 0.09);
+  --shadow-brand: 0 4px 14px rgba(46, 163, 242, 0.39);
+  --shadow-brand-lg: 0 10px 26px rgba(46, 163, 242, 0.42), 0 2px 6px rgba(0, 33, 104, 0.12);
+  --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* Storm-theme shadow aliases (keeps the dark surfaces on the shared scale) */
+  --shadow-storm-surface: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 12px 36px rgba(0, 24, 88, 0.35);
+  --shadow-storm-card: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 14px 40px rgba(0, 24, 88, 0.4);
+  --shadow-storm-metric: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 10px 30px rgba(0, 24, 88, 0.35);
+  --shadow-storm-field: 0 6px 14px rgba(0, 10, 35, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  --shadow-storm-button: 0 6px 14px rgba(0, 10, 35, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --shadow-storm-button-hover: 0 12px 24px rgba(0, 10, 35, 0.42), 0 0 0 1px rgba(255, 192, 56, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  --shadow-storm-pulse-rest: 0 6px 12px rgba(0, 10, 35, 0.32), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  --shadow-storm-pulse-lift: 0 10px 20px rgba(0, 10, 35, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+  --shadow-storm-pulse-peak: 0 13px 22px rgba(0, 10, 35, 0.48), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  --shadow-storm-mini-stat: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 6px 16px rgba(0, 10, 35, 0.3);
+  --shadow-storm-mini-stat-hover: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 10px 24px rgba(0, 10, 35, 0.4);
+  --shadow-storm-command-hover: 0 16px 32px rgba(0, 18, 74, 0.34);
+  --shadow-storm-warm: 0 6px 14px rgba(0, 10, 35, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  --shadow-storm-ring: 0 0 0 1px rgba(255, 192, 56, 0.55), 0 8px 24px rgba(0, 33, 104, 0.12);
+  --shadow-storm-focus: 0 0 0 2px rgba(255, 255, 255, 0.94), 0 0 0 5px rgba(255, 192, 56, 0.55), 0 8px 18px rgba(0, 10, 35, 0.34);
+  --shadow-storm-disabled: 0 4px 8px rgba(0, 10, 35, 0.28);
+
+  /* ============================================
+     SURFACE + INTERACTION TOKENS
+     ============================================ */
+  --surface-raised: #ffffff;
+  --surface-sunken: #f6f9ff;
+  --border-strong: #d1d5db;
+  --accent-hairline: rgba(46, 163, 242, 0.35);
+  --accent-ring: rgba(46, 163, 242, 0.2);
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+
   /* ============================================
      GRID ELECTRIC CORP COLOR PALETTE
      ============================================ */
@@ -115,6 +218,13 @@
   --grid-warning: #fcb900;
   --grid-danger: #cf2e2e;
   --grid-info: #0693e3;
+
+  /* Readable ink shades for soft status fills */
+  --grid-success-ink: #0a6b45;
+  --grid-warning-ink: #8a5a00;
+  --grid-danger-ink: #9b1f1f;
+  --grid-info-ink: #005f96;
+  --grid-brand-ink: #002168;
   
   /* Shadcn/UI Theme Mappings */
   --background: #ffffff;
@@ -182,6 +292,23 @@
   --sidebar-accent-foreground: #f9fafb;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: #2ea3f2;
+
+  /* Elevation reads deeper on dark surfaces */
+  --shadow-elevation-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-elevation-sm: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-elevation-md: 0 8px 18px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-elevation-lg: 0 14px 32px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-elevation-xl: 0 24px 52px rgba(0, 0, 0, 0.6), 0 8px 20px rgba(0, 0, 0, 0.45);
+  --shadow-brand: 0 4px 14px rgba(46, 163, 242, 0.45);
+  --shadow-brand-lg: 0 10px 28px rgba(46, 163, 242, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  /* Surface + interaction tokens */
+  --surface-raised: #1e293b;
+  --surface-sunken: #0b0f19;
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --accent-hairline: rgba(46, 163, 242, 0.45);
+  --accent-ring: rgba(46, 163, 242, 0.32);
 }
 
 @layer base {
@@ -199,6 +326,11 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
     color: #002168;
+  }
+  /* Brand-tinted keyboard focus everywhere, without overriding per-component rings */
+  :where(a, button, [role='button'], input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: var(--focus-ring-width) solid var(--accent-ring);
+    outline-offset: var(--focus-ring-offset);
   }
 }
 
@@ -250,6 +382,12 @@
   .bg-grid-danger-soft {
     background-color: color-mix(in srgb, var(--grid-danger) 14%, white);
   }
+  .bg-grid-info-soft {
+    background-color: color-mix(in srgb, var(--grid-info) 14%, white);
+  }
+  .bg-grid-brand-soft {
+    background-color: color-mix(in srgb, var(--grid-blue) 14%, white);
+  }
   .border-grid-blue {
     border-color: #2ea3f2;
   }
@@ -261,6 +399,55 @@
   }
   .border-grid-danger {
     border-color: color-mix(in srgb, var(--grid-danger) 38%, white);
+  }
+  .border-grid-info {
+    border-color: color-mix(in srgb, var(--grid-info) 42%, white);
+  }
+  .border-grid-brand {
+    border-color: color-mix(in srgb, var(--grid-blue) 40%, white);
+  }
+  /* Ink shades for readable text on soft status fills */
+  .text-grid-success-ink {
+    color: var(--grid-success-ink);
+  }
+  .text-grid-warning-ink {
+    color: var(--grid-warning-ink);
+  }
+  .text-grid-danger-ink {
+    color: var(--grid-danger-ink);
+  }
+  .text-grid-info-ink {
+    color: var(--grid-info-ink);
+  }
+  .text-grid-brand-ink {
+    color: var(--grid-brand-ink);
+  }
+  .bg-grid-blue-soft {
+    background-color: color-mix(in srgb, var(--grid-blue) 12%, white);
+  }
+  /* Dark-mode soft fills tint toward the shell rather than white */
+  .dark .bg-grid-success-soft,
+  .dark .bg-grid-warning-soft,
+  .dark .bg-grid-danger-soft,
+  .dark .bg-grid-info-soft,
+  .dark .bg-grid-brand-soft,
+  .dark .bg-grid-blue-soft {
+    background-color: color-mix(in srgb, var(--surface-sunken) 82%, currentColor);
+  }
+  .dark .text-grid-success-ink {
+    color: color-mix(in srgb, var(--grid-success) 78%, white);
+  }
+  .dark .text-grid-warning-ink {
+    color: color-mix(in srgb, var(--grid-warning) 82%, white);
+  }
+  .dark .text-grid-danger-ink {
+    color: color-mix(in srgb, var(--grid-danger) 72%, white);
+  }
+  .dark .text-grid-info-ink {
+    color: color-mix(in srgb, var(--grid-info) 78%, white);
+  }
+  .dark .text-grid-brand-ink {
+    color: var(--grid-blue-light);
   }
   .text-grid-lightning {
     color: var(--grid-lightning);
@@ -314,9 +501,7 @@
       radial-gradient(circle at 88% 16%, rgba(255, 255, 255, 0.12) 0%, transparent 52%),
       linear-gradient(135deg, rgba(0, 20, 69, 0.9) 0%, rgba(0, 42, 109, 0.82) 56%, rgba(10, 78, 154, 0.78) 100%);
     backdrop-filter: blur(16px);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.15),
-      0 12px 36px rgba(0, 24, 88, 0.35);
+    box-shadow: var(--shadow-storm-surface);
     color: #f5f9ff;
   }
   .storm-card {
@@ -325,9 +510,7 @@
       radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.15) 0%, transparent 55%),
       linear-gradient(135deg, rgba(0, 26, 90, 0.92) 0%, rgba(0, 48, 122, 0.84) 55%, rgba(11, 74, 166, 0.8) 100%);
     backdrop-filter: blur(16px);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.15),
-      0 14px 40px rgba(0, 24, 88, 0.4);
+    box-shadow: var(--shadow-storm-card);
     color: #f5f9ff;
   }
   .storm-card:nth-child(4n + 2) {
@@ -351,9 +534,7 @@
       radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.14) 0%, transparent 45%),
       linear-gradient(135deg, rgba(0, 18, 56, 0.92) 0%, rgba(0, 31, 88, 0.84) 46%, rgba(6, 47, 111, 0.8) 100%);
     backdrop-filter: blur(12px);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.12),
-      0 10px 30px rgba(0, 24, 88, 0.35);
+    box-shadow: var(--shadow-storm-metric);
     color: #f8fbff;
   }
   .storm-card [data-slot='card-title'] {
@@ -401,9 +582,7 @@
     border: 1px solid rgba(255, 255, 255, 0.9);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 252, 255, 0.92) 100%);
     color: #0a1733;
-    box-shadow:
-      0 6px 14px rgba(0, 10, 35, 0.22),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+    box-shadow: var(--shadow-storm-field);
   }
   .storm-card :where(input:not([type='checkbox']):not([type='radio']), textarea)::placeholder,
   .storm-surface :where(input:not([type='checkbox']):not([type='radio']), textarea)::placeholder {
@@ -421,9 +600,7 @@
     border: 1px solid rgba(255, 255, 255, 0.9);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 252, 255, 0.92) 100%);
     color: #0a1733;
-    box-shadow:
-      0 6px 14px rgba(0, 10, 35, 0.22),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+    box-shadow: var(--shadow-storm-field);
   }
   .storm-contrast-form :where(input:not([type='checkbox']):not([type='radio']), textarea)::placeholder {
     color: #5a6f95;
@@ -439,17 +616,14 @@
     border: 1px solid rgba(255, 255, 255, 0.95);
     background: linear-gradient(135deg, #ffde8e 0%, #ffc038 46%, #f4ad07 100%);
     color: #0a1733;
-    box-shadow:
-      0 6px 14px rgba(0, 10, 35, 0.35),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    box-shadow: var(--shadow-storm-warm);
   }
   .storm-card [data-slot='button']:not([data-variant='destructive']):not([data-variant='link']):hover,
   .storm-surface [data-slot='button']:not([data-variant='destructive']):not([data-variant='link']):hover {
     color: #0a1733;
     filter: brightness(1.03) saturate(1.02);
-    box-shadow:
-      0 10px 20px rgba(0, 10, 35, 0.42),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-storm-pulse-lift);
   }
   .storm-card [data-slot='button']:not([data-variant='destructive']):not([data-variant='link']) svg,
   .storm-surface [data-slot='button']:not([data-variant='destructive']):not([data-variant='link']) svg {
@@ -464,9 +638,7 @@
     color: #fff1bf;
   }
   .storm-lightning-ring {
-    box-shadow:
-      0 0 0 1px rgba(255, 192, 56, 0.55),
-      0 8px 24px rgba(0, 33, 104, 0.12);
+    box-shadow: var(--shadow-storm-ring);
   }
   .storm-lightning-dot {
     width: 0.5rem;
@@ -490,11 +662,9 @@
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    box-shadow:
-      0 6px 14px rgba(0, 10, 35, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    box-shadow: var(--shadow-storm-button);
     transition:
-      transform var(--motion-duration-fast) var(--motion-ease-standard),
+      transform var(--motion-duration-fast) var(--motion-ease-emphasized),
       box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
       filter var(--motion-duration-fast) var(--motion-ease-standard),
       border-color var(--motion-duration-fast) var(--motion-ease-standard);
@@ -512,10 +682,7 @@
     transform: translateY(-1.5px);
     filter: brightness(1.04) saturate(1.03);
     border-color: #ffc038;
-    box-shadow:
-      0 12px 24px rgba(0, 10, 35, 0.42),
-      0 0 0 1px rgba(255, 192, 56, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    box-shadow: var(--shadow-storm-button-hover);
     animation: storm-button-pulse 1.25s ease-in-out infinite;
   }
   .storm-contrast-button:hover::after {
@@ -524,15 +691,12 @@
 
   .storm-contrast-button:focus-visible {
     outline: none;
-    box-shadow:
-      0 0 0 2px rgba(255, 255, 255, 0.94),
-      0 0 0 5px rgba(255, 192, 56, 0.55),
-      0 8px 18px rgba(0, 10, 35, 0.34);
+    box-shadow: var(--shadow-storm-focus);
   }
   .storm-contrast-button:disabled {
     opacity: 0.62;
     filter: saturate(0.78);
-    box-shadow: 0 4px 8px rgba(0, 10, 35, 0.28);
+    box-shadow: var(--shadow-storm-disabled);
   }
   .storm-contrast-button svg {
     color: #0a1733;
@@ -541,9 +705,7 @@
     border: 1px solid rgba(255, 255, 255, 0.9);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 252, 255, 0.92) 100%);
     color: #0a1733;
-    box-shadow:
-      0 6px 14px rgba(0, 10, 35, 0.22),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+    box-shadow: var(--shadow-storm-field);
   }
   .storm-contrast-field svg {
     color: #0a1733;
@@ -559,11 +721,9 @@
     background: linear-gradient(135deg, rgba(255, 228, 164, 0.95) 0%, rgba(255, 192, 56, 0.9) 50%, rgba(239, 172, 9, 0.85) 100%);
     color: #0a1733;
     backdrop-filter: blur(8px);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.25),
-      0 6px 16px rgba(0, 10, 35, 0.3);
+    box-shadow: var(--shadow-storm-mini-stat);
     transition:
-      transform var(--motion-duration-fast) var(--motion-ease-standard),
+      transform var(--motion-duration-fast) var(--motion-ease-emphasized),
       box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
       filter var(--motion-duration-fast) var(--motion-ease-standard),
       border-color var(--motion-duration-fast) var(--motion-ease-standard);
@@ -572,9 +732,7 @@
     transform: translateY(-1.5px);
     filter: brightness(1.03);
     border-color: rgba(255, 255, 255, 0.95);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.35),
-      0 10px 24px rgba(0, 10, 35, 0.4);
+    box-shadow: var(--shadow-storm-mini-stat-hover);
   }
   .assessment-command-shell {
     color: #f5f9ff;
@@ -596,15 +754,15 @@
   .assessment-command-card:hover {
     transform: translateY(-2px);
     filter: brightness(1.02);
-    box-shadow: 0 16px 32px rgba(0, 18, 74, 0.34);
+    box-shadow: var(--shadow-storm-command-hover);
   }
   
-  /* Card Shadows */
+  /* Card Shadows (legacy aliases -> shared elevation scale) */
   .shadow-card {
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: var(--shadow-elevation-sm);
   }
   .shadow-card-hover {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    box-shadow: var(--shadow-elevation-lg);
   }
   
   /* Text Utilities */
@@ -632,14 +790,10 @@
 @keyframes storm-button-pulse {
   0%,
   100% {
-    box-shadow:
-      0 10px 20px rgba(0, 10, 35, 0.42),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+    box-shadow: var(--shadow-storm-pulse-lift);
   }
   50% {
-    box-shadow:
-      0 13px 22px rgba(0, 10, 35, 0.48),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+    box-shadow: var(--shadow-storm-pulse-peak);
   }
 }
 
@@ -747,3 +901,187 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================
+   REACTIVE INTERACTION LAYER
+   Reusable elevation / lift / press / focus /
+   accent primitives. Any component can opt in.
+   ============================================ */
+
+@layer utilities {
+  /* Surfaces ------------------------------------------------- */
+  .surface-raised {
+    border: 1px solid var(--border);
+    background-color: var(--surface-raised);
+    box-shadow: var(--shadow-elevation-sm);
+  }
+  .surface-sunken {
+    border: 1px solid var(--border);
+    background-color: var(--surface-sunken);
+  }
+
+  /* Hover lift ------------------------------------------------ */
+  .interactive-lift {
+    transition:
+      transform var(--motion-duration-fast) var(--motion-ease-emphasized),
+      box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+      border-color var(--motion-duration-fast) var(--motion-ease-standard),
+      background-color var(--motion-duration-fast) var(--motion-ease-standard);
+  }
+  .interactive-lift:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-hairline);
+    box-shadow: var(--shadow-elevation-lg);
+  }
+  .interactive-lift:active {
+    transform: translateY(0) scale(0.995);
+    box-shadow: var(--shadow-elevation-sm);
+  }
+
+  /* Press feedback ------------------------------------------- */
+  .interactive-press {
+    transition:
+      transform var(--motion-duration-instant) var(--motion-ease-spring),
+      box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+  }
+  .interactive-press:active {
+    transform: scale(0.97);
+  }
+
+  /* Keyboard focus ------------------------------------------- */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 var(--focus-ring-width) var(--accent-ring),
+      0 0 0 1px var(--primary);
+  }
+
+  /* Brand gradient with a top-light sheen -------------------- */
+  .sheen-brand {
+    background-image:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 58%),
+      linear-gradient(135deg, var(--grid-navy-dark) 0%, var(--grid-navy) 45%, var(--grid-blue) 100%);
+    transition: background-image var(--motion-duration-base) var(--motion-ease-standard);
+  }
+  .sheen-brand:hover {
+    background-image:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 58%),
+      linear-gradient(135deg, var(--grid-navy) 0%, var(--grid-blue) 62%, var(--grid-blue-light) 100%);
+  }
+
+  /* Loading shimmer for skeletons ---------------------------- */
+  .skeleton-shimmer {
+    background-color: var(--muted);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--accent-hairline) 50%,
+      transparent 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 240% 100%;
+  }
+
+  /* Fading rule for separators ------------------------------- */
+  .separator-fade {
+    background-image: linear-gradient(90deg, transparent 0%, var(--border) 22%, var(--border) 78%, transparent 100%);
+  }
+  .separator-fade[data-orientation='vertical'] {
+    background-image: linear-gradient(180deg, transparent 0%, var(--border) 22%, var(--border) 78%, transparent 100%);
+  }
+
+  /* Staggered entrance -------------------------------------- */
+  .stagger-children > * {
+    animation: lift-in var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(7) { animation-delay: 240ms; }
+  .stagger-children > *:nth-child(n + 8) { animation-delay: 280ms; }
+
+  /* Micro-interactions -------------------------------------- */
+  .hover-lift-sm {
+    transition:
+      transform var(--motion-duration-fast) var(--motion-ease-emphasized),
+      box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+  }
+  .hover-lift-sm:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-elevation-md);
+  }
+  .hover-glow-brand:hover {
+    box-shadow: var(--shadow-brand-lg);
+  }
+}
+
+@keyframes lift-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -140% 0;
+  }
+  100% {
+    background-position: 240% 0;
+  }
+}
+
+@keyframes accent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--accent-ring);
+  }
+  55% {
+    box-shadow: 0 0 0 6px rgba(46, 163, 242, 0);
+  }
+}
+
+.animate-lift-in {
+  animation: lift-in var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.6s linear infinite;
+}
+
+.animate-accent-pulse {
+  animation: accent-pulse 2s var(--motion-ease-standard) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive-lift,
+  .interactive-lift:hover,
+  .interactive-lift:active,
+  .interactive-press,
+  .interactive-press:active,
+  .hover-lift-sm,
+  .hover-lift-sm:hover,
+  .stagger-children > *,
+  .animate-lift-in,
+  .animate-shimmer,
+  .animate-accent-pulse {
+    animation: none;
+    transform: none;
+    transition: none;
+  }
+  .shadow-card-hover,
+  .hover-glow-brand:hover {
+    box-shadow: var(--shadow-elevation-sm);
+  }
+  .skeleton-shimmer {
+    background-image: none;
+  }
+}
+
