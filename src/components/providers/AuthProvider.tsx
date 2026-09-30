@@ -27,13 +27,40 @@ const PUBLIC_ROUTES = [
   '/forbidden',
 ];
 
+// Set to false when ready to re-enable real authentication
+const DEV_BYPASS_AUTH = true;
+
+const DEV_MOCK_PROFILE: AppUser = {
+  id: '00000000-0000-0000-0000-000000000001',
+  email: 'admin@gridelectric.com',
+  first_name: 'David',
+  last_name: 'McCarty',
+  role: 'SUPER_ADMIN',
+  is_active: true,
+  is_email_verified: true,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+const DEV_MOCK_USER = {
+  id: '00000000-0000-0000-0000-000000000001',
+  email: 'admin@gridelectric.com',
+  app_metadata: {},
+  user_metadata: {
+    first_name: 'David',
+    last_name: 'McCarty',
+  },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as unknown as User;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<AppUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(DEV_BYPASS_AUTH ? DEV_MOCK_USER : null);
+  const [profile, setProfile] = useState<AppUser | null>(DEV_BYPASS_AUTH ? DEV_MOCK_PROFILE : null);
+  const [isLoading, setIsLoading] = useState(!DEV_BYPASS_AUTH);
 
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
 
@@ -48,6 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Error fetching profile:', error);
+        if (DEV_BYPASS_AUTH) {
+          setProfile(DEV_MOCK_PROFILE);
+        }
         return;
       }
 
@@ -56,11 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error in fetchProfile:', error);
+      if (DEV_BYPASS_AUTH) {
+        setProfile(DEV_MOCK_PROFILE);
+      }
     }
   };
 
   const refreshProfile = async () => {
-    if (user?.id) {
+    if (user?.id && user.id !== DEV_MOCK_PROFILE.id) {
       await fetchProfile(user.id);
     }
   };
@@ -68,9 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
-      router.push('/login');
+      if (!DEV_BYPASS_AUTH) {
+        setUser(null);
+        setProfile(null);
+        router.push('/login');
+      } else {
+        router.push('/admin/dashboard');
+      }
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -84,6 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (error) {
           console.error('Session error:', error);
+          if (DEV_BYPASS_AUTH) {
+            setUser(DEV_MOCK_USER);
+            setProfile(DEV_MOCK_PROFILE);
+          }
           setIsLoading(false);
           return;
         }
@@ -91,9 +132,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setUser(session.user);
           await fetchProfile(session.user.id);
+        } else if (DEV_BYPASS_AUTH) {
+          setUser(DEV_MOCK_USER);
+          setProfile(DEV_MOCK_PROFILE);
         }
       } catch (error) {
         console.error('Error checking session:', error);
+        if (DEV_BYPASS_AUTH) {
+          setUser(DEV_MOCK_USER);
+          setProfile(DEV_MOCK_PROFILE);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -107,6 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setUser(session.user);
           await fetchProfile(session.user.id);
+        } else if (DEV_BYPASS_AUTH) {
+          setUser(DEV_MOCK_USER);
+          setProfile(DEV_MOCK_PROFILE);
         } else {
           setUser(null);
           setProfile(null);
@@ -122,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Handle route protection
   useEffect(() => {
+    if (DEV_BYPASS_AUTH) return;
     if (!isLoading) {
       if (!user && !isPublicRoute) {
         router.push('/login');
@@ -133,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     profile,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: DEV_BYPASS_AUTH ? true : !!user,
     signOut,
     refreshProfile,
   };

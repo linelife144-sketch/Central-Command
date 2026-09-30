@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isPasswordResetAllowedPath, shouldEnforcePasswordReset } from '@/lib/auth/passwordResetGate';
 
 const PUBLIC_ROUTE_PREFIXES = [
   '/login',
@@ -98,6 +99,18 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(contractorUrl);
   }
 
+  // Development Auth Bypass: bypass login and open app directly to dashboard
+  const DEV_BYPASS_AUTH = true;
+  if (DEV_BYPASS_AUTH) {
+    if (pathname === '/login' || pathname === '/forgot-password' || pathname === '/magic-link' || pathname === '/') {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = '/admin/dashboard';
+      dashboardUrl.search = '';
+      return NextResponse.redirect(dashboardUrl);
+    }
+    return supabaseResponse;
+  }
+
   // If NOT authenticated
   if (!user) {
     // If attempting to access a non-public route, redirect to login
@@ -132,6 +145,18 @@ export async function updateSession(request: NextRequest) {
   const role = profile.role;
   const isAdminRole = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'CEO';
   const isContractorRole = role === 'CONTRACTOR';
+
+  // If user must set/reset password, ensure they stay on or get directed to /set-password
+  if (shouldEnforcePasswordReset(profile.must_reset_password, pathname)) {
+    const setPasswordUrl = request.nextUrl.clone();
+    setPasswordUrl.pathname = '/set-password';
+    return NextResponse.redirect(setPasswordUrl);
+  }
+
+  // Allow password setup/recovery routes and auth confirmation to proceed without dashboard redirect
+  if (isPasswordResetAllowedPath(pathname) || pathname === '/auth/confirm') {
+    return supabaseResponse;
+  }
 
   // Handle redirect if user is on public routes (like login or root page)
   if (pathname === '/' || isPublicRoute(pathname)) {

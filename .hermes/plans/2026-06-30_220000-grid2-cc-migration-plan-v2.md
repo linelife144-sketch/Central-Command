@@ -35,7 +35,7 @@ v1 was a solid phase plan. v2 makes it **executable under the long-horizon frame
 **Success = ALL of these gates are provably GREEN (evidence, not assertion):**
 
 | # | Success Gate | How it is proven |
-|---|--------------|------------------|
+| --- | -------------- | ------------------ |
 | SG1 | Grid2's 16 migrations applied to CC's Supabase | `npx supabase migration list --linked` shows all applied |
 | SG2 | Schema has Grid2 tables (`storm_events`, `contractors`, OCR templates, `must_reset_password`, `CEO` role) | Verification script output |
 | SG3 | Seed data present (82 inventory, 24 wire sizes, 8 equipment types) | Row-count query output |
@@ -52,7 +52,7 @@ v1 was a solid phase plan. v2 makes it **executable under the long-horizon frame
 ## §2 — Execution Framework Mapping
 
 | Framework element | How this migration uses it |
-|-------------------|----------------------------|
+| ------------------- | ---------------------------- |
 | **Primary pattern** | Pattern B (Hierarchical Plan-Execute) — milestones with parallel sub-workstreams, verified at each boundary |
 | **Secondary pattern** | Pattern C (Search-Based) — M5 only, to triage build-error clusters in parallel |
 | **Coding engine** | Pi Agent (RPC) writes code; Hermes sub-agents investigate/verify (never both on same file simultaneously) |
@@ -67,7 +67,7 @@ v1 was a solid phase plan. v2 makes it **executable under the long-horizon frame
 
 ## §3 — Milestone Map (High-Level)
 
-```
+```dart
 M0  Path C Attempt (user gate)          — CP-0: migrate or abort-entirely
 M1  Backup & Pre-flight (serial)        — CP-1: recoverability proven
 M2  Database Migration (serial+parallel)— CP-2: schema+seed verified  ⚠️ DESTRUCTIVE
@@ -119,7 +119,7 @@ M6  Cleanup, Docs & Archive (serial)    — CP-6: SG1–SG8 all green, user demo
 **Owner**: Hermes orchestrator (Pi for git).
 
 | Task | Action | Exit criterion |
-|------|--------|----------------|
+| ------ | -------- | ---------------- |
 | T1.1 | `git checkout -b feat/grid2-cc-migration` | `git branch --show-current` = `feat/grid2-cc-migration` |
 | T1.2 | Copy `.env` → `~/Desktop/Perses/cc-env-backup-20260630.env` | Backup file exists, non-empty, contains `xcvacmreerrypygpritq` |
 | T1.3 | `npx supabase db dump --linked --file ~/Desktop/Perses/cc-db-backup-20260630.sql` | Dump file exists, size > 0 bytes, contains `CREATE TABLE` |
@@ -152,7 +152,7 @@ M6  Cleanup, Docs & Archive (serial)    — CP-6: SG1–SG8 all green, user demo
 **Critical path (strictly serial):**
 
 | Task | Action | Exit criterion |
-|------|--------|----------------|
+| ------ | -------- | ---------------- |
 | T2.1 | Copy all 16 Grid2 migration files → CC's `supabase/migrations/` (preserve timestamps) | `ls supabase/migrations/*.sql \| wc -l` reflects Grid2's 16 |
 | T2.2 | Overwrite `types/database.ts` with Grid2's version | File diff shows Grid2 tables/enums present |
 | T2.3 | **⚠️ EVIDENCE-GATED DESTRUCTIVE STEP** — see §9 before running. Requires explicit user "yes". `npx supabase db reset --linked` | Command exits 0; reset confirmed |
@@ -161,7 +161,7 @@ M6  Cleanup, Docs & Archive (serial)    — CP-6: SG1–SG8 all green, user demo
 **Parallel verification batch (dispatch immediately after T2.4 — ≤3 at a time, so 2 waves):**
 
 | Task | Sub-agent goal | Exit criterion |
-|------|----------------|----------------|
+| ------ | ---------------- | ---------------- |
 | T2.5a | Verify core tables exist (`storm_events`, `contractors`, `ticket_templates`, `inventory_items`; `profiles` has `must_reset_password` + `CEO` role) | Sub-agent returns table/column presence proof |
 | T2.5b | Verify RLS policies attached to all new tables | Policy-count query > 0 per table |
 | T2.5c | Verify seed data (82 inventory, 24 wire sizes, 8 equipment types) | Row-count query matches |
@@ -240,7 +240,7 @@ M6  Cleanup, Docs & Archive (serial)    — CP-6: SG1–SG8 all green, user demo
 
 **Why opaque**: The actual errors (Next 15→16 breaks, Zod 3→4 API changes, Tailwind class conflicts, import edge cases) are **unknowable until the first build runs**. Per the waterfall anti-pattern, inventing specific fix-tasks now is fiction. Instead, follow this **meta-procedure**, then decompose into real tasks:
 
-```
+```dart
 M5 META-PROCEDURE (Pattern C — Search-Based):
   1. Run `npm run build` ONCE. Capture full error output.
   2. CLUSTER errors into independent categories (import paths / Zod v4 /
@@ -272,7 +272,7 @@ M5 META-PROCEDURE (Pattern C — Search-Based):
 **Owner**: Hermes + Pi (final commit).
 
 | Task | Action | Exit criterion |
-|------|--------|----------------|
+| ------ | -------- | ---------------- |
 | T6.1 | Remove any Grid2 `.env.local` refs / dead Supabase URLs | `grep -r bsiuuibnjccjkmgktfce` = nothing (SG6) |
 | T6.2 | Update `AGENTS.md` (both projects) to reflect unified codebase | AGENTS.md describes single codebase |
 | T6.3 | Write ADR documenting schema swap + data-loss decision | `docs/adr/NNNN-grid2-cc-migration.md` exists |
@@ -295,7 +295,7 @@ M5 META-PROCEDURE (Pattern C — Search-Based):
 ## §5 — Checkpoint Reference Table (consolidated)
 
 | CP | Gate name | Hard verification | Grounding | GO requires | Rollback action |
-|----|-----------|-------------------|-----------|-------------|-----------------|
+| ---- | ----------- | ------------------- | ----------- | ------------- | ----------------- |
 | CP-0 | Path decision | User states outcome | none | Path C failed | — |
 | CP-1 | Recoverability | DB dump + env + migrations backed up, branch created | quick | 4/4 backups verified | — (enables later rollback) |
 | CP-2 | Schema & seed ⚠️ | 4 verify sub-agents + script `SCHEMA OK` | **FULL** | SG1+SG2+SG3 | restore DB from T1.3 dump |
@@ -311,7 +311,7 @@ M5 META-PROCEDURE (Pattern C — Search-Based):
 ## §6 — Grounding Cadence
 
 | Trigger | When | Template |
-|---------|------|----------|
+| --------- | ------ | ---------- |
 | Milestone boundary | Every CP-1…CP-6 | FULL (`grounding-check`) — except CP-1 (quick) |
 | Every ~5 tool calls | Mid-milestone, especially M3/M5 | Quick-check variant |
 | Before destructive reset (T2.3) | Once | FULL + evidence ledger (§9) |
@@ -347,7 +347,7 @@ Because M2 is destructive, rollback must be real and rehearsed:
 
 **Source/config rollback (CP-3/CP-4 ABORT):**
 
-```
+```dart
 git checkout <path> from the CP-1 checkpoint commit, OR
 git reset --hard <cp1-commit-sha> to abandon the whole branch
 ```
@@ -363,7 +363,7 @@ git reset --hard <cp1-commit-sha> to abandon the whole branch
 Before running `npx supabase db reset --linked`, the following claims MUST be classified **GROUNDED** (verified), not assumed:
 
 | Claim | Required evidence | Classification gate |
-|-------|-------------------|---------------------|
+| ------- | ------------------- | --------------------- |
 | "The linked project is CC (`xcvacmreerrypygpritq`), NOT Grid2's dead ref" | `npx supabase projects list` / `.env` grep shows CC ref | Must be GROUNDED |
 | "A restorable DB backup exists" | CP-1 verified `cc-db-backup-20260630.sql` non-empty w/ `CREATE TABLE` | Must be GROUNDED |
 | "No irreplaceable production data will be lost" | User answered §7-Q2 explicitly | Must be GROUNDED |
@@ -378,7 +378,7 @@ Before running `npx supabase db reset --linked`, the following claims MUST be cl
 At each checkpoint, write a compact memory summary and let detailed history fold away:
 
 | After | Memory entry to write |
-|-------|----------------------|
+| ------- | ---------------------- |
 | CP-1 | "M1 done: backups at ~/Desktop/Perses/cc-*-20260630.*, branch feat/grid2-cc-migration." |
 | CP-2 | "M2 done: Grid2 16 migrations applied to CC Supabase, seed verified. Decision: reset executed with backup." |
 | CP-3 | "M3 done: src/ tree grafted, import strategy = <chosen>. tsc clean." |
@@ -393,7 +393,7 @@ Do NOT store transient state (task-by-task progress) in memory — that's `todo`
 ## §11 — Files Likely to Change
 
 | Category | Files | Est. count |
-|----------|-------|-----------|
+| ---------- | ------- | ----------- |
 | Database | Grid2's 16 migrations, `types/database.ts` | ~17 |
 | Source (M3) | `app/**`, `components/**`, `lib/**`, `stores/**`, `types/**` | 300+ |
 | Config (M4) | `package.json`, `app/layout.tsx`, `app/globals.css`, `lib/supabase/*`, `next.config.ts`, `tsconfig.json` | 8–12 |
