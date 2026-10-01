@@ -44,21 +44,12 @@ interface DashboardExpenseReportRow {
   reviewed_at: string | null;
 }
 
-interface DashboardInvoiceRow {
-  id: string;
-  contractor_id: string;
-  status: string | null;
-  total_amount: number | null;
-  created_at: string;
-}
-
 interface DashboardMetricsBuildInput {
   now: Date;
   tickets: DashboardTicketRow[];
   pendingTimeEntries: number;
   pendingExpenseReports: number;
   pendingAssessments: number;
-  invoicesForTrend: DashboardInvoiceRow[];
 }
 
 interface DashboardReportBuildInput {
@@ -69,7 +60,6 @@ interface DashboardReportBuildInput {
   tickets: DashboardTicketRow[];
   timeEntries: DashboardTimeEntryRow[];
   expenseReports: DashboardExpenseReportRow[];
-  invoices: DashboardInvoiceRow[];
   contractorNameById: Map<string, string>;
 }
 
@@ -84,10 +74,6 @@ export interface DashboardMetricsData {
   pending_time_entries: number;
   pending_expense_reports: number;
   pending_assessments: number;
-  revenue_mtd: number;
-  revenue_previous_mtd: number;
-  revenue_trend_percent: number;
-  invoices_generated_mtd: number;
   status_breakdown: {
     in_route: number;
     on_site: number;
@@ -102,7 +88,6 @@ export interface DashboardReportSeriesPoint {
   tickets_created: number;
   approved_time_amount: number;
   approved_expense_amount: number;
-  invoiced_amount: number;
 }
 
 export interface DashboardReportContractorRow {
@@ -110,7 +95,6 @@ export interface DashboardReportContractorRow {
   contractor_name: string;
   approved_time_amount: number;
   approved_expense_amount: number;
-  invoiced_amount: number;
   pending_reviews: number;
 }
 
@@ -123,7 +107,6 @@ export interface DashboardReportData {
     tickets_created: number;
     approved_time_amount: number;
     approved_expense_amount: number;
-    invoiced_amount: number;
     pending_reviews: number;
   };
   series: DashboardReportSeriesPoint[];
@@ -191,39 +174,6 @@ function parseRequiredDate(value: string, label: string): Date {
 
 function toDateOnly(value: Date): string {
   return format(value, 'yyyy-MM-dd');
-}
-
-function isInvoiceRevenueStatus(status: string | null | undefined): boolean {
-  return String(status ?? '').toUpperCase() !== 'VOID';
-}
-
-function getPreviousMtdWindow(now: Date): { start: Date; end: Date } {
-  const prevReference = subMonths(now, 1);
-  const prevStart = startOfMonth(prevReference);
-  const prevMonthLastDay = endOfMonth(prevReference).getDate();
-  const day = Math.min(now.getDate(), prevMonthLastDay);
-
-  const prevEnd = endOfDay(
-    new Date(
-      prevReference.getFullYear(),
-      prevReference.getMonth(),
-      day,
-      now.getHours(),
-      now.getMinutes(),
-      now.getSeconds(),
-      now.getMilliseconds(),
-    ),
-  );
-
-  return { start: prevStart, end: prevEnd };
-}
-
-function formatTrendPercent(current: number, previous: number): number {
-  if (previous === 0) {
-    return current > 0 ? 100 : 0;
-  }
-
-  return Math.round((((current - previous) / previous) * 100 + Number.EPSILON) * 10) / 10;
 }
 
 function getBucketStart(value: Date, groupBy: ReportGroupBy): Date {
@@ -299,37 +249,6 @@ export function buildDashboardMetrics(input: DashboardMetricsBuildInput): Dashbo
     unassigned: activeTickets.filter((ticket) => !ticket.assigned_to).length,
   };
 
-  const mtdStart = startOfMonth(input.now);
-  const mtdRange = { start: mtdStart, end: input.now };
-  const previousMtd = getPreviousMtdWindow(input.now);
-
-  let revenueMtd = 0;
-  let revenuePreviousMtd = 0;
-  let invoicesGeneratedMtd = 0;
-
-  for (const invoice of input.invoicesForTrend) {
-    if (!isInvoiceRevenueStatus(invoice.status)) {
-      continue;
-    }
-
-    const createdAt = parseDateOrNull(invoice.created_at);
-    if (!createdAt) {
-      continue;
-    }
-
-    const totalAmount = normalizeNumber(invoice.total_amount);
-
-    if (isWithinInterval(createdAt, mtdRange)) {
-      revenueMtd += totalAmount;
-      invoicesGeneratedMtd += 1;
-      continue;
-    }
-
-    if (isWithinInterval(createdAt, previousMtd)) {
-      revenuePreviousMtd += totalAmount;
-    }
-  }
-
   const pendingTickets = activeTickets.filter(ticket => ticket.status.toUpperCase() === 'PENDING_REVIEW').length;
   const pendingReviewsTotal =
     pendingTickets + input.pendingTimeEntries + input.pendingExpenseReports + input.pendingAssessments;
@@ -344,10 +263,6 @@ export function buildDashboardMetrics(input: DashboardMetricsBuildInput): Dashbo
     pending_time_entries: input.pendingTimeEntries,
     pending_expense_reports: input.pendingExpenseReports,
     pending_assessments: input.pendingAssessments,
-    revenue_mtd: roundCurrency(revenueMtd),
-    revenue_previous_mtd: roundCurrency(revenuePreviousMtd),
-    revenue_trend_percent: formatTrendPercent(revenueMtd, revenuePreviousMtd),
-    invoices_generated_mtd: invoicesGeneratedMtd,
     status_breakdown: statusBreakdown,
   };
 }
@@ -364,7 +279,6 @@ export function buildDashboardReport(input: DashboardReportBuildInput): Dashboar
       tickets_created: 0,
       approved_time_amount: 0,
       approved_expense_amount: 0,
-      invoiced_amount: 0,
     });
   }
 
@@ -378,7 +292,6 @@ export function buildDashboardReport(input: DashboardReportBuildInput): Dashboar
   let ticketsCreated = 0;
   let approvedTimeAmount = 0;
   let approvedExpenseAmount = 0;
-  let invoicedAmount = 0;
   let pendingReviews = 0;
 
   const getContractorTotals = (contractorId: string): DashboardReportContractorRow => {
@@ -392,7 +305,6 @@ export function buildDashboardReport(input: DashboardReportBuildInput): Dashboar
       contractor_name: resolveContractorName(contractorId, input.contractorNameById),
       approved_time_amount: 0,
       approved_expense_amount: 0,
-      invoiced_amount: 0,
       pending_reviews: 0,
     };
 
@@ -476,41 +388,13 @@ export function buildDashboardReport(input: DashboardReportBuildInput): Dashboar
     contractor.approved_expense_amount = roundCurrency(contractor.approved_expense_amount + amount);
   }
 
-  for (const invoice of input.invoices) {
-    if (!isInvoiceRevenueStatus(invoice.status)) {
-      continue;
-    }
-
-    const createdAt = parseDateOrNull(invoice.created_at);
-    if (!createdAt || !isWithinInterval(createdAt, includeDateRange)) {
-      continue;
-    }
-
-    const amount = normalizeNumber(invoice.total_amount);
-    invoicedAmount += amount;
-
-    const bucketKey = toDateOnly(getBucketStart(createdAt, input.groupBy));
-    const bucket = seriesMap.get(bucketKey);
-    if (bucket) {
-      bucket.invoiced_amount = roundCurrency(bucket.invoiced_amount + amount);
-    }
-
-    const contractor = getContractorTotals(invoice.contractor_id);
-    contractor.invoiced_amount = roundCurrency(contractor.invoiced_amount + amount);
-  }
-
   const series = Array.from(seriesMap.values()).map((point) => ({
     ...point,
     approved_time_amount: roundCurrency(point.approved_time_amount),
     approved_expense_amount: roundCurrency(point.approved_expense_amount),
-    invoiced_amount: roundCurrency(point.invoiced_amount),
   }));
 
   const contractors = Array.from(contractorTotals.values()).sort((a, b) => {
-    if (b.invoiced_amount !== a.invoiced_amount) {
-      return b.invoiced_amount - a.invoiced_amount;
-    }
-
     if (b.approved_time_amount !== a.approved_time_amount) {
       return b.approved_time_amount - a.approved_time_amount;
     }
@@ -527,7 +411,6 @@ export function buildDashboardReport(input: DashboardReportBuildInput): Dashboar
       tickets_created: ticketsCreated,
       approved_time_amount: roundCurrency(approvedTimeAmount),
       approved_expense_amount: roundCurrency(approvedExpenseAmount),
-      invoiced_amount: roundCurrency(invoicedAmount),
       pending_reviews: pendingReviews,
     },
     series,
@@ -606,26 +489,23 @@ export function buildReportExportArtifact(
     ['Tickets Created', String(report.totals.tickets_created)],
     ['Approved Time Amount', report.totals.approved_time_amount.toFixed(2)],
     ['Approved Expense Amount', report.totals.approved_expense_amount.toFixed(2)],
-    ['Invoiced Amount', report.totals.invoiced_amount.toFixed(2)],
     ['Pending Reviews', String(report.totals.pending_reviews)],
     [],
     ['Trend Series'],
-    ['Period', 'Tickets Created', 'Approved Time', 'Approved Expenses', 'Invoiced Amount'],
+    ['Period', 'Tickets Created', 'Approved Time', 'Approved Expenses'],
     ...report.series.map((row) => [
       row.label,
       String(row.tickets_created),
       row.approved_time_amount.toFixed(2),
       row.approved_expense_amount.toFixed(2),
-      row.invoiced_amount.toFixed(2),
     ]),
     [],
     ['Contractor Breakdown'],
-    ['Contractor', 'Approved Time', 'Approved Expenses', 'Invoiced Amount', 'Pending Reviews'],
+    ['Contractor', 'Approved Time', 'Approved Expenses', 'Pending Reviews'],
     ...report.contractors.map((row) => [
       row.contractor_name,
       row.approved_time_amount.toFixed(2),
       row.approved_expense_amount.toFixed(2),
-      row.invoiced_amount.toFixed(2),
       String(row.pending_reviews),
     ]),
   ];
@@ -656,13 +536,12 @@ export function buildReportExportArtifact(
     `Tickets Created: ${report.totals.tickets_created}`,
     `Approved Time Amount: $${report.totals.approved_time_amount.toFixed(2)}`,
     `Approved Expense Amount: $${report.totals.approved_expense_amount.toFixed(2)}`,
-    `Invoiced Amount: $${report.totals.invoiced_amount.toFixed(2)}`,
     `Pending Reviews: ${report.totals.pending_reviews}`,
     '',
-    'Top Contractors (by invoiced amount)',
+    'Top Contractors (by approved time amount)',
     ...report.contractors.slice(0, 12).map(
       (row) =>
-        `${row.contractor_name}: $${row.invoiced_amount.toFixed(2)} (Time $${row.approved_time_amount.toFixed(2)}, Expense $${row.approved_expense_amount.toFixed(2)})`,
+        `${row.contractor_name}: Time $${row.approved_time_amount.toFixed(2)}, Expense $${row.approved_expense_amount.toFixed(2)}`,
     ),
   ];
 
@@ -865,24 +744,6 @@ async function fetchAllTickets(client: SupabaseClient): Promise<DashboardTicketR
   return (data ?? []) as DashboardTicketRow[];
 }
 
-async function fetchInvoicesByCreatedRange(
-  client: SupabaseClient,
-  startIso: string,
-  endIso: string,
-): Promise<DashboardInvoiceRow[]> {
-  const invoicesTable = client.from('contractor_invoices') as unknown as SelectDateRangeClient<DashboardInvoiceRow>;
-  const { data, error } = await invoicesTable
-    .select('id, contractor_id, status, total_amount, created_at')
-    .gte('created_at', startIso)
-    .lte('created_at', endIso);
-
-  if (error) {
-    throw new Error('Unable to load invoice metrics.');
-  }
-
-  return (data ?? []) as DashboardInvoiceRow[];
-}
-
 async function fetchReportTickets(
   client: SupabaseClient,
   startIso: string,
@@ -938,35 +799,15 @@ async function fetchReportExpenseReports(
   return (data ?? []) as DashboardExpenseReportRow[];
 }
 
-async function fetchReportInvoices(
-  client: SupabaseClient,
-  startIso: string,
-  endIso: string,
-): Promise<DashboardInvoiceRow[]> {
-  const invoicesTable = client.from('contractor_invoices') as unknown as SelectDateRangeClient<DashboardInvoiceRow>;
-  const { data, error } = await invoicesTable
-    .select('id, contractor_id, status, total_amount, created_at')
-    .gte('created_at', startIso)
-    .lte('created_at', endIso);
-
-  if (error) {
-    throw new Error('Unable to load report invoice data.');
-  }
-
-  return (data ?? []) as DashboardInvoiceRow[];
-}
-
 interface DashboardReportingDependencies {
   now: () => Date;
   fetchTickets: () => Promise<DashboardTicketRow[]>;
   fetchPendingTimeEntries: () => Promise<number>;
   fetchPendingExpenseReports: () => Promise<number>;
   fetchPendingAssessments: () => Promise<number>;
-  fetchInvoicesByCreatedRange: (startIso: string, endIso: string) => Promise<DashboardInvoiceRow[]>;
   fetchReportTickets: (startIso: string, endIso: string) => Promise<DashboardTicketRow[]>;
   fetchReportTimeEntries: (startIso: string, endIso: string) => Promise<DashboardTimeEntryRow[]>;
   fetchReportExpenseReports: (startDate: string, endDate: string) => Promise<DashboardExpenseReportRow[]>;
-  fetchReportInvoices: (startIso: string, endIso: string) => Promise<DashboardInvoiceRow[]>;
   fetchContractorNames: (contractorIds: string[]) => Promise<Map<string, string>>;
 }
 
@@ -999,12 +840,6 @@ export function createDashboardReportingService(
         const client = await getDefaultClient();
         return fetchPendingAssessments(client);
       }),
-    fetchInvoicesByCreatedRange:
-      dependencies?.fetchInvoicesByCreatedRange ??
-      (async (startIso, endIso) => {
-        const client = await getDefaultClient();
-        return fetchInvoicesByCreatedRange(client, startIso, endIso);
-      }),
     fetchReportTickets:
       dependencies?.fetchReportTickets ??
       (async (startIso, endIso) => {
@@ -1022,12 +857,6 @@ export function createDashboardReportingService(
       (async (startDate, endDate) => {
         const client = await getDefaultClient();
         return fetchReportExpenseReports(client, startDate, endDate);
-      }),
-    fetchReportInvoices:
-      dependencies?.fetchReportInvoices ??
-      (async (startIso, endIso) => {
-        const client = await getDefaultClient();
-        return fetchReportInvoices(client, startIso, endIso);
       }),
     fetchContractorNames:
       dependencies?.fetchContractorNames ??
@@ -1050,7 +879,6 @@ export function createDashboardReportingService(
           pending_reviews_total: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
           pending_tickets: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
           pending_time_entries: 0, pending_expense_reports: 0, pending_assessments: 0,
-          revenue_mtd: 0, revenue_previous_mtd: 0, revenue_trend_percent: 0, invoices_generated_mtd: 0,
           status_breakdown: {
             in_route: active.filter(ticket => ticket.status === 'IN_ROUTE').length,
             on_site: active.filter(ticket => ticket.status === 'ON_SITE').length,
@@ -1059,18 +887,13 @@ export function createDashboardReportingService(
           },
         };
       }
-      const previousWindow = getPreviousMtdWindow(now);
 
-      const [ticketResult, timeResult, expenseResult, assessmentResult, invoiceResult] =
+      const [ticketResult, timeResult, expenseResult, assessmentResult] =
         await Promise.allSettled([
           resolvedDependencies.fetchTickets(),
           resolvedDependencies.fetchPendingTimeEntries(),
           resolvedDependencies.fetchPendingExpenseReports(),
           resolvedDependencies.fetchPendingAssessments(),
-          resolvedDependencies.fetchInvoicesByCreatedRange(
-            previousWindow.start.toISOString(),
-            now.toISOString(),
-          ),
         ]);
 
       // A denied review query must not erase valid ticket and crew counts.
@@ -1085,8 +908,6 @@ export function createDashboardReportingService(
       const pendingTimeEntries = countOrUnavailable(timeResult, 'Time reviews');
       const pendingExpenseReports = countOrUnavailable(expenseResult, 'Expense reviews');
       const pendingAssessments = countOrUnavailable(assessmentResult, 'Assessment reviews');
-      const invoicesForTrend = invoiceResult.status === 'fulfilled' ? invoiceResult.value : [];
-      if (invoiceResult.status === 'rejected') unavailableMetrics.push('Revenue');
 
       const metrics = buildDashboardMetrics({
         now,
@@ -1094,7 +915,6 @@ export function createDashboardReportingService(
         pendingTimeEntries,
         pendingExpenseReports,
         pendingAssessments,
-        invoicesForTrend,
       });
       return { ...metrics, unavailable_metrics: unavailableMetrics };
     },
@@ -1116,18 +936,16 @@ export function createDashboardReportingService(
       const startDateOnly = toDateOnly(normalizedStart);
       const endDateOnly = toDateOnly(normalizedEnd);
 
-      const [tickets, timeEntries, expenseReports, invoices] = await Promise.all([
+      const [tickets, timeEntries, expenseReports] = await Promise.all([
         resolvedDependencies.fetchReportTickets(startIso, endIso),
         resolvedDependencies.fetchReportTimeEntries(startIso, endIso),
         resolvedDependencies.fetchReportExpenseReports(startDateOnly, endDateOnly),
-        resolvedDependencies.fetchReportInvoices(startIso, endIso),
       ]);
 
       const contractorIds = Array.from(
         new Set([
           ...timeEntries.map((row) => row.contractor_id),
           ...expenseReports.map((row) => row.contractor_id),
-          ...invoices.map((row) => row.contractor_id),
         ]),
       );
 
@@ -1141,7 +959,6 @@ export function createDashboardReportingService(
         tickets,
         timeEntries,
         expenseReports,
-        invoices,
         contractorNameById,
       });
     },

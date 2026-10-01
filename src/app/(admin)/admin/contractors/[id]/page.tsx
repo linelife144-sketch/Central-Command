@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/common/data-display/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { contractorService } from '@/lib/services/contractorService';
-import { formatCurrency, formatDate } from '@/lib/utils/formatters';
+import { formatDate } from '@/lib/utils/formatters';
 import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function ContractorDetailPage() {
@@ -22,7 +22,7 @@ export default function ContractorDetailPage() {
   if (!c) return <div><PageHeader title="Contractor not found" showBackButton backHref="/admin/contractors" /></div>;
   return <div className="space-y-6">
     <PageHeader title={c.fullName} description={c.businessName} showBackButton backHref="/admin/contractors"><Button variant="outline" onClick={() => query.refetch()}>Refresh</Button></PageHeader>
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><MetricCard title="Active Tickets" value={c.activeTicketCount} /><MetricCard title="Total Tickets" value={c.totalTicketCount} /><MetricCard title="YTD Invoiced" value={formatCurrency(c.ytdEarnings)} /><MetricCard title="Eligible" value={c.isActive && c.eligibleForAssignment ? 'Yes' : 'No'} /></div>
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4"><MetricCard title="Active Tickets" value={c.activeTicketCount} /><MetricCard title="Total Tickets" value={c.totalTicketCount} /><MetricCard title="Eligible" value={c.isActive && c.eligibleForAssignment ? 'Yes' : 'No'} /></div>
     <Card><CardHeader><CardTitle>Contractor account</CardTitle></CardHeader><CardContent className="space-y-3">
       <StatusBadge status={!c.isActive ? 'Inactive' : c.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending'} />
       <p>Email: {c.email}</p><p>Phone: {c.phone || 'Not provided'}</p><p>Location: {[c.city,c.state].filter(Boolean).join(', ') || 'Not provided'}</p>

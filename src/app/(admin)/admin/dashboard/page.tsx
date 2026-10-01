@@ -6,7 +6,7 @@ import { DashboardMetrics } from '@/components/features/dashboard/DashboardMetri
 import { DashboardRecentTickets } from '@/components/features/dashboard/DashboardRecentTickets';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Clock, DollarSign, Plus, Users } from 'lucide-react';
+import { AlertTriangle, Clock, Plus, Users } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   return <div className="space-y-6">
@@ -22,7 +22,6 @@ export default function AdminDashboardPage() {
           <Button className="w-full justify-start" variant="outline" asChild><Link href="/admin/map"><Users className="mr-2 h-4 w-4" />Assign Route</Link></Button>
           <Button className="w-full justify-start" variant="outline" asChild><Link href="/tickets/create?priority=A"><AlertTriangle className="mr-2 h-4 w-4" />Emergency Dispatch</Link></Button>
           <Button className="w-full justify-start" variant="outline" asChild><Link href="/admin/time-review"><Clock className="mr-2 h-4 w-4" />Review Timesheets</Link></Button>
-          <Button className="w-full justify-start" variant="outline" asChild><Link href="/admin/invoice-generation"><DollarSign className="mr-2 h-4 w-4" />Generate Invoices</Link></Button>
         </CardContent>
       </Card>
       <DashboardRecentTickets />

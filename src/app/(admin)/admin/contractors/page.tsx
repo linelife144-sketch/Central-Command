@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { contractorService, type ContractorListItem } from '@/lib/services/contractorService';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { formatCurrency } from '@/lib/utils/formatters';
 
 function statusOf(contractor: ContractorListItem) {
   if (!contractor.isActive) return 'Inactive';
@@ -24,7 +23,6 @@ const columns: Column<ContractorListItem>[] = [
   { key: 'onboardingStatus', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
   { key: 'eligibleForAssignment', header: 'Eligible', cell: c => c.isActive && c.eligibleForAssignment ? 'Yes' : 'No' },
   { key: 'activeTicketCount', header: 'Active Tickets', cell: c => c.activeTicketCount },
-  { key: 'ytdEarnings', header: 'YTD Invoiced', cell: c => formatCurrency(c.ytdEarnings) },
   { key: 'alerts', header: 'Alerts', cell: c => c.alerts.join('; ') || '—' },
 ];
 export default function ContractorsListPage() {
@@ -35,7 +33,7 @@ export default function ContractorsListPage() {
   const contractors = query.data ?? [];
   const filtered = contractors.filter(c => [c.fullName, c.businessName, c.email].join(' ').toLowerCase().includes(search.toLowerCase()) && (status === 'all' || statusOf(c).toLowerCase() === status));
   function exportCsv() {
-    const rows = [['Name','Business','Email','Status','Eligible','Active Tickets','YTD Invoiced'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.isActive && c.eligibleForAssignment),String(c.activeTicketCount),String(c.ytdEarnings)])];
+    const rows = [['Name','Business','Email','Status','Eligible','Active Tickets'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.isActive && c.eligibleForAssignment),String(c.activeTicketCount)])];
     const content = rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""').replace(/^[=+@-]/,"'") + '"').join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'contractors.csv'; anchor.click(); URL.revokeObjectURL(url);
@@ -43,7 +41,7 @@ export default function ContractorsListPage() {
   return <div className="space-y-6">
     <PageHeader title="Contractors" description="Live workforce and assigned ticket counts"><Button asChild><Link href="/admin/contractors/invite">Invite Contractor</Link></Button></PageHeader>
     {query.error && <div role="alert">Unable to load contractors. {query.error instanceof Error ? query.error.message : ''} <Button variant="outline" onClick={() => query.refetch()}>Retry</Button></div>}
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
       <MetricCard title="Total" value={query.isPending ? '—' : contractors.length} />
       <MetricCard title="Active" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Active').length} />
       <MetricCard title="Pending" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Pending').length} />

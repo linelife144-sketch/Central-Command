@@ -138,7 +138,7 @@ export function ReportsDashboard() {
 
     return Math.max(
       ...report.series.map((point) =>
-        Math.max(point.approved_time_amount, point.approved_expense_amount, point.invoiced_amount),
+        Math.max(point.approved_time_amount, point.approved_expense_amount),
       ),
     );
   }, [report]);
@@ -276,7 +276,7 @@ export function ReportsDashboard() {
         </Alert>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-3">
             <p className="text-xs text-slate-500">Tickets Created</p>
@@ -298,14 +298,6 @@ export function ReportsDashboard() {
             <p className="text-xs text-slate-500">Approved Expenses</p>
             <p className="text-lg font-semibold">
               {report ? formatCurrency(report.totals.approved_expense_amount) : isLoading ? '...' : formatCurrency(0)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs text-slate-500">Invoiced Amount</p>
-            <p className="text-lg font-semibold">
-              {report ? formatCurrency(report.totals.invoiced_amount) : isLoading ? '...' : formatCurrency(0)}
             </p>
           </CardContent>
         </Card>
@@ -339,10 +331,6 @@ export function ReportsDashboard() {
                   <span className="h-2.5 w-2.5 rounded bg-emerald-500" />
                   Approved Expenses
                 </span>
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded bg-indigo-500" />
-                  Invoiced
-                </span>
               </div>
               <div className="overflow-x-auto">
                 <div className="flex min-w-[640px] items-end gap-3 pb-2">
@@ -362,13 +350,6 @@ export function ReportsDashboard() {
                             height: `${amountToPercent(point.approved_expense_amount, chartMax)}%`,
                           }}
                           title={`Approved Expense: ${formatCurrency(point.approved_expense_amount)}`}
-                        />
-                        <div
-                          className={cn('w-3 rounded-sm bg-indigo-500 transition-all')}
-                          style={{
-                            height: `${amountToPercent(point.invoiced_amount, chartMax)}%`,
-                          }}
-                          title={`Invoiced: ${formatCurrency(point.invoiced_amount)}`}
                         />
                       </div>
                       <p className="text-center text-[11px] text-slate-600">{point.label}</p>
@@ -397,7 +378,6 @@ export function ReportsDashboard() {
                   <TableHead>Contractor</TableHead>
                   <TableHead className="text-right">Approved Time</TableHead>
                   <TableHead className="text-right">Approved Expenses</TableHead>
-                  <TableHead className="text-right">Invoiced</TableHead>
                   <TableHead className="text-right">Pending Reviews</TableHead>
                 </TableRow>
               </TableHeader>
@@ -407,7 +387,6 @@ export function ReportsDashboard() {
                     <TableCell className="font-medium">{row.contractor_name}</TableCell>
                     <TableCell className="text-right">{formatCurrency(row.approved_time_amount)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(row.approved_expense_amount)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(row.invoiced_amount)}</TableCell>
                     <TableCell className="text-right">{formatNumber(row.pending_reviews)}</TableCell>
                   </TableRow>
                 ))}

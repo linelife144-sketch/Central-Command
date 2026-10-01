@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/common/layout/PageHeader';
-import { InvoiceGenerator } from '@/components/features/invoices';
 import type { Ticket } from '@/types';
 import { toast } from 'sonner';
 
@@ -46,7 +45,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
     <div className="storm-surface border-l-4 border-l-grid-blue rounded-xl p-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-grid-muted">Storm event code</p>
       <p className="mt-2 font-mono text-2xl font-bold">{storm.eventCode}</p>
-      <p className="mt-3 text-sm text-grid-muted">Contractors, tickets, time, expenses, and billing belong to this event. Ticket forms use {storm.utilityClient} rules.</p>
+      <p className="mt-3 text-sm text-grid-muted">Contractors, tickets, time, and expenses belong to this event. Ticket forms use {storm.utilityClient} rules.</p>
     </div>
     {error && <p role="alert" className="text-destructive">{error}</p>}
     <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-contractors">
@@ -69,9 +68,6 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
     <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-tickets"><h2 id="storm-tickets" className="text-xl font-semibold text-white">Tickets · {tickets.length}</h2>
       {tickets.length ? <ul className="divide-y">{tickets.map(ticket => <li key={ticket.id} className="flex justify-between gap-3 py-3"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticket_number}</Link><span>{ticket.status}</span></li>)}</ul> : <p className="text-sm text-grid-muted">Create the first {storm.utilityClient} ticket for this event.</p>}
     </section>
-    <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-billing"><h2 id="storm-billing" className="text-xl font-semibold text-white">Billing · {storm.eventCode}</h2>
-      <p className="text-sm text-grid-muted">Only approved time and expenses from this storm are included.</p>
-      <div className="storm-billing-content"><InvoiceGenerator stormEventId={stormId} generatedBy={profile?.id} /></div>
-    </section>
+
   </div>;
 }

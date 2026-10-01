@@ -36,12 +36,6 @@ interface RemoteTicketRow {
   assigned_to: string | null;
 }
 
-interface RemoteInvoiceRow {
-  contractor_id: string;
-  total_amount: number | null;
-  status: string | null;
-}
-
 export interface ContractorListItem {
   id: string;
   profileId: string;
@@ -57,7 +51,6 @@ export interface ContractorListItem {
   email: string;
   phone: string | null;
   activeTicketCount: number;
-  ytdEarnings: number;
   alerts: string[];
 }
 
@@ -90,7 +83,6 @@ export interface ContractorDetail {
   eligibilityReason: string | null;
   activeTicketCount: number;
   totalTicketCount: number;
-  ytdEarnings: number;
   createdAt: string;
   updatedAt: string;
   recentTickets: Array<{
@@ -110,23 +102,6 @@ function formatFullName(profile?: RemoteProfileRow): string {
 
   const fullName = `${profile.first_name} ${profile.last_name}`.trim();
   return fullName.length > 0 ? fullName : profile.email;
-}
-
-function getCurrentYearDateRange() {
-  const year = new Date().getUTCFullYear();
-  return {
-    year,
-    start: `${year}-01-01`,
-    end: `${year}-12-31`,
-  };
-}
-
-function toCurrencyNumber(value: number | null | undefined): number {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return 0;
-  }
-
-  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 function isActiveTicketStatus(status: string): boolean {
@@ -199,33 +174,6 @@ async function fetchTicketRows(contractorIds: string[]): Promise<RemoteTicketRow
   return (data ?? []) as RemoteTicketRow[];
 }
 
-async function fetchYtdInvoiceRows(contractorIds: string[]): Promise<RemoteInvoiceRow[]> {
-  if (contractorIds.length === 0) {
-    return [];
-  }
-
-  const { start, end } = getCurrentYearDateRange();
-
-  // Prefer new schema first.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('contractor_invoices') as any)
-    .select('contractor_id, total_amount, status')
-    .in('contractor_id', contractorIds)
-    .gte('billing_period_start', start)
-    .lte('billing_period_end', end);
-
-  if (!error) {
-    return (data ?? []) as RemoteInvoiceRow[];
-  }
-
-  if (isAuthOrPermissionError(error)) {
-    return [];
-  }
-
-
-  throw error;
-}
-
 function buildActiveTicketCountByContractor(ticketRows: RemoteTicketRow[]): Map<string, number> {
   const counts = new Map<string, number>();
 
@@ -252,25 +200,6 @@ function buildTotalTicketCountByContractor(ticketRows: RemoteTicketRow[]): Map<s
   }
 
   return counts;
-}
-
-function buildYtdEarningsByContractor(invoiceRows: RemoteInvoiceRow[]): Map<string, number> {
-  const totals = new Map<string, number>();
-
-  for (const row of invoiceRows) {
-    if (!row.contractor_id) {
-      continue;
-    }
-
-    if ((row.status ?? '').toUpperCase() === 'VOID') {
-      continue;
-    }
-
-    const current = totals.get(row.contractor_id) ?? 0;
-    totals.set(row.contractor_id, toCurrencyNumber(current + toCurrencyNumber(row.total_amount)));
-  }
-
-  return totals;
 }
 
 function applySearchFilter(items: ContractorListItem[], search?: string): ContractorListItem[] {
@@ -352,14 +281,12 @@ export const contractorService = {
     const profileIds = rows.map((row) => row.profile_id);
     const contractorIds = rows.map((row) => row.id);
 
-    const [profilesById, ticketRows, invoiceRows] = await Promise.all([
+    const [profilesById, ticketRows] = await Promise.all([
       fetchProfilesByIds(profileIds),
       fetchTicketRows(contractorIds),
-      fetchYtdInvoiceRows(contractorIds),
     ]);
 
     const activeTicketCountByContractor = buildActiveTicketCountByContractor(ticketRows);
-    const ytdEarningsByContractor = buildYtdEarningsByContractor(invoiceRows);
 
     const mappedItems = rows.map((row) => {
       const profile = profilesById.get(row.profile_id);
@@ -381,7 +308,6 @@ export const contractorService = {
         email,
         phone: profile?.phone ?? row.business_phone,
         activeTicketCount: activeTicketCountByContractor.get(row.id) ?? 0,
-        ytdEarnings: ytdEarningsByContractor.get(row.id) ?? 0,
         alerts: buildAlerts(row),
       } satisfies ContractorListItem;
     });
@@ -456,16 +382,14 @@ export const contractorService = {
     }
 
     const row = contractorData as RemoteContractorRow;
-    const [profilesById, ticketRows, invoiceRows] = await Promise.all([
+    const [profilesById, ticketRows] = await Promise.all([
       fetchProfilesByIds([row.profile_id]),
       fetchTicketRows([row.id]),
-      fetchYtdInvoiceRows([row.id]),
     ]);
 
     const profile = profilesById.get(row.profile_id);
     const activeTicketCountByContractor = buildActiveTicketCountByContractor(ticketRows);
     const totalTicketCountByContractor = buildTotalTicketCountByContractor(ticketRows);
-    const ytdEarningsByContractor = buildYtdEarningsByContractor(invoiceRows);
 
     const recentTickets = ticketRows
       .sort((left, right) => Date.parse(right.updated_at) - Date.parse(left.updated_at))
@@ -497,7 +421,6 @@ export const contractorService = {
       eligibilityReason: row.eligibility_reason,
       activeTicketCount: activeTicketCountByContractor.get(row.id) ?? 0,
       totalTicketCount: totalTicketCountByContractor.get(row.id) ?? 0,
-      ytdEarnings: ytdEarningsByContractor.get(row.id) ?? 0,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       recentTickets,

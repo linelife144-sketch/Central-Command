@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Clock, DollarSign, Loader2, RefreshCw, Ticket, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Clock, Loader2, RefreshCw, Ticket, Users } from 'lucide-react';
 
 import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,7 +15,6 @@ import { GRID_TICKETS_CHANGED_EVENT, GRID_TICKETS_VERSION_KEY } from '@/lib/tick
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { supabase } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/utils/formatters';
 
 interface DashboardMetricsProps {
   className?: string;
@@ -27,11 +26,6 @@ function toErrorMessage(error: unknown): string {
   }
 
   return 'Unable to load dashboard metrics.';
-}
-
-function formatSignedTrend(value: number): string {
-  const rounded = Math.abs(value).toFixed(1);
-  return `${rounded}%`;
 }
 
 export function DashboardMetrics({ className }: DashboardMetricsProps) {
@@ -90,7 +84,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
     let channel: ReturnType<typeof supabase.channel> | undefined;
     if (!isSuperAdminTestingEnabled()) {
       channel = supabase.channel('dashboard-live-metrics');
-      for (const table of ['tickets', 'time_entries', 'expense_reports', 'damage_assessments', 'contractor_invoices', 'contractors']) {
+      for (const table of ['tickets', 'time_entries', 'expense_reports', 'damage_assessments', 'contractors']) {
         channel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleRefresh);
       }
       channel.subscribe();
@@ -106,28 +100,10 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
     };
   }, [loadMetrics]);
 
-  const revenueTrendDirection = useMemo<'up' | 'down' | 'neutral'>(() => {
-    if (!metrics) {
-      return 'neutral';
-    }
-
-    if (metrics.revenue_trend_percent > 0) {
-      return 'up';
-    }
-
-    if (metrics.revenue_trend_percent < 0) {
-      return 'down';
-    }
-
-    return 'neutral';
-  }, [metrics]);
-
   const activeTicketsValue = metrics?.active_tickets ?? (isLoading ? '...' : 'Unavailable');
   const fieldCrewsValue = metrics?.field_crews ?? (isLoading ? '...' : 'Unavailable');
-  const reviewsUnavailable = metrics?.unavailable_metrics?.some(label => label !== 'Revenue');
-  const revenueUnavailable = metrics?.unavailable_metrics?.includes('Revenue');
+  const reviewsUnavailable = Boolean(metrics?.unavailable_metrics?.length);
   const pendingReviewValue = reviewsUnavailable ? 'Unavailable' : metrics?.pending_reviews_total ?? (isLoading ? '...' : 'Unavailable');
-  const revenueValue = revenueUnavailable ? 'Unavailable' : metrics ? formatCurrency(metrics.revenue_mtd) : isLoading ? '...' : formatCurrency(0);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -152,7 +128,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
       ) : null}
 
       {metrics?.unavailable_metrics?.length ? <Alert><AlertDescription>Some metrics could not be loaded: {metrics.unavailable_metrics.join(', ')}. Ticket and crew counts are current.</AlertDescription></Alert> : null}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard
           title="Active Tickets"
           value={activeTicketsValue}
@@ -182,15 +158,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
           variant="warning"
         />
 
-        <MetricCard
-          title="Revenue (MTD)"
-          value={revenueValue}
-          icon={<DollarSign className="h-4 w-4 text-grid-lightning" />}
-          trend={revenueTrendDirection}
-          trendValue={metrics && !revenueUnavailable ? formatSignedTrend(metrics.revenue_trend_percent) : undefined}
-          description="vs previous month-to-date"
-          variant="accent"
-        />
+
       </div>
 
       <Card className="storm-surface">

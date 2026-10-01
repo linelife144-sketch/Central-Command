@@ -316,8 +316,6 @@ export interface ContractorInvoice {
   subtotal_time: number;
   subtotal_expenses: number;
   total_amount: number;
-  ytd_payments: number;
-  threshold_warning: boolean;
   status: InvoiceStatus;
   submitted_at?: string;
   approved_at?: string;

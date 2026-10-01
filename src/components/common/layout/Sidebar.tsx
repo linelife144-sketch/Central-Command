@@ -34,7 +34,6 @@ const adminNavItems = [
   { href: '/admin/time-review', label: 'Time Review', icon: Clock },
   { href: '/admin/expense-review', label: 'Expenses', icon: Receipt },
   { href: '/admin/assessment-review', label: 'Assessments', icon: FileText },
-  { href: '/admin/invoice-generation', label: 'Invoices', icon: FileText },
   { href: '/admin/reports', label: 'Reports', icon: FileText },
   { href: '/admin/map', label: 'Map View', icon: Map },
   { href: '/admin/account', label: 'Account', icon: Settings },
@@ -46,7 +45,6 @@ const contractorNavItems = [
   { href: '/contractor/time', label: 'Time Tracking', icon: Clock },
   { href: '/contractor/expenses', label: 'Expenses', icon: Receipt },
   { href: '/contractor/assessments/create', label: 'Assessments', icon: FileText },
-  { href: '/contractor/invoices', label: 'Invoices', icon: FileText },
   { href: '/contractor/account', label: 'Account', icon: Users },
 ];
 

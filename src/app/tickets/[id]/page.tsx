@@ -18,6 +18,7 @@ import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { StatusUpdater } from '@/components/features/tickets/StatusUpdater';
 import { UtilityTicketDetails } from '@/components/features/tickets/UtilityTicketDetails';
 import { StatusHistoryTimeline } from '@/components/features/tickets/StatusHistoryTimeline';
+import { TicketAssessments } from '@/components/features/tickets/TicketAssessments';
 
 export default function TicketDetailPage() {
     const params = useParams();
@@ -134,16 +135,7 @@ export default function TicketDetailPage() {
                             </Card>
                         </TabsContent>
                         <TabsContent value="assessments">
-                            {userRole === 'contractor' ? (
-                                <div className="text-muted-foreground p-4 text-center border-2 border-dashed rounded-lg">
-                                    <p>No assessment submitted yet.</p>
-                                    {(ticket.status === 'ON_SITE' || ticket.status === 'IN_PROGRESS' || ticket.status === 'NEEDS_REWORK') && (
-                                        <button className="mt-2 text-primary font-semibold">Start Assessment Form</button>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-muted-foreground p-4">No assessments yet.</div>
-                            )}
+                            <TicketAssessments ticket={ticket} canCreate={userRole === 'contractor'} />
                         </TabsContent>
                         <TabsContent value="history">
                             <div className="mt-4">

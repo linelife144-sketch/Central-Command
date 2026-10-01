@@ -22,10 +22,6 @@ describe('useNavigationSignals helpers', () => {
       pending_time_entries: 2,
       pending_expense_reports: 1,
       pending_assessments: 2,
-      revenue_mtd: 0,
-      revenue_previous_mtd: 0,
-      revenue_trend_percent: 0,
-      invoices_generated_mtd: 0,
       status_breakdown: {
         in_route: 3,
         on_site: 2,

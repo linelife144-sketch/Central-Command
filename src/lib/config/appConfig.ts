@@ -30,8 +30,6 @@ export const APP_CONFIG = {
   AUTO_APPROVE_THRESHOLD: 75,
   MILEAGE_RATE: 0.655, // IRS rate
   
-  // 1099
-  T1099_THRESHOLD: 600,
   
   // Pagination
   DEFAULT_PAGE_SIZE: 20,

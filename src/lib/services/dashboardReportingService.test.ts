@@ -8,7 +8,7 @@ import {
 } from './dashboardReportingService';
 
 describe('dashboardReportingService', () => {
-  it('builds dashboard metrics from ticket, review, and invoice inputs', () => {
+  it('builds dashboard metrics from ticket and review inputs', () => {
     const metrics = buildDashboardMetrics({
       now: new Date('2026-02-15T12:00:00.000Z'),
       tickets: [
@@ -44,29 +44,6 @@ describe('dashboardReportingService', () => {
       pendingTimeEntries: 4,
       pendingExpenseReports: 3,
       pendingAssessments: 2,
-      invoicesForTrend: [
-        {
-          id: 'inv-1',
-          contractor_id: 'sub-1',
-          status: 'APPROVED',
-          total_amount: 1000,
-          created_at: '2026-02-05T10:00:00.000Z',
-        },
-        {
-          id: 'inv-2',
-          contractor_id: 'sub-2',
-          status: 'VOID',
-          total_amount: 500,
-          created_at: '2026-02-10T10:00:00.000Z',
-        },
-        {
-          id: 'inv-3',
-          contractor_id: 'sub-3',
-          status: 'PAID',
-          total_amount: 500,
-          created_at: '2026-01-10T10:00:00.000Z',
-        },
-      ],
     });
 
     expect(metrics.active_tickets).toBe(3);
@@ -77,10 +54,6 @@ describe('dashboardReportingService', () => {
     expect(metrics.status_breakdown.on_site).toBe(1);
     expect(metrics.status_breakdown.pending_review).toBe(1);
     expect(metrics.status_breakdown.unassigned).toBe(1);
-    expect(metrics.revenue_mtd).toBe(1000);
-    expect(metrics.revenue_previous_mtd).toBe(500);
-    expect(metrics.revenue_trend_percent).toBe(100);
-    expect(metrics.invoices_generated_mtd).toBe(1);
   });
 
   it('keeps ticket metrics visible and marks unavailable review sources', async () => {
@@ -90,7 +63,6 @@ describe('dashboardReportingService', () => {
       fetchPendingTimeEntries: async () => 0,
       fetchPendingExpenseReports: async () => 0,
       fetchPendingAssessments: async () => { throw new Error('permission denied'); },
-      fetchInvoicesByCreatedRange: async () => [],
     });
     const metrics = await service.getDashboardMetrics();
     expect(metrics.active_tickets).toBe(1);
@@ -156,22 +128,6 @@ describe('dashboardReportingService', () => {
           reviewed_at: null,
         },
       ],
-      invoices: [
-        {
-          id: 'inv-1',
-          contractor_id: 'sub-1',
-          status: 'APPROVED',
-          total_amount: 300,
-          created_at: '2026-02-06T10:00:00.000Z',
-        },
-        {
-          id: 'inv-2',
-          contractor_id: 'sub-2',
-          status: 'VOID',
-          total_amount: 999,
-          created_at: '2026-02-07T10:00:00.000Z',
-        },
-      ],
       contractorNameById: new Map([
         ['sub-1', 'John Smith'],
         ['sub-2', 'Maria Johnson'],
@@ -181,7 +137,6 @@ describe('dashboardReportingService', () => {
     expect(report.totals.tickets_created).toBe(2);
     expect(report.totals.approved_time_amount).toBe(200);
     expect(report.totals.approved_expense_amount).toBe(50);
-    expect(report.totals.invoiced_amount).toBe(300);
     expect(report.totals.pending_reviews).toBe(2);
     expect(report.series.length).toBeGreaterThan(0);
 
@@ -190,12 +145,10 @@ describe('dashboardReportingService', () => {
 
     expect(sub1).toBeDefined();
     expect(sub1?.approved_time_amount).toBe(200);
-    expect(sub1?.invoiced_amount).toBe(300);
     expect(sub1?.pending_reviews).toBe(1);
 
     expect(sub2).toBeDefined();
     expect(sub2?.approved_expense_amount).toBe(50);
-    expect(sub2?.invoiced_amount).toBe(0);
     expect(sub2?.pending_reviews).toBe(1);
   });
 
@@ -208,7 +161,6 @@ describe('dashboardReportingService', () => {
       tickets: [],
       timeEntries: [],
       expenseReports: [],
-      invoices: [],
       contractorNameById: new Map(),
     });
 
@@ -217,6 +169,7 @@ describe('dashboardReportingService', () => {
     expect(csv.mimeType).toBe('text/csv');
     expect(typeof csv.content).toBe('string');
     expect(String(csv.content)).toContain('Tickets Created');
+    expect(String(csv.content)).not.toContain('Invoiced');
 
     const excel = buildReportExportArtifact(report, 'EXCEL', new Date('2026-02-14T12:00:00.000Z'));
     expect(excel.fileName.endsWith('.xls')).toBe(true);
@@ -231,6 +184,19 @@ describe('dashboardReportingService', () => {
 
     const header = new TextDecoder().decode((pdf.content as Uint8Array).slice(0, 8));
     expect(header).toContain('%PDF-1.4');
+  });
+
+
+  it('loads an operations report using tickets, time, and expenses without invoice dependencies', async () => {
+    const service = createDashboardReportingService({
+      now: () => new Date('2026-10-01T12:00:00Z'),
+      fetchReportTickets: async () => [],
+      fetchReportTimeEntries: async () => [],
+      fetchReportExpenseReports: async () => [],
+      fetchContractorNames: async () => new Map(),
+    });
+    const report = await service.getReport({startDate:'2026-10-01',endDate:'2026-10-01',groupBy:'day'});
+    expect(report.totals).toEqual({tickets_created:0,approved_time_amount:0,approved_expense_amount:0,pending_reviews:0});
   });
 
   it('rejects invalid report date ranges before fetching data', async () => {

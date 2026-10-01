@@ -658,4 +658,21 @@ interface SyncManager {
 
 ---
 
+## Live workflow verification — 2026-10-01 (Codex)
+
+- [x] Created QA-20261001 storm, two fictional contractor Auth fixtures, and two tickets; verified real persistence, roster membership, and one assignment per contractor.
+- [x] Replaced sample contractor data and corrected profile activity, eligibility, assignee names, addresses, and assigned-ticket identity resolution.
+- [x] Verified contractor login and isolation from another contractor's ticket.
+- [x] Corrected false status-save success and hardcoded assessment-empty messages; connected assigned-ticket assessment navigation.
+- [x] Removed 1099 tracking and app invoicing per user direction. Invoicing is handled externally; historical database records are preserved.
+- [x] TypeScript check and 29 targeted tests passed across eight suites.
+- [ ] Complete contractor status progression after approval of scoped Supabase status permissions.
+- [ ] Restore assessment reads after approval of the scoped SELECT grant with existing RLS.
+- [ ] Finish staff contractor provisioning: invitation UI currently references missing scripts; QA fixtures do not prove that workflow.
+- GPS/location testing is deferred by the user for a later build.
+
+`MASTER_BUILD_INSTRUCTIONS.md` is absent from this checkout. This checklist records the testing progress in its place. Source changes are local; no deployment or Git operation performed.
+
+---
+
 **END OF IMPLEMENTATION CHECKLIST**
