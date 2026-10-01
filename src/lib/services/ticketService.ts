@@ -3,6 +3,8 @@ import { Ticket, TicketStatus, UserRole } from '@/types';
 import { isValidTransition } from '@/lib/utils/statusTransitions';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { localTestStore } from '@/lib/testing/localTestStore';
+import { stormRosterService } from './stormRosterService';
+import { notifyTicketsChanged } from '@/lib/tickets/events';
 
 export const ticketService = {
     async getUtilityPayload(id: string): Promise<Record<string, unknown> | null> {
@@ -35,7 +37,7 @@ export const ticketService = {
     },
 
     async createTicket(ticket: Partial<Ticket>) {
-        if (isSuperAdminTestingEnabled()) return localTestStore.createTicket(ticket);
+        if (isSuperAdminTestingEnabled()) { const created = localTestStore.createTicket(ticket); notifyTicketsChanged(); return created; }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from('tickets') as any)
             .insert([ticket])
@@ -43,11 +45,12 @@ export const ticketService = {
             .single();
 
         if (error) throw error;
+        notifyTicketsChanged();
         return data as Ticket;
     },
 
     async updateTicket(id: string, updates: Partial<Ticket>) {
-        if (isSuperAdminTestingEnabled()) return localTestStore.updateTicket(id, updates);
+        if (isSuperAdminTestingEnabled()) { const updated = localTestStore.updateTicket(id, updates); notifyTicketsChanged(); return updated; }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from('tickets') as any)
             .update(updates)
@@ -56,7 +59,23 @@ export const ticketService = {
             .single();
 
         if (error) throw error;
+        notifyTicketsChanged();
         return data as Ticket;
+    },
+
+    async assignTicket(id: string, contractorId: string): Promise<Ticket> {
+        if (!contractorId) throw new Error('Select a contractor.');
+        if (isSuperAdminTestingEnabled()) { const updated = localTestStore.assignTicket(id, contractorId); notifyTicketsChanged(); return updated; }
+        const ticket = await this.getTicketById(id);
+        if (!ticket.storm_event_id) throw new Error('This ticket needs a storm event before it can be assigned.');
+        const roster = await stormRosterService.listAssignable(ticket.storm_event_id);
+        if (!roster.some(member => member.contractorId === contractorId)) throw new Error('Select an approved contractor from this storm’s roster.');
+        // One UPDATE saves the assignee and status together; the database trigger records history.
+        return this.updateTicket(id, {
+            assigned_to: contractorId,
+            status: ticket.status === 'DRAFT' ? 'ASSIGNED' : ticket.status,
+            updated_at: new Date().toISOString(),
+        });
     },
 
     async getTicketsByAssignee(assigneeId: string) {
@@ -95,6 +114,7 @@ export const ticketService = {
 
         if (isSuperAdminTestingEnabled()) {
             localTestStore.updateTicketStatus(id, newStatus, userId, changeReason, location);
+            notifyTicketsChanged();
             return true;
         }
 
@@ -114,9 +134,8 @@ export const ticketService = {
 
         if (updateError) throw updateError;
 
-        // Log history
-        await this.logStatusChange(id, currentStatus, newStatus, userId, changeReason, location);
-
+        // Database trigger writes the status history atomically with this update.
+        notifyTicketsChanged();
         return true;
     },
 

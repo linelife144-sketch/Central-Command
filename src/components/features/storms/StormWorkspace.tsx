@@ -50,7 +50,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
     </div>
     {error && <p role="alert" className="text-destructive">{error}</p>}
     <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-contractors">
-      <h2 id="storm-contractors" className="text-xl font-semibold">Contractors</h2>
+      <h2 id="storm-contractors" className="text-xl font-semibold text-white">Contractors</h2>
       {roster.length ? <ul className="divide-y">{roster.map(member => <li key={member.contractorId} className="py-3">{member.displayName}</li>)}</ul> : <p className="text-sm text-grid-muted">No contractors assigned to this storm yet.</p>}
       {canManage && <form className="flex flex-wrap items-end gap-3" onSubmit={async event => {
         event.preventDefault(); setSaving(true);
@@ -66,12 +66,12 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
         catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to create test contractor.'); } finally { setSaving(false); }
       }}><div className="flex-1 space-y-2"><Label htmlFor="test-contractor-name">Test contractor name</Label><Input id="test-contractor-name" required value={name} onChange={event => setName(event.target.value)} /></div><Button disabled={saving} type="submit" variant="storm">Create Test Contractor</Button></form> : canManage ? <p className="text-sm"><Link className="text-grid-blue underline" href="/admin/contractors/invite">Onboard a new contractor</Link> before assigning them to this storm.</p> : null}
     </section>
-    <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-tickets"><h2 id="storm-tickets" className="text-xl font-semibold">Tickets · {tickets.length}</h2>
+    <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-tickets"><h2 id="storm-tickets" className="text-xl font-semibold text-white">Tickets · {tickets.length}</h2>
       {tickets.length ? <ul className="divide-y">{tickets.map(ticket => <li key={ticket.id} className="flex justify-between gap-3 py-3"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticket_number}</Link><span>{ticket.status}</span></li>)}</ul> : <p className="text-sm text-grid-muted">Create the first {storm.utilityClient} ticket for this event.</p>}
     </section>
-    <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-billing"><h2 id="storm-billing" className="text-xl font-semibold">Billing · {storm.eventCode}</h2>
+    <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-billing"><h2 id="storm-billing" className="text-xl font-semibold text-white">Billing · {storm.eventCode}</h2>
       <p className="text-sm text-grid-muted">Only approved time and expenses from this storm are included.</p>
-      <InvoiceGenerator stormEventId={stormId} generatedBy={profile?.id} />
+      <div className="storm-billing-content"><InvoiceGenerator stormEventId={stormId} generatedBy={profile?.id} /></div>
     </section>
   </div>;
 }

@@ -84,7 +84,7 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     work_type: row.work_type as WorkType,
     work_type_rate: row.work_type_rate,
     total_minutes: row.total_minutes ?? undefined,
-    break_minutes: row.break_minutes,
+    break_minutes: row.break_minutes ?? 0,
     billable_minutes: row.billable_minutes ?? undefined,
     billable_amount: row.billable_amount ?? undefined,
     status: row.status as TimeEntryStatus,
@@ -93,8 +93,8 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     rejection_reason: row.rejection_reason ?? undefined,
     invoice_id: row.invoice_id ?? undefined,
     sync_status: (row.sync_status as SyncStatus) ?? 'SYNCED',
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    created_at: row.created_at ?? row.clock_in_at,
+    updated_at: row.updated_at ?? row.created_at ?? row.clock_in_at,
   };
 }
 

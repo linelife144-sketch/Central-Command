@@ -277,7 +277,17 @@ export const stormEventService = {
     }
 
     if (!data) {
-      return null;
+      // Contractors get only the context for their assigned tickets through RLS.
+      const { data: context, error: contextError } = await supabase.rpc(
+        'get_assigned_storm_ticket_context', { p_storm_id: id },
+      );
+      if (contextError) {
+        if (isAuthOrPermissionError(contextError)) return null;
+        throw contextError;
+      }
+      if (!context || typeof context !== 'object' || Array.isArray(context)) return null;
+      const activeTicketCountByEventId = await getActiveTicketCountByEventId([id]);
+      return mapStormEventRow(context as unknown as RemoteStormEventRow, activeTicketCountByEventId);
     }
 
     const activeTicketCountByEventId = await getActiveTicketCountByEventId([id]);

@@ -565,6 +565,17 @@
   ):not([class*='bg-']) {
     color: #dce9ff !important;
   }
+  /* Billing uses ordinary cards; keep their muted text readable on each theme. */
+  .storm-surface .storm-billing-content :where(
+    .text-grid-muted,
+    .text-grid-subtle,
+    .text-muted-foreground,
+    .text-slate-500,
+    .text-slate-600,
+    .text-slate-700
+  ) {
+    color: var(--muted-foreground) !important;
+  }
   .storm-card :where(
     .font-semibold.text-grid-navy,
     .font-bold.text-grid-navy,

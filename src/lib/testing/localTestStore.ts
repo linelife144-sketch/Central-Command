@@ -197,6 +197,20 @@ export const localTestStore = {
     return ticket;
   },
 
+  assignTicket(id: string, contractorId: string): Ticket {
+    if (!contractorId) throw new Error('Select a contractor.');
+    const data = readData();
+    const original = findTicket(data, id);
+    const ticket: Ticket = { ...original, assigned_to: contractorId,
+      status: original.status === 'DRAFT' ? 'ASSIGNED' : original.status,
+      updated_at: new Date().toISOString() };
+    validateTicket(data, ticket, id);
+    data.tickets = data.tickets.map(item => item.id === id ? ticket : item);
+    if (ticket.status !== original.status) data.history.push(historyEntry(id, original.status, ticket.status, SUPER_ADMIN_TEST_PROFILE.id, 'Contractor assigned.'));
+    saveData(data);
+    return ticket;
+  },
+
   updateTicketStatus(
     id: string,
     status: TicketStatus,

@@ -13,10 +13,10 @@ Ticket numbers are unique per storm. Event codes are unique regardless of case. 
 ## Database rollout
 
 1. Run the read-only `scripts/storm-workflow-preflight.sql` against the selected environment and reconcile reported legacy records.
-2. Apply `20260930120000_storm_first_workflow.sql` and then `20260930121000_utility_profiles_seed.sql` using the normal Supabase migration workflow.
+2. Apply `20261001033725_storm_first_workflow.sql` and then `20261001033733_utility_profiles_seed.sql` using the normal Supabase migration workflow.
 3. Verify the target environment's real schema, RLS, and role behavior before disabling local testing.
 
-The migrations have been tested in an isolated PostgreSQL instance with a representative schema fixture, not applied to live Supabase. Legacy unscoped rows are preserved; new writes require storm scope.
+Applied to the live Central Command project through the Supabase plugin on 2026-09-30. Authenticated Super Admin storm and utility ticket creation passed in a rolled-back transaction. Auth and RLS also passed eight isolated integration checks. Legacy unscoped rows are preserved; new writes require storm scope.
 
 `npm run schema:utilities -- <output.sql>` generates reviewable utility configuration SQL from the application registry; it never applies SQL. Template keys are versioned contracts: create a new version instead of changing existing published field structures.
 

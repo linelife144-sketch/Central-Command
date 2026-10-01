@@ -13,6 +13,12 @@ export const stormRosterService = {
     if (error) throw error;
     return (data ?? []) as StormRosterMember[];
   },
+  async listAssignable(stormId: string): Promise<StormRosterMember[]> {
+    if (isSuperAdminTestingEnabled()) return localTestStore.listRoster(stormId);
+    const { data, error } = await supabase.rpc('list_assignable_storm_contractors' as never, { p_storm_id: stormId } as never);
+    if (error) throw error;
+    return (data ?? []) as StormRosterMember[];
+  },
   async assign(stormId: string, contractorId: string) {
     if (isSuperAdminTestingEnabled()) return localTestStore.assignContractor(stormId, contractorId);
     const { error } = await supabase.rpc('assign_contractor_to_storm' as never, { p_storm_id: stormId, p_contractor_id: contractorId } as never);

@@ -1,19 +1,12 @@
 {
   "date": "2026-09-30",
   "task": "Storm-first operating and utility context",
-  "status": "implemented_and_locally_verified_live_rollout_pending_environment_choice",
-  "live_supabase_modified": false,
-  "typecheck": "Passed full TypeScript check",
+  "status": "local_and_live_database_complete",
+  "live_supabase_modified": true,
+  "typecheck": "Passed",
   "unit_tests": {
-    "passed": 29,
-    "runtime": "Node 22",
-    "suites": [
-      "localTestStore",
-      "entergy template",
-      "entergyTicketFormat",
-      "invoiceGenerationService",
-      "TicketFormRenderer"
-    ]
+    "passed": 74,
+    "suites": 14
   },
   "service_checks": [
     {
@@ -66,16 +59,32 @@
   "browser_checks": [
     "Entergy and FPL storm workspaces, ticket creation, and refresh persistence verified",
     "Illustrative terminology rules withdrawn; original template fields and labels restored",
-    "Saved QA snapshots repaired; invented equipment values removed from the two agent-created QA tickets"
+    "Saved QA snapshots repaired; invented equipment values removed from the two agent-created QA tickets",
+    "Marked storm headings are white; billing messages use dark gray text on light cards."
   ],
-  "screenshots": [],
+  "screenshots": [
+    "/Users/davidmccarty/.codex/.chatgpt-projects/g-p-698e4e3dea2c819193d268ef77b9572e/workspace/supabase-live/storm-contrast.jpg"
+  ],
   "server": "Codex-managed Next development server running at http://localhost:3000",
   "docker": "Docker Desktop stopped after test attempt resumed an existing conflicting localhost service. Database verification used temporary in-memory PostgreSQL instead.",
   "limitations": [
-    "Database checks use a representative schema fixture; target Supabase schema and RLS must be checked before rollout",
     "Complete production formats and procedures for FPL and other utilities require approved specifications",
     "Local billing has no approved time or expense entries and never queries live finances"
   ],
   "progress_tracker_note": "MASTER_BUILD_INSTRUCTIONS.md referenced by AGENTS.md is missing; ADR 0002 and this report record the work.",
-  "rollback": "Restored Entergy and FPL template files and Entergy export formatting from pre-change backups; regenerated pending SQL seed; adjusted tests to original fields. No live Supabase migration was applied."
+  "rollback": "The earlier illustrative terminology changes were rolled back before this deployment. Deployed templates preserve the restored fields and labels.",
+  "live_supabase": {
+    "modified": true,
+    "project": "xcvacmreerrypygpritq",
+    "connection": "Primary Supabase plugin",
+    "super_admin_profile": "Verified company login; active and email verified",
+    "auth_and_rls_checks": 8,
+    "live_ticket_creation": "Passed under authenticated role; all QA business data rolled back",
+    "local_testing": "Browser-local mode remains enabled",
+    "live_authorization": "Passed: assigned contractor reads utility payload; unassigned/inactive access denied; signup and role escalation rejected; QA records rolled back"
+  },
+  "remaining_advisor": {
+    "name": "Leaked Password Protection Disabled",
+    "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+  }
 }

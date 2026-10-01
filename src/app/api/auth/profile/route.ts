@@ -51,23 +51,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (user.id === 'eb7fa895-aabf-4048-b806-0224bd01fa84') {
-    return NextResponse.json({
-      profile: {
-        id: 'eb7fa895-aabf-4048-b806-0224bd01fa84',
-        email: 'dmccarty@gridelectriccorp.com',
-        first_name: 'David',
-        last_name: 'McCarty',
-        role: 'SUPER_ADMIN',
-        is_active: true,
-        is_email_verified: true,
-        must_reset_password: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    });
-  }
-
   try {
     const admin = createAdminClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

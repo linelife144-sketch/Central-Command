@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -51,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AppUser | null>(DEV_BYPASS_AUTH ? DEV_MOCK_PROFILE : null);
   const [isLoading, setIsLoading] = useState(!DEV_BYPASS_AUTH);
 
+  const currentUserId = useRef<string | null>(DEV_BYPASS_AUTH ? DEV_MOCK_USER.id : null);
+
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
 
   // Fetch user profile from profiles table
@@ -62,7 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .single();
 
+      if (currentUserId.current !== userId) return;
+
       if (error) {
+        setProfile(null);
         console.error('Error fetching profile:', error);
         if (DEV_BYPASS_AUTH) {
           setProfile(DEV_MOCK_PROFILE);
@@ -71,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
-        setProfile(data as AppUser);
+        setProfile(data.is_active ? data as AppUser : null);
       }
     } catch (error) {
       console.error('Error in fetchProfile:', error);
@@ -95,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
       if (!DEV_BYPASS_AUTH) {
+        currentUserId.current = null;
         setUser(null);
         setProfile(null);
         router.push('/login');
@@ -109,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // The local test identity never reads or changes an existing Supabase session.
     if (DEV_BYPASS_AUTH) return;
+
+    let profileTimer: ReturnType<typeof setTimeout> | undefined;
 
     // Check for existing session
     const checkSession = async () => {
@@ -126,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (session?.user) {
+          currentUserId.current = session.user.id;
           setUser(session.user);
           await fetchProfile(session.user.id);
         } else if (DEV_BYPASS_AUTH) {
@@ -147,22 +156,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (_event, session) => {
+        if (profileTimer) clearTimeout(profileTimer);
+        currentUserId.current = session?.user.id ?? null;
+        setUser(session?.user ?? null);
+        setProfile(null);
+
         if (session?.user) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-        } else if (DEV_BYPASS_AUTH) {
-          setUser(DEV_MOCK_USER);
-          setProfile(DEV_MOCK_PROFILE);
+          setIsLoading(true);
+          // Supabase holds an auth lock during this callback. Read the profile
+          // after it returns so login and subsequent API calls cannot deadlock.
+          profileTimer = setTimeout(() => {
+            void fetchProfile(session.user.id).finally(() => setIsLoading(false));
+          }, 0);
         } else {
-          setUser(null);
-          setProfile(null);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 
     return () => {
+      if (profileTimer) clearTimeout(profileTimer);
+      currentUserId.current = null;
       subscription.unsubscribe();
     };
   }, []);

@@ -12,6 +12,8 @@ import {
   type DashboardMetricsData,
 } from '@/lib/services/dashboardReportingService';
 import { GRID_TICKETS_CHANGED_EVENT, GRID_TICKETS_VERSION_KEY } from '@/lib/tickets/events';
+import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
+import { supabase } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/formatters';
 
@@ -80,7 +82,25 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
     window.addEventListener(GRID_TICKETS_CHANGED_EVENT, handleTicketsChanged);
     window.addEventListener('storage', handleStorageSync);
 
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleRefresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => { void loadMetrics('refresh'); }, 250);
+    };
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    if (!isSuperAdminTestingEnabled()) {
+      channel = supabase.channel('dashboard-live-metrics');
+      for (const table of ['tickets', 'time_entries', 'expense_reports', 'damage_assessments', 'contractor_invoices', 'contractors']) {
+        channel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleRefresh);
+      }
+      channel.subscribe();
+    }
+    const fallback = window.setInterval(scheduleRefresh, 30000);
+
     return () => {
+      window.clearInterval(fallback);
+      if (refreshTimer) clearTimeout(refreshTimer);
+      if (channel) void supabase.removeChannel(channel);
       window.removeEventListener(GRID_TICKETS_CHANGED_EVENT, handleTicketsChanged);
       window.removeEventListener('storage', handleStorageSync);
     };
@@ -138,10 +158,10 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
         />
 
         <MetricCard
-          title="Field Crews"
+          title="Active Contractor Crews"
           value={fieldCrewsValue}
           icon={<Users className="h-4 w-4 text-grid-lightning" />}
-          description={metrics ? `${metrics.on_site_crews} currently on site` : 'Active assignments'}
+          description={metrics ? `${metrics.on_site_crews} on site · assigned to active tickets` : 'Active assignments'}
           variant="accent"
         />
 
@@ -151,7 +171,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
           icon={<Clock className="h-4 w-4 text-grid-lightning" />}
           description={
             metrics
-              ? `${metrics.pending_time_entries} time, ${metrics.pending_expense_reports} expense, ${metrics.pending_assessments} assessments`
+              ? `${metrics.pending_tickets} tickets, ${metrics.pending_time_entries} time, ${metrics.pending_expense_reports} expense, ${metrics.pending_assessments} assessments`
               : 'Time, expense, and assessment approvals'
           }
           variant="warning"

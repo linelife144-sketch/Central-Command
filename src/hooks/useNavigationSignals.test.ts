@@ -18,6 +18,7 @@ describe('useNavigationSignals helpers', () => {
       field_crews: 4,
       on_site_crews: 2,
       pending_reviews_total: 5,
+      pending_tickets: 4,
       pending_time_entries: 2,
       pending_expense_reports: 1,
       pending_assessments: 2,

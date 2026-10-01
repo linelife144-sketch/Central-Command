@@ -124,3 +124,44 @@ describe('local Super Admin testing boundaries', () => {
     expect(() => localTestStore.getTickets()).toThrow('not enabled');
   });
 });
+
+describe('storm ticket assignment', () => {
+  it('saves the selected contractor, assigned status and history together', async () => {
+    const storm = await createStorm();
+    const ticket = await ticketService.createTicket(ticketInput(storm.id));
+    const crew = localTestStore.createContractor('Storm Crew');
+    localTestStore.assignContractor(storm.id, crew.id);
+    const updated = await ticketService.assignTicket(ticket.id, crew.id);
+    expect(updated).toMatchObject({ assigned_to: crew.id, status: 'ASSIGNED' });
+    expect(localTestStore.getTicketById(ticket.id)).toEqual(updated);
+    expect(localTestStore.getStatusHistory(ticket.id)).toContainEqual(expect.objectContaining({ from_status: 'DRAFT', to_status: 'ASSIGNED' }));
+    expect(remote.from).not.toHaveBeenCalled();
+  });
+  it('rejects a contractor from another storm without changing the ticket', async () => {
+    const storm = await createStorm();
+    const other = await stormEventService.createStormEvent({ name: 'Other', eventCode: 'OTHER', utilityClient: 'Entergy' });
+    const ticket = await ticketService.createTicket(ticketInput(storm.id));
+    const crew = localTestStore.createContractor('Other Crew');
+    localTestStore.assignContractor(other.id, crew.id);
+    await expect(ticketService.assignTicket(ticket.id, crew.id)).rejects.toThrow('storm roster');
+    expect(localTestStore.getTicketById(ticket.id)).toEqual(ticket);
+  });
+  it('preserves progress when reassigning', async () => {
+    const storm = await createStorm();
+    const ticket = await ticketService.createTicket(ticketInput(storm.id));
+    const crew = localTestStore.createContractor('Crew');
+    localTestStore.assignContractor(storm.id, crew.id);
+    localTestStore.updateTicket(ticket.id, { status: 'IN_PROGRESS' });
+    expect(await ticketService.assignTicket(ticket.id, crew.id)).toMatchObject({ status: 'IN_PROGRESS', assigned_to: crew.id });
+  });
+  it('leaves assignment, status and history unchanged if saving fails', async () => {
+    const storm = await createStorm();
+    const ticket = await ticketService.createTicket(ticketInput(storm.id));
+    const crew = localTestStore.createContractor('Crew');
+    localTestStore.assignContractor(storm.id, crew.id);
+    const before = window.localStorage.getItem(LOCAL_TEST_STORAGE_KEY);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Full'); });
+    await expect(ticketService.assignTicket(ticket.id, crew.id)).rejects.toThrow('Unable to save');
+    expect(window.localStorage.getItem(LOCAL_TEST_STORAGE_KEY)).toBe(before);
+  });
+});

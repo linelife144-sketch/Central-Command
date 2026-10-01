@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
+import { stormRosterService } from '@/lib/services/stormRosterService';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
 import { TicketPriorityBadge } from '@/components/features/tickets/TicketPriorityBadge';
@@ -23,12 +24,24 @@ export default function TicketDetailPage() {
     const { profile: user } = useAuth();
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [assigneeName, setAssigneeName] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
     const userRole: 'admin' | 'contractor' =
         isAdminClassRole(user?.role) || user?.role === 'TEAM_LEAD'
             ? 'admin'
             : 'contractor';
+
+    useEffect(() => {
+        let cancelled = false;
+        setAssigneeName('');
+        if (userRole === 'admin' && ticket?.assigned_to && ticket.storm_event_id) {
+            stormRosterService.list(ticket.storm_event_id).then(members => {
+                if (!cancelled) setAssigneeName(members.find(member => member.contractorId === ticket.assigned_to)?.displayName ?? '');
+            }).catch(error => console.error('Failed to load assigned contractor:', error));
+        }
+        return () => { cancelled = true; };
+    }, [ticket?.assigned_to, ticket?.storm_event_id, userRole]);
 
     const loadTicket = async () => {
         if (!params.id) return;
@@ -151,7 +164,7 @@ export default function TicketDetailPage() {
                                 <p className="font-semibold">
                                     {userRole === 'contractor'
                                         ? 'You'
-                                        : (ticket.assigned_to ? 'Contractor Assigned' : 'Unassigned')}
+                                        : (ticket.assigned_to ? (assigneeName || 'Contractor Assigned') : 'Unassigned')}
                                 </p>
                             </div>
                             <div>

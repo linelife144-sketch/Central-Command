@@ -17,6 +17,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { TicketAssign } from './TicketAssign';
+import { isAdminClassRole } from '@/lib/auth/roleGuards';
 
 interface StatusUpdaterProps {
   ticket: Ticket;
@@ -47,9 +49,12 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
   const [reason, setReason] = useState('');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+
   const possibleStatuses = getNextPossibleStatuses(ticket.status, userRole);
 
   const handleStatusClick = (status: TicketStatus) => {
+    if (status === 'ASSIGNED') { setIsAssignOpen(true); return; }
     const negativeStatuses: TicketStatus[] = ['REJECTED', 'NEEDS_REWORK', 'CLOSED'];
     
     if (negativeStatuses.includes(status)) {
@@ -82,7 +87,9 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
     }
   };
 
-  if (possibleStatuses.length === 0) {
+  const canReassign = isAdminClassRole(userRole) && Boolean(ticket.assigned_to) && !['DRAFT', 'CLOSED', 'ARCHIVED', 'EXPIRED'].includes(ticket.status);
+
+  if (possibleStatuses.length === 0 && !canReassign) {
     return null;
   }
 
@@ -103,6 +110,16 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
           </Button>
         );
       })}
+
+      {canReassign && <Button onClick={() => setIsAssignOpen(true)} disabled={isUpdating}>Reassign</Button>}
+
+      <TicketAssign isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)}
+        stormEventId={ticket.storm_event_id ?? undefined} currentAssigneeId={ticket.assigned_to} ticketNumber={ticket.ticket_number}
+        onAssign={async (contractorId) => {
+          const updated = await ticketService.assignTicket(ticket.id, contractorId);
+          toast.success('Ticket assigned successfully');
+          onStatusUpdated?.(updated.status);
+        }} />
 
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <DialogContent>

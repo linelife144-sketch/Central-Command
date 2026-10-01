@@ -1,138 +1,87 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
-// import { getContractors } from "@/lib/services/contractorService" // This might not exist yet?
-// Only TicketService usage was mentioned. I might need to mock or check available services.
-// I'll assume for now I can pass a list of contractors or fetch them.
-// Let's implement fetching logic if service exists, otherwise use props.
-// Checking `lib/services` might be needed. For now I will focus on the UI and prop interface.
-
-interface ContractorOption {
-    id: string
-    name: string
-}
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { stormRosterService, type StormRosterMember } from '@/lib/services/stormRosterService';
 
 interface TicketAssignProps {
-    isOpen: boolean
-    onClose: () => void
-    onAssign: (contractorId: string) => Promise<void>
-    currentAssigneeId?: string
-    ticketNumber: string
-    // In a real app, passing the list of contractors or a fetcher would be better.
-    // I'll simulate fetching for now or assume a callback to get them? 
-    // Actually, asking for contractors via props is cleaner for component purity.
-    // But for simplicity in this "feature" component, I'll fetch them.
-    // Wait, I don't know if `contractorService` exists.
-    // I'll just check `lib/services` first.
+  isOpen: boolean;
+  onClose: () => void;
+  onAssign: (contractorId: string) => Promise<void>;
+  currentAssigneeId?: string;
+  stormEventId?: string;
+  ticketNumber: string;
 }
 
-export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, ticketNumber }: TicketAssignProps) {
-    const [assigneeId, setAssigneeId] = useState<string>(currentAssigneeId || "")
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [contractors, setContractors] = useState<ContractorOption[]>([])
-    const [isLoading, setIsLoading] = useState(false)
+export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, stormEventId, ticketNumber }: TicketAssignProps) {
+  const [assigneeId, setAssigneeId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contractors, setContractors] = useState<StormRosterMember[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-    useEffect(() => {
-        if (isOpen) {
-            loadContractors()
-            if (currentAssigneeId) setAssigneeId(currentAssigneeId)
-        }
-    }, [isOpen, currentAssigneeId])
-
-    async function loadContractors() {
-        setIsLoading(true)
-        try {
-            // TODO: Replace with actual service call
-            // const subs = await contractorService.getContractors()
-            // Mock data for now until I verify service exists
-            await new Promise(resolve => setTimeout(resolve, 500))
-            setContractors([
-                { id: "sub1", name: "John Doe (Electrician)" },
-                { id: "sub2", name: "Jane Smith (HVAC)" },
-                { id: "sub3", name: "Bob Wilson (General)" },
-            ])
-        } catch (error) {
-            console.error("Failed to load contractors", error)
-            toast.error("Failed to load contractors")
-        } finally {
-            setIsLoading(false)
-        }
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setAssigneeId('');
+    setContractors([]);
+    setError('');
+    setIsLoading(Boolean(stormEventId));
+    if (stormEventId) {
+      stormRosterService.listAssignable(stormEventId).then((members) => {
+        if (cancelled) return;
+        setContractors(members);
+        if (members.some(member => member.contractorId === currentAssigneeId)) setAssigneeId(currentAssigneeId!);
+      }).catch((cause) => {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : 'Unable to load storm contractors. Close and try again.');
+      }).finally(() => { if (!cancelled) setIsLoading(false); });
     }
+    return () => { cancelled = true; };
+  }, [isOpen, stormEventId, currentAssigneeId]);
 
-    const handleSubmit = async () => {
-        if (!assigneeId) return
+  async function handleSubmit() {
+    if (isLoading || isSubmitting || !contractors.some(member => member.contractorId === assigneeId)) return;
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await onAssign(assigneeId);
+      onClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to assign this ticket. Please try again.');
+    } finally { setIsSubmitting(false); }
+  }
 
-        setIsSubmitting(true)
-        try {
-            await onAssign(assigneeId)
-            onClose()
-        } catch (error) {
-            // Error handling should be done by parent or here.
-            console.error(error)
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Assign Ticket {ticketNumber}</DialogTitle>
-                    <DialogDescription>
-                        Select a contractor to assign this ticket to.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="contractor" className="text-right">
-                            Assign To
-                        </Label>
-                        <Select
-                            value={assigneeId}
-                            onValueChange={setAssigneeId}
-                            disabled={isLoading}
-                        >
-                            <SelectTrigger className="col-span-3">
-                                <SelectValue placeholder={isLoading ? "Loading..." : "Select contractor"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {contractors.map((sub) => (
-                                    <SelectItem key={sub.id} value={sub.id}>
-                                        {sub.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-                        Cancel
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={!assigneeId || isSubmitting}>
-                        {isSubmitting ? "Assigning..." : "Assign Ticket"}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSubmitting) onClose(); }}>
+      <DialogContent className="sm:max-w-[425px]" onEscapeKeyDown={(event) => { if (isSubmitting) event.preventDefault(); }} onPointerDownOutside={(event) => { if (isSubmitting) event.preventDefault(); }}>
+        <DialogHeader>
+          <DialogTitle>Assign Ticket {ticketNumber}</DialogTitle>
+          <DialogDescription>Select a contractor from this storm’s roster.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <Label htmlFor="ticket-contractor">Assign To</Label>
+          <Select value={assigneeId} onValueChange={setAssigneeId} disabled={isLoading || isSubmitting || contractors.length === 0}>
+            <SelectTrigger id="ticket-contractor"><SelectValue placeholder={isLoading ? 'Loading contractors…' : 'Select contractor'} /></SelectTrigger>
+            <SelectContent>
+              {contractors.map(member => <SelectItem key={member.contractorId} value={member.contractorId}>{member.displayName}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {!isLoading && !error && contractors.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {stormEventId ? <>Add an approved contractor to this storm before assigning tickets. <Link href={`/admin/storms/${stormEventId}#storm-contractors`} className="text-primary underline">Manage storm contractors</Link></> : 'This ticket needs a storm event before it can be assigned.'}
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={isLoading || !assigneeId || isSubmitting}>{isSubmitting ? 'Assigning…' : 'Assign Ticket'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

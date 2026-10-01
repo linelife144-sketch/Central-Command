@@ -6,6 +6,6 @@ export function notifyTicketsChanged(): void {
     return;
   }
 
-  window.localStorage.setItem(GRID_TICKETS_VERSION_KEY, String(Date.now()));
+  try { window.localStorage.setItem(GRID_TICKETS_VERSION_KEY, String(Date.now())); } catch { /* Same-tab subscribers still receive the event. */ }
   window.dispatchEvent(new CustomEvent(GRID_TICKETS_CHANGED_EVENT));
 }

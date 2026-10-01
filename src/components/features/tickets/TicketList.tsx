@@ -31,7 +31,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         status: "ALL",
         priority: "ALL",
     });
-    const [assignRequest, setAssignRequest] = useState<{ ticketId: string, ticketNumber: string, currentAssigneeId?: string } | null>(null);
+    const [assignRequest, setAssignRequest] = useState<{ ticketId: string, ticketNumber: string, currentAssigneeId?: string, stormEventId?: string } | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -56,13 +56,6 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         loadTickets();
     }, [userRole, userId]);
 
-    const loadTickets = async () => {
-        // Re-implement or expose if needed for manual reload. 
-        // But wait, I used loadTickets() in handleAssignTicket.
-        // So I should keep it outside, but wrap in useCallback.
-    };
-
-
     const filteredTickets = useMemo(() => {
         return tickets.filter(ticket => {
             const matchesSearch = filters.search === "" ||
@@ -79,18 +72,9 @@ export function TicketList({ userRole, userId }: TicketListProps) {
 
     const handleAssignTicket = async (contractorId: string) => {
         if (!assignRequest) return;
-        try {
-            await ticketService.updateTicket(assignRequest.ticketId, {
-                assigned_to: contractorId,
-                status: 'ASSIGNED', // Automatically update status to ASSIGNED? Or keep existing? Usually logic implies assignment = assigned status.
-                // But check existing status... if it was DRAFT, now ASSIGNED.
-            });
-            toast.success(`Ticket ${assignRequest.ticketNumber} assigned successfully`);
-            loadTickets(); // Reload to update list
-        } catch (error) {
-            console.error("Failed to assign ticket", error);
-            toast.error("Failed to assign ticket");
-        }
+        const updated = await ticketService.assignTicket(assignRequest.ticketId, contractorId);
+        setTickets(previous => previous.map(ticket => ticket.id === updated.id ? updated : ticket));
+        toast.success(`Ticket ${assignRequest.ticketNumber} assigned successfully`);
     };
 
     const columns: Column<Ticket>[] = [
@@ -157,7 +141,8 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                                 setAssignRequest({
                                     ticketId: ticket.id,
                                     ticketNumber: ticket.ticket_number,
-                                    currentAssigneeId: ticket.assigned_to
+                                    currentAssigneeId: ticket.assigned_to,
+                                    stormEventId: ticket.storm_event_id ?? undefined
                                 });
                             }}
                         >
@@ -222,6 +207,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                 onClose={() => setAssignRequest(null)}
                 onAssign={handleAssignTicket}
                 currentAssigneeId={assignRequest?.currentAssigneeId}
+                stormEventId={assignRequest?.stormEventId}
                 ticketNumber={assignRequest?.ticketNumber || ''}
             />
         </div>

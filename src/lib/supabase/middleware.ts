@@ -26,41 +26,18 @@ export async function updateSession(request: NextRequest) {
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: any) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          supabaseResponse.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name: string, options: any) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          supabaseResponse.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
         },
       },
     }
@@ -72,6 +49,13 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  function redirectWithSession(url: URL) {
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie));
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  }
 
   const pathname = request.nextUrl.pathname;
 
@@ -91,13 +75,13 @@ export async function updateSession(request: NextRequest) {
   if (pathname === '/subcontractor' || pathname.startsWith('/subcontractor/')) {
     const contractorUrl = request.nextUrl.clone();
     contractorUrl.pathname = pathname.replace(/^\/subcontractor/, '/contractor');
-    return NextResponse.redirect(contractorUrl);
+    return redirectWithSession(contractorUrl);
   }
 
   if (pathname === '/admin/subcontractors' || pathname.startsWith('/admin/subcontractors/')) {
     const contractorUrl = request.nextUrl.clone();
     contractorUrl.pathname = pathname.replace(/^\/admin\/subcontractors/, '/admin/contractors');
-    return NextResponse.redirect(contractorUrl);
+    return redirectWithSession(contractorUrl);
   }
 
   // Development Auth Bypass: bypass login and open app directly to dashboard
@@ -107,7 +91,7 @@ export async function updateSession(request: NextRequest) {
       const dashboardUrl = request.nextUrl.clone();
       dashboardUrl.pathname = '/admin/dashboard';
       dashboardUrl.search = '';
-      return NextResponse.redirect(dashboardUrl);
+      return redirectWithSession(dashboardUrl);
     }
     return supabaseResponse;
   }
@@ -122,7 +106,7 @@ export async function updateSession(request: NextRequest) {
       if (pathname !== '/') {
         loginUrl.searchParams.set('redirect', pathname);
       }
-      return NextResponse.redirect(loginUrl);
+      return redirectWithSession(loginUrl);
     }
     return supabaseResponse;
   }
@@ -131,16 +115,16 @@ export async function updateSession(request: NextRequest) {
   // Fetch user profile to check role
   const { data: profile, error } = (await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_active, must_reset_password')
     .eq('id', user.id)
     .single()) as any;
 
-  if (error || !profile) {
+  if (error || !profile || !profile.is_active) {
     // If profile fetching fails, sign them out and redirect to login
     await supabase.auth.signOut();
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
-    return NextResponse.redirect(loginUrl);
+    return redirectWithSession(loginUrl);
   }
 
   const role = profile.role;
@@ -151,7 +135,7 @@ export async function updateSession(request: NextRequest) {
   if (shouldEnforcePasswordReset(profile.must_reset_password, pathname)) {
     const setPasswordUrl = request.nextUrl.clone();
     setPasswordUrl.pathname = '/set-password';
-    return NextResponse.redirect(setPasswordUrl);
+    return redirectWithSession(setPasswordUrl);
   }
 
   // Allow password setup/recovery routes and auth confirmation to proceed without dashboard redirect
@@ -171,20 +155,20 @@ export async function updateSession(request: NextRequest) {
       targetUrl.pathname = '/forbidden';
     }
     targetUrl.search = '';
-    return NextResponse.redirect(targetUrl);
+    return redirectWithSession(targetUrl);
   }
 
   // Check role-based route permissions
   if (pathname.startsWith('/admin/') && !isAdminRole) {
     const forbiddenUrl = request.nextUrl.clone();
     forbiddenUrl.pathname = '/forbidden';
-    return NextResponse.redirect(forbiddenUrl);
+    return redirectWithSession(forbiddenUrl);
   }
 
   if (pathname.startsWith('/contractor/') && !isContractorRole) {
     const forbiddenUrl = request.nextUrl.clone();
     forbiddenUrl.pathname = '/forbidden';
-    return NextResponse.redirect(forbiddenUrl);
+    return redirectWithSession(forbiddenUrl);
   }
 
   return supabaseResponse;

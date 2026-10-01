@@ -17,7 +17,7 @@ export function isValidTransition(
   if (current === next) return true;
 
   // Admin Transitions
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+  if (role === 'CEO' || role === 'ADMIN' || role === 'SUPER_ADMIN') {
     switch (current) {
       case 'DRAFT':
         return ['ASSIGNED', 'CLOSED'].includes(next);

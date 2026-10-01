@@ -1,3 +1,5 @@
+import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
+import { localTestStore } from '@/lib/testing/localTestStore';
 import {
   eachDayOfInterval,
   eachMonthOfInterval,
@@ -77,6 +79,7 @@ export interface DashboardMetricsData {
   field_crews: number;
   on_site_crews: number;
   pending_reviews_total: number;
+  pending_tickets: number;
   pending_time_entries: number;
   pending_expense_reports: number;
   pending_assessments: number;
@@ -326,8 +329,9 @@ export function buildDashboardMetrics(input: DashboardMetricsBuildInput): Dashbo
     }
   }
 
+  const pendingTickets = activeTickets.filter(ticket => ticket.status.toUpperCase() === 'PENDING_REVIEW').length;
   const pendingReviewsTotal =
-    input.pendingTimeEntries + input.pendingExpenseReports + input.pendingAssessments;
+    pendingTickets + input.pendingTimeEntries + input.pendingExpenseReports + input.pendingAssessments;
 
   return {
     generated_at: input.now.toISOString(),
@@ -335,6 +339,7 @@ export function buildDashboardMetrics(input: DashboardMetricsBuildInput): Dashbo
     field_crews: fieldCrewIds.size,
     on_site_crews: onSiteCrewIds.size,
     pending_reviews_total: pendingReviewsTotal,
+    pending_tickets: pendingTickets,
     pending_time_entries: input.pendingTimeEntries,
     pending_expense_reports: input.pendingExpenseReports,
     pending_assessments: input.pendingAssessments,
@@ -1034,6 +1039,25 @@ export function createDashboardReportingService(
   return {
     async getDashboardMetrics(): Promise<DashboardMetricsData> {
       const now = resolvedDependencies.now();
+      if (isSuperAdminTestingEnabled()) {
+        const tickets = localTestStore.getTickets();
+        const active = tickets.filter(ticket => !['CLOSED', 'ARCHIVED', 'EXPIRED'].includes(ticket.status));
+        const crews = new Set(active.map(ticket => ticket.assigned_to).filter((id): id is string => Boolean(id)));
+        return {
+          generated_at: now.toISOString(), active_tickets: active.length, field_crews: crews.size,
+          on_site_crews: new Set(active.filter(ticket => ticket.status === 'ON_SITE').map(ticket => ticket.assigned_to).filter((id): id is string => Boolean(id))).size,
+          pending_reviews_total: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
+          pending_tickets: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
+          pending_time_entries: 0, pending_expense_reports: 0, pending_assessments: 0,
+          revenue_mtd: 0, revenue_previous_mtd: 0, revenue_trend_percent: 0, invoices_generated_mtd: 0,
+          status_breakdown: {
+            in_route: active.filter(ticket => ticket.status === 'IN_ROUTE').length,
+            on_site: active.filter(ticket => ticket.status === 'ON_SITE').length,
+            pending_review: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
+            unassigned: active.filter(ticket => !ticket.assigned_to).length,
+          },
+        };
+      }
       const previousWindow = getPreviousMtdWindow(now);
 
       const [tickets, pendingTimeEntries, pendingExpenseReports, pendingAssessments, invoicesForTrend] =

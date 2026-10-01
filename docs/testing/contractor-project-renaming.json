@@ -1,14 +1,14 @@
 {
   "date": "2026-09-30",
   "agent": "Codex",
-  "status": "local_complete_live_database_blocked_by_management_login",
+  "status": "local_and_live_database_complete",
   "task": "Project-wide canonical contractor naming",
   "updated_files": 51,
   "naming": "Contractor singular; Contractors plural; CONTRACTOR stored role; contractor_id keys",
   "typecheck": "Passed",
   "unit_tests": {
-    "passed": 53,
-    "suites": 10
+    "passed": 74,
+    "suites": 14
   },
   "database": {
     "engine": "Temporary PostgreSQL",
@@ -30,10 +30,14 @@
     "Contractor portal Time Tracking loads after route-group rename"
   ],
   "live_supabase": {
-    "modified": false,
+    "modified": true,
     "project": "xcvacmreerrypygpritq",
-    "management_api": "HTTP 401",
-    "cli": "No saved access token"
+    "connection": "Primary Supabase plugin",
+    "super_admin_profile": "Verified company login; active and email verified",
+    "auth_and_rls_checks": 8,
+    "live_ticket_creation": "Passed under authenticated role; all QA business data rolled back",
+    "local_testing": "Browser-local mode remains enabled",
+    "live_authorization": "Passed: assigned contractor reads utility payload; unassigned/inactive access denied; signup and role escalation rejected; QA records rolled back"
   },
   "legacy_identifiers_retained_only_for": [
     "Historical migrations",
@@ -41,5 +45,9 @@
     "Detection of an incomplete schema migration"
   ],
   "backup": "Original files stored outside the app in the current task workspace",
-  "progress_tracker_note": "MASTER_BUILD_INSTRUCTIONS.md is missing; ADR 0003 and this report record authorized work."
+  "progress_tracker_note": "MASTER_BUILD_INSTRUCTIONS.md is missing; ADR 0003 and this report record authorized work.",
+  "remaining_advisor": {
+    "name": "Leaked Password Protection Disabled",
+    "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+  }
 }
