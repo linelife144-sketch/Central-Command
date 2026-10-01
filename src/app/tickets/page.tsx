@@ -3,16 +3,17 @@
 
 import { TicketList } from '@/components/features/tickets/TicketList';
 import { PageHeader } from '@/components/common/layout/PageHeader';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { isAdminClassRole } from '@/lib/auth/roleGuards';
 
 export default function TicketsPage() {
-    const { user } = useAuthStore();
+    const { profile: user } = useAuth();
 
     // Map UserRole to TicketList role format
-    const userRole: 'admin' | 'subcontractor' =
-        user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'TEAM_LEAD'
+    const userRole: 'admin' | 'contractor' =
+        isAdminClassRole(user?.role) || user?.role === 'TEAM_LEAD'
             ? 'admin'
-            : 'subcontractor';
+            : 'contractor';
 
     return (
         <div className="space-y-6">
@@ -21,7 +22,7 @@ export default function TicketsPage() {
                 description={userRole === 'admin' ? 'View and manage all service tickets.' : 'View and manage your assigned damage assessment tickets.'}
             />
             {user ? (
-                <TicketList userRole={userRole} userId={userRole === 'subcontractor' ? user.id : undefined} />
+                <TicketList userRole={userRole} userId={userRole === 'contractor' ? user.id : undefined} />
             ) : (
                 <div>Please log in to view tickets.</div>
             )}

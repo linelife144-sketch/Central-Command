@@ -69,7 +69,7 @@
 │   │   │   ├── page.tsx
 │   │   │   └── 📁 [id]/
 │   │   │       └── page.tsx
-│   │   ├── 📁 subcontractors/
+│   │   ├── 📁 contractors/
 │   │   │   ├── page.tsx
 │   │   │   └── 📁 [id]/
 │   │   │       └── page.tsx
@@ -90,7 +90,7 @@
 │   │   └── 📁 settings/
 │   │       └── page.tsx
 │   │
-│   ├── 📁 (subcontractor)/          # Subcontractor portal route group
+│   ├── 📁 (contractor)/          # Contractor portal route group
 │   │   ├── 📁 dashboard/
 │   │   │   └── page.tsx
 │   │   ├── 📁 tickets/
@@ -254,7 +254,7 @@
 │   ├── useExpenses.ts
 │   ├── useAssessments.ts
 │   ├── useInvoices.ts
-│   ├── useSubcontractors.ts
+│   ├── useContractors.ts
 │   ├── useMedia.ts
 │   ├── useGeolocation.ts
 │   ├── useSync.ts
@@ -303,7 +303,7 @@
 │   ├── index.ts                     # Main exports
 │   ├── auth.ts
 │   ├── user.ts
-│   ├── subcontractor.ts
+│   ├── contractor.ts
 │   ├── ticket.ts
 │   ├── timeEntry.ts
 │   ├── expense.ts
@@ -375,7 +375,7 @@
 │  PAGE COMPONENTS (Routes)                                                   │
 │  ├── (auth)/login/page.tsx           # Login page                           │
 │  ├── (admin)/dashboard/page.tsx      # Admin dashboard                      │
-│  ├── (subcontractor)/tickets/page.tsx # Sub ticket list                     │
+│  ├── (contractor)/tickets/page.tsx # Sub ticket list                     │
 │  │                                                                          │
 │  FEATURE COMPONENTS (Business Logic)                                        │
 │  ├── TicketList.tsx                  # Ticket list with filters             │
@@ -633,7 +633,7 @@ export function useTickets(filters?: object) {
     queryFn: async () => {
       let query = supabase
         .from('tickets')
-        .select('*, assigned_subcontractor:subcontractors(id, business_name)')
+        .select('*, assigned_contractor:contractors(id, business_name)')
         .order('created_at', { ascending: false });
       
       if (filters?.status) {
@@ -1300,7 +1300,7 @@ export type AssessmentFormData = z.infer<typeof assessmentSchema>;
 // Re-export all types
 export * from './auth';
 export * from './user';
-export * from './subcontractor';
+export * from './contractor';
 export * from './ticket';
 export * from './timeEntry';
 export * from './expense';

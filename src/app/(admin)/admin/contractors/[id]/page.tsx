@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 // Mock data
-const mockSubcontractor = {
+const mockContractor = {
   id: '1',
   firstName: 'John',
   lastName: 'Smith',
@@ -48,7 +48,7 @@ const mockSubcontractor = {
   ],
 };
 
-export default function SubcontractorDetailPage() {
+export default function ContractorDetailPage() {
   const params = useParams();
   const [isApproving, setIsApproving] = useState(false);
 
@@ -59,8 +59,8 @@ export default function SubcontractorDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`${mockSubcontractor.firstName} ${mockSubcontractor.lastName}`}
-        description="Subcontractor details and management"
+        title={`${mockContractor.firstName} ${mockContractor.lastName}`}
+        description="Contractor details and management"
         showBackButton
         backHref="/admin/contractors"
       >
@@ -81,28 +81,28 @@ export default function SubcontractorDetailPage() {
             <div className="flex flex-col items-center text-center">
               <Avatar className="w-24 h-24 mb-4">
                 <AvatarFallback className="text-2xl bg-blue-100 text-blue-700">
-                  {getInitials(mockSubcontractor.firstName, mockSubcontractor.lastName)}
+                  {getInitials(mockContractor.firstName, mockContractor.lastName)}
                 </AvatarFallback>
               </Avatar>
               <h2 className="text-xl font-bold">
-                {mockSubcontractor.firstName} {mockSubcontractor.lastName}
+                {mockContractor.firstName} {mockContractor.lastName}
               </h2>
-              <p className="text-slate-500">{mockSubcontractor.businessName}</p>
+              <p className="text-slate-500">{mockContractor.businessName}</p>
               <div className="mt-4">
-                <StatusBadge status={mockSubcontractor.status} />
+                <StatusBadge status={mockContractor.status} />
               </div>
               <div className="mt-6 space-y-2 w-full text-left">
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-slate-400" />
-                  <span>{mockSubcontractor.email}</span>
+                  <span>{mockContractor.email}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-slate-400" />
-                  <span>{mockSubcontractor.phone}</span>
+                  <span>{mockContractor.phone}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-slate-400" />
-                  <span>{mockSubcontractor.address}</span>
+                  <span>{mockContractor.address}</span>
                 </div>
               </div>
             </div>
@@ -115,26 +115,26 @@ export default function SubcontractorDetailPage() {
             <Card>
               <CardContent className="pt-6">
                 <p className="text-sm text-slate-500">YTD Earnings</p>
-                <p className="text-2xl font-bold">{mockSubcontractor.ytdEarnings}</p>
+                <p className="text-2xl font-bold">{mockContractor.ytdEarnings}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <p className="text-sm text-slate-500">Total Tickets</p>
-                <p className="text-2xl font-bold">{mockSubcontractor.totalTickets}</p>
+                <p className="text-2xl font-bold">{mockContractor.totalTickets}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <p className="text-sm text-slate-500">Join Date</p>
-                <p className="text-lg font-bold">{mockSubcontractor.joinDate}</p>
+                <p className="text-lg font-bold">{mockContractor.joinDate}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
                 <p className="text-sm text-slate-500">Eligible</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {mockSubcontractor.eligible ? 'Yes' : 'No'}
+                  {mockContractor.eligible ? 'Yes' : 'No'}
                 </p>
               </CardContent>
             </Card>
@@ -170,7 +170,7 @@ export default function SubcontractorDetailPage() {
                     <div className="text-right">
                       <StatusBadge status="Active" size="sm" />
                       <p className="text-sm text-slate-500 mt-1">
-                        Expires: {mockSubcontractor.insurance.generalLiability.expires}
+                        Expires: {mockContractor.insurance.generalLiability.expires}
                       </p>
                     </div>
                   </div>
@@ -182,7 +182,7 @@ export default function SubcontractorDetailPage() {
                     <div className="text-right">
                       <StatusBadge status="Active" size="sm" />
                       <p className="text-sm text-slate-500 mt-1">
-                        Expires: {mockSubcontractor.insurance.workersComp.expires}
+                        Expires: {mockContractor.insurance.workersComp.expires}
                       </p>
                     </div>
                   </div>
@@ -194,7 +194,7 @@ export default function SubcontractorDetailPage() {
                     <div className="text-right">
                       <StatusBadge status="Active" size="sm" />
                       <p className="text-sm text-slate-500 mt-1">
-                        Expires: {mockSubcontractor.insurance.auto.expires}
+                        Expires: {mockContractor.insurance.auto.expires}
                       </p>
                     </div>
                   </div>
@@ -208,7 +208,7 @@ export default function SubcontractorDetailPage() {
                   <CardTitle>Professional Credentials</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockSubcontractor.credentials.map((cred, index) => (
+                  {mockContractor.credentials.map((cred, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <p className="font-medium">{cred.type}</p>
@@ -235,7 +235,7 @@ export default function SubcontractorDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-slate-500">Account Holder</p>
-                      <p className="font-medium">{mockSubcontractor.businessName}</p>
+                      <p className="font-medium">{mockContractor.businessName}</p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-500">Bank</p>

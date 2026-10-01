@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -22,14 +23,14 @@ import {
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
-  userRole: 'admin' | 'subcontractor';
+  userRole: 'admin' | 'contractor';
 }
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/storms/create', label: 'Storm Events', icon: CloudLightning },
   { href: '/tickets', label: 'Tickets', icon: Ticket },
-  { href: '/admin/contractors', label: 'Users', icon: Users },
+  { href: '/admin/contractors', label: 'Contractors', icon: Users },
   { href: '/admin/time-review', label: 'Time Review', icon: Clock },
   { href: '/admin/expense-review', label: 'Expenses', icon: Receipt },
   { href: '/admin/assessment-review', label: 'Assessments', icon: FileText },
@@ -39,7 +40,7 @@ const adminNavItems = [
   { href: '/admin/account', label: 'Account', icon: Settings },
 ];
 
-const subcontractorNavItems = [
+const contractorNavItems = [
   { href: '/tickets', label: 'My Tickets', icon: Ticket },
   { href: '/contractor/map', label: 'Map', icon: Map },
   { href: '/contractor/time', label: 'Time Tracking', icon: Clock },
@@ -51,15 +52,20 @@ const subcontractorNavItems = [
 
 export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
   const pathname = usePathname();
-  const navItems = userRole === 'admin' ? adminNavItems : subcontractorNavItems;
+  const navItems = userRole === 'admin' ? adminNavItems : contractorNavItems;
 
   const renderNavContent = () => (
     <div className="flex flex-col h-full bg-surface-raised">
       {/* Logo */}
       <div className="flex items-center h-16 px-6 border-b border-border-strong">
-        <div className="w-8 h-8 bg-gradient-storm rounded-lg flex items-center justify-center mr-3 shadow-brand">
-          <span className="text-white font-bold text-lg">G</span>
-        </div>
+        <Image
+          alt="Grid Electric storm mark"
+          className="w-8 h-8 object-contain rounded-lg mr-3"
+          height={32}
+          priority
+          src="/icons/grid-ge-storm-icon-clean.svg"
+          width={32}
+        />
         <div>
           <span className="font-bold text-grid-navy">Grid Electric</span>
           <span className="text-xs text-muted-foreground block">{userRole === 'admin' ? 'Admin Portal' : 'Contractor Portal'}</span>

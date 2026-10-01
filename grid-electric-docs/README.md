@@ -6,7 +6,7 @@
 
 ## 📋 DOCUMENTATION OVERVIEW
 
-This comprehensive documentation package contains everything needed to build the Central Command Damage Assessment Platform — a Progressive Web App (PWA) for managing independent subcontractor crews performing utility damage assessments.
+This comprehensive documentation package contains everything needed to build the Central Command Damage Assessment Platform — a Progressive Web App (PWA) for managing independent contractor crews performing utility damage assessments.
 
 ### Document Index
 
@@ -14,7 +14,7 @@ This comprehensive documentation package contains everything needed to build the
 |---|----------|---------|
 | 1 | **[Technical PRD](01-TECHNICAL-PRD.md)** | Complete product requirements, architecture decisions, and feature specifications |
 | 2 | **[Database Schema](02-DATABASE-SCHEMA.md)** | Full Supabase PostgreSQL schema with tables, RLS policies, and triggers |
-| 3 | **[Wireframes](03-WIREFRAMES.md)** | ASCII wireframes for all 52 screens across auth, onboarding, admin, and subcontractor portals |
+| 3 | **[Wireframes](03-WIREFRAMES.md)** | ASCII wireframes for all 52 screens across auth, onboarding, admin, and contractor portals |
 | 4 | **[Design System](04-DESIGN-SYSTEM.md)** | Blue/yellow theme, typography, components, and styling specifications |
 | 5 | **[API Specifications](05-API-SPECIFICATIONS.md)** | Complete REST API documentation for all endpoints |
 | 6 | **[Component Architecture](06-COMPONENT-ARCHITECTURE.md)** | React component structure, hooks, and folder organization |
@@ -30,7 +30,7 @@ This comprehensive documentation package contains everything needed to build the
 ### Business Model
 
 - **Prime Contractor:** Central Command (You)
-- **Workforce:** Independent 1099 subcontractors
+- **Workforce:** Independent 1099 contractors
 - **Clients:** Power utility companies with government contracts
 - **Compliance:** FISMA/FedRAMP moderate
 
@@ -138,9 +138,9 @@ Danger:    Red 600     #DC2626  (Errors, rejected)
 
 ### Admin Portal (18 screens)
 
-- Dashboard, Tickets (list/detail/create/assign), Subcontractors (list/detail/approval), Time Review, Expense Review, Assessment Review, Invoices (list/generate), Reports, Map, Settings, Audit Logs
+- Dashboard, Tickets (list/detail/create/assign), Contractors (list/detail/approval), Time Review, Expense Review, Assessment Review, Invoices (list/generate), Reports, Map, Settings, Audit Logs
 
-### Subcontractor Portal (16 screens)
+### Contractor Portal (16 screens)
 
 - Dashboard, Tickets (list/detail/assess), Time (list/clock), Expenses (list/new), Invoices (list/detail), Profile, Sync Status
 
@@ -153,13 +153,13 @@ Danger:    Red 600     #DC2626  (Errors, rejected)
 ### Key Tables
 
 1. `profiles` — User accounts (extends auth.users)
-2. `subcontractors` — Business info, 1099 tracking
-3. `subcontractor_credentials` — Insurance, licenses with expiration alerts
+2. `contractors` — Business info, 1099 tracking
+3. `contractor_credentials` — Insurance, licenses with expiration alerts
 4. `tickets` — Work orders with GPS tracking
 5. `time_entries` — Clock in/out with GPS verification
 6. `expense_reports` + `expense_items` — Expense management
 7. `damage_assessments` — Assessment forms
-8. `subcontractor_invoices` — Automated billing
+8. `contractor_invoices` — Automated billing
 9. `media_assets` — Photos with EXIF/GPS
 10. `sync_queue` — Offline sync tracking
 

@@ -24,6 +24,7 @@ interface StormHeaderSummary {
   name: string;
   utilityClient: string;
   state: string;
+  eventCode: string;
 }
 
 interface TicketFormRendererProps {
@@ -41,6 +42,7 @@ interface TicketFormRendererProps {
 
 function getFieldDefault(field: TicketTemplateFieldConfig): unknown {
   if (field.controlType === 'toggle') return false;
+  if (field.controlType === 'number') return undefined;
   return '';
 }
 
@@ -96,7 +98,7 @@ export function TicketFormRenderer({
 }: TicketFormRendererProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const combinedSchema = useMemo(() => commonTicketCreateSchema.and(template.schema), [template]);
+  const combinedSchema = useMemo(() => (template.schema as z.ZodObject).extend(commonTicketCreateSchema.shape), [template]);
 
   const defaultValues = useMemo(() => {
     const templateDefaults = Object.fromEntries(
@@ -152,8 +154,8 @@ export function TicketFormRenderer({
             <span className={stormMetaValueClass}>{storm.state}</span>
           </p>
           <p>
-            <span className={stormMetaLabelClass}>Storm ID:</span>{' '}
-            <span className={`font-mono text-xs ${stormMetaValueClass}`}>{storm.id}</span>
+            <span className={stormMetaLabelClass}>Event code:</span>{' '}
+            <span className={`font-mono text-xs ${stormMetaValueClass}`}>{storm.eventCode}</span>
           </p>
         </div>
       </div>
@@ -165,6 +167,12 @@ export function TicketFormRenderer({
             await onSubmitTicket(values);
           })}
         >
+          <FormField control={form.control} name="priority" render={({ field }) => (
+            <FormItem><FormLabel>Priority</FormLabel><Select value={String(field.value)} onValueChange={field.onChange}>
+              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+              <SelectContent>{['A', 'B', 'C', 'X'].map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent>
+            </Select><FormMessage /></FormItem>
+          )} />
           <div className="storm-surface rounded-xl border border-[rgba(255,192,56,0.75)] p-4">
             <p className="mb-3 text-sm font-bold text-white">OCR Intake</p>
             <div className="mb-4 space-y-2">
@@ -261,7 +269,7 @@ export function TicketFormRenderer({
                                 <SelectContent>
                                   {(fieldConfig.enumValues ?? []).map((item) => (
                                     <SelectItem key={item} value={item}>
-                                      {item}
+                                      {fieldConfig.enumLabels?.[item] ?? item}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

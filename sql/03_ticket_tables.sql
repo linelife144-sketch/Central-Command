@@ -20,7 +20,7 @@ CREATE TABLE tickets (
   geofence_radius_meters INTEGER DEFAULT 500,
   
   -- Assignment
-  assigned_to UUID REFERENCES subcontractors(id),
+  assigned_to UUID REFERENCES contractors(id),
   assigned_by UUID REFERENCES profiles(id),
   assigned_at TIMESTAMPTZ,
   
@@ -115,7 +115,7 @@ CREATE TABLE ticket_routes (
   route_name VARCHAR(255) NOT NULL,
   
   -- Assignment
-  assigned_to UUID REFERENCES subcontractors(id),
+  assigned_to UUID REFERENCES contractors(id),
   assigned_by UUID REFERENCES profiles(id),
   assigned_at TIMESTAMPTZ,
   

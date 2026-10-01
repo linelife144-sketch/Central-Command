@@ -1331,10 +1331,10 @@ export async function submitAssessment(
   assessmentData: DamageAssessment,
   options: {
     ticketId: string;
-    subcontractorId: string;
+    contractorId: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const { ticketId, subcontractorId } = options;
+  const { ticketId, contractorId } = options;
   
   try {
     // 1. Validate all required fields
@@ -1351,7 +1351,7 @@ export async function submitAssessment(
     // 3. Prepare submission
     const submission = {
       ticket_id: ticketId,
-      subcontractor_id: subcontractorId,
+      contractor_id: contractorId,
       ...assessmentData,
       data_hash: dataHash,
       submitted_at: new Date().toISOString(),

@@ -19,8 +19,8 @@ import { TicketAssign } from './TicketAssign';
 import { toast } from 'sonner';
 
 interface TicketListProps {
-    userRole: 'admin' | 'subcontractor';
-    userId?: string; // For subcontractor view
+    userRole: 'admin' | 'contractor';
+    userId?: string; // For contractor view
 }
 
 export function TicketList({ userRole, userId }: TicketListProps) {
@@ -39,7 +39,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             setIsLoading(true);
             try {
                 let data: Ticket[];
-                if (userRole === 'subcontractor' && userId) {
+                if (userRole === 'contractor' && userId) {
                     data = await ticketService.getTicketsByAssignee(userId);
                 } else {
                     data = await ticketService.getTickets();
@@ -77,11 +77,11 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         });
     }, [tickets, filters]);
 
-    const handleAssignTicket = async (subcontractorId: string) => {
+    const handleAssignTicket = async (contractorId: string) => {
         if (!assignRequest) return;
         try {
             await ticketService.updateTicket(assignRequest.ticketId, {
-                assigned_to: subcontractorId,
+                assigned_to: contractorId,
                 status: 'ASSIGNED', // Automatically update status to ASSIGNED? Or keep existing? Usually logic implies assignment = assigned status.
                 // But check existing status... if it was DRAFT, now ASSIGNED.
             });

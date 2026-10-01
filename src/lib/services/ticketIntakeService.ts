@@ -1,3 +1,7 @@
+import { isSuperAdminTestingEnabled, SUPER_ADMIN_TEST_PROFILE } from '@/lib/testing/superAdminTesting';
+import { localTestStore } from '@/lib/testing/localTestStore';
+import { stormEventService } from './stormEventService';
+import { commonTicketCreateSchema, getTicketTemplateByUtilityClient, getTicketTemplateByTemplateKey, type TicketTemplateKey } from '@/lib/tickets/templates';
 import { supabase } from '@/lib/supabase/client';
 import { canPerformManagementAction, type ManagementAction } from '@/lib/auth/authorization';
 import type { UserRole } from '@/types';
@@ -24,7 +28,7 @@ async function getCurrentProfileRole(): Promise<UserRole | null> {
 }
 
 async function assertAllowed(action: ManagementAction): Promise<void> {
-  const role = await getCurrentProfileRole();
+  const role = isSuperAdminTestingEnabled() ? SUPER_ADMIN_TEST_PROFILE.role : await getCurrentProfileRole();
   if (!canPerformManagementAction(role, action)) {
     throw new Error('You do not have permission to create tickets.');
   }
@@ -44,54 +48,31 @@ export const ticketIntakeService = {
   async createUtilityTicket(input: CreateUtilityTicketInput): Promise<{ id: string }> {
     await assertAllowed('ticket_entry_write');
 
-    const normalizedUtilityClient: UtilityClient = normalizeUtilityClient(input.stormUtilityClient);
-    if (normalizedUtilityClient !== input.template.utilityClient) {
-      throw new Error('Template utility does not match storm utility client.');
+    const storm = await stormEventService.getStormEventById(input.stormEventId);
+    if (!storm) throw new Error('Create or select an existing storm event first.');
+    const normalizedUtilityClient = normalizeUtilityClient(storm.utilityClient);
+    const expectedTemplate = storm.ticketTemplateKey ? getTicketTemplateByTemplateKey(storm.ticketTemplateKey as TicketTemplateKey) : getTicketTemplateByUtilityClient(normalizedUtilityClient);
+    if (normalizeUtilityClient(input.stormUtilityClient) !== normalizedUtilityClient || input.template.templateKey !== (storm.ticketTemplateKey ?? expectedTemplate.templateKey)) {
+      throw new Error('Ticket utility and template must match the parent storm.');
     }
+    const common = commonTicketCreateSchema.parse(input.common);
 
-    const validatedPayload = input.template.schema.parse(input.payload) as Record<string, unknown>;
-    const ticketNumber = input.template.getTicketNumber(validatedPayload);
+    const validatedPayload = expectedTemplate.schema.parse(input.payload) as Record<string, unknown>;
+    const ticketNumber = expectedTemplate.getTicketNumber(validatedPayload);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: ticketRow, error: ticketError } = await (supabase.from('tickets') as any)
-      .insert({
-        storm_event_id: input.stormEventId,
-        ticket_number: ticketNumber,
-        utility_client: input.stormUtilityClient.trim(),
-        template_key: input.template.templateKey,
-        status: input.common.status,
-        priority: input.common.priority,
-        source_type: input.common.source_type,
-        source_file_id: input.common.source_file_id ?? null,
-        raw_ocr_text: input.common.raw_ocr_text ?? null,
+    if (isSuperAdminTestingEnabled()) {
+      const ticket = localTestStore.createTicket({
+        storm_event_id: storm.id, ticket_number: ticketNumber, utility_client: storm.utilityClient,
+        status: common.status, priority: common.priority, address: String(validatedPayload.address_line),
         work_description: `${input.template.displayName} - ${ticketNumber}`,
-        address: typeof validatedPayload.address_line === 'string' ? validatedPayload.address_line : 'Unknown',
-        city: 'Unknown',
-        state: 'NA',
-        zip_code: '00000',
-      })
-      .select('id')
-      .single();
-
-    if (ticketError) {
-      throw ticketError;
+      }, validatedPayload);
+      return { id: ticket.id };
     }
-
-    const created = ticketRow as TicketInsertResult;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: payloadError } = await (supabase.from('ticket_payloads') as any).upsert({
-      ticket_id: created.id,
-      payload: validatedPayload,
-      payload_version: input.template.payloadVersion,
-      extraction_confidence: input.extractionConfidence ?? {},
-      extraction_warnings: input.extractionWarnings ?? [],
-    });
-
-    if (payloadError) {
-      throw payloadError;
-    }
-
-    return { id: created.id };
+    const { data, error } = await supabase.rpc('create_storm_ticket' as never, {
+      p_storm_id: storm.id, p_common: common, p_payload: validatedPayload,
+      p_confidence: input.extractionConfidence ?? {}, p_warnings: input.extractionWarnings ?? [],
+    } as never);
+    if (error) throw error;
+    return { id: data as string };
   },
 };

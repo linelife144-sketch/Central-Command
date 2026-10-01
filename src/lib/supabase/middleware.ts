@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isPasswordResetAllowedPath, shouldEnforcePasswordReset } from '@/lib/auth/passwordResetGate';
+import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 
 const PUBLIC_ROUTE_PREFIXES = [
   '/login',
@@ -86,7 +87,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Handle /subcontractor to /contractor redirects (legacy support)
+  // Redirect legacy bookmarks to canonical contractor routes.
   if (pathname === '/subcontractor' || pathname.startsWith('/subcontractor/')) {
     const contractorUrl = request.nextUrl.clone();
     contractorUrl.pathname = pathname.replace(/^\/subcontractor/, '/contractor');
@@ -100,7 +101,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Development Auth Bypass: bypass login and open app directly to dashboard
-  const DEV_BYPASS_AUTH = true;
+  const DEV_BYPASS_AUTH = isSuperAdminTestingEnabled();
   if (DEV_BYPASS_AUTH) {
     if (pathname === '/login' || pathname === '/forgot-password' || pathname === '/magic-link' || pathname === '/') {
       const dashboardUrl = request.nextUrl.clone();

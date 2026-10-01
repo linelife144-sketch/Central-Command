@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase/client';
-import { getErrorLogContext, isAuthOrPermissionError, isMissingDatabaseObjectError } from '@/lib/utils/errorHandling';
+import { getErrorLogContext, isAuthOrPermissionError } from '@/lib/utils/errorHandling';
 
 interface UseContractorIdResult {
   contractorId: string | undefined;
@@ -36,21 +36,11 @@ export function useContractorId(profileId?: string): UseContractorIdResult {
 
         // Use a bounded list query instead of maybeSingle to tolerate legacy duplicate rows.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let { data, error } = await (supabase.from('contractors') as any)
+        const { data, error } = await (supabase.from('contractors') as any)
           .select('id')
           .eq('profile_id', profileId)
           .limit(1);
 
-        if (error && isMissingDatabaseObjectError(error)) {
-          // Fallback for pre-migration schema.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const legacyResult = await (supabase.from('subcontractors') as any)
-            .select('id')
-            .eq('profile_id', profileId)
-            .limit(1);
-          data = legacyResult.data;
-          error = legacyResult.error;
-        }
 
         if (error) {
           throw error;

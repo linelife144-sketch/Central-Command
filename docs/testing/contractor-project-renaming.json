@@ -1,0 +1,45 @@
+{
+  "date": "2026-09-30",
+  "agent": "Codex",
+  "status": "local_complete_live_database_blocked_by_management_login",
+  "task": "Project-wide canonical contractor naming",
+  "updated_files": 51,
+  "naming": "Contractor singular; Contractors plural; CONTRACTOR stored role; contractor_id keys",
+  "typecheck": "Passed",
+  "unit_tests": {
+    "passed": 53,
+    "suites": 10
+  },
+  "database": {
+    "engine": "Temporary PostgreSQL",
+    "checks": [
+      "Existing role values survive enum renaming",
+      "Tables and columns rename without losing records",
+      "View dependencies remain valid",
+      "RLS and table grants remain unchanged",
+      "Routine bodies and names update while grants and execution context survive",
+      "Foreign keys retain enforcement",
+      "Constraints, indexes, policies, and triggers use canonical names",
+      "Migration can run again safely",
+      "Ambiguous parallel names and dependent parameter signatures stop safely"
+    ]
+  },
+  "browser": [
+    "Contractor list and Invite Contractor wording",
+    "Contractor details and management wording",
+    "Contractor portal Time Tracking loads after route-group rename"
+  ],
+  "live_supabase": {
+    "modified": false,
+    "project": "xcvacmreerrypygpritq",
+    "management_api": "HTTP 401",
+    "cli": "No saved access token"
+  },
+  "legacy_identifiers_retained_only_for": [
+    "Historical migrations",
+    "Old bookmark redirects",
+    "Detection of an incomplete schema migration"
+  ],
+  "backup": "Original files stored outside the app in the current task workspace",
+  "progress_tracker_note": "MASTER_BUILD_INSTRUCTIONS.md is missing; ADR 0003 and this report record authorized work."
+}

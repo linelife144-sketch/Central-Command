@@ -125,19 +125,19 @@
 | 3 | Create pending approval screen | Status page |
 | 3 | Build admin approval interface | Review queue |
 | 4 | Create admin dashboard shell | Dashboard layout |
-| 4 | Implement subcontractor list | Data table |
-| 5 | Build subcontractor detail view | Profile view |
+| 4 | Implement contractor list | Data table |
+| 5 | Build contractor detail view | Profile view |
 
 **Week 4 Deliverables:**
 
 - [ ] Complete onboarding flow (11 steps)
 - [ ] Admin approval workflow
-- [ ] Subcontractor management UI
+- [ ] Contractor management UI
 - [ ] Dashboard framework
 
 **Phase 1 Completion Criteria:**
 
-- ✅ New subcontractor can complete full onboarding
+- ✅ New contractor can complete full onboarding
 - ✅ Admin can review and approve applications
 - ✅ All data persists to database
 - ✅ Authentication works end-to-end
@@ -233,7 +233,7 @@
 **Phase 2 Completion Criteria:**
 
 - ✅ Admin can create and assign tickets
-- ✅ Subcontractor can view tickets on map
+- ✅ Contractor can view tickets on map
 - ✅ GPS validation works
 - ✅ Photos capture with GPS and upload
 - ✅ App works offline for viewing tickets
@@ -328,7 +328,7 @@
 
 **Phase 3 Completion Criteria:**
 
-- ✅ Subcontractor can clock in/out with GPS
+- ✅ Contractor can clock in/out with GPS
 - ✅ Expenses can be submitted with receipts
 - ✅ Damage assessments can be completed
 - ✅ Invoices auto-generate from approved entries

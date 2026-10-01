@@ -1,9 +1,18 @@
 import { supabase } from '@/lib/supabase/client';
 import { Ticket, TicketStatus, UserRole } from '@/types';
 import { isValidTransition } from '@/lib/utils/statusTransitions';
+import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
+import { localTestStore } from '@/lib/testing/localTestStore';
 
 export const ticketService = {
+    async getUtilityPayload(id: string): Promise<Record<string, unknown> | null> {
+        if (isSuperAdminTestingEnabled()) return localTestStore.getPayload(id);
+        const { data, error } = await supabase.from('ticket_payloads').select('payload').eq('ticket_id', id).maybeSingle();
+        if (error) throw error;
+        return data ? (data as { payload: Record<string, unknown> }).payload : null;
+    },
     async getTickets() {
+        if (isSuperAdminTestingEnabled()) return localTestStore.getTickets();
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
@@ -14,6 +23,7 @@ export const ticketService = {
     },
 
     async getTicketById(id: string) {
+        if (isSuperAdminTestingEnabled()) return localTestStore.getTicketById(id);
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
@@ -25,6 +35,7 @@ export const ticketService = {
     },
 
     async createTicket(ticket: Partial<Ticket>) {
+        if (isSuperAdminTestingEnabled()) return localTestStore.createTicket(ticket);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from('tickets') as any)
             .insert([ticket])
@@ -36,6 +47,7 @@ export const ticketService = {
     },
 
     async updateTicket(id: string, updates: Partial<Ticket>) {
+        if (isSuperAdminTestingEnabled()) return localTestStore.updateTicket(id, updates);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from('tickets') as any)
             .update(updates)
@@ -48,6 +60,9 @@ export const ticketService = {
     },
 
     async getTicketsByAssignee(assigneeId: string) {
+        if (isSuperAdminTestingEnabled()) {
+            return localTestStore.getTickets().filter((ticket) => ticket.assigned_to === assigneeId);
+        }
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
@@ -76,6 +91,11 @@ export const ticketService = {
         // 2. Validate transition
         if (!isValidTransition(currentStatus, newStatus, role)) {
             throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus} for role ${role}`);
+        }
+
+        if (isSuperAdminTestingEnabled()) {
+            localTestStore.updateTicketStatus(id, newStatus, userId, changeReason, location);
+            return true;
         }
 
         // 3. Start transaction-like update
@@ -111,6 +131,10 @@ export const ticketService = {
         changeReason?: string,
         location?: { latitude: number; longitude: number; accuracy: number }
     ) {
+        if (isSuperAdminTestingEnabled()) {
+            localTestStore.logStatusChange(ticketId, fromStatus, toStatus, changedBy, changeReason, location);
+            return;
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from('ticket_status_history') as any)
             .insert([{
@@ -132,6 +156,7 @@ export const ticketService = {
      * Fetches status history for a specific ticket.
      */
     async getStatusHistory(ticketId: string) {
+        if (isSuperAdminTestingEnabled()) return localTestStore.getStatusHistory(ticketId);
         const { data, error } = await supabase
             .from('ticket_status_history')
             .select(`

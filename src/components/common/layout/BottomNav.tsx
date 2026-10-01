@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 interface BottomNavProps {
-  userRole: 'admin' | 'subcontractor';
+  userRole: 'admin' | 'contractor';
 }
 
 const adminNavItems = [
@@ -22,7 +22,7 @@ const adminNavItems = [
   { href: '/admin/map', label: 'Map', icon: Map },
 ];
 
-const subcontractorNavItems = [
+const contractorNavItems = [
   { href: '/tickets', label: 'Tickets', icon: Ticket },
   { href: '/contractor/map', label: 'Map', icon: Map },
   { href: '/contractor/time', label: 'Time', icon: Clock },
@@ -30,7 +30,7 @@ const subcontractorNavItems = [
 
 export function BottomNav({ userRole }: BottomNavProps) {
   const pathname = usePathname();
-  const navItems = userRole === 'admin' ? adminNavItems : subcontractorNavItems;
+  const navItems = userRole === 'admin' ? adminNavItems : contractorNavItems;
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border-strong bg-background/90 shadow-elevation-lg backdrop-blur-md safe-area-pb">

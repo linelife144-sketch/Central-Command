@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-30",
+  "agent": "Codex",
+  "task": "Enable a Super Admin testing session for local ticket and storm event creation",
+  "status": "implemented_service_and_browser_verified",
+  "storage": "Browser localStorage under central-command-super-admin-test-data-v1",
+  "activation": "NODE_ENV=development and NEXT_PUBLIC_ENABLE_SUPER_ADMIN_TESTING=true in .env.local",
+  "disable": "Set NEXT_PUBLIC_ENABLE_SUPER_ADMIN_TESTING=false and reload the development server",
+  "production": "Local testing is always disabled when NODE_ENV=production",
+  "scope": "Storm events, ticket CRUD, and ticket status history. This mode does not create real Supabase accounts or business records.",
+  "progress_tracker_note": "The MASTER_BUILD_INSTRUCTIONS.md progress tracker referenced by AGENTS.md is missing. This file records the authorized task and verification status instead.",
+  "verification": {
+    "typecheck": "Passed full TypeScript check after changes",
+    "service_checks": "8 direct checks passed against installed service code with isolated storage and a remote adapter",
+    "vitest": "Focused rollback form and formatting tests rerun; see storm verification report",
+    "server": "Running in Codex-managed session on port 3000; tickets and storm creation pages returned HTTP 200",
+    "browser": "Entergy and FPL ticket creation and refresh persistence verified. Illustrative equipment restrictions withdrawn and original fields restored.",
+    "real_data": "No live Supabase records modified."
+  }
+}

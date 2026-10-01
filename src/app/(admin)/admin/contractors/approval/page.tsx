@@ -18,7 +18,7 @@ import {
   Award,
 } from 'lucide-react';
 
-interface PendingSubcontractor {
+interface PendingContractor {
   id: string;
   firstName: string;
   lastName: string;
@@ -31,7 +31,7 @@ interface PendingSubcontractor {
   trainingCompleted: boolean;
 }
 
-const mockPending: PendingSubcontractor[] = [
+const mockPending: PendingContractor[] = [
   {
     id: '1',
     firstName: 'Sarah',
@@ -58,8 +58,8 @@ const mockPending: PendingSubcontractor[] = [
   },
 ];
 
-export default function SubcontractorApprovalPage() {
-  const [selectedSub, setSelectedSub] = useState<PendingSubcontractor | null>(mockPending[0]);
+export default function ContractorApprovalPage() {
+  const [selectedSub, setSelectedSub] = useState<PendingContractor | null>(mockPending[0]);
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
 
@@ -82,7 +82,7 @@ export default function SubcontractorApprovalPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Subcontractor Approvals"
+        title="Contractor Approvals"
         description={`${mockPending.length} applications pending review`}
         showBackButton
         backHref="/admin/contractors"

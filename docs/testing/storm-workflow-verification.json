@@ -1,0 +1,81 @@
+{
+  "date": "2026-09-30",
+  "task": "Storm-first operating and utility context",
+  "status": "implemented_and_locally_verified_live_rollout_pending_environment_choice",
+  "live_supabase_modified": false,
+  "typecheck": "Passed full TypeScript check",
+  "unit_tests": {
+    "passed": 29,
+    "runtime": "Node 22",
+    "suites": [
+      "localTestStore",
+      "entergy template",
+      "entergyTicketFormat",
+      "invoiceGenerationService",
+      "TicketFormRenderer"
+    ]
+  },
+  "service_checks": [
+    {
+      "name": "Testing flag is disabled outside development",
+      "passed": true
+    },
+    {
+      "name": "Super Admin is allowed to create storms and tickets",
+      "passed": true
+    },
+    {
+      "name": "Storm and linked ticket save without remote calls",
+      "passed": true
+    },
+    {
+      "name": "Records persist across service reloads",
+      "passed": true
+    },
+    {
+      "name": "Invalid links and duplicate numbers are rejected",
+      "passed": true
+    },
+    {
+      "name": "Local updates, assignment filters, and status history work",
+      "passed": true
+    },
+    {
+      "name": "Failed writes preserve saved data and report an error",
+      "passed": true
+    },
+    {
+      "name": "Production uses the original remote service",
+      "passed": true
+    }
+  ],
+  "database_checks": {
+    "engine": "Ephemeral PostgreSQL with representative schema fixture",
+    "checks": [
+      "Migrations execute and utility definitions preload into each storm",
+      "Event codes are unique regardless of case",
+      "Utility and frozen event configuration cannot change",
+      "Atomic utility ticket creation persists ticket and payload",
+      "Invalid configured enums, extra fields and malformed incident numbers are rejected",
+      "Ticket numbers are unique within a storm and reusable in another storm",
+      "Contractor membership is required for ticket assignment",
+      "Invoice lines reject time and expenses from other storms",
+      "RPCs deny unauthorized roles and never run with elevated privileges"
+    ]
+  },
+  "browser_checks": [
+    "Entergy and FPL storm workspaces, ticket creation, and refresh persistence verified",
+    "Illustrative terminology rules withdrawn; original template fields and labels restored",
+    "Saved QA snapshots repaired; invented equipment values removed from the two agent-created QA tickets"
+  ],
+  "screenshots": [],
+  "server": "Codex-managed Next development server running at http://localhost:3000",
+  "docker": "Docker Desktop stopped after test attempt resumed an existing conflicting localhost service. Database verification used temporary in-memory PostgreSQL instead.",
+  "limitations": [
+    "Database checks use a representative schema fixture; target Supabase schema and RLS must be checked before rollout",
+    "Complete production formats and procedures for FPL and other utilities require approved specifications",
+    "Local billing has no approved time or expense entries and never queries live finances"
+  ],
+  "progress_tracker_note": "MASTER_BUILD_INSTRUCTIONS.md referenced by AGENTS.md is missing; ADR 0002 and this report record the work.",
+  "rollback": "Restored Entergy and FPL template files and Entergy export formatting from pre-change backups; regenerated pending SQL seed; adjusted tests to original fields. No live Supabase migration was applied."
+}

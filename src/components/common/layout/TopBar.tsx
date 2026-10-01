@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,9 +44,14 @@ export function TopBar({ onMenuClick, userName, userRole, onSignOut }: TopBarPro
 
           {/* Logo - Mobile */}
           <Link href="/" className="lg:hidden flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-storm rounded-lg flex items-center justify-center shadow-brand">
-              <span className="text-white font-bold text-sm">G</span>
-            </div>
+            <Image
+              alt="Grid Electric storm mark"
+              className="w-8 h-8 object-contain rounded-lg"
+              height={32}
+              priority
+              src="/icons/grid-ge-storm-icon-clean.svg"
+              width={32}
+            />
           </Link>
         </div>
 

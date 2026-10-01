@@ -28,12 +28,12 @@ Implement the core mapping and GPS tracking foundations required for contractor 
 - [ ] Implement geofencing check logic (verify distance < 500m)
 - [ ] Create custom `useGeolocation` / GPS validation hook
 - [ ] Implement route optimization logic (using OSRM or Mapbox)
-- [ ] Create route view UI for subcontractors
+- [ ] Create route view UI for contractors
 
 ### 3. Status Update Flow (Task 6.3)
 
 - [ ] Implement GPS validation check at each status transition
-- [ ] Implement the 3-status subcontractor mobile map view flow (In Route → On Site → Complete)
+- [ ] Implement the 3-status contractor mobile map view flow (In Route → On Site → Complete)
 - [ ] Create mobile map view interface
 
 ---

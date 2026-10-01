@@ -30,6 +30,7 @@ export interface TicketTemplateFieldConfig {
   controlType: TicketFormControlType;
   required: boolean;
   enumValues?: string[];
+  enumLabels?: Record<string, string>;
   formattingRules?: {
     regex?: RegExp;
     transform?: 'uppercase' | 'trim' | 'digits_only';

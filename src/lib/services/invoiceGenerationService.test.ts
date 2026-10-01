@@ -65,7 +65,8 @@ describe('createInvoiceGenerationService', () => {
 
     await expect(
       service.listGenerationCandidates({
-        billingPeriodStart: '2026-02-20',
+        stormEventId: 'storm-1',
+      billingPeriodStart: '2026-02-20',
         billingPeriodEnd: '2026-02-01',
       }),
     ).rejects.toThrow('Billing period end date must be on or after the start date');
@@ -78,7 +79,8 @@ describe('createInvoiceGenerationService', () => {
 
     await expect(
       service.generateInvoices({
-        billingPeriodStart: '2026-02-01',
+        stormEventId: 'storm-1',
+      billingPeriodStart: '2026-02-01',
         billingPeriodEnd: '2026-02-28',
         contractorIds: ['sub-1'],
       }),
@@ -127,6 +129,7 @@ describe('createInvoiceGenerationService', () => {
     } as never);
 
     const result = await service.generateInvoices({
+      stormEventId: 'storm-1',
       billingPeriodStart: '2026-02-01',
       billingPeriodEnd: '2026-02-28',
       contractorIds: ['sub-1'],

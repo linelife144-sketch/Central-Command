@@ -1,6 +1,7 @@
+import { isSuperAdminTestingEnabled } from '../testing/superAdminTesting';
 import { APP_CONFIG } from '../config/appConfig';
 import { resolveBillableMinutesForEntry, calculateBillableAmount } from '../utils/timeTracking';
-import type { InvoiceStatus, ContractorInvoice, SubcontractorInvoice } from '../../types';
+import type { InvoiceStatus, ContractorInvoice } from '../../types';
 
 interface RemoteTimeEntryRow {
   id: string;
@@ -28,6 +29,7 @@ interface RemoteExpenseReportRow {
 }
 
 interface RemoteInvoiceRow {
+  storm_event_id: string;
   id: string;
   invoice_number: string;
   contractor_id: string;
@@ -98,6 +100,7 @@ interface RemoteTicketRow {
 type InvoiceGenerationStatus = Extract<InvoiceStatus, 'DRAFT' | 'SUBMITTED'>;
 
 export interface InvoiceGenerationPeriod {
+  stormEventId?: string;
   billingPeriodStart: string;
   billingPeriodEnd: string;
 }
@@ -233,6 +236,7 @@ export interface InvoiceGenerationService {
 }
 
 interface InsertInvoiceInput {
+  stormEventId: string;
   invoiceNumber: string;
   contractorId: string;
   billingPeriodStart: string;
@@ -308,6 +312,7 @@ function parseIsoDate(value: string): Date {
 }
 
 function validateBillingPeriod(period: InvoiceGenerationPeriod): void {
+  if (!period.stormEventId) throw new Error('Select a storm event before billing.');
   const start = parseIsoDate(period.billingPeriodStart);
   const end = parseIsoDate(period.billingPeriodEnd);
 
@@ -323,6 +328,7 @@ function toDateOnly(value: string): string {
 function mapRemoteInvoice(row: RemoteInvoiceRow): ContractorInvoice {
   return {
     id: row.id,
+    storm_event_id: row.storm_event_id,
     invoice_number: row.invoice_number,
     contractor_id: row.contractor_id,
     billing_period_start: row.billing_period_start,
@@ -554,6 +560,7 @@ async function fetchGenerationCandidates(period: InvoiceGenerationPeriod): Promi
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: timeData, error: timeError } = await (supabase.from('time_entries') as any)
     .select('id, contractor_id, ticket_id, clock_in_at, clock_out_at, break_minutes, billable_minutes, billable_amount, work_type, work_type_rate, status, invoice_id')
+    .eq('storm_event_id', period.stormEventId)
     .eq('status', 'APPROVED')
     .is('invoice_id', null)
     .gte('clock_in_at', periodStartIso)
@@ -567,6 +574,7 @@ async function fetchGenerationCandidates(period: InvoiceGenerationPeriod): Promi
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: expenseData, error: expenseError } = await (supabase.from('expense_reports') as any)
     .select('id, contractor_id, report_period_start, report_period_end, total_amount, status, invoice_id')
+    .eq('storm_event_id', period.stormEventId)
     .eq('status', 'APPROVED')
     .is('invoice_id', null)
     .lte('report_period_start', periodEnd)
@@ -710,6 +718,7 @@ async function insertInvoice(input: InsertInvoiceInput): Promise<ContractorInvoi
   const { data, error } = await (supabase.from('contractor_invoices') as any)
     .insert([
       {
+        storm_event_id: input.stormEventId,
         invoice_number: input.invoiceNumber,
         contractor_id: input.contractorId,
         billing_period_start: input.billingPeriodStart,
@@ -992,12 +1001,14 @@ export function createInvoiceGenerationService(
   return {
     async listGenerationCandidates(period: InvoiceGenerationPeriod): Promise<InvoiceGenerationCandidate[]> {
       validateBillingPeriod(period);
+      if (isSuperAdminTestingEnabled()) return [];
       return dependencies.fetchGenerationCandidates(period);
     },
 
     async generateInvoices(input: GenerateInvoicesInput): Promise<GenerateInvoicesResult> {
       validateBillingPeriod(input);
 
+      if (isSuperAdminTestingEnabled()) throw new Error('No approved local time or expense entries are available to bill.');
       if (!dependencies.isOnline()) {
         throw new Error('Invoice generation requires an internet connection.');
       }
@@ -1008,6 +1019,7 @@ export function createInvoiceGenerationService(
       }
 
       const allCandidates = await dependencies.fetchGenerationCandidates({
+        stormEventId: input.stormEventId,
         billingPeriodStart: input.billingPeriodStart,
         billingPeriodEnd: input.billingPeriodEnd,
       });
@@ -1044,6 +1056,7 @@ export function createInvoiceGenerationService(
         const thresholdReachedAt = existingTracking?.threshold_reached_at ?? (thresholdWarning ? nowIso : undefined);
 
         const createdInvoice = await dependencies.insertInvoice({
+          stormEventId: input.stormEventId!,
           invoiceNumber,
           contractorId: candidate.contractor_id,
           billingPeriodStart: input.billingPeriodStart,
@@ -1104,6 +1117,7 @@ export function createInvoiceGenerationService(
     },
 
     async listInvoices(filters: InvoiceListFilters = {}): Promise<InvoiceListItem[]> {
+      if (isSuperAdminTestingEnabled()) throw new Error('No approved local time or expense entries are available to bill.');
       if (!dependencies.isOnline()) {
         return [];
       }
@@ -1116,6 +1130,7 @@ export function createInvoiceGenerationService(
         return null;
       }
 
+      if (isSuperAdminTestingEnabled()) throw new Error('No approved local time or expense entries are available to bill.');
       if (!dependencies.isOnline()) {
         return null;
       }
@@ -1131,6 +1146,7 @@ export function createInvoiceGenerationService(
         return null;
       }
 
+      if (isSuperAdminTestingEnabled()) throw new Error('No approved local time or expense entries are available to bill.');
       if (!dependencies.isOnline()) {
         return null;
       }

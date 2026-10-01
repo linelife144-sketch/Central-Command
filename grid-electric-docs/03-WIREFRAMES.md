@@ -15,7 +15,7 @@
 3. [Authentication Flows](#3-authentication-flows)
 4. [Onboarding Flows](#4-onboarding-flows)
 5. [Admin Portal Screens](#5-admin-portal-screens)
-6. [Subcontractor Portal Screens](#6-subcontractor-portal-screens)
+6. [Contractor Portal Screens](#6-contractor-portal-screens)
 7. [Shared Components](#7-shared-components)
 8. [Mobile-First Specifications](#8-mobile-first-specifications)
 
@@ -63,62 +63,62 @@
 
 | # | Screen | Purpose | Primary User |
 |---|--------|---------|--------------|
-| O1 | Welcome | Platform introduction | New Subcontractors |
-| O2 | Personal Info | Identity collection | New Subcontractors |
-| O3 | Business Info | 1099 entity setup | New Subcontractors |
-| O4 | Insurance Upload | Coverage verification | New Subcontractors |
-| O5 | Credentials | License/certification | New Subcontractors |
-| O6 | Banking Setup | Payment information | New Subcontractors |
-| O7 | Rate Agreement | Compensation terms | New Subcontractors |
-| O8 | Agreements | Legal document signing | New Subcontractors |
-| O9 | Safety Training | Video completion | New Subcontractors |
-| O10 | Profile Photo | Identity verification | New Subcontractors |
-| O11 | Review & Submit | Final confirmation | New Subcontractors |
-| O12 | Pending Approval | Awaiting admin review | New Subcontractors |
+| O1 | Welcome | Platform introduction | New Contractors |
+| O2 | Personal Info | Identity collection | New Contractors |
+| O3 | Business Info | 1099 entity setup | New Contractors |
+| O4 | Insurance Upload | Coverage verification | New Contractors |
+| O5 | Credentials | License/certification | New Contractors |
+| O6 | Banking Setup | Payment information | New Contractors |
+| O7 | Rate Agreement | Compensation terms | New Contractors |
+| O8 | Agreements | Legal document signing | New Contractors |
+| O9 | Safety Training | Video completion | New Contractors |
+| O10 | Profile Photo | Identity verification | New Contractors |
+| O11 | Review & Submit | Final confirmation | New Contractors |
+| O12 | Pending Approval | Awaiting admin review | New Contractors |
 
 ### 2.3 Admin Portal Screens (18)
 
 | # | Screen | Purpose | Primary User |
 |---|--------|---------|--------------|
 | AD1 | Admin Dashboard | Overview & metrics | Operations Manager |
-| AD2 | Subcontractor List | Manage workforce | Operations Manager |
-| AD3 | Subcontractor Detail | Individual profile view | Operations Manager |
-| AD4 | Subcontractor Approval | Review onboarding | Operations Manager |
+| AD2 | Contractor List | Manage workforce | Operations Manager |
+| AD3 | Contractor Detail | Individual profile view | Operations Manager |
+| AD4 | Contractor Approval | Review onboarding | Operations Manager |
 | AD5 | Ticket List | All tickets view | Operations Manager |
 | AD6 | Ticket Detail | Individual ticket view | Operations Manager |
 | AD7 | Ticket Create | New ticket creation | Operations Manager |
-| AD8 | Ticket Assignment | Assign to subcontractor | Operations Manager |
+| AD8 | Ticket Assignment | Assign to contractor | Operations Manager |
 | AD9 | Route Optimization | Multi-ticket routing | Operations Manager |
 | AD10 | Time Review | Approve/reject time entries | Operations Manager |
 | AD11 | Expense Review | Approve/reject expenses | Operations Manager |
 | AD12 | Assessment Review | Review damage assessments | Operations Manager |
-| AD13 | Invoice Generation | Create subcontractor invoices | Operations Manager |
+| AD13 | Invoice Generation | Create contractor invoices | Operations Manager |
 | AD14 | Invoice List | View all invoices | Operations Manager |
 | AD15 | Reports Dashboard | Analytics & reporting | Operations Manager |
 | AD16 | Map View | Geographic ticket view | Operations Manager |
 | AD17 | Settings | Platform configuration | Super Admin |
 | AD18 | Audit Logs | Compliance tracking | Super Admin |
 
-### 2.4 Subcontractor Portal Screens (16)
+### 2.4 Contractor Portal Screens (16)
 
 | # | Screen | Purpose | Primary User |
 |---|--------|---------|--------------|
-| SC1 | Sub Dashboard | Today's work overview | Subcontractor |
-| SC2 | Ticket List | My assigned tickets | Subcontractor |
-| SC3 | Ticket Detail | Individual ticket view | Subcontractor |
-| SC4 | Clock In/Out | Time tracking interface | Subcontractor |
-| SC5 | Route Map | Navigation to site | Subcontractor |
-| SC6 | Photo Capture | Assessment photography | Subcontractor |
-| SC7 | Damage Assessment Form | Equipment evaluation | Subcontractor |
-| SC8 | Safety Checklist | Pre-work verification | Subcontractor |
-| SC9 | Expense List | My expense reports | Subcontractor |
-| SC10 | Expense Create | New expense entry | Subcontractor |
-| SC11 | Receipt Capture | Photo upload for expenses | Subcontractor |
-| SC12 | Time History | Past time entries | Subcontractor |
-| SC13 | Invoice List | My invoices | Subcontractor |
-| SC14 | Invoice Detail | Individual invoice view | Subcontractor |
-| SC15 | Profile | My information | Subcontractor |
-| SC16 | Sync Status | Offline queue management | Subcontractor |
+| SC1 | Sub Dashboard | Today's work overview | Contractor |
+| SC2 | Ticket List | My assigned tickets | Contractor |
+| SC3 | Ticket Detail | Individual ticket view | Contractor |
+| SC4 | Clock In/Out | Time tracking interface | Contractor |
+| SC5 | Route Map | Navigation to site | Contractor |
+| SC6 | Photo Capture | Assessment photography | Contractor |
+| SC7 | Damage Assessment Form | Equipment evaluation | Contractor |
+| SC8 | Safety Checklist | Pre-work verification | Contractor |
+| SC9 | Expense List | My expense reports | Contractor |
+| SC10 | Expense Create | New expense entry | Contractor |
+| SC11 | Receipt Capture | Photo upload for expenses | Contractor |
+| SC12 | Time History | Past time entries | Contractor |
+| SC13 | Invoice List | My invoices | Contractor |
+| SC14 | Invoice Detail | Individual invoice view | Contractor |
+| SC15 | Profile | My information | Contractor |
+| SC16 | Sync Status | Offline queue management | Contractor |
 
 **Total Screens: 52**
 
@@ -951,14 +951,14 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.5 Subcontractor List (AD2)
+### 5.5 Contractor List (AD2)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  Central Command                                    John | Admin ▼  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  SUBCONTRACTORS                                    [+ Invite] [Export]      │
+│  CONTRACTORS                                    [+ Invite] [Export]      │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │ 🔍 Search by name...  [Status ▼] [Eligibility ▼] [Insurance ▼]      │    │
@@ -1002,12 +1002,12 @@
 │  ─────────────────────────────────────────────────────────────────────────  │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ 🔍 Search...  [Status ▼] [Date Range ▼] [Subcontractor ▼] [Export]  │    │
+│  │ 🔍 Search...  [Status ▼] [Date Range ▼] [Contractor ▼] [Export]  │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
 │  PENDING REVIEW (15)                                                        │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ □  Subcontractor  Ticket      Date        Hours   Type        Amount│    │
+│  │ □  Contractor  Ticket      Date        Hours   Type        Amount│    │
 │  │ ─────────────────────────────────────────────────────────────────── │    │
 │  │ □  John Smith     GES-260245  02/03/2026  4.5h    Standard    $337.50│   │
 │  │     [📷 Clock-in] [📍 GPS: 27.95, -82.45]                           │    │
@@ -1028,7 +1028,7 @@
 │                                                                             │
 │  RECENTLY APPROVED                                                          │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ Subcontractor  Ticket      Date        Hours   Type        Amount   │    │
+│  │ Contractor  Ticket      Date        Hours   Type        Amount   │    │
 │  │ ─────────────────────────────────────────────────────────────────── │    │
 │  │ Robert Wilson  GES-260230  02/01/2026  5.5h    Standard    $412.50  │    │
 │  │ Lisa Davis     GES-260228  02/01/2026  3.0h    Emergency   $375.00  │    │
@@ -1058,7 +1058,7 @@
 │  │ └─────────────────────────┘ │  │ └─────────────────────────────────┘ │   │
 │  └─────────────────────────────┘  └─────────────────────────────────────┘   │
 │                                                                             │
-│  SUBCONTRACTORS TO INVOICE                                                  │
+│  CONTRACTORS TO INVOICE                                                  │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │ □ Select All                                                        │    │
 │  │ ─────────────────────────────────────────────────────────────────── │    │
@@ -1077,7 +1077,7 @@
 │                                                                             │
 │  SUMMARY                                                                    │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ Subcontractors Selected: 4                                          │    │
+│  │ Contractors Selected: 4                                          │    │
 │  │ Total Time Entries: 41                                              │    │
 │  │ Total Expense Reports: 17                                           │    │
 │  │                                                                     │    │
@@ -1096,7 +1096,7 @@
 
 ---
 
-## 6. SUBCONTRACTOR PORTAL SCREENS
+## 6. CONTRACTOR PORTAL SCREENS
 
 ### 6.1 Sub Dashboard (SC1) - Mobile
 

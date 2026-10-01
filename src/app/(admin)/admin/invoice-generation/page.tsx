@@ -1,22 +1,5 @@
-'use client';
-
-import { PageHeader } from '@/components/common/layout/PageHeader';
-import { InvoiceGenerator } from '@/components/features/invoices';
-import { useAuth } from '@/components/providers/AuthProvider';
-
-export default function AdminInvoiceGenerationPage() {
-  const { profile } = useAuth();
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Invoice Generation"
-        description="Generate contractor invoices from approved time entries and expense reports."
-      />
-
-      <div className="storm-surface rounded-xl p-4">
-        <InvoiceGenerator generatedBy={profile?.id} />
-      </div>
-    </div>
-  );
+import Link from 'next/link';
+export default function BillingStartPage() {
+  return <div className="space-y-4"><h1 className="text-2xl font-semibold">Storm Billing</h1>
+    <p>Open a storm workspace to generate invoices for that event.</p><Link className="text-grid-blue underline" href="/admin/storms">Select a storm event</Link></div>;
 }

@@ -14,8 +14,8 @@ CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_subcontractors_updated_at
-  BEFORE UPDATE ON subcontractors
+CREATE TRIGGER update_contractors_updated_at
+  BEFORE UPDATE ON contractors
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_tickets_updated_at

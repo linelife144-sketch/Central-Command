@@ -33,8 +33,8 @@ CREATE INDEX idx_profiles_email ON profiles(email);
 CREATE INDEX idx_profiles_role ON profiles(role);
 CREATE INDEX idx_profiles_active ON profiles(is_active);
 
--- Subcontractors table
-CREATE TABLE subcontractors (
+-- Contractors table
+CREATE TABLE contractors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   profile_id UUID UNIQUE REFERENCES profiles(id) ON DELETE CASCADE,
   
@@ -76,17 +76,17 @@ CREATE TABLE subcontractors (
 );
 
 -- Enable RLS
-ALTER TABLE subcontractors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractors ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_subcontractors_profile ON subcontractors(profile_id);
-CREATE INDEX idx_subcontractors_status ON subcontractors(onboarding_status);
-CREATE INDEX idx_subcontractors_eligible ON subcontractors(is_eligible_for_assignment);
+CREATE INDEX idx_contractors_profile ON contractors(profile_id);
+CREATE INDEX idx_contractors_status ON contractors(onboarding_status);
+CREATE INDEX idx_contractors_eligible ON contractors(is_eligible_for_assignment);
 
--- Subcontractor Rates
-CREATE TABLE subcontractor_rates (
+-- Contractor Rates
+CREATE TABLE contractor_rates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id) ON DELETE CASCADE,
+  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
   
   -- Rate Definition
   work_type work_type NOT NULL,
@@ -102,16 +102,16 @@ CREATE TABLE subcontractor_rates (
   created_by UUID REFERENCES profiles(id),
   
   -- Constraints
-  CONSTRAINT unique_active_rate UNIQUE (subcontractor_id, work_type, effective_from)
+  CONSTRAINT unique_active_rate UNIQUE (contractor_id, work_type, effective_from)
 );
 
 -- Enable RLS
-ALTER TABLE subcontractor_rates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractor_rates ENABLE ROW LEVEL SECURITY;
 
--- Subcontractor Banking
-CREATE TABLE subcontractor_banking (
+-- Contractor Banking
+CREATE TABLE contractor_banking (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id) ON DELETE CASCADE,
+  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
   
   -- Bank Details (Encrypted)
   account_holder_name VARCHAR(255) NOT NULL,
@@ -141,4 +141,4 @@ CREATE TABLE subcontractor_banking (
 );
 
 -- Enable RLS
-ALTER TABLE subcontractor_banking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractor_banking ENABLE ROW LEVEL SECURITY;

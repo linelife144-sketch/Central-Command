@@ -25,7 +25,7 @@
 
 ### 1.1 Why Offline-First?
 
-Field subcontractors often work in areas with:
+Field contractors often work in areas with:
 - **Poor cellular coverage** (rural areas, underground facilities)
 - **Network congestion** (emergency response situations)
 - **Battery constraints** (continuous radio usage drains battery)
@@ -425,10 +425,10 @@ class GridElectricDatabase extends Dexie {
     
     this.version(1).stores({
       tickets: 'id, ticket_number, status, assigned_to, priority, scheduled_date, syncStatus, lastModified',
-      timeEntries: 'id, subcontractor_id, ticket_id, clock_in_at, status, syncStatus, lastModified',
-      expenseReports: 'id, subcontractor_id, report_period_start, status',
+      timeEntries: 'id, contractor_id, ticket_id, clock_in_at, status, syncStatus, lastModified',
+      expenseReports: 'id, contractor_id, report_period_start, status',
       expenseItems: 'id, expense_report_id, category, expense_date',
-      assessments: 'id, ticket_id, subcontractor_id, assessed_at',
+      assessments: 'id, ticket_id, contractor_id, assessed_at',
       mediaAssets: 'id, uploaded_by, entity_type, entity_id, upload_status',
       syncQueue: 'id, operation, table, entity_id, status, retry_count, created_at',
       pendingPhotos: 'id, retryCount, createdAt',

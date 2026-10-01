@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Users, UserCheck, UserPlus, UserX, AlertTriangle } from 'lucide-react';
 
-interface Subcontractor {
+interface Contractor {
   id: string;
   name: string;
   status: string;
@@ -27,7 +27,7 @@ interface Subcontractor {
   alerts?: string;
 }
 
-const mockSubcontractors: Subcontractor[] = [
+const mockContractors: Contractor[] = [
   { id: '1', name: 'John Smith', status: 'Active', eligible: true, tickets: 12, ytdEarnings: '$45,230', alerts: undefined },
   { id: '2', name: 'Maria Johnson', status: 'Active', eligible: true, tickets: 8, ytdEarnings: '$38,150', alerts: undefined },
   { id: '3', name: 'David Chen', status: 'Active', eligible: true, tickets: 15, ytdEarnings: '$52,400', alerts: 'Insurance expiring' },
@@ -37,7 +37,7 @@ const mockSubcontractors: Subcontractor[] = [
   { id: '7', name: 'Robert Wilson', status: 'Active', eligible: true, tickets: 6, ytdEarnings: '$28,900', alerts: undefined },
 ];
 
-const columns: Column<Subcontractor>[] = [
+const columns: Column<Contractor>[] = [
   {
     key: 'name',
     header: 'Name',
@@ -88,18 +88,18 @@ const columns: Column<Subcontractor>[] = [
   },
 ];
 
-export default function SubcontractorsListPage() {
+export default function ContractorsListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Calculate metrics
-  const totalCount = mockSubcontractors.length;
-  const activeCount = mockSubcontractors.filter(s => s.status === 'Active').length;
-  const pendingCount = mockSubcontractors.filter(s => s.status === 'Pending').length;
-  const expiringCount = mockSubcontractors.filter(s => s.alerts?.includes('expiring')).length;
+  const totalCount = mockContractors.length;
+  const activeCount = mockContractors.filter(s => s.status === 'Active').length;
+  const pendingCount = mockContractors.filter(s => s.status === 'Pending').length;
+  const expiringCount = mockContractors.filter(s => s.alerts?.includes('expiring')).length;
 
   // Filter data
-  const filteredData = mockSubcontractors.filter(sub => {
+  const filteredData = mockContractors.filter(sub => {
     const matchesSearch = sub.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || sub.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
@@ -108,12 +108,12 @@ export default function SubcontractorsListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Subcontractors"
+        title="Contractors"
         description="Manage your workforce and view performance metrics"
       >
         <Button>
           <UserPlus className="w-4 h-4 mr-2" />
-          Invite Subcontractor
+          Invite Contractor
         </Button>
       </PageHeader>
 

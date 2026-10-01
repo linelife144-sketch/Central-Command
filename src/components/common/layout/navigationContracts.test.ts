@@ -15,7 +15,7 @@ describe('navigation contracts', () => {
     expect(ADMIN_SIDEBAR_NAV_ITEMS).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ href: '/admin/dashboard', label: 'Dashboard' }),
-        expect.objectContaining({ href: '/admin/contractors', label: 'Users' }),
+        expect.objectContaining({ href: '/admin/contractors', label: 'Contractors' }),
         expect.objectContaining({ href: '/admin/storms/create', label: 'Storm Events' }),
       ])
     );

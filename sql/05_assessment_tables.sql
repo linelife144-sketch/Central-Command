@@ -69,7 +69,7 @@ ALTER TABLE hazard_categories ENABLE ROW LEVEL SECURITY;
 CREATE TABLE damage_assessments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id UUID NOT NULL UNIQUE REFERENCES tickets(id),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   
   -- Safety Observations
   safety_observations JSONB DEFAULT '{}'::jsonb,
@@ -110,7 +110,7 @@ ALTER TABLE damage_assessments ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
 CREATE INDEX idx_assessment_ticket ON damage_assessments(ticket_id);
-CREATE INDEX idx_assessment_subcontractor ON damage_assessments(subcontractor_id);
+CREATE INDEX idx_assessment_contractor ON damage_assessments(contractor_id);
 
 -- Equipment Assessments
 CREATE TABLE equipment_assessments (

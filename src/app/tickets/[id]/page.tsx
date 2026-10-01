@@ -12,21 +12,23 @@ import { formatDate, formatAddress } from '@/lib/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { StatusUpdater } from '@/components/features/tickets/StatusUpdater';
+import { UtilityTicketDetails } from '@/components/features/tickets/UtilityTicketDetails';
 import { StatusHistoryTimeline } from '@/components/features/tickets/StatusHistoryTimeline';
 
 export default function TicketDetailPage() {
     const params = useParams();
-    const { user } = useAuthStore();
+    const { profile: user } = useAuth();
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const userRole: 'admin' | 'subcontractor' =
-        user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'TEAM_LEAD'
+    const userRole: 'admin' | 'contractor' =
+        isAdminClassRole(user?.role) || user?.role === 'TEAM_LEAD'
             ? 'admin'
-            : 'subcontractor';
+            : 'contractor';
 
     const loadTicket = async () => {
         if (!params.id) return;
@@ -99,6 +101,7 @@ export default function TicketDetailPage() {
                             <TabsTrigger value="history">History</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details" className="space-y-4 mt-4">
+                            <UtilityTicketDetails ticket={ticket} />
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Location & Contact</CardTitle>
@@ -118,7 +121,7 @@ export default function TicketDetailPage() {
                             </Card>
                         </TabsContent>
                         <TabsContent value="assessments">
-                            {userRole === 'subcontractor' ? (
+                            {userRole === 'contractor' ? (
                                 <div className="text-muted-foreground p-4 text-center border-2 border-dashed rounded-lg">
                                     <p>No assessment submitted yet.</p>
                                     {(ticket.status === 'ON_SITE' || ticket.status === 'IN_PROGRESS' || ticket.status === 'NEEDS_REWORK') && (
@@ -140,15 +143,15 @@ export default function TicketDetailPage() {
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{userRole === 'subcontractor' ? 'Metadata' : 'Info'}</CardTitle>
+                            <CardTitle>{userRole === 'contractor' ? 'Metadata' : 'Info'}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
                                 <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Assigned To</span>
                                 <p className="font-semibold">
-                                    {userRole === 'subcontractor'
+                                    {userRole === 'contractor'
                                         ? 'You'
-                                        : (ticket.assigned_to ? 'Subcontractor Assigned' : 'Unassigned')}
+                                        : (ticket.assigned_to ? 'Contractor Assigned' : 'Unassigned')}
                                 </p>
                             </div>
                             <div>

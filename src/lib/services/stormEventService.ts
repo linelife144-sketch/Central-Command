@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase/client';
-import { normalizeUtilityClient } from '@/lib/tickets/templates';
+import { createTemplateSnapshot, getTicketTemplateByUtilityClient, normalizeUtilityClient } from '@/lib/tickets/templates';
 import { isAuthOrPermissionError, isMissingDatabaseObjectError } from '@/lib/utils/errorHandling';
+import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
+import { localTestStore } from '@/lib/testing/localTestStore';
 
 const CLOSED_TICKET_STATUSES = new Set(['CLOSED', 'ARCHIVED', 'EXPIRED']);
 
@@ -173,6 +175,8 @@ async function getActiveTicketCountByEventId(eventIds: string[]): Promise<Map<st
 
 export const stormEventService = {
   async listStormEvents(): Promise<StormEventSummary[]> {
+    if (isSuperAdminTestingEnabled()) return localTestStore.listStormEvents();
+
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !sessionData.session) {
       return [];
@@ -224,6 +228,8 @@ export const stormEventService = {
     if (!id) {
       return null;
     }
+
+    if (isSuperAdminTestingEnabled()) return localTestStore.getStormEventById(id);
 
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !sessionData.session) {
@@ -279,12 +285,29 @@ export const stormEventService = {
   },
 
   async createStormEvent(input: CreateStormEventInput): Promise<StormEventSummary> {
+    if (isSuperAdminTestingEnabled()) {
+      const utilityClient = normalizeUtilityClientValue(input.utilityClient);
+      return localTestStore.createStormEvent({
+        eventCode: normalizeOptional(input.eventCode)?.toUpperCase() ?? `${utilityClient}-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+        name: input.name,
+        utilityClient,
+        status: normalizeStormEventStatus(input.status ?? 'MOB'),
+        region: normalizeOptional(input.region),
+        contractReference: normalizeOptional(input.contractReference),
+        startDate: normalizeOptional(input.startDate),
+        endDate: normalizeOptional(input.endDate),
+        notes: normalizeOptional(input.notes),
+        ticketTemplateKey: getTicketTemplateByUtilityClient(normalizeUtilityClient(utilityClient)).templateKey,
+        configSnapshot: createTemplateSnapshot(normalizeUtilityClient(utilityClient)),
+      });
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     const normalizedUtilityClient = normalizeUtilityClientValue(input.utilityClient);
-    const eventCode = normalizeOptional(input.eventCode) ?? buildEventCode(normalizedUtilityClient);
+    const eventCode = normalizeOptional(input.eventCode)?.toUpperCase() ?? `${normalizedUtilityClient}-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from('storm_events') as any)

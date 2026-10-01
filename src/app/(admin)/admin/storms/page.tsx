@@ -95,6 +95,8 @@ export default function StormEventsPage() {
               </CardHeader>
               <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-grid-muted">
+                  <p className="font-mono font-semibold">Event code: {stormEvent.eventCode}</p>
+                  <Link className="text-grid-blue underline" href={`/admin/storms/${stormEvent.id}`}>Open storm workspace</Link>
                   <p>Utility Client: {stormEvent.utilityClient}</p>
                   <p>Status: {stormEvent.status}</p>
                   <p>Region: {stormEvent.region ?? 'Unspecified Region'}</p>
@@ -103,7 +105,7 @@ export default function StormEventsPage() {
                 {canCreateTicketEntries ? (
                   <Button asChild variant="storm" size="sm" title="Create ticket entry within this storm event">
                     <Link
-                      href={`/tickets/create?storm_event_id=${encodeURIComponent(stormEvent.id)}&utility_client=${encodeURIComponent(stormEvent.utilityClient)}`}
+                      href={`/storms/${stormEvent.id}/tickets/new`}
                     >
                       <TicketIcon className="h-4 w-4 mr-2" />
                       Create Ticket Entry

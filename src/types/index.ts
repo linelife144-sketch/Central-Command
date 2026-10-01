@@ -23,8 +23,8 @@ export type UserRole =
   | 'CONTRACTOR'
   | 'READ_ONLY';
 
-// Subcontractor Types
-export interface Subcontractor {
+// Contractor Types
+export interface Contractor {
   id: string;
   profile_id: string;
   business_name: string;
@@ -56,7 +56,7 @@ export type OnboardingStatus =
   | 'APPROVED'
   | 'SUSPENDED';
 
-export interface SubcontractorCredential {
+export interface ContractorCredential {
   id: string;
   contractor_id: string;
   credential_type: string;
@@ -306,7 +306,8 @@ export interface EquipmentAssessment {
 export type EquipmentCondition = 'GOOD' | 'FAIR' | 'DAMAGED' | 'DESTROYED';
 
 // Invoice Types
-export interface SubcontractorInvoice {
+export interface ContractorInvoice {
+  storm_event_id?: string;
   id: string;
   invoice_number: string;
   contractor_id: string;
@@ -411,7 +412,6 @@ export interface SyncQueueItem {
 
 export type SyncItemStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CONFLICT';
 
-export interface ContractorInvoice extends SubcontractorInvoice {}
 export type InvoiceListItem = ContractorInvoice;
 
 // Assessment photo types (from Grid2)

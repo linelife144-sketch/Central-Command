@@ -7,7 +7,7 @@ This platform is a specialized Internal Damage Assessment and Operations Managem
 The Grid Electric Platform aims to bring the organization into the modern era by replacing manual or fragmented systems with a unified digital ecosystem. It focuses on maximizing operational efficiency, ensuring data integrity in the field, and providing real-time visibility into every aspect of the business.
 
 ## Target Users
-- **Field Subcontractors (1099 Workers):** The primary data collectors performing assessments and managing their daily tasks.
+- **Field Contractors (1099 Workers):** The primary data collectors performing assessments and managing their daily tasks.
 - **Operations Managers:** The coordinators responsible for dispatching crews, monitoring progress, and reviewing field data.
 - **Super Admins:** Internal leadership overseeing financial performance, inventory, and system configuration.
 
@@ -27,5 +27,5 @@ The Grid Electric Platform aims to bring the organization into the modern era by
 - **Field-Resilient Data Input:** Focused on making data entry as painless as possible for crews in the field.
 
 ## Critical Capabilities: Field Offline Mode
-- **Subcontractor Data Preservation:** Specifically for field assessments, the app will store ticket routes and all assessment data inputs locally on the mobile device.
+- **Contractor Data Preservation:** Specifically for field assessments, the app will store ticket routes and all assessment data inputs locally on the mobile device.
 - **Auto-Sync:** Once a reliable network connection is restored, the locally stored field data will automatically synchronize with the central system.

@@ -215,7 +215,7 @@ exact unions — only the style maps behind them changed.
 | `scripts/clean-next-duplicates.test.ts` | **New.** 6 tests: removal, false-positive protection, idempotency, missing-dir no-op, default-scope guard. |
 | `package.json` | `predev`/`prebuild` hooks; `test` → `vitest run` (`test:watch` keeps watching). |
 | `src/app/auth/confirm/page.tsx` | `useSearchParams` moved into `AuthConfirmInner`, wrapped by a new `AuthConfirmPage` default export with `<Suspense fallback={<ConfirmSkeleton/>}>`. Retokened off `slate`/`blue`/`green`/`red`. |
-| `src/app/(subcontractor)/contractor/assessments/create/page.tsx` | Same Suspense pattern with `AssessmentCreateInner` + `AssessmentCreateSkeleton`. This was the *second* failure the build never reached. |
+| `src/app/(contractor)/contractor/assessments/create/page.tsx` | Same Suspense pattern with `AssessmentCreateInner` + `AssessmentCreateSkeleton`. This was the *second* failure the build never reached. |
 | `layout/AppShell.tsx` | `bg-slate-50 dark:bg-slate-900` → `bg-grid-shell`; content wrapper gets `animate-lift-in`; removed unused `user` destructure. |
 | `layout/TopBar.tsx` | Glass `bg-background/85` + `backdrop-blur-md` + `shadow-elevation-sm` → `md` on hover; brand notification pill; gradient avatar fallback; removed unused `Menu` import. |
 | `layout/Sidebar.tsx` | `bg-surface-raised`; active nav item = `bg-grid-blue-soft` + `border-accent-hairline` + blue rail + `aria-current`; icon scale on hover; removed `bg-blue-600` logo chip. |

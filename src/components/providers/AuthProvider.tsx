@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { User as AppUser } from '@/types';
+import { isSuperAdminTestingEnabled, SUPER_ADMIN_TEST_PROFILE } from '@/lib/testing/superAdminTesting';
 
 interface AuthContextType {
   user: User | null;
@@ -27,20 +28,8 @@ const PUBLIC_ROUTES = [
   '/forbidden',
 ];
 
-// Set to false when ready to re-enable real authentication
-const DEV_BYPASS_AUTH = true;
-
-const DEV_MOCK_PROFILE: AppUser = {
-  id: '00000000-0000-0000-0000-000000000001',
-  email: 'admin@gridelectric.com',
-  first_name: 'David',
-  last_name: 'McCarty',
-  role: 'SUPER_ADMIN',
-  is_active: true,
-  is_email_verified: true,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
+const DEV_BYPASS_AUTH = isSuperAdminTestingEnabled();
+const DEV_MOCK_PROFILE = SUPER_ADMIN_TEST_PROFILE;
 
 const DEV_MOCK_USER = {
   id: '00000000-0000-0000-0000-000000000001',
@@ -99,6 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (DEV_BYPASS_AUTH) {
+      router.push('/admin/dashboard');
+      return;
+    }
     try {
       await supabase.auth.signOut();
       if (!DEV_BYPASS_AUTH) {
@@ -114,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // The local test identity never reads or changes an existing Supabase session.
+    if (DEV_BYPASS_AUTH) return;
+
     // Check for existing session
     const checkSession = async () => {
       try {

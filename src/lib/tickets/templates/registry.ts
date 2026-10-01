@@ -31,3 +31,11 @@ const TICKET_TEMPLATE_KEY_REGISTRY: Record<TicketTemplateKey, TicketTemplateDefi
 export function getTicketTemplateByTemplateKey(templateKey: TicketTemplateKey): TicketTemplateDefinition {
   return TICKET_TEMPLATE_KEY_REGISTRY[templateKey];
 }
+
+// Versioned keys are immutable contracts. Add a new key when changing field structure.
+export function createTemplateSnapshot(utility: UtilityClient): Record<string, unknown> {
+  const template = getTicketTemplateByUtilityClient(utility);
+  return JSON.parse(JSON.stringify({ utility_client: utility, ticket_template_key: template.templateKey,
+    payload_version: template.payloadVersion, field_definitions: template.fieldConfig,
+    default_values: template.defaultValues }, (_key, value) => value instanceof RegExp ? { pattern: value.source, flags: value.flags } : value));
+}

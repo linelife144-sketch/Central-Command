@@ -28,12 +28,12 @@
 
 ### 1.1 Purpose
 
-This document defines the technical requirements for the Central Command Damage Assessment Platform — a Progressive Web Application (PWA) designed to manage independent subcontractor crews performing utility damage assessments for government contracts.
+This document defines the technical requirements for the Central Command Damage Assessment Platform — a Progressive Web Application (PWA) designed to manage independent contractor crews performing utility damage assessments for government contracts.
 
 ### 1.2 Business Context
 
 - **Prime Contractor:** Central Command
-- **Workforce Model:** Independent 1099 subcontractors (not employees)
+- **Workforce Model:** Independent 1099 contractors (not employees)
 - **Client Base:** Power utility companies with government contracts
 - **Compliance Level:** FISMA/FedRAMP moderate (government contract requirements)
 
@@ -52,7 +52,7 @@ Enable efficient dispatch, tracking, and billing of damage assessment crews whil
 | Feature | Priority | Complexity |
 |---------|----------|------------|
 | User Authentication & Role Management | P0 | Medium |
-| Subcontractor Onboarding Flow | P0 | Medium |
+| Contractor Onboarding Flow | P0 | Medium |
 | Basic Ticket Management (CRUD) | P0 | High |
 | GPS-Verified Time Tracking | P0 | High |
 | Simple Expense Submission | P0 | Medium |
@@ -88,7 +88,7 @@ Enable efficient dispatch, tracking, and billing of damage assessment crews whil
 
 ### 2.3 MVP Success Criteria
 
-- [ ] Subcontractor can onboard in < 10 minutes
+- [ ] Contractor can onboard in < 10 minutes
 - [ ] Ticket creation to assignment < 2 minutes
 - [ ] Time tracking accuracy within 50m GPS radius
 - [ ] Offline form submission with < 5 min sync delay
@@ -177,10 +177,10 @@ Enable efficient dispatch, tracking, and billing of damage assessment crews whil
 
 ### 4.1 Role Matrix
 
-| Feature | Super Admin | Operations Manager | Field Subcontractor | Auditor |
+| Feature | Super Admin | Operations Manager | Field Contractor | Auditor |
 |---------|-------------|-------------------|---------------------|---------|
 | User Management | ✅ Full | ❌ No | ❌ No | ❌ No |
-| Subcontractor Onboarding | ✅ Full | ✅ Full | ❌ No | ❌ No |
+| Contractor Onboarding | ✅ Full | ✅ Full | ❌ No | ❌ No |
 | Ticket Creation | ✅ Full | ✅ Full | ❌ No | ❌ No |
 | Ticket Assignment | ✅ Full | ✅ Full | ❌ No | ❌ No |
 | Field Work (Time/Photos) | ❌ No | ❌ No | ✅ Own Only | ❌ No |
@@ -206,7 +206,7 @@ Enable efficient dispatch, tracking, and billing of damage assessment crews whil
 - **Device:** Desktop + Tablet
 - **Frequency:** Continuous during operations
 
-#### Field Subcontractor
+#### Field Contractor
 
 - **Goals:** Receive assignments, track time, submit assessments, get paid
 - **Tech Savvy:** Variable (training required)
@@ -243,7 +243,7 @@ Enable efficient dispatch, tracking, and billing of damage assessment crews whil
 - Multi-factor authentication (MVP: optional, Post-MVP: required for admins)
 - Password requirements: 12+ chars, uppercase, lowercase, number, special char
 
-#### 5.1.2 Subcontractor Onboarding Flow
+#### 5.1.2 Contractor Onboarding Flow
 
 | Step | Screen | Purpose | Data Collected |
 |------|--------|---------|----------------|
@@ -278,7 +278,7 @@ Enable efficient dispatch, tracking, and billing of damage assessment crews whil
          │                 ▼                 │
          │          ┌─────────────┐          │
          │          │  ASSIGNED   │          │
-         │          │(Subcontractor│         │
+         │          │(Contractor│         │
          │          │  notified)   │         │
          │          └──────┬──────┘         │
          │                 │                 │
@@ -345,7 +345,7 @@ interface Ticket {
   geofence_radius: number;       // Default: 500m
   
   // Assignment
-  assigned_to?: string;          // subcontractor_id
+  assigned_to?: string;          // contractor_id
   assigned_by: string;           // admin_id
   assigned_at?: Date;
   
@@ -419,7 +419,7 @@ interface StatusChange {
 ```typescript
 interface TimeEntry {
   id: string;
-  subcontractor_id: string;
+  contractor_id: string;
   ticket_id: string;
   
   // Clock In
@@ -505,7 +505,7 @@ type WorkType =
 ```typescript
 interface ExpenseReport {
   id: string;
-  subcontractor_id: string;
+  contractor_id: string;
   report_period_start: Date;
   report_period_end: Date;
   
@@ -588,7 +588,7 @@ type PolicyFlag =
 interface DamageAssessment {
   id: string;
   ticket_id: string;
-  subcontractor_id: string;
+  contractor_id: string;
   
   // Safety observations
   safety_status: {
@@ -696,10 +696,10 @@ interface AssessmentPhoto {
 #### 5.6.2 Invoice Data Model
 
 ```typescript
-interface SubcontractorInvoice {
+interface ContractorInvoice {
   id: string;
   invoice_number: string;          // INV-2026-000001 format
-  subcontractor_id: string;
+  contractor_id: string;
   
   // Period
   billing_period_start: Date;
@@ -748,7 +748,7 @@ interface SubcontractorInvoice {
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   ┌──────────────┐         ┌──────────────┐         ┌──────────────┐        │
-│   │   profiles   │◄────────┤subcontractors│◄────────│credentials   │        │
+│   │   profiles   │◄────────┤contractors│◄────────│credentials   │        │
 │   │  (auth users)│    1:1  │  (business)  │   1:N   │ (insurance)  │        │
 │   └──────┬───────┘         └──────┬───────┘         └──────────────┘        │
 │          │                        │                                         │
@@ -767,7 +767,7 @@ interface SubcontractorInvoice {
 │          │                    │                                             │
 │          │                    ▼                                             │
 │          │           ┌──────────────┐                                       │
-│          │           │ subcontractor│                                       │
+│          │           │ contractor│                                       │
 │          │           │   _invoices  │                                       │
 │          │           └──────────────┘                                       │
 │          │                                                                  │
@@ -921,7 +921,7 @@ All actions logged with:
 | Concurrent users | 100 | 1,000 |
 | Tickets per month | 5,000 | 50,000 |
 | Photos per month | 50,000 | 500,000 |
-| Subcontractors | 200 | 2,000 |
+| Contractors | 200 | 2,000 |
 
 ---
 
@@ -944,7 +944,7 @@ All actions logged with:
 | Time tracking accuracy | > 95% | GPS validation |
 | Expense approval time | < 24 hours | Workflow tracking |
 | Invoice generation time | < 1 hour | Automation tracking |
-| Subcontractor satisfaction | > 4.0/5 | Monthly surveys |
+| Contractor satisfaction | > 4.0/5 | Monthly surveys |
 
 ### 10.3 Compliance Metrics
 

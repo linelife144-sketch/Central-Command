@@ -1,10 +1,10 @@
 -- Central Command - Financial Tables
 
--- Subcontractor Invoices
-CREATE TABLE subcontractor_invoices (
+-- Contractor Invoices
+CREATE TABLE contractor_invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   invoice_number VARCHAR(50) NOT NULL UNIQUE,
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   
   -- Period
   billing_period_start DATE NOT NULL,
@@ -41,17 +41,17 @@ CREATE TABLE subcontractor_invoices (
 );
 
 -- Enable RLS
-ALTER TABLE subcontractor_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractor_invoices ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_invoice_subcontractor ON subcontractor_invoices(subcontractor_id);
-CREATE INDEX idx_invoice_status ON subcontractor_invoices(status);
-CREATE INDEX idx_invoice_period ON subcontractor_invoices(billing_period_start, billing_period_end);
+CREATE INDEX idx_invoice_contractor ON contractor_invoices(contractor_id);
+CREATE INDEX idx_invoice_status ON contractor_invoices(status);
+CREATE INDEX idx_invoice_period ON contractor_invoices(billing_period_start, billing_period_end);
 
 -- Invoice Line Items
 CREATE TABLE invoice_line_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  invoice_id UUID NOT NULL REFERENCES subcontractor_invoices(id) ON DELETE CASCADE,
+  invoice_id UUID NOT NULL REFERENCES contractor_invoices(id) ON DELETE CASCADE,
   
   -- Line Item Type
   item_type VARCHAR(20) NOT NULL,
@@ -76,7 +76,7 @@ ALTER TABLE invoice_line_items ENABLE ROW LEVEL SECURITY;
 -- Tax 1099 Tracking
 CREATE TABLE tax_1099_tracking (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   tax_year INTEGER NOT NULL,
   
   -- Totals
@@ -97,7 +97,7 @@ CREATE TABLE tax_1099_tracking (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
-  CONSTRAINT unique_subcontractor_year UNIQUE (subcontractor_id, tax_year)
+  CONSTRAINT unique_contractor_year UNIQUE (contractor_id, tax_year)
 );
 
 -- Enable RLS

@@ -143,8 +143,8 @@ async function testConnection() {
     failed++;
   }
 
-  // Test 6: Check tables exist (profiles, subcontractors, tickets)
-  const requiredTables = ['profiles', 'subcontractors', 'tickets', 'time_entries', 'expense_reports'];
+  // Test 6: Check tables exist (profiles, contractors, tickets)
+  const requiredTables = ['profiles', 'contractors', 'tickets', 'time_entries', 'expense_reports'];
   
   for (const table of requiredTables) {
     try {

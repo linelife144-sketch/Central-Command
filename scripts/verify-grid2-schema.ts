@@ -40,10 +40,10 @@ const CC_CORE_TABLES = [
   'time_entries',
   'expense_reports',
   'damage_assessments',
-  'contractors',          // renamed from subcontractors
-  'contractor_rates',     // renamed from subcontractor_rates
-  'contractor_banking',   // renamed from subcontractor_banking
-  'contractor_invoices',  // renamed from subcontractor_invoices
+  'contractors',
+  'contractor_rates',
+  'contractor_banking',
+  'contractor_invoices',
   'tax_1099_tracking',
   'media_assets',
   'sync_queue',
@@ -80,8 +80,8 @@ const RLS_REQUIRED_TABLES = [
   'storm_event_logistics_entries',
 ];
 
-// Legacy subcontractor table names that should NOT exist
-const LEGACY_SUBCONTRACTOR_TABLES = [
+// Original table names checked only to detect incomplete database renames
+const LEGACY_TABLE_NAMES = [
   'subcontractors',
   'subcontractor_rates',
   'subcontractor_banking',
@@ -252,12 +252,12 @@ async function checkCeoRole(ctx: CheckContext): Promise<VerificationResult> {
 async function checkContractorNaming(ctx: CheckContext): Promise<VerificationResult> {
   const existing = await getExistingTables(ctx.runSql);
 
-  const legacyFound = LEGACY_SUBCONTRACTOR_TABLES.filter(t => existing.has(t));
+  const legacyFound = LEGACY_TABLE_NAMES.filter(t => existing.has(t));
   const requiredContractorTables = ['contractors', 'contractor_rates', 'contractor_banking', 'contractor_invoices'];
   const contractorMissing = requiredContractorTables.filter(t => !existing.has(t));
 
   if (legacyFound.length > 0) {
-    ctx.failures.push(`Legacy subcontractor tables still exist: ${legacyFound.join(', ')}`);
+    ctx.failures.push(`Legacy table names still exist: ${legacyFound.join(', ')}`);
   }
   if (contractorMissing.length > 0) {
     ctx.failures.push(`Contractor tables missing: ${contractorMissing.join(', ')}`);
@@ -273,7 +273,7 @@ async function checkContractorNaming(ctx: CheckContext): Promise<VerificationRes
 
   return {
     passed: true,
-    message: '✅ Contractor naming verified (no legacy subcontractor tables)',
+    message: '✅ Contractor naming verified (canonical table names)',
   };
 }
 

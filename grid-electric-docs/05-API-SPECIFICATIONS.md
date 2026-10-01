@@ -13,7 +13,7 @@
 
 1. [Authentication](#1-authentication)
 2. [Users & Profiles](#2-users--profiles)
-3. [Subcontractors](#3-subcontractors)
+3. [Contractors](#3-contractors)
 4. [Tickets](#4-tickets)
 5. [Time Tracking](#5-time-tracking)
 6. [Expenses](#6-expenses)
@@ -84,7 +84,7 @@ Content-Type: application/json
 ### 2.1 Get Current Profile
 
 ```http
-GET /rest/v1/profiles?select=*,subcontractors(*)
+GET /rest/v1/profiles?select=*,contractors(*)
 Authorization: Bearer <token>
 ```
 
@@ -100,7 +100,7 @@ Authorization: Bearer <token>
   "is_active": true,
   "last_login_at": "2026-02-04T09:30:00Z",
   "created_at": "2026-01-15T08:00:00Z",
-  "subcontractors": {
+  "contractors": {
     "id": "660e8400-e29b-41d4-a716-446655440001",
     "business_name": "Smith Electrical Services LLC",
     "onboarding_status": "APPROVED",
@@ -125,12 +125,12 @@ Content-Type: application/json
 
 ---
 
-## 3. SUBCONTRACTORS
+## 3. CONTRACTORS
 
-### 3.1 List Subcontractors (Admin Only)
+### 3.1 List Contractors (Admin Only)
 
 ```http
-GET /rest/v1/subcontractors?select=*,profiles(first_name,last_name,email)&order=created_at.desc
+GET /rest/v1/contractors?select=*,profiles(first_name,last_name,email)&order=created_at.desc
 Authorization: Bearer <admin_token>
 ```
 
@@ -166,17 +166,17 @@ Authorization: Bearer <admin_token>
 ]
 ```
 
-### 3.2 Get Subcontractor Details
+### 3.2 Get Contractor Details
 
 ```http
-GET /rest/v1/subcontractors?id=eq.<id>&select=*,profiles(*),subcontractor_credentials(*),subcontractor_rates(*)
+GET /rest/v1/contractors?id=eq.<id>&select=*,profiles(*),contractor_credentials(*),contractor_rates(*)
 Authorization: Bearer <token>
 ```
 
-### 3.3 Create Subcontractor (Onboarding)
+### 3.3 Create Contractor (Onboarding)
 
 ```http
-POST /rest/v1/subcontractors
+POST /rest/v1/contractors
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -194,10 +194,10 @@ Content-Type: application/json
 }
 ```
 
-### 3.4 Update Subcontractor Status (Admin)
+### 3.4 Update Contractor Status (Admin)
 
 ```http
-PATCH /rest/v1/subcontractors?id=eq.<id>
+PATCH /rest/v1/contractors?id=eq.<id>
 Authorization: Bearer <admin_token>
 Content-Type: application/json
 
@@ -212,7 +212,7 @@ Content-Type: application/json
 ### 3.5 Upload Credential Document
 
 ```http
-POST /storage/v1/object/credentials/<subcontractor_id>/<filename>
+POST /storage/v1/object/credentials/<contractor_id>/<filename>
 Authorization: Bearer <token>
 Content-Type: application/pdf
 
@@ -226,7 +226,7 @@ Content-Type: application/pdf
 ### 4.1 List Tickets
 
 ```http
-GET /rest/v1/tickets?select=*,assigned_subcontractor:subcontractors(id,business_name,profiles(first_name,last_name))&order=created_at.desc
+GET /rest/v1/tickets?select=*,assigned_contractor:contractors(id,business_name,profiles(first_name,last_name))&order=created_at.desc
 Authorization: Bearer <token>
 ```
 
@@ -262,7 +262,7 @@ Authorization: Bearer <token>
     "assigned_to": "660e8400-e29b-41d4-a716-446655440001",
     "assigned_at": "2026-02-04T08:30:00Z",
     "created_at": "2026-02-04T08:00:00Z",
-    "assigned_subcontractor": {
+    "assigned_contractor": {
       "id": "660e8400-e29b-41d4-a716-446655440001",
       "business_name": "Smith Electrical Services LLC",
       "profiles": {
@@ -354,7 +354,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "subcontractor_id": "660e8400-e29b-41d4-a716-446655440001",
+  "contractor_id": "660e8400-e29b-41d4-a716-446655440001",
   "ticket_id": "770e8400-e29b-41d4-a716-446655440002",
   "clock_in_at": "2026-02-04T09:15:00Z",
   "clock_in_latitude": 27.9506,
@@ -370,7 +370,7 @@ Content-Type: application/json
 ```json
 {
   "id": "880e8400-e29b-41d4-a716-446655440003",
-  "subcontractor_id": "660e8400-e29b-41d4-a716-446655440001",
+  "contractor_id": "660e8400-e29b-41d4-a716-446655440001",
   "ticket_id": "770e8400-e29b-41d4-a716-446655440002",
   "clock_in_at": "2026-02-04T09:15:00Z",
   "work_type": "STANDARD_ASSESSMENT",
@@ -407,7 +407,7 @@ Authorization: Bearer <token>
 **Query Parameters:**
 | Param | Type | Description |
 |-------|------|-------------|
-| `subcontractor_id` | uuid | Filter by subcontractor |
+| `contractor_id` | uuid | Filter by contractor |
 | `ticket_id` | uuid | Filter by ticket |
 | `status` | string | Filter by status |
 | `clock_in_at.gte` | timestamp | Start date range |
@@ -445,7 +445,7 @@ Content-Type: application/json
 ### 5.6 Get Current Active Time Entry
 
 ```http
-GET /rest/v1/time_entries?subcontractor_id=eq.<id>&clock_out_at=is.null&order=clock_in_at.desc&limit=1
+GET /rest/v1/time_entries?contractor_id=eq.<id>&clock_out_at=is.null&order=clock_in_at.desc&limit=1
 Authorization: Bearer <token>
 ```
 
@@ -461,7 +461,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "subcontractor_id": "660e8400-e29b-41d4-a716-446655440001",
+  "contractor_id": "660e8400-e29b-41d4-a716-446655440001",
   "report_period_start": "2026-02-01",
   "report_period_end": "2026-02-29"
 }
@@ -493,7 +493,7 @@ Content-Type: application/json
 ### 6.3 Upload Receipt
 
 ```http
-POST /storage/v1/object/receipts/<subcontractor_id>/<expense_item_id>_<filename>
+POST /storage/v1/object/receipts/<contractor_id>/<expense_item_id>_<filename>
 Authorization: Bearer <token>
 Content-Type: image/jpeg
 
@@ -547,7 +547,7 @@ Content-Type: application/json
 
 {
   "ticket_id": "770e8400-e29b-41d4-a716-446655440002",
-  "subcontractor_id": "660e8400-e29b-41d4-a716-446655440001",
+  "contractor_id": "660e8400-e29b-41d4-a716-446655440001",
   "safety_observations": {
     "downed_conductors": true,
     "damaged_insulators": true,
@@ -624,7 +624,7 @@ Authorization: Bearer <admin_token>
 Content-Type: application/json
 
 {
-  "subcontractor_id": "660e8400-e29b-41d4-a716-446655440001",
+  "contractor_id": "660e8400-e29b-41d4-a716-446655440001",
   "billing_period_start": "2026-01-01",
   "billing_period_end": "2026-01-31"
 }
@@ -646,21 +646,21 @@ Content-Type: application/json
 ### 8.2 List Invoices
 
 ```http
-GET /rest/v1/subcontractor_invoices?select=*&order=created_at.desc
+GET /rest/v1/contractor_invoices?select=*&order=created_at.desc
 Authorization: Bearer <token>
 ```
 
 ### 8.3 Get Invoice Details
 
 ```http
-GET /rest/v1/subcontractor_invoices?id=eq.<invoice_id>&select=*,invoice_line_items(*)
+GET /rest/v1/contractor_invoices?id=eq.<invoice_id>&select=*,invoice_line_items(*)
 Authorization: Bearer <token>
 ```
 
 ### 8.4 Mark Invoice as Paid (Admin)
 
 ```http
-PATCH /rest/v1/subcontractor_invoices?id=eq.<invoice_id>
+PATCH /rest/v1/contractor_invoices?id=eq.<invoice_id>
 Authorization: Bearer <admin_token>
 Content-Type: application/json
 
@@ -735,7 +735,7 @@ Content-Type: application/json
 
 {
   "uploaded_by": "550e8400-e29b-41d4-a716-446655440000",
-  "subcontractor_id": "660e8400-e29b-41d4-a716-446655440001",
+  "contractor_id": "660e8400-e29b-41d4-a716-446655440001",
   "file_name": "assessment_photo_1.jpg",
   "original_name": "IMG_20260204_120000.jpg",
   "file_type": "PHOTO",
@@ -771,7 +771,7 @@ const subscription = supabase
       event: '*',
       schema: 'public',
       table: 'tickets',
-      filter: `assigned_to=eq.${subcontractorId}`
+      filter: `assigned_to=eq.${contractorId}`
     },
     (payload) => {
       console.log('Ticket update:', payload);

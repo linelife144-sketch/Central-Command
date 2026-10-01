@@ -1,6 +1,6 @@
 # Central Command — Damage Assessment Platform
 
-Welcome! This is the workspace directory for the **Central Command Damage Assessment Platform**, a Progressive Web Application (PWA) designed for managing independent 1099 subcontractor crews performing utility damage assessments under government contracts.
+Welcome! This is the workspace directory for the **Central Command Damage Assessment Platform**, a Progressive Web Application (PWA) designed for managing independent 1099 contractor crews performing utility damage assessments under government contracts.
 
 This README serves as the primary entry point and operational guide for **AI Coding Assistants** and human developers working in this codebase.
 
@@ -25,9 +25,9 @@ Before taking any action or writing any code in this directory, you **MUST** fol
 Grid2/
 ├── app/                          # Next.js 14 App Router application
 │   ├── (auth)/                   # Authentication routes (Login, Magic Link, etc.)
-│   ├── (onboarding)/             # 12-step subcontractor onboarding flow
+│   ├── (onboarding)/             # 12-step contractor onboarding flow
 │   ├── (admin)/                  # Admin portal & dashboard (18 screens)
-│   ├── (subcontractor)/          # Field contractor portal (16 screens)
+│   ├── (contractor)/          # Field contractor portal (16 screens)
 │   └── api/                      # Backend API routes
 ├── components/                   # React components
 │   ├── ui/                       # shadcn/ui components (do not recreate existing ones!)

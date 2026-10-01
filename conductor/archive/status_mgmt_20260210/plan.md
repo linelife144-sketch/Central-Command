@@ -30,7 +30,7 @@ This plan outlines the steps to implement the context-aware status management sy
     - [x] Implement validation logic and modal trigger (Green Phase)
     - [x] Verify test coverage for validation (Skipped per user request)
 - [x] Task: Final Integration & Mobile Polish
-    - [x] Integrate `StatusUpdater` into Ticket Detail pages (Admin & Subcontractor)
+    - [x] Integrate `StatusUpdater` into Ticket Detail pages (Admin & Contractor)
     - [x] Verify responsive behavior and touch targets on mobile (Manually verified)
     - [x] Perform end-to-end flow test (Assigned -> In Route -> On Site -> Complete) (Ready for manual test)
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Integration' (Skipped per user request)

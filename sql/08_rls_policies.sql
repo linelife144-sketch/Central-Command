@@ -42,22 +42,22 @@ CREATE POLICY profiles_insert_admin ON profiles
 CREATE POLICY profiles_delete_admin ON profiles
   FOR DELETE USING (is_admin());
 
--- Subcontractors RLS Policies
--- Users can view their own subcontractor record
-CREATE POLICY subcontractors_select_own ON subcontractors
+-- Contractors RLS Policies
+-- Users can view their own contractor record
+CREATE POLICY contractors_select_own ON contractors
   FOR SELECT USING (profile_id = auth.uid());
 
--- Admins can view all subcontractor records
-CREATE POLICY subcontractors_select_admin ON subcontractors
+-- Admins can view all contractor records
+CREATE POLICY contractors_select_admin ON contractors
   FOR SELECT USING (is_admin());
 
--- Users can update their own subcontractor record
-CREATE POLICY subcontractors_update_own ON subcontractors
+-- Users can update their own contractor record
+CREATE POLICY contractors_update_own ON contractors
   FOR UPDATE USING (profile_id = auth.uid())
   WITH CHECK (profile_id = auth.uid());
 
--- Admins have full access to subcontractors
-CREATE POLICY subcontractors_write_admin ON subcontractors
+-- Admins have full access to contractors
+CREATE POLICY contractors_write_admin ON contractors
   FOR ALL USING (is_admin());
 
 -- Tickets RLS Policies
@@ -65,7 +65,7 @@ CREATE POLICY subcontractors_write_admin ON subcontractors
 CREATE POLICY tickets_select_assigned ON tickets
   FOR SELECT USING (
     assigned_to IN (
-      SELECT id FROM subcontractors WHERE profile_id = auth.uid()
+      SELECT id FROM contractors WHERE profile_id = auth.uid()
     )
   );
 
@@ -77,8 +77,8 @@ CREATE POLICY tickets_admin ON tickets
 -- Users can manage their own time entries
 CREATE POLICY time_entries_own ON time_entries
   FOR ALL USING (
-    subcontractor_id IN (
-      SELECT id FROM subcontractors WHERE profile_id = auth.uid()
+    contractor_id IN (
+      SELECT id FROM contractors WHERE profile_id = auth.uid()
     )
   );
 
@@ -90,8 +90,8 @@ CREATE POLICY time_entries_admin ON time_entries
 -- Users can manage their own expense reports
 CREATE POLICY expense_reports_own ON expense_reports
   FOR ALL USING (
-    subcontractor_id IN (
-      SELECT id FROM subcontractors WHERE profile_id = auth.uid()
+    contractor_id IN (
+      SELECT id FROM contractors WHERE profile_id = auth.uid()
     )
   );
 
@@ -104,7 +104,7 @@ CREATE POLICY expense_items_own ON expense_items
   FOR ALL USING (
     EXISTS (
       SELECT 1 FROM expense_reports er
-      JOIN subcontractors s ON er.subcontractor_id = s.id
+      JOIN contractors s ON er.contractor_id = s.id
       WHERE expense_items.expense_report_id = er.id
       AND s.profile_id = auth.uid()
     )
@@ -116,8 +116,8 @@ CREATE POLICY expense_items_admin ON expense_items
 -- Damage Assessments RLS Policies
 CREATE POLICY damage_assessments_own ON damage_assessments
   FOR ALL USING (
-    subcontractor_id IN (
-      SELECT id FROM subcontractors WHERE profile_id = auth.uid()
+    contractor_id IN (
+      SELECT id FROM contractors WHERE profile_id = auth.uid()
     )
   );
 
@@ -129,7 +129,7 @@ CREATE POLICY equipment_assessments_own ON equipment_assessments
   FOR ALL USING (
     EXISTS (
       SELECT 1 FROM damage_assessments da
-      JOIN subcontractors s ON da.subcontractor_id = s.id
+      JOIN contractors s ON da.contractor_id = s.id
       WHERE equipment_assessments.damage_assessment_id = da.id
       AND s.profile_id = auth.uid()
     )
@@ -138,51 +138,51 @@ CREATE POLICY equipment_assessments_own ON equipment_assessments
 CREATE POLICY equipment_assessments_admin ON equipment_assessments
   FOR ALL USING (is_admin());
 
--- Subcontractor Rates RLS Policies
-CREATE POLICY rates_own ON subcontractor_rates
+-- Contractor Rates RLS Policies
+CREATE POLICY rates_own ON contractor_rates
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM subcontractors s
-      WHERE subcontractor_rates.subcontractor_id = s.id
+      SELECT 1 FROM contractors s
+      WHERE contractor_rates.contractor_id = s.id
       AND s.profile_id = auth.uid()
     )
   );
 
-CREATE POLICY rates_admin ON subcontractor_rates
+CREATE POLICY rates_admin ON contractor_rates
   FOR ALL USING (is_admin());
 
--- Subcontractor Banking RLS Policies
-CREATE POLICY banking_own ON subcontractor_banking
+-- Contractor Banking RLS Policies
+CREATE POLICY banking_own ON contractor_banking
   FOR ALL USING (
     EXISTS (
-      SELECT 1 FROM subcontractors s
-      WHERE subcontractor_banking.subcontractor_id = s.id
+      SELECT 1 FROM contractors s
+      WHERE contractor_banking.contractor_id = s.id
       AND s.profile_id = auth.uid()
     )
   );
 
-CREATE POLICY banking_admin ON subcontractor_banking
+CREATE POLICY banking_admin ON contractor_banking
   FOR ALL USING (is_admin());
 
--- Subcontractor Invoices RLS Policies
-CREATE POLICY invoices_own ON subcontractor_invoices
+-- Contractor Invoices RLS Policies
+CREATE POLICY invoices_own ON contractor_invoices
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM subcontractors s
-      WHERE subcontractor_invoices.subcontractor_id = s.id
+      SELECT 1 FROM contractors s
+      WHERE contractor_invoices.contractor_id = s.id
       AND s.profile_id = auth.uid()
     )
   );
 
-CREATE POLICY invoices_admin ON subcontractor_invoices
+CREATE POLICY invoices_admin ON contractor_invoices
   FOR ALL USING (is_admin());
 
 -- Invoice Line Items RLS Policies
 CREATE POLICY invoice_line_items_own ON invoice_line_items
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM subcontractor_invoices si
-      JOIN subcontractors s ON si.subcontractor_id = s.id
+      SELECT 1 FROM contractor_invoices si
+      JOIN contractors s ON si.contractor_id = s.id
       WHERE invoice_line_items.invoice_id = si.id
       AND s.profile_id = auth.uid()
     )
@@ -201,7 +201,7 @@ CREATE POLICY media_select_assigned ON media_assets
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM tickets t
-      JOIN subcontractors s ON t.assigned_to = s.id
+      JOIN contractors s ON t.assigned_to = s.id
       WHERE media_assets.entity_id = t.id
       AND media_assets.entity_type = 'ticket'
       AND s.profile_id = auth.uid()
@@ -244,8 +244,8 @@ CREATE POLICY sync_queue_admin ON sync_queue
 CREATE POLICY tax_1099_own ON tax_1099_tracking
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM subcontractors s
-      WHERE tax_1099_tracking.subcontractor_id = s.id
+      SELECT 1 FROM contractors s
+      WHERE tax_1099_tracking.contractor_id = s.id
       AND s.profile_id = auth.uid()
     )
   );
@@ -258,7 +258,7 @@ CREATE POLICY ticket_status_history_own ON ticket_status_history
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM tickets t
-      JOIN subcontractors s ON t.assigned_to = s.id
+      JOIN contractors s ON t.assigned_to = s.id
       WHERE ticket_status_history.ticket_id = t.id
       AND s.profile_id = auth.uid()
     )
@@ -272,7 +272,7 @@ CREATE POLICY ticket_routes_own ON ticket_routes
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM tickets t
-      JOIN subcontractors s ON t.assigned_to = s.id
+      JOIN contractors s ON t.assigned_to = s.id
       WHERE t.id = ANY(ticket_routes.ticket_ids)
       AND s.profile_id = auth.uid()
     )

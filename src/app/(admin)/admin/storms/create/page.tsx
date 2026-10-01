@@ -138,8 +138,8 @@ export default function CreateStormEventPage() {
         window.localStorage.setItem('active_storm_event_id', createdEvent.id);
       }
 
-      toast.success('Storm event created. Environment is now active on the dashboard.');
-      router.push(`/admin/dashboard?storm_event_id=${encodeURIComponent(createdEvent.id)}`);
+      toast.success('Storm event created. Add contractors or create tickets for this event.');
+      router.push(`/admin/storms/${createdEvent.id}`);
       router.refresh();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to create storm event.'));

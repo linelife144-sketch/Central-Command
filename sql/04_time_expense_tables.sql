@@ -3,7 +3,7 @@
 -- Time Entries
 CREATE TABLE time_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   ticket_id UUID REFERENCES tickets(id),
   
   -- Clock In
@@ -64,7 +64,7 @@ CREATE TABLE time_entries (
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_time_subcontractor ON time_entries(subcontractor_id);
+CREATE INDEX idx_time_contractor ON time_entries(contractor_id);
 CREATE INDEX idx_time_ticket ON time_entries(ticket_id);
 CREATE INDEX idx_time_status ON time_entries(status);
 CREATE INDEX idx_time_clock_in ON time_entries(clock_in_at);
@@ -73,7 +73,7 @@ CREATE INDEX idx_time_invoice ON time_entries(invoice_id);
 -- Expense Reports
 CREATE TABLE expense_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   
   -- Period
   report_period_start DATE NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE expense_reports (
 ALTER TABLE expense_reports ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_expense_report_subcontractor ON expense_reports(subcontractor_id);
+CREATE INDEX idx_expense_report_contractor ON expense_reports(contractor_id);
 CREATE INDEX idx_expense_report_status ON expense_reports(status);
 CREATE INDEX idx_expense_report_period ON expense_reports(report_period_start, report_period_end);
 

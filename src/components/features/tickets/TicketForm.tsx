@@ -55,6 +55,8 @@ export function TicketForm() {
     const { profile } = useAuth()
     
     const stormEventIdParam = searchParams.get("storm_event_id") || ""
+    const requestedPriority = searchParams.get("priority")
+    const initialPriority = ticketFormSchema.shape.priority.safeParse(requestedPriority)
     const [stormEvents, setStormEvents] = useState<StormEventSummary[]>([])
     const [loadingStorms, setLoadingStorms] = useState(true)
 
@@ -68,7 +70,7 @@ export function TicketForm() {
             work_order_ref: "",
             work_description: "",
             special_instructions: "",
-            priority: "C",
+            priority: initialPriority.success ? initialPriority.data : "C",
             status: "DRAFT",
             scheduled_date: "",
             due_date: "",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { TicketFormRenderer } from '@/components/features/tickets/TicketFormRenderer';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -30,15 +30,18 @@ interface TicketNewClientPageProps {
 
 export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { profile } = useAuth();
   const canCreate = canPerformManagementAction(profile?.role, 'ticket_entry_write');
 
   const [stormName, setStormName] = useState('');
+  const [eventCode, setEventCode] = useState('');
   const [stormUtility, setStormUtility] = useState('Entergy');
+  const [snapshotFields, setSnapshotFields] = useState<import('@/lib/tickets/templates').TicketTemplateFieldConfig[] | null>(null);
   const [stormTemplateKey, setStormTemplateKey] = useState<TicketTemplateKey | null>(null);
   const [stormState, setStormState] = useState('Unknown');
   const [ready, setReady] = useState(false);
-  const [initialValues, setInitialValues] = useState<Record<string, unknown>>({});
+  const [initialValues, setInitialValues] = useState<Record<string, unknown>>({ priority: ['A', 'B', 'C', 'X'].includes(searchParams.get('priority') ?? '') ? searchParams.get('priority') : 'C' });
   const [confidenceByField, setConfidenceByField] = useState<Record<string, number>>({});
   const [extractionWarnings, setExtractionWarnings] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,8 +70,10 @@ export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
         }
 
         setStormName(stormEvent.name);
+        setEventCode(stormEvent.eventCode);
         setStormUtility(stormEvent.utilityClient);
         setStormTemplateKey(stormEvent.ticketTemplateKey as TicketTemplateKey | null);
+        setSnapshotFields((stormEvent.configSnapshot?.field_definitions as import('@/lib/tickets/templates').TicketTemplateFieldConfig[] | undefined) ?? null);
         setStormState(stormEvent.region ?? 'Unknown');
         setReady(true);
       })
@@ -80,11 +85,12 @@ export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
 
   const template = useMemo(() => {
     if (stormTemplateKey) {
-      return getTicketTemplateByTemplateKey(stormTemplateKey);
+      const definition = getTicketTemplateByTemplateKey(stormTemplateKey);
+      return snapshotFields ? { ...definition, fieldConfig: snapshotFields } : definition;
     }
     const utility = normalizeUtilityClient(stormUtility);
     return getTicketTemplateByUtilityClient(utility);
-  }, [stormTemplateKey, stormUtility]);
+  }, [stormTemplateKey, stormUtility, snapshotFields]);
 
   if (!canCreate) {
     return <div className="storm-surface rounded-xl border-[rgba(255,192,56,0.75)] p-4 text-sm text-blue-100 shadow-[0_12px_28px_rgba(0,20,80,0.3)]">Only authorized users can create tickets.</div>;
@@ -99,7 +105,7 @@ export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
       <h1 className="text-2xl font-semibold text-blue-50">Create Ticket</h1>
       <div className="rounded-xl border-[rgba(255,192,56,0.75)] bg-white p-4 shadow-[0_12px_28px_rgba(0,20,80,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(0,18,72,0.38)]">
         <TicketFormRenderer
-          storm={{ id: stormId, name: stormName, utilityClient: stormUtility, state: stormState }}
+          storm={{ id: stormId, name: stormName, utilityClient: stormUtility, state: stormState, eventCode }}
           template={template}
           initialValues={initialValues}
           confidenceByField={confidenceByField}
@@ -190,7 +196,7 @@ export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
               }
 
               notifyTicketsChanged();
-              router.push('/storms');
+              router.push(`/admin/storms/${stormId}`);
               router.refresh();
             } catch (error) {
               toast.error(getErrorMessage(error, 'Failed to create ticket.'));

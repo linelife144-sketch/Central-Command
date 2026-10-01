@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-30",
+  "agent": "Codex",
+  "task": "User annotated contractor labels",
+  "changes": [
+    "Sidebar Users to Contractors",
+    "Page title Contractors to Contractors",
+    "Button Invite Contractor to Invite Contractor",
+    "Shared navigation configuration and existing expectation aligned"
+  ],
+  "progress_tracker_note": "The MASTER_BUILD_INSTRUCTIONS.md required by AGENTS.md is missing. This report records the requested change.",
+  "status": "implemented_browser_verified",
+  "verification": "In-app browser shows Contractors in navigation and page heading, plus Invite Contractor button."
+}

@@ -13,7 +13,7 @@ Grid Electric Services' damage assessment PWA was split across two codebases:
 | UI maturity | 84% (Phase 4) | 31% (Phase 2) |
 | Supabase project | `bsiuuibnjccjkmgktfce` (dead) | `xcvacmreerrypygpritq` (live) |
 | Layout | `src/` | Root-level |
-| Schema | contractors, CEO, storm_events | subcontractors, TEAM_LEAD, READ_ONLY |
+| Schema | contractors, CEO, storm_events | contractors, TEAM_LEAD, READ_ONLY |
 
 Path C (recover Grid2's Supabase dashboard) was attempted and failed. Path A (rebuild Grid2 features into CC incrementally) would have taken weeks.
 
@@ -23,13 +23,13 @@ Execute **Path B**: Graft Grid2's production-ready frontend onto Central Command
 
 ### What was done
 
-1. **Database migration**: Wiped CC's schema, applied Grid2's base SQL scripts (`sql/01-10`) via `psql`, then applied 14 of 16 Grid2 migration deltas. Result: 36 tables including `storm_events`, `customers`, `contractors` (renamed from `subcontractors`), `CEO` in `user_role` enum, full RLS on all tables.
+1. **Database migration**: Wiped CC's schema, applied Grid2's base SQL scripts (`sql/01-10`) via `psql`, then applied 14 of 16 Grid2 migration deltas. Result: 36 tables including `storm_events`, `customers`, `contractors` (renamed from `contractors`), `CEO` in `user_role` enum, full RLS on all tables.
 
 2. **Source migration**: Created `src/` directory in CC, moved CC's source files into it, merged Grid2's 300+ source files without overwriting existing CC content. Adopted Grid2's `@/* → ./src/*` path alias.
 
 3. **Configuration merge**: Merged `package.json` (kept CC's newer versions, added Grid2-only deps), replaced `globals.css` with 812-line storm theme, injected `ServiceWorkerProvider`/`SyncProvider`/`OfflineBanner` into root layout, replaced Supabase clients with `@supabase/ssr` pattern pointed at CC's ref, updated `next.config.ts` for Turbopack + webpack cache fix.
 
-4. **Type error resolution**: Fixed 231 TypeScript errors across 7 clusters: added `storm` button variant, configured vitest globals, renamed `subcontractor_id` → `contractor_id` in types, added missing Grid2 type exports, fixed `InvoiceListItem`/`SyncQueueItem`/`Local*` types, added missing Dexie exports.
+4. **Type error resolution**: Fixed 231 TypeScript errors across 7 clusters: added `storm` button variant, configured vitest globals, renamed `contractor_id` → `contractor_id` in types, added missing Grid2 type exports, fixed `InvoiceListItem`/`SyncQueueItem`/`Local*` types, added missing Dexie exports.
 
 ### Verifications
 
@@ -44,7 +44,7 @@ Execute **Path B**: Graft Grid2's production-ready frontend onto Central Command
 ### Positive
 - CC now runs Grid2's 84% complete PWA on a live Supabase backend
 - Storm theme, PWA offline stack, GPS workflows, OCR pipeline all operational
-- 50+ routes including admin dashboard, storm event management, subcontractor portals
+- 50+ routes including admin dashboard, storm event management, contractor portals
 
 ### Negative / Deferred
 - Two migrations skipped due to Grid2-specific data references:

@@ -6,7 +6,7 @@ CREATE TABLE media_assets (
   
   -- Ownership
   uploaded_by UUID REFERENCES profiles(id),
-  subcontractor_id UUID REFERENCES subcontractors(id),
+  contractor_id UUID REFERENCES contractors(id),
   
   -- File Info
   file_name VARCHAR(255) NOT NULL,

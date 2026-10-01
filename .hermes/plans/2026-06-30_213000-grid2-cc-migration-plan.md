@@ -25,7 +25,7 @@ Replace Central Command’s immature frontend (31% complete, ~20 screens) with G
 ### Known State
 - **Grid2** (source of truth for UI): `~/Grid2/` — 84% complete, uses `src/` root, `@supabase/ssr`, Atten font, 750-line storm theme globals.css, 16 migrations (including CEO role, storm events, OCR templates, full inventory).
 - **Central Command** (target): `~/Desktop/Central Command/` — 31% complete, uses root-level files, `@supabase/supabase-js`, Geist font, 331-line basic globals.css, 13 migrations, live Supabase ref `xcvacmreerrypygpritq`.
-- Schema divergence is **severe** (role enums, `contractors` vs `subcontractors`, missing `must_reset_password`, missing `storm_events`, missing OCR tables).
+- Schema divergence is **severe** (role enums, `contractors` vs `contractors`, missing `must_reset_password`, missing `storm_events`, missing OCR tables).
 - User preference: Use **Pi Agent** (RPC mode) as primary coding engine + Hermes sub-agents for parallel validation/research. Hermes remains the orchestrator.
 
 ### Key Assumptions

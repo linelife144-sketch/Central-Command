@@ -21,6 +21,7 @@ import { Tax1099TrackingDisplay } from './Tax1099TrackingDisplay';
 
 interface InvoiceGeneratorProps {
   generatedBy?: string;
+  stormEventId?: string;
 }
 
 function toDateInputValue(date: Date): string {
@@ -46,7 +47,7 @@ function parseError(error: unknown): string {
   return 'Unable to generate invoices.';
 }
 
-export function InvoiceGenerator({ generatedBy }: InvoiceGeneratorProps) {
+export function InvoiceGenerator({ generatedBy, stormEventId }: InvoiceGeneratorProps) {
   const period = useMemo(() => getDefaultPeriod(), []);
   const [billingStart, setBillingStart] = useState(period.start);
   const [billingEnd, setBillingEnd] = useState(period.end);
@@ -64,6 +65,7 @@ export function InvoiceGenerator({ generatedBy }: InvoiceGeneratorProps) {
 
     try {
       const loaded = await invoiceGenerationService.listGenerationCandidates({
+        stormEventId,
         billingPeriodStart: billingStart,
         billingPeriodEnd: billingEnd,
       });
@@ -75,7 +77,7 @@ export function InvoiceGenerator({ generatedBy }: InvoiceGeneratorProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [billingEnd, billingStart]);
+  }, [billingEnd, billingStart, stormEventId]);
 
   useEffect(() => {
     void loadCandidates();
@@ -171,6 +173,7 @@ export function InvoiceGenerator({ generatedBy }: InvoiceGeneratorProps) {
 
     try {
       const result = await invoiceGenerationService.generateInvoices({
+        stormEventId,
         billingPeriodStart: billingStart,
         billingPeriodEnd: billingEnd,
         contractorIds: selectedContractorIds,
@@ -294,7 +297,7 @@ export function InvoiceGenerator({ generatedBy }: InvoiceGeneratorProps) {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Card>
               <CardContent className="p-3">
-                <p className="text-xs text-slate-500">Selected Subs</p>
+                <p className="text-xs text-slate-500">Selected Contractors</p>
                 <p className="text-lg font-semibold">{summary.contractorCount}</p>
               </CardContent>
             </Card>

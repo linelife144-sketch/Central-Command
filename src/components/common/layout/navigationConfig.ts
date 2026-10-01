@@ -27,7 +27,7 @@ export const ADMIN_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
   { href: '/tickets', label: 'Tickets', signalKey: 'tickets', badgeStyle: 'count' },
   {
     href: '/admin/contractors',
-    label: 'Users',
+    label: 'Contractors',
     matchPaths: ['/admin/admin/contractors'],
   },
   { href: '/admin/time-review', label: 'Time Review', signalKey: 'reviews', badgeStyle: 'count' },
@@ -65,7 +65,7 @@ export const ADMIN_BOTTOM_NAV_ITEMS: NavLinkItem[] = [
   { href: '/tickets', label: 'Tickets', signalKey: 'tickets', badgeStyle: 'count' },
   {
     href: '/admin/contractors',
-    label: 'Users',
+    label: 'Contractors',
     matchPaths: ['/admin/admin/contractors'],
   },
   { href: '/admin/map', label: 'Map' },

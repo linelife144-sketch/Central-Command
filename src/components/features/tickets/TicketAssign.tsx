@@ -19,13 +19,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-// import { getSubcontractors } from "@/lib/services/subcontractorService" // This might not exist yet?
+// import { getContractors } from "@/lib/services/contractorService" // This might not exist yet?
 // Only TicketService usage was mentioned. I might need to mock or check available services.
-// I'll assume for now I can pass a list of subcontractors or fetch them.
+// I'll assume for now I can pass a list of contractors or fetch them.
 // Let's implement fetching logic if service exists, otherwise use props.
 // Checking `lib/services` might be needed. For now I will focus on the UI and prop interface.
 
-interface SubcontractorOption {
+interface ContractorOption {
     id: string
     name: string
 }
@@ -33,45 +33,45 @@ interface SubcontractorOption {
 interface TicketAssignProps {
     isOpen: boolean
     onClose: () => void
-    onAssign: (subcontractorId: string) => Promise<void>
+    onAssign: (contractorId: string) => Promise<void>
     currentAssigneeId?: string
     ticketNumber: string
-    // In a real app, passing the list of subcontractors or a fetcher would be better.
+    // In a real app, passing the list of contractors or a fetcher would be better.
     // I'll simulate fetching for now or assume a callback to get them? 
-    // Actually, asking for subcontractors via props is cleaner for component purity.
+    // Actually, asking for contractors via props is cleaner for component purity.
     // But for simplicity in this "feature" component, I'll fetch them.
-    // Wait, I don't know if `subcontractorService` exists.
+    // Wait, I don't know if `contractorService` exists.
     // I'll just check `lib/services` first.
 }
 
 export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, ticketNumber }: TicketAssignProps) {
     const [assigneeId, setAssigneeId] = useState<string>(currentAssigneeId || "")
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [subcontractors, setSubcontractors] = useState<SubcontractorOption[]>([])
+    const [contractors, setContractors] = useState<ContractorOption[]>([])
     const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
-            loadSubcontractors()
+            loadContractors()
             if (currentAssigneeId) setAssigneeId(currentAssigneeId)
         }
     }, [isOpen, currentAssigneeId])
 
-    async function loadSubcontractors() {
+    async function loadContractors() {
         setIsLoading(true)
         try {
             // TODO: Replace with actual service call
-            // const subs = await subcontractorService.getSubcontractors()
+            // const subs = await contractorService.getContractors()
             // Mock data for now until I verify service exists
             await new Promise(resolve => setTimeout(resolve, 500))
-            setSubcontractors([
+            setContractors([
                 { id: "sub1", name: "John Doe (Electrician)" },
                 { id: "sub2", name: "Jane Smith (HVAC)" },
                 { id: "sub3", name: "Bob Wilson (General)" },
             ])
         } catch (error) {
-            console.error("Failed to load subcontractors", error)
-            toast.error("Failed to load subcontractors")
+            console.error("Failed to load contractors", error)
+            toast.error("Failed to load contractors")
         } finally {
             setIsLoading(false)
         }
@@ -98,12 +98,12 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, tic
                 <DialogHeader>
                     <DialogTitle>Assign Ticket {ticketNumber}</DialogTitle>
                     <DialogDescription>
-                        Select a subcontractor to assign this ticket to.
+                        Select a contractor to assign this ticket to.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="subcontractor" className="text-right">
+                        <Label htmlFor="contractor" className="text-right">
                             Assign To
                         </Label>
                         <Select
@@ -112,10 +112,10 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, tic
                             disabled={isLoading}
                         >
                             <SelectTrigger className="col-span-3">
-                                <SelectValue placeholder={isLoading ? "Loading..." : "Select subcontractor"} />
+                                <SelectValue placeholder={isLoading ? "Loading..." : "Select contractor"} />
                             </SelectTrigger>
                             <SelectContent>
-                                {subcontractors.map((sub) => (
+                                {contractors.map((sub) => (
                                     <SelectItem key={sub.id} value={sub.id}>
                                         {sub.name}
                                     </SelectItem>

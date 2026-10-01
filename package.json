@@ -24,7 +24,8 @@
     "test:cross-browser": "playwright test --project=chromium --project=firefox --project=webkit",
     "test:all": "npm run test && npm run test:e2e",
     "provision:users": "node --experimental-strip-types scripts/provision-users-from-csv.ts",
-    "upsert:contractor": "node --experimental-strip-types scripts/upsert-single-contractor.ts"
+    "upsert:contractor": "node --experimental-strip-types scripts/upsert-single-contractor.ts",
+    "schema:utilities": "node scripts/generate-utility-config.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

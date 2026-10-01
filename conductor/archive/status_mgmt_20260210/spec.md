@@ -7,7 +7,7 @@ Implement a robust, role-aware status management system for tickets. This includ
 
 ### 1. Context-Aware Status Updater
 - **Role-Based Visibility:**
-    - **Subcontractors:** View "Field Actions" (e.g., Start Route, Mark On Site, Mark Complete).
+    - **Contractors:** View "Field Actions" (e.g., Start Route, Mark On Site, Mark Complete).
     - **Admins:** View "Management Actions" (e.g., Approve, Request Rework, Close, Archive).
 - **Logical Flow:** Buttons only appear if the transition is valid from the current state (e.g., "Mark On Site" only shows if status is "In Route").
 - **Confirmation Modals:** Trigger a modal for high-impact or negative transitions.
@@ -31,7 +31,7 @@ Implement a robust, role-aware status management system for tickets. This includ
 - **Feedback:** Use `sonner` toasts to confirm successful updates or display validation errors.
 
 ## Acceptance Criteria
-- [ ] Subcontractors can successfully move a ticket from `ASSIGNED` to `COMPLETE` using one-tap action buttons.
+- [ ] Contractors can successfully move a ticket from `ASSIGNED` to `COMPLETE` using one-tap action buttons.
 - [ ] Admins can approve or request rework on tickets in the `PENDING_REVIEW` state.
 - [ ] Attempting to reject a ticket without a reason shows a validation error.
 - [ ] The status history timeline accurately reflects all previous transitions.

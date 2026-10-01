@@ -37,7 +37,7 @@
 - ✅ Zustand auth store
 - ✅ Utility functions (formatters, validators)
 - ✅ Authentication screens, forms, & wrappers
-- ✅ 12-Step Subcontractor Onboarding flow & components
+- ✅ 12-Step Contractor Onboarding flow & components
 - ✅ Admin Dashboard Shell & Layouts
 - ✅ Ticket CRUD, components, status transitions, and timeline
 - ✅ Map Integration (Mapbox GL, MapView, TicketMarkers, RouteOverlay, GeofenceCircle)
@@ -64,14 +64,14 @@ Grid2's 84% mature UI was grafted onto Central Command's Supabase backend (`xcva
 
 ## Project Overview
 
-**Central Command Damage Assessment Platform** — A Progressive Web Application (PWA) for managing independent 1099 subcontractor crews performing utility damage assessments for government contracts.
+**Central Command Damage Assessment Platform** — A Progressive Web Application (PWA) for managing independent 1099 contractor crews performing utility damage assessments for government contracts.
 
 ### Business Context
 
 | Aspect | Details |
 |--------|---------|
 | **Prime Contractor** | Central Command |
-| **Workforce Model** | Independent 1099 subcontractors (not employees) |
+| **Workforce Model** | Independent 1099 contractors (not employees) |
 | **Client Base** | Power utility companies with government contracts |
 | **Compliance Level** | FISMA/FedRAMP moderate |
 
@@ -127,7 +127,7 @@ Grid2/
 │   ├── (auth)/                   # Auth routes (login, forgot-password, etc.)
 │   ├── (onboarding)/             # 12-step onboarding flow
 │   ├── (admin)/                  # Admin portal (18 screens)
-│   ├── (subcontractor)/          # Subcontractor portal (16 screens)
+│   ├── (contractor)/          # Contractor portal (16 screens)
 │   └── api/                      # API routes
 │
 ├── components/
@@ -488,7 +488,7 @@ All actions logged with:
 - Access controls (RLS)
 - 1099 tracking accuracy
 
-**Offline-first is a core requirement.** Field subcontractors work in areas with poor cellular coverage. Always implement features with offline capability in mind.
+**Offline-first is a core requirement.** Field contractors work in areas with poor cellular coverage. Always implement features with offline capability in mind.
 
 **GPS validation is mandatory.** All time entries and photos require GPS verification. Never disable or bypass GPS checks.
 
@@ -501,3 +501,13 @@ All actions logged with:
 ---
 
 *Remember: **ALWAYS** read `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md` before starting any work.*
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

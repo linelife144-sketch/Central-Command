@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
-import { isAuthOrPermissionError, isMissingDatabaseObjectError } from '@/lib/utils/errorHandling';
+import { isAuthOrPermissionError } from '@/lib/utils/errorHandling';
 
 interface RemoteContractorRow {
   id: string;
@@ -37,12 +37,6 @@ interface RemoteTicketRow {
 
 interface RemoteInvoiceRow {
   contractor_id: string;
-  total_amount: number | null;
-  status: string | null;
-}
-
-interface LegacyRemoteInvoiceRow {
-  subcontractor_id: string;
   total_amount: number | null;
   status: string | null;
 }
@@ -224,48 +218,6 @@ async function fetchYtdInvoiceRows(contractorIds: string[]): Promise<RemoteInvoi
     return [];
   }
 
-  if (isMissingDatabaseObjectError(error)) {
-    // Fallback for partially migrated schema: same table with legacy column name.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: partialData, error: partialError } = await (supabase.from('contractor_invoices') as any)
-      .select('subcontractor_id, total_amount, status')
-      .in('subcontractor_id', contractorIds)
-      .gte('billing_period_start', start)
-      .lte('billing_period_end', end);
-
-    if (!partialError) {
-      return ((partialData ?? []) as LegacyRemoteInvoiceRow[]).map((row) => ({
-        contractor_id: row.subcontractor_id,
-        total_amount: row.total_amount,
-        status: row.status,
-      }));
-    }
-
-    if (isAuthOrPermissionError(partialError)) {
-      return [];
-    }
-
-    // Fallback for pre-migration schema.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: legacyData, error: legacyError } = await (supabase.from('subcontractor_invoices') as any)
-      .select('subcontractor_id, total_amount, status')
-      .in('subcontractor_id', contractorIds)
-      .gte('billing_period_start', start)
-      .lte('billing_period_end', end);
-
-    if (legacyError) {
-      if (isAuthOrPermissionError(legacyError)) {
-        return [];
-      }
-      throw legacyError;
-    }
-
-    return ((legacyData ?? []) as LegacyRemoteInvoiceRow[]).map((row) => ({
-      contractor_id: row.subcontractor_id,
-      total_amount: row.total_amount,
-      status: row.status,
-    }));
-  }
 
   throw error;
 }
@@ -382,23 +334,8 @@ export const contractorService = {
       query = query.eq('is_eligible_for_assignment', true);
     }
 
-    let { data, error } = await query;
+    const { data, error } = await query;
 
-    if (error && isMissingDatabaseObjectError(error)) {
-      // Fallback for legacy pre-migration schema.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let legacyQuery = (supabase.from('subcontractors') as any).select(
-        contractorColumns,
-      );
-
-      if (filters.eligibleOnly) {
-        legacyQuery = legacyQuery.eq('is_eligible_for_assignment', true);
-      }
-
-      const legacyResult = await legacyQuery;
-      data = legacyResult.data;
-      error = legacyResult.error;
-    }
 
     if (error) {
       if (isAuthOrPermissionError(error)) {
@@ -492,19 +429,11 @@ export const contractorService = {
     ].join(',');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let result = await (supabase.from('contractors') as any)
+    const result = await (supabase.from('contractors') as any)
       .select(contractorColumns)
       .eq('id', contractorId)
       .maybeSingle();
 
-    if (result.error && isMissingDatabaseObjectError(result.error)) {
-      // Fallback for legacy pre-migration schema.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result = await (supabase.from('subcontractors') as any)
-        .select(contractorColumns)
-        .eq('id', contractorId)
-        .maybeSingle();
-    }
 
     const { data: contractorData, error: contractorError } = result;
 

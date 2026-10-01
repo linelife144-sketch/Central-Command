@@ -46,11 +46,11 @@
 │  ├── user_roles                                                              │
 │  └── sessions                                                                │
 │                                                                              │
-│  SUBCONTRACTOR MANAGEMENT                                                    │
-│  ├── subcontractors                                                          │
-│  ├── subcontractor_credentials                                               │
-│  ├── subcontractor_rates                                                     │
-│  └── subcontractor_banking                                                   │
+│  CONTRACTOR MANAGEMENT                                                    │
+│  ├── contractors                                                          │
+│  ├── contractor_credentials                                               │
+│  ├── contractor_rates                                                     │
+│  └── contractor_banking                                                   │
 │                                                                              │
 │  TICKET SYSTEM                                                               │
 │  ├── tickets                                                                 │
@@ -75,7 +75,7 @@
 │  └── documents                                                               │
 │                                                                              │
 │  FINANCIAL                                                                   │
-│  ├── subcontractor_invoices                                                  │
+│  ├── contractor_invoices                                                  │
 │  ├── invoice_line_items                                                      │
 │  ├── payments                                                                │
 │  └── tax_1099_tracking                                                       │
@@ -245,10 +245,10 @@ CREATE INDEX idx_profiles_role ON profiles(role);
 CREATE INDEX idx_profiles_active ON profiles(is_active);
 ```
 
-### 3.2 Subcontractors
+### 3.2 Contractors
 
 ```sql
-CREATE TABLE subcontractors (
+CREATE TABLE contractors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   profile_id UUID UNIQUE REFERENCES profiles(id) ON DELETE CASCADE,
   
@@ -290,21 +290,21 @@ CREATE TABLE subcontractors (
 );
 
 -- Enable RLS
-ALTER TABLE subcontractors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractors ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_subcontractors_profile ON subcontractors(profile_id);
-CREATE INDEX idx_subcontractors_status ON subcontractors(onboarding_status);
-CREATE INDEX idx_subcontractors_eligible ON subcontractors(is_eligible_for_assignment);
-CREATE INDEX idx_subcontractors_tax_id ON subcontractors(tax_id);
+CREATE INDEX idx_contractors_profile ON contractors(profile_id);
+CREATE INDEX idx_contractors_status ON contractors(onboarding_status);
+CREATE INDEX idx_contractors_eligible ON contractors(is_eligible_for_assignment);
+CREATE INDEX idx_contractors_tax_id ON contractors(tax_id);
 ```
 
-### 3.3 Subcontractor Credentials
+### 3.3 Contractor Credentials
 
 ```sql
-CREATE TABLE subcontractor_credentials (
+CREATE TABLE contractor_credentials (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id) ON DELETE CASCADE,
+  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
   
   -- Credential Type
   credential_type VARCHAR(100) NOT NULL, -- INSURANCE_GL, INSURANCE_WC, INSURANCE_AUTO, LICENSE_ELECTRICAL, CERTIFICATION_OSHA, etc.
@@ -343,21 +343,21 @@ CREATE TABLE subcontractor_credentials (
 );
 
 -- Enable RLS
-ALTER TABLE subcontractor_credentials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractor_credentials ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_credentials_subcontractor ON subcontractor_credentials(subcontractor_id);
-CREATE INDEX idx_credentials_type ON subcontractor_credentials(credential_type);
-CREATE INDEX idx_credentials_expiration ON subcontractor_credentials(expiration_date);
-CREATE INDEX idx_credentials_status ON subcontractor_credentials(status);
+CREATE INDEX idx_credentials_contractor ON contractor_credentials(contractor_id);
+CREATE INDEX idx_credentials_type ON contractor_credentials(credential_type);
+CREATE INDEX idx_credentials_expiration ON contractor_credentials(expiration_date);
+CREATE INDEX idx_credentials_status ON contractor_credentials(status);
 ```
 
-### 3.4 Subcontractor Rates
+### 3.4 Contractor Rates
 
 ```sql
-CREATE TABLE subcontractor_rates (
+CREATE TABLE contractor_rates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id) ON DELETE CASCADE,
+  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
   
   -- Rate Definition
   work_type work_type NOT NULL,
@@ -373,24 +373,24 @@ CREATE TABLE subcontractor_rates (
   created_by UUID REFERENCES profiles(id),
   
   -- Constraints
-  CONSTRAINT unique_active_rate UNIQUE (subcontractor_id, work_type, effective_from)
+  CONSTRAINT unique_active_rate UNIQUE (contractor_id, work_type, effective_from)
 );
 
 -- Enable RLS
-ALTER TABLE subcontractor_rates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractor_rates ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_rates_subcontractor ON subcontractor_rates(subcontractor_id);
-CREATE INDEX idx_rates_work_type ON subcontractor_rates(work_type);
-CREATE INDEX idx_rates_effective ON subcontractor_rates(effective_from, effective_to);
+CREATE INDEX idx_rates_contractor ON contractor_rates(contractor_id);
+CREATE INDEX idx_rates_work_type ON contractor_rates(work_type);
+CREATE INDEX idx_rates_effective ON contractor_rates(effective_from, effective_to);
 ```
 
-### 3.5 Subcontractor Banking
+### 3.5 Contractor Banking
 
 ```sql
-CREATE TABLE subcontractor_banking (
+CREATE TABLE contractor_banking (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id) ON DELETE CASCADE,
+  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
   
   -- Bank Details (Encrypted)
   account_holder_name VARCHAR(255) NOT NULL,
@@ -420,11 +420,11 @@ CREATE TABLE subcontractor_banking (
 );
 
 -- Enable RLS
-ALTER TABLE subcontractor_banking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractor_banking ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_banking_subcontractor ON subcontractor_banking(subcontractor_id);
-CREATE INDEX idx_banking_primary ON subcontractor_banking(subcontractor_id, is_primary);
+CREATE INDEX idx_banking_contractor ON contractor_banking(contractor_id);
+CREATE INDEX idx_banking_primary ON contractor_banking(contractor_id, is_primary);
 ```
 
 ---
@@ -453,7 +453,7 @@ CREATE TABLE tickets (
   geofence_radius_meters INTEGER DEFAULT 500,
   
   -- Assignment
-  assigned_to UUID REFERENCES subcontractors(id),
+  assigned_to UUID REFERENCES contractors(id),
   assigned_by UUID REFERENCES profiles(id),
   assigned_at TIMESTAMPTZ,
   
@@ -555,7 +555,7 @@ CREATE TABLE ticket_routes (
   route_name VARCHAR(255) NOT NULL,
   
   -- Assignment
-  assigned_to UUID REFERENCES subcontractors(id),
+  assigned_to UUID REFERENCES contractors(id),
   assigned_by UUID REFERENCES profiles(id),
   assigned_at TIMESTAMPTZ,
   
@@ -597,7 +597,7 @@ CREATE INDEX idx_routes_status ON ticket_routes(status);
 ```sql
 CREATE TABLE time_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   ticket_id UUID REFERENCES tickets(id),
   
   -- Clock In
@@ -658,7 +658,7 @@ CREATE TABLE time_entries (
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_time_subcontractor ON time_entries(subcontractor_id);
+CREATE INDEX idx_time_contractor ON time_entries(contractor_id);
 CREATE INDEX idx_time_ticket ON time_entries(ticket_id);
 CREATE INDEX idx_time_status ON time_entries(status);
 CREATE INDEX idx_time_clock_in ON time_entries(clock_in_at);
@@ -671,7 +671,7 @@ CREATE INDEX idx_time_sync ON time_entries(sync_status);
 ```sql
 CREATE TABLE expense_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   
   -- Period
   report_period_start DATE NOT NULL,
@@ -707,7 +707,7 @@ CREATE TABLE expense_reports (
 ALTER TABLE expense_reports ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_expense_report_subcontractor ON expense_reports(subcontractor_id);
+CREATE INDEX idx_expense_report_contractor ON expense_reports(contractor_id);
 CREATE INDEX idx_expense_report_status ON expense_reports(status);
 CREATE INDEX idx_expense_report_period ON expense_reports(report_period_start, report_period_end);
 CREATE INDEX idx_expense_report_invoice ON expense_reports(invoice_id);
@@ -907,7 +907,7 @@ CREATE INDEX idx_hazard_active ON hazard_categories(is_active);
 CREATE TABLE damage_assessments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id UUID NOT NULL UNIQUE REFERENCES tickets(id),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   
   -- Safety Observations
   safety_observations JSONB DEFAULT '{}'::jsonb,
@@ -957,7 +957,7 @@ ALTER TABLE damage_assessments ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
 CREATE INDEX idx_assessment_ticket ON damage_assessments(ticket_id);
-CREATE INDEX idx_assessment_subcontractor ON damage_assessments(subcontractor_id);
+CREATE INDEX idx_assessment_contractor ON damage_assessments(contractor_id);
 CREATE INDEX idx_assessment_sync ON damage_assessments(sync_status);
 ```
 
@@ -998,13 +998,13 @@ CREATE INDEX idx_equip_type ON equipment_assessments(equipment_type_id);
 
 ## 7. FINANCIAL TABLES
 
-### 7.1 Subcontractor Invoices
+### 7.1 Contractor Invoices
 
 ```sql
-CREATE TABLE subcontractor_invoices (
+CREATE TABLE contractor_invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   invoice_number VARCHAR(50) NOT NULL UNIQUE,
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   
   -- Period
   billing_period_start DATE NOT NULL,
@@ -1041,13 +1041,13 @@ CREATE TABLE subcontractor_invoices (
 );
 
 -- Enable RLS
-ALTER TABLE subcontractor_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contractor_invoices ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_invoice_subcontractor ON subcontractor_invoices(subcontractor_id);
-CREATE INDEX idx_invoice_status ON subcontractor_invoices(status);
-CREATE INDEX idx_invoice_period ON subcontractor_invoices(billing_period_start, billing_period_end);
-CREATE INDEX idx_invoice_number ON subcontractor_invoices(invoice_number);
+CREATE INDEX idx_invoice_contractor ON contractor_invoices(contractor_id);
+CREATE INDEX idx_invoice_status ON contractor_invoices(status);
+CREATE INDEX idx_invoice_period ON contractor_invoices(billing_period_start, billing_period_end);
+CREATE INDEX idx_invoice_number ON contractor_invoices(invoice_number);
 ```
 
 ### 7.2 Invoice Line Items
@@ -1055,7 +1055,7 @@ CREATE INDEX idx_invoice_number ON subcontractor_invoices(invoice_number);
 ```sql
 CREATE TABLE invoice_line_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  invoice_id UUID NOT NULL REFERENCES subcontractor_invoices(id) ON DELETE CASCADE,
+  invoice_id UUID NOT NULL REFERENCES contractor_invoices(id) ON DELETE CASCADE,
   
   -- Line Item Type
   item_type VARCHAR(20) NOT NULL, -- TIME_ENTRY, EXPENSE_REPORT
@@ -1087,7 +1087,7 @@ CREATE INDEX idx_line_item_type ON invoice_line_items(item_type);
 ```sql
 CREATE TABLE tax_1099_tracking (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  contractor_id UUID NOT NULL REFERENCES contractors(id),
   tax_year INTEGER NOT NULL,
   
   -- Totals
@@ -1108,14 +1108,14 @@ CREATE TABLE tax_1099_tracking (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
-  CONSTRAINT unique_subcontractor_year UNIQUE (subcontractor_id, tax_year)
+  CONSTRAINT unique_contractor_year UNIQUE (contractor_id, tax_year)
 );
 
 -- Enable RLS
 ALTER TABLE tax_1099_tracking ENABLE ROW LEVEL SECURITY;
 
 -- Indexes
-CREATE INDEX idx_1099_subcontractor ON tax_1099_tracking(subcontractor_id);
+CREATE INDEX idx_1099_contractor ON tax_1099_tracking(contractor_id);
 CREATE INDEX idx_1099_year ON tax_1099_tracking(tax_year);
 CREATE INDEX idx_1099_threshold ON tax_1099_tracking(threshold_reached);
 ```
@@ -1132,7 +1132,7 @@ CREATE TABLE media_assets (
   
   -- Ownership
   uploaded_by UUID REFERENCES profiles(id),
-  subcontractor_id UUID REFERENCES subcontractors(id),
+  contractor_id UUID REFERENCES contractors(id),
   
   -- File Info
   file_name VARCHAR(255) NOT NULL,
@@ -1326,9 +1326,9 @@ CREATE INDEX idx_sync_retry ON sync_queue(retry_after);
 
 -- Composite Indexes for Common Queries
 CREATE INDEX idx_tickets_assigned_status ON tickets(assigned_to, status);
-CREATE INDEX idx_time_entries_subcontractor_date ON time_entries(subcontractor_id, clock_in_at);
-CREATE INDEX idx_expense_reports_subcontractor_period ON expense_reports(subcontractor_id, report_period_start);
-CREATE INDEX idx_subcontractor_credentials_expiring ON subcontractor_credentials(subcontractor_id, expiration_date) 
+CREATE INDEX idx_time_entries_contractor_date ON time_entries(contractor_id, clock_in_at);
+CREATE INDEX idx_expense_reports_contractor_period ON expense_reports(contractor_id, report_period_start);
+CREATE INDEX idx_contractor_credentials_expiring ON contractor_credentials(contractor_id, expiration_date) 
   WHERE expiration_date <= CURRENT_DATE + INTERVAL '90 days';
 
 -- Full-Text Search Indexes
@@ -1394,35 +1394,35 @@ CREATE POLICY profiles_delete_admin ON profiles
   FOR DELETE USING (is_admin());
 ```
 
-### 11.2 Subcontractors RLS Policies
+### 11.2 Contractors RLS Policies
 
 ```sql
--- Subcontractors: Users can read their own subcontractor record
-CREATE POLICY subcontractors_select_own ON subcontractors
+-- Contractors: Users can read their own contractor record
+CREATE POLICY contractors_select_own ON contractors
   FOR SELECT USING (profile_id = auth.uid());
 
--- Subcontractors: Admins can read all
-CREATE POLICY subcontractors_select_admin ON subcontractors
+-- Contractors: Admins can read all
+CREATE POLICY contractors_select_admin ON contractors
   FOR SELECT USING (is_admin());
 
--- Subcontractors: Users can update their own record
-CREATE POLICY subcontractors_update_own ON subcontractors
+-- Contractors: Users can update their own record
+CREATE POLICY contractors_update_own ON contractors
   FOR UPDATE USING (profile_id = auth.uid())
   WITH CHECK (profile_id = auth.uid());
 
--- Subcontractors: Admins can insert/update
-CREATE POLICY subcontractors_write_admin ON subcontractors
+-- Contractors: Admins can insert/update
+CREATE POLICY contractors_write_admin ON contractors
   FOR ALL USING (is_admin());
 ```
 
 ### 11.3 Tickets RLS Policies
 
 ```sql
--- Tickets: Subcontractors can see assigned tickets
+-- Tickets: Contractors can see assigned tickets
 CREATE POLICY tickets_select_assigned ON tickets
   FOR SELECT USING (
     assigned_to IN (
-      SELECT id FROM subcontractors WHERE profile_id = auth.uid()
+      SELECT id FROM contractors WHERE profile_id = auth.uid()
     )
   );
 
@@ -1434,11 +1434,11 @@ CREATE POLICY tickets_admin ON tickets
 ### 11.4 Time Entries RLS Policies
 
 ```sql
--- Time Entries: Subcontractors can CRUD their own
+-- Time Entries: Contractors can CRUD their own
 CREATE POLICY time_entries_own ON time_entries
   FOR ALL USING (
-    subcontractor_id IN (
-      SELECT id FROM subcontractors WHERE profile_id = auth.uid()
+    contractor_id IN (
+      SELECT id FROM contractors WHERE profile_id = auth.uid()
     )
   );
 
@@ -1450,11 +1450,11 @@ CREATE POLICY time_entries_admin ON time_entries
 ### 11.5 Expense Reports RLS Policies
 
 ```sql
--- Expense Reports: Subcontractors can CRUD their own
+-- Expense Reports: Contractors can CRUD their own
 CREATE POLICY expense_reports_own ON expense_reports
   FOR ALL USING (
-    subcontractor_id IN (
-      SELECT id FROM subcontractors WHERE profile_id = auth.uid()
+    contractor_id IN (
+      SELECT id FROM contractors WHERE profile_id = auth.uid()
     )
   );
 
@@ -1475,7 +1475,7 @@ CREATE POLICY media_select_assigned ON media_assets
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM tickets t
-      JOIN subcontractors s ON t.assigned_to = s.id
+      JOIN contractors s ON t.assigned_to = s.id
       WHERE media_assets.entity_id = t.id::text
       AND media_assets.entity_type = 'ticket'
       AND s.profile_id = auth.uid()
@@ -1538,8 +1538,8 @@ CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_subcontractors_updated_at
-  BEFORE UPDATE ON subcontractors
+CREATE TRIGGER update_contractors_updated_at
+  BEFORE UPDATE ON contractors
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- (Apply to all other tables with updated_at...)
@@ -1634,7 +1634,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER credential_expiration_trigger
-  BEFORE INSERT OR UPDATE ON subcontractor_credentials
+  BEFORE INSERT OR UPDATE ON contractor_credentials
   FOR EACH ROW EXECUTE FUNCTION check_credential_expiration();
 ```
 
@@ -1645,40 +1645,40 @@ CREATE TRIGGER credential_expiration_trigger
 CREATE OR REPLACE FUNCTION update_1099_tracking()
 RETURNS TRIGGER AS $$
 DECLARE
-  v_subcontractor_id UUID;
+  v_contractor_id UUID;
   v_tax_year INTEGER;
   v_ytd_total DECIMAL(12, 2);
 BEGIN
   -- Only process paid invoices
   IF NEW.status = 'PAID' AND OLD.status != 'PAID' THEN
-    v_subcontractor_id := NEW.subcontractor_id;
+    v_contractor_id := NEW.contractor_id;
     v_tax_year := EXTRACT(YEAR FROM NEW.paid_at);
     
     -- Calculate YTD total
     SELECT COALESCE(SUM(total_amount), 0)
     INTO v_ytd_total
-    FROM subcontractor_invoices
-    WHERE subcontractor_id = v_subcontractor_id
+    FROM contractor_invoices
+    WHERE contractor_id = v_contractor_id
     AND status = 'PAID'
     AND EXTRACT(YEAR FROM paid_at) = v_tax_year;
     
     -- Insert or update 1099 tracking
     INSERT INTO tax_1099_tracking (
-      subcontractor_id,
+      contractor_id,
       tax_year,
       total_payments,
       total_invoices,
       threshold_reached,
       threshold_reached_at
     ) VALUES (
-      v_subcontractor_id,
+      v_contractor_id,
       v_tax_year,
       v_ytd_total,
       1,
       v_ytd_total >= 600,
       CASE WHEN v_ytd_total >= 600 THEN NOW() ELSE NULL END
     )
-    ON CONFLICT (subcontractor_id, tax_year)
+    ON CONFLICT (contractor_id, tax_year)
     DO UPDATE SET
       total_payments = v_ytd_total,
       total_invoices = tax_1099_tracking.total_invoices + 1,
@@ -1696,7 +1696,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER invoice_paid_1099_trigger
-  AFTER UPDATE ON subcontractor_invoices
+  AFTER UPDATE ON contractor_invoices
   FOR EACH ROW EXECUTE FUNCTION update_1099_tracking();
 ```
 
