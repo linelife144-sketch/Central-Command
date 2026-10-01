@@ -1,0 +1,18 @@
+
+.node_modules-icloud-backup-20261001/
+.next-icloud-backup-20261001/
+# Code-only project map: documents and media are excluded.
+conductor/
+.hermes/
+docs/
+grid-electric-docs/
+*.md
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.gif
+*.webp
+*.ico
+*.mp4

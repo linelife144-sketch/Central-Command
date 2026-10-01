@@ -72,7 +72,7 @@ describe('dashboardReportingService', () => {
     expect(metrics.active_tickets).toBe(3);
     expect(metrics.field_crews).toBe(2);
     expect(metrics.on_site_crews).toBe(1);
-    expect(metrics.pending_reviews_total).toBe(9);
+    expect(metrics.pending_reviews_total).toBe(10); // 1 ticket + 4 time + 3 expense + 2 assessments
     expect(metrics.status_breakdown.in_route).toBe(1);
     expect(metrics.status_breakdown.on_site).toBe(1);
     expect(metrics.status_breakdown.pending_review).toBe(1);
@@ -81,6 +81,21 @@ describe('dashboardReportingService', () => {
     expect(metrics.revenue_previous_mtd).toBe(500);
     expect(metrics.revenue_trend_percent).toBe(100);
     expect(metrics.invoices_generated_mtd).toBe(1);
+  });
+
+  it('keeps ticket metrics visible and marks unavailable review sources', async () => {
+    const service = createDashboardReportingService({
+      now: () => new Date('2026-10-01T12:00:00Z'),
+      fetchTickets: async () => [{ id: 'qa', status: 'ASSIGNED', assigned_to: 'crew', created_at: '2026-10-01T10:00:00Z', is_deleted: false }],
+      fetchPendingTimeEntries: async () => 0,
+      fetchPendingExpenseReports: async () => 0,
+      fetchPendingAssessments: async () => { throw new Error('permission denied'); },
+      fetchInvoicesByCreatedRange: async () => [],
+    });
+    const metrics = await service.getDashboardMetrics();
+    expect(metrics.active_tickets).toBe(1);
+    expect(metrics.field_crews).toBe(1);
+    expect(metrics.unavailable_metrics).toEqual(['Assessment reviews']);
   });
 
   it('builds grouped report data with contractor totals', () => {

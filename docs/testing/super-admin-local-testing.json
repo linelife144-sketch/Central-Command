@@ -16,5 +16,8 @@
     "server": "Running in Codex-managed session on port 3000; tickets and storm creation pages returned HTTP 200",
     "browser": "Entergy and FPL ticket creation and refresh persistence verified. Illustrative equipment restrictions withdrawn and original fields restored.",
     "real_data": "No live Supabase records modified."
-  }
+  },
+  "current_mode": "supabase_connected_2026_10_01",
+  "current_activation": "NEXT_PUBLIC_ENABLE_SUPER_ADMIN_TESTING=false",
+  "current_mode_note": "Real Supabase auth and persistence enabled. Original browser-local fixtures preserved; not imported into Supabase."
 }

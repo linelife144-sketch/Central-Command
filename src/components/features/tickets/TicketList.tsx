@@ -17,6 +17,7 @@ import { TicketFilters, TicketFiltersState } from './TicketFilters';
 import { TicketCard } from './TicketCard';
 import { TicketAssign } from './TicketAssign';
 import { toast } from 'sonner';
+import { contractorService } from '@/lib/services/contractorService';
 
 interface TicketListProps {
     userRole: 'admin' | 'contractor';
@@ -24,6 +25,7 @@ interface TicketListProps {
 }
 
 export function TicketList({ userRole, userId }: TicketListProps) {
+    const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filters, setFilters] = useState<TicketFiltersState>({
@@ -45,6 +47,12 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                     data = await ticketService.getTickets();
                 }
                 setTickets(Array.isArray(data) ? data : []);
+                if (userRole === 'admin') {
+                    try {
+                        const contractors = await contractorService.listContractors();
+                        setAssigneeNames(Object.fromEntries(contractors.map(c => [c.id, c.fullName])));
+                    } catch { toast.error('Unable to load contractor names'); }
+                }
             } catch (error) {
                 console.error('Failed to load tickets:', error);
                 setTickets([]);
@@ -108,11 +116,16 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             cell: (ticket) => <StatusBadge status={ticket.status} />,
         },
         {
+            key: 'assigned_to',
+            header: 'Assigned To',
+            cell: ticket => ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : 'Contractor assigned') : 'Unassigned',
+        },
+        {
             key: 'location',
             header: 'Location',
             cell: (ticket) => (
                 <div className="text-sm">
-                    {ticket.city}, {ticket.state}
+                    {[ticket.address, ticket.city, ticket.state].filter(Boolean).join(', ') || 'Not provided'}
                 </div>
             )
         },
@@ -196,6 +209,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                         <TicketCard
                             key={ticket.id}
                             ticket={ticket}
+                            assigneeName={ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : undefined) : undefined}
                             onClick={handleRowClick}
                         />
                     ))

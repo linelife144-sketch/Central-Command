@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoginForm } from '@/components/features/auth/LoginForm';
+import { BrandMark } from '@/components/common/brand/BrandMark';
 
 export const metadata: Metadata = {
   title: 'Sign In - Central Command',
@@ -15,9 +16,7 @@ export default function LoginPage() {
     <Card className="w-full">
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">G</span>
-          </div>
+          <BrandMark portalLabel="Secure Access" variant="full" />
         </div>
         <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
         <CardDescription>

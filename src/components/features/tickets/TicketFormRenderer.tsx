@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -123,7 +123,11 @@ export function TicketFormRenderer({
     defaultValues,
   });
 
+  const lastDefaults = useRef(JSON.stringify(defaultValues));
   useEffect(() => {
+    const signature = JSON.stringify(defaultValues);
+    if (lastDefaults.current === signature) return;
+    lastDefaults.current = signature;
     form.reset(defaultValues);
   }, [defaultValues, form]);
 

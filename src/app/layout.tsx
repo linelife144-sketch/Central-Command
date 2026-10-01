@@ -5,7 +5,7 @@ import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvi
 import { SyncProvider } from "@/components/providers/SyncProvider";
 import { OfflineBanner } from "@/components/common/feedback/OfflineBanner";
 import { Toaster } from "@/components/ui/sonner";
-import { Agentation } from "agentation";
+import { AgentationLoader } from "@/components/providers/AgentationLoader";
 
 export const metadata: Metadata = {
   title: "Central Command",
@@ -25,7 +25,7 @@ export default function RootLayout({
             <SyncProvider>
               <OfflineBanner />
               {children}
-              {process.env.NODE_ENV === "development" && <Agentation />}
+              {process.env.NODE_ENV === "development" && <AgentationLoader />}
               <Toaster />
             </SyncProvider>
           </ServiceWorkerProvider>

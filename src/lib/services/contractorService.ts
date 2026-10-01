@@ -23,6 +23,7 @@ interface RemoteProfileRow {
   last_name: string;
   email: string;
   phone: string | null;
+  is_active: boolean;
 }
 
 interface RemoteTicketRow {
@@ -49,6 +50,7 @@ export interface ContractorListItem {
   businessType: string | null;
   city: string | null;
   state: string | null;
+  isActive: boolean;
   onboardingStatus: string;
   eligibleForAssignment: boolean;
   eligibilityReason: string | null;
@@ -82,6 +84,7 @@ export interface ContractorDetail {
   businessPhone: string | null;
   city: string | null;
   state: string | null;
+  isActive: boolean;
   onboardingStatus: string;
   eligibleForAssignment: boolean;
   eligibilityReason: string | null;
@@ -161,7 +164,7 @@ async function fetchProfilesByIds(profileIds: string[]): Promise<Map<string, Rem
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from('profiles') as any)
-    .select('id, first_name, last_name, email, phone')
+    .select('id, first_name, last_name, email, phone, is_active')
     .in('id', profileIds);
 
   if (error) {
@@ -183,7 +186,8 @@ async function fetchTicketRows(contractorIds: string[]): Promise<RemoteTicketRow
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from('tickets') as any)
     .select('id, ticket_number, status, priority, utility_client, updated_at, assigned_to')
-    .in('assigned_to', contractorIds);
+    .in('assigned_to', contractorIds)
+    .eq('is_deleted', false);
 
   if (error) {
     if (isAuthOrPermissionError(error)) {
@@ -328,7 +332,7 @@ export const contractorService = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query = (supabase.from('contractors') as any).select(
       contractorColumns,
-    );
+    ).eq('is_deleted', false);
 
     if (filters.eligibleOnly) {
       query = query.eq('is_eligible_for_assignment', true);
@@ -370,7 +374,8 @@ export const contractorService = {
         businessType: row.business_type,
         city: row.city,
         state: row.state,
-        onboardingStatus: row.onboarding_status,
+        isActive: profile?.is_active ?? false,
+      onboardingStatus: row.onboarding_status,
         eligibleForAssignment: row.is_eligible_for_assignment,
         eligibilityReason: row.eligibility_reason,
         email,
@@ -396,6 +401,7 @@ export const contractorService = {
     });
 
     return contractors
+      .filter(contractor => contractor.isActive)
       .map((contractor) => ({
         id: contractor.id,
         displayName: `${contractor.fullName} (${contractor.businessName})`,
@@ -432,6 +438,7 @@ export const contractorService = {
     const result = await (supabase.from('contractors') as any)
       .select(contractorColumns)
       .eq('id', contractorId)
+      .eq('is_deleted', false)
       .maybeSingle();
 
 
@@ -484,6 +491,7 @@ export const contractorService = {
       businessPhone: row.business_phone,
       city: row.city,
       state: row.state,
+      isActive: profile?.is_active ?? false,
       onboardingStatus: row.onboarding_status,
       eligibleForAssignment: row.is_eligible_for_assignment,
       eligibilityReason: row.eligibility_reason,

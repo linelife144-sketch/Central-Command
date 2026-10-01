@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
     // Prevent intermittent dev chunk corruption that causes MODULE_NOT_FOUND runtime errors.
     if (dev) {
       config.cache = false;
+      // Uncached dev builds take longer to compile/serve large bundles
+      // (e.g. app/layout.js). Give the browser more time before it gives
+      // up and throws a ChunkLoadError timeout.
+      config.output = {
+        ...config.output,
+        chunkLoadTimeout: 300000, // 5 minutes
+      };
     }
     return config;
   },

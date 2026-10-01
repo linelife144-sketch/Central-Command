@@ -20,6 +20,22 @@ describe('canonical contractor queries', () => {
     await expect(contractorService.listContractors()).rejects.toEqual(error);
     expect(remote.from.mock.calls.map(call => call[0])).toEqual(['contractors']);
   });
+  it('uses the profile activity flag and counts only open, non-deleted assignments', async () => {
+    const contractorQuery = query({ data: [{id:'crew',profile_id:'profile',business_name:'QA',onboarding_status:'APPROVED',is_eligible_for_assignment:true}],error:null });
+    const ticketQuery = query({ data: [{id:'open',assigned_to:'crew',status:'ASSIGNED'},{id:'closed',assigned_to:'crew',status:'CLOSED'}],error:null });
+    remote.from.mockImplementation((table: string) => {
+      if (table === 'contractors') return contractorQuery;
+      if (table === 'profiles') return query({data:[{id:'profile',first_name:'QA',last_name:'Crew',email:'qa@example.com',is_active:false}],error:null});
+      if (table === 'tickets') return ticketQuery;
+      return query({data:[],error:null});
+    });
+    const rows = await contractorService.listContractors();
+    expect(rows[0]).toMatchObject({fullName:'QA Crew',isActive:false,activeTicketCount:1});
+    expect(contractorQuery.eq).toHaveBeenCalledWith('is_deleted', false);
+    expect(ticketQuery.eq).toHaveBeenCalledWith('is_deleted', false);
+    expect(await contractorService.listAssignableContractors()).toEqual([]);
+  });
+
   it('does not use database queries without a session', async () => {
     remote.getSession.mockResolvedValue({ data:{ session:null },error:null });
     expect(await contractorService.listContractors()).toEqual([]);

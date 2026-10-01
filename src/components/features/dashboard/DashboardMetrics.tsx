@@ -122,10 +122,12 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
     return 'neutral';
   }, [metrics]);
 
-  const activeTicketsValue = metrics?.active_tickets ?? (isLoading ? '...' : 0);
-  const fieldCrewsValue = metrics?.field_crews ?? (isLoading ? '...' : 0);
-  const pendingReviewValue = metrics?.pending_reviews_total ?? (isLoading ? '...' : 0);
-  const revenueValue = metrics ? formatCurrency(metrics.revenue_mtd) : isLoading ? '...' : formatCurrency(0);
+  const activeTicketsValue = metrics?.active_tickets ?? (isLoading ? '...' : 'Unavailable');
+  const fieldCrewsValue = metrics?.field_crews ?? (isLoading ? '...' : 'Unavailable');
+  const reviewsUnavailable = metrics?.unavailable_metrics?.some(label => label !== 'Revenue');
+  const revenueUnavailable = metrics?.unavailable_metrics?.includes('Revenue');
+  const pendingReviewValue = reviewsUnavailable ? 'Unavailable' : metrics?.pending_reviews_total ?? (isLoading ? '...' : 'Unavailable');
+  const revenueValue = revenueUnavailable ? 'Unavailable' : metrics ? formatCurrency(metrics.revenue_mtd) : isLoading ? '...' : formatCurrency(0);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -149,6 +151,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
         </Alert>
       ) : null}
 
+      {metrics?.unavailable_metrics?.length ? <Alert><AlertDescription>Some metrics could not be loaded: {metrics.unavailable_metrics.join(', ')}. Ticket and crew counts are current.</AlertDescription></Alert> : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           title="Active Tickets"
@@ -170,7 +173,9 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
           value={pendingReviewValue}
           icon={<Clock className="h-4 w-4 text-grid-lightning" />}
           description={
-            metrics
+            reviewsUnavailable
+              ? 'Review total unavailable until all review sources can be read'
+              : metrics
               ? `${metrics.pending_tickets} tickets, ${metrics.pending_time_entries} time, ${metrics.pending_expense_reports} expense, ${metrics.pending_assessments} assessments`
               : 'Time, expense, and assessment approvals'
           }
@@ -182,7 +187,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
           value={revenueValue}
           icon={<DollarSign className="h-4 w-4 text-grid-lightning" />}
           trend={revenueTrendDirection}
-          trendValue={metrics ? formatSignedTrend(metrics.revenue_trend_percent) : undefined}
+          trendValue={metrics && !revenueUnavailable ? formatSignedTrend(metrics.revenue_trend_percent) : undefined}
           description="vs previous month-to-date"
           variant="accent"
         />
@@ -192,21 +197,21 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
         <CardContent className="grid grid-cols-2 gap-3 pt-6 text-sm md:grid-cols-4">
           <div className="storm-mini-stat rounded-md p-3">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">In Route</p>
-            <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.in_route ?? (isLoading ? '...' : 0)}</p>
+            <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.in_route ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>
           <div className="storm-mini-stat rounded-md p-3">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">On Site</p>
-            <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.on_site ?? (isLoading ? '...' : 0)}</p>
+            <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.on_site ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>
           <div className="storm-mini-stat rounded-md p-3">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">Pending Review</p>
             <p className="text-lg font-bold text-[#0a1733]">
-              {metrics?.status_breakdown.pending_review ?? (isLoading ? '...' : 0)}
+              {metrics?.status_breakdown.pending_review ?? (isLoading ? '...' : 'Unavailable')}
             </p>
           </div>
           <div className="storm-mini-stat rounded-md p-3">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">Unassigned</p>
-            <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.unassigned ?? (isLoading ? '...' : 0)}</p>
+            <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.unassigned ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>
         </CardContent>
       </Card>

@@ -34,6 +34,17 @@ describe('storm utility ticket workflow', () => {
     expect(submit.mock.calls[0]?.[0]).toMatchObject({ incident_number: '1234567890', priority: 'C', status: 'DRAFT' });
   });
 
+  it('keeps typed fields when equivalent template props are recreated', () => {
+    const template = getTicketTemplateByUtilityClient('ENTERGY');
+    const props = { storm: { id: 's', name: 'QA', eventCode: 'QA', utilityClient: 'ENTERGY', state: 'Louisiana' }, template, onSubmitTicket: vi.fn(async () => {}), onRunOcr: () => {} };
+    const view = render(createElement(TicketFormRenderer, props));
+    fireEvent.change(screen.getByLabelText(/Incident Number/), { target: { value: '2026100101' } });
+    fireEvent.change(screen.getByLabelText(/^Address/), { target: { value: '100 QA Test Lane' } });
+    view.rerender(createElement(TicketFormRenderer, { ...props, template: { ...template } }));
+    expect((screen.getByLabelText(/Incident Number/) as HTMLInputElement).value).toBe('2026100101');
+    expect((screen.getByLabelText(/^Address/) as HTMLInputElement).value).toBe('100 QA Test Lane');
+  });
+
   it('saves utility payloads locally and rejects templates from another utility', async () => {
     const storm = await stormEventService.createStormEvent({ name: 'Entergy storm', utilityClient: 'Entergy' });
     const common = { status: 'DRAFT', priority: 'A', source_type: 'MANUAL' } as const;

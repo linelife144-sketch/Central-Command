@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => { setIsReady(true); }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,7 +87,7 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -99,7 +101,7 @@ export function LoginForm() {
           type="email"
           placeholder="name@company.com"
           {...register('email')}
-          disabled={isLoading}
+          disabled={isLoading || !isReady}
         />
         {errors.email && (
           <p className="text-sm text-red-600">{errors.email.message}</p>
@@ -113,7 +115,7 @@ export function LoginForm() {
           type="password"
           placeholder="Enter your password"
           {...register('password')}
-          disabled={isLoading}
+          disabled={isLoading || !isReady}
         />
         {errors.password && (
           <p className="text-sm text-red-600">{errors.password.message}</p>
@@ -123,7 +125,7 @@ export function LoginForm() {
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading}
+        disabled={isLoading || !isReady}
       >
         {isLoading ? (
           <>

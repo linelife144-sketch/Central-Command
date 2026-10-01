@@ -124,15 +124,21 @@ export const ticketService = {
 
         // Update ticket
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: updateError } = await (supabase.from('tickets') as any)
+        const { data: updatedTicket, error: updateError } = await (supabase.from('tickets') as any)
             .update({
                 status: newStatus,
                 updated_at: new Date().toISOString(),
                 updated_by: userId
             })
-            .eq('id', id);
+            .eq('id', id)
+            .eq('status', currentStatus)
+            .select('id, status')
+            .maybeSingle();
 
         if (updateError) throw updateError;
+        if (!updatedTicket || updatedTicket.status !== newStatus) {
+            throw new Error('Ticket status was not saved. Your account may not have permission, or the ticket changed. Refresh and try again.');
+        }
 
         // Database trigger writes the status history atomically with this update.
         notifyTicketsChanged();

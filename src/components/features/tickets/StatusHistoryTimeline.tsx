@@ -66,7 +66,7 @@ export function StatusHistoryTimeline({ ticketId, refreshKey }: StatusHistoryTim
                   <div className="flex items-center gap-2">
                     <StatusBadge status={item.to_status} size="sm" />
                     <span className="text-sm font-medium text-foreground">
-                      by {item.profiles?.first_name} {item.profiles?.last_name}
+                      by {[item.profiles?.first_name, item.profiles?.last_name].filter(Boolean).join(' ') || 'User unavailable'}
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground flex flex-col sm:items-end">

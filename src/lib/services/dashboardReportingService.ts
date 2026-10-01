@@ -74,6 +74,7 @@ interface DashboardReportBuildInput {
 }
 
 export interface DashboardMetricsData {
+  unavailable_metrics?: string[];
   generated_at: string;
   active_tickets: number;
   field_crews: number;
@@ -1060,8 +1061,8 @@ export function createDashboardReportingService(
       }
       const previousWindow = getPreviousMtdWindow(now);
 
-      const [tickets, pendingTimeEntries, pendingExpenseReports, pendingAssessments, invoicesForTrend] =
-        await Promise.all([
+      const [ticketResult, timeResult, expenseResult, assessmentResult, invoiceResult] =
+        await Promise.allSettled([
           resolvedDependencies.fetchTickets(),
           resolvedDependencies.fetchPendingTimeEntries(),
           resolvedDependencies.fetchPendingExpenseReports(),
@@ -1072,7 +1073,22 @@ export function createDashboardReportingService(
           ),
         ]);
 
-      return buildDashboardMetrics({
+      // A denied review query must not erase valid ticket and crew counts.
+      if (ticketResult.status === 'rejected') throw ticketResult.reason;
+      const tickets = ticketResult.value;
+      const unavailableMetrics: string[] = [];
+      const countOrUnavailable = (result: PromiseSettledResult<number>, label: string) => {
+        if (result.status === 'fulfilled') return result.value;
+        unavailableMetrics.push(label);
+        return 0;
+      };
+      const pendingTimeEntries = countOrUnavailable(timeResult, 'Time reviews');
+      const pendingExpenseReports = countOrUnavailable(expenseResult, 'Expense reviews');
+      const pendingAssessments = countOrUnavailable(assessmentResult, 'Assessment reviews');
+      const invoicesForTrend = invoiceResult.status === 'fulfilled' ? invoiceResult.value : [];
+      if (invoiceResult.status === 'rejected') unavailableMetrics.push('Revenue');
+
+      const metrics = buildDashboardMetrics({
         now,
         tickets,
         pendingTimeEntries,
@@ -1080,6 +1096,7 @@ export function createDashboardReportingService(
         pendingAssessments,
         invoicesForTrend,
       });
+      return { ...metrics, unavailable_metrics: unavailableMetrics };
     },
 
     async getReport(input: DashboardReportInput): Promise<DashboardReportData> {

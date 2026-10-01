@@ -159,8 +159,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (IS_LOCAL_DEV_HOST) {
-    // Never cache app bundles in local development; stale caches mask current code.
-    event.respondWith(fetch(request));
+    // Let the browser handle dev requests natively. Proxying through the SW
+    // thread (via event.respondWith(fetch(request))) can hang/timeout while
+    // the dev server is compiling, which blocks chunk loads like app/layout.js.
     return;
   }
 

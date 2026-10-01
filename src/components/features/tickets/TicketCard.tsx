@@ -10,9 +10,10 @@ interface TicketCardProps {
     ticket: Ticket;
     onClick?: (ticket: Ticket) => void;
     className?: string;
+    assigneeName?: string;
 }
 
-export function TicketCard({ ticket, onClick, className }: TicketCardProps) {
+export function TicketCard({ ticket, onClick, className, assigneeName }: TicketCardProps) {
     return (
         <Card
             className={cn(
@@ -48,7 +49,7 @@ export function TicketCard({ ticket, onClick, className }: TicketCardProps) {
                 {ticket.assigned_to && (
                     <div className="flex items-center text-sm text-muted-foreground">
                         <User className="mr-2 h-3.5 w-3.5" />
-                        <span>Assigned</span>
+                        <span>{assigneeName || 'Contractor assigned'}</span>
                     </div>
                 )}
             </CardContent>

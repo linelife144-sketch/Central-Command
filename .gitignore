@@ -39,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/.node_modules-icloud-backup-20261001/
+/.next-icloud-backup-20261001/

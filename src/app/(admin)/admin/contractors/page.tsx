@@ -2,178 +2,58 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
-import { DataTable, Column } from '@/components/common/data-display/DataTable';
+import { DataTable, type Column } from '@/components/common/data-display/DataTable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Users, UserCheck, UserPlus, UserX, AlertTriangle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { contractorService, type ContractorListItem } from '@/lib/services/contractorService';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { formatCurrency } from '@/lib/utils/formatters';
 
-interface Contractor {
-  id: string;
-  name: string;
-  status: string;
-  eligible: boolean;
-  tickets: number;
-  ytdEarnings: string;
-  alerts?: string;
+function statusOf(contractor: ContractorListItem) {
+  if (!contractor.isActive) return 'Inactive';
+  return contractor.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending';
 }
-
-const mockContractors: Contractor[] = [
-  { id: '1', name: 'John Smith', status: 'Active', eligible: true, tickets: 12, ytdEarnings: '$45,230', alerts: undefined },
-  { id: '2', name: 'Maria Johnson', status: 'Active', eligible: true, tickets: 8, ytdEarnings: '$38,150', alerts: undefined },
-  { id: '3', name: 'David Chen', status: 'Active', eligible: true, tickets: 15, ytdEarnings: '$52,400', alerts: 'Insurance expiring' },
-  { id: '4', name: 'Sarah Williams', status: 'Pending', eligible: false, tickets: 0, ytdEarnings: '-', alerts: undefined },
-  { id: '5', name: 'Michael Brown', status: 'Active', eligible: true, tickets: 10, ytdEarnings: '$41,800', alerts: undefined },
-  { id: '6', name: 'Lisa Davis', status: 'Inactive', eligible: false, tickets: 0, ytdEarnings: '$12,500', alerts: 'Credential expired' },
-  { id: '7', name: 'Robert Wilson', status: 'Active', eligible: true, tickets: 6, ytdEarnings: '$28,900', alerts: undefined },
+const columns: Column<ContractorListItem>[] = [
+  { key: 'fullName', header: 'Name', cell: c => <Link className="font-medium text-grid-blue underline" href={`/admin/contractors/${c.id}`}>{c.fullName}</Link> },
+  { key: 'businessName', header: 'Business', cell: c => c.businessName },
+  { key: 'onboardingStatus', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
+  { key: 'eligibleForAssignment', header: 'Eligible', cell: c => c.isActive && c.eligibleForAssignment ? 'Yes' : 'No' },
+  { key: 'activeTicketCount', header: 'Active Tickets', cell: c => c.activeTicketCount },
+  { key: 'ytdEarnings', header: 'YTD Invoiced', cell: c => formatCurrency(c.ytdEarnings) },
+  { key: 'alerts', header: 'Alerts', cell: c => c.alerts.join('; ') || '—' },
 ];
-
-const columns: Column<Contractor>[] = [
-  {
-    key: 'name',
-    header: 'Name',
-    cell: (sub) => (
-      <Link
-        href={`/admin/contractors/${sub.id}`}
-        className="font-medium text-blue-600 hover:text-blue-800"
-      >
-        {sub.name}
-      </Link>
-    ),
-  },
-  {
-    key: 'status',
-    header: 'Status',
-    cell: (sub) => <StatusBadge status={sub.status} size="sm" />,
-  },
-  {
-    key: 'eligible',
-    header: 'Eligible',
-    cell: (sub) => (
-      <span className={sub.eligible ? 'text-green-600' : 'text-slate-400'}>
-        {sub.eligible ? '✓ Yes' : '✗ No'}
-      </span>
-    ),
-  },
-  {
-    key: 'tickets',
-    header: 'Tickets',
-    cell: (sub) => sub.tickets,
-  },
-  {
-    key: 'ytdEarnings',
-    header: 'YTD Earnings',
-    cell: (sub) => sub.ytdEarnings,
-  },
-  {
-    key: 'alerts',
-    header: 'Alerts',
-    cell: (sub) => sub.alerts ? (
-      <span className="flex items-center gap-1 text-yellow-600 text-sm">
-        <AlertTriangle className="w-4 h-4" />
-        {sub.alerts}
-      </span>
-    ) : (
-      <span className="text-slate-400">-</span>
-    ),
-  },
-];
-
 export default function ContractorsListPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  // Calculate metrics
-  const totalCount = mockContractors.length;
-  const activeCount = mockContractors.filter(s => s.status === 'Active').length;
-  const pendingCount = mockContractors.filter(s => s.status === 'Pending').length;
-  const expiringCount = mockContractors.filter(s => s.alerts?.includes('expiring')).length;
-
-  // Filter data
-  const filteredData = mockContractors.filter(sub => {
-    const matchesSearch = sub.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || sub.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Contractors"
-        description="Manage your workforce and view performance metrics"
-      >
-        <Button>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Invite Contractor
-        </Button>
-      </PageHeader>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total"
-          value={totalCount}
-          icon={<Users className="w-4 h-4 text-blue-600" />}
-        />
-        <MetricCard
-          title="Active"
-          value={activeCount}
-          icon={<UserCheck className="w-4 h-4 text-green-600" />}
-        />
-        <MetricCard
-          title="Pending"
-          value={pendingCount}
-          icon={<UserX className="w-4 h-4 text-slate-600" />}
-          variant="default"
-        />
-        <MetricCard
-          title="Expiring"
-          value={expiringCount}
-          icon={<AlertTriangle className="w-4 h-4 text-red-600" />}
-          variant="danger"
-        />
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Search by name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="sm:max-w-xs"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="sm:max-w-xs">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" className="sm:ml-auto">
-          Export
-        </Button>
-      </div>
-
-      {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={filteredData}
-        keyExtractor={(sub) => sub.id}
-        onRowClick={(sub) => console.log('Clicked:', sub.name)}
-      />
+  const { profile } = useAuth();
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
+  const query = useQuery({ queryKey: ['contractors', profile?.id], queryFn: () => contractorService.listContractors(), enabled: Boolean(profile), refetchInterval: 15000, refetchOnWindowFocus: true });
+  const contractors = query.data ?? [];
+  const filtered = contractors.filter(c => [c.fullName, c.businessName, c.email].join(' ').toLowerCase().includes(search.toLowerCase()) && (status === 'all' || statusOf(c).toLowerCase() === status));
+  function exportCsv() {
+    const rows = [['Name','Business','Email','Status','Eligible','Active Tickets','YTD Invoiced'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.isActive && c.eligibleForAssignment),String(c.activeTicketCount),String(c.ytdEarnings)])];
+    const content = rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""').replace(/^[=+@-]/,"'") + '"').join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'contractors.csv'; anchor.click(); URL.revokeObjectURL(url);
+  }
+  return <div className="space-y-6">
+    <PageHeader title="Contractors" description="Live workforce and assigned ticket counts"><Button asChild><Link href="/admin/contractors/invite">Invite Contractor</Link></Button></PageHeader>
+    {query.error && <div role="alert">Unable to load contractors. {query.error instanceof Error ? query.error.message : ''} <Button variant="outline" onClick={() => query.refetch()}>Retry</Button></div>}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <MetricCard title="Total" value={query.isPending ? '—' : contractors.length} />
+      <MetricCard title="Active" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Active').length} />
+      <MetricCard title="Pending" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Pending').length} />
+      <MetricCard title="Eligible" value={query.isPending ? '—' : contractors.filter(c => c.isActive && c.eligibleForAssignment).length} />
     </div>
-  );
+    <div className="flex flex-col sm:flex-row gap-4">
+      <Input placeholder="Search by name, business, or email..." value={search} onChange={e => setSearch(e.target.value)} className="sm:max-w-xs" />
+      <Select value={status} onValueChange={setStatus}><SelectTrigger className="sm:max-w-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select>
+      <Button variant="outline" onClick={() => query.refetch()}>Refresh</Button><Button variant="outline" onClick={exportCsv} disabled={query.isPending || Boolean(query.error)}>Export</Button>
+    </div>
+    {!query.error && <DataTable columns={columns} data={filtered} keyExtractor={c => c.id} isLoading={query.isPending} emptyMessage="No contractors match your filters." />}
+  </div>;
 }
