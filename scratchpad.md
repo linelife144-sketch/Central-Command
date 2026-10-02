@@ -74,3 +74,5 @@ Implement the core mapping and GPS tracking foundations required for contractor 
 - **Next immediate action:** Begin Mapbox GL package integration or create mapping UI component placeholders.
 
 ---
+
+Its `previews/` folder contains one PNG for each workbook sheet: Overview, Inputs, Budget, Cash-Forecast, Matter-Economics, Launch-Tasks, Prospects, and Weekly-Results.
