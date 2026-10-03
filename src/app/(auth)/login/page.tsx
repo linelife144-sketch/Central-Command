@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <Card className="w-full">
-      <CardHeader className="space-y-1 text-center">
-        <div className="flex justify-center mb-4">
+      <CardHeader className="space-y-2">
+        <div className="mb-5 lg:hidden">
           <BrandMark portalLabel="Secure Access" variant="full" />
         </div>
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+        <CardTitle className="cc-auth-title">Welcome back.</CardTitle>
         <CardDescription>
           Sign in to your Central Command account
         </CardDescription>
@@ -26,16 +26,16 @@ export default function LoginPage() {
       <CardContent className="space-y-4">
         <LoginForm />
         
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs">
           <Link 
             href="/forgot-password" 
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="font-semibold text-grid-navy underline-offset-4 hover:underline"
           >
             Forgot password?
           </Link>
           <Link 
             href="/magic-link" 
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="font-semibold text-grid-navy underline-offset-4 hover:underline"
           >
             Use magic link
           </Link>

@@ -18,7 +18,7 @@ export const ADMIN_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
     badgeStyle: 'count',
   },
   {
-    href: '/admin/storms/create',
+    href: '/admin/storms',
     label: 'Storm Events',
     matchPaths: ['/admin/admin/storms/create'],
     signalKey: 'storms',

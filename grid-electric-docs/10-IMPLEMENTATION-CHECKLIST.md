@@ -676,3 +676,25 @@ interface SyncManager {
 ---
 
 **END OF IMPLEMENTATION CHECKLIST**
+
+## Phase 4 UI/UX refresh — 2026-10-03 (Codex /root)
+
+The guide's `MASTER_BUILD_INSTRUCTIONS.md` is absent from this checkout. This entry records the authorized polish work in the existing implementation checklist.
+
+- [x] Retain Grid Electric blue/navy as the primary palette and gold as the accent; add refined gradients, elevation, and reduced-motion-aware transitions. — Codex /root
+- [x] Host Manrope body and Barlow Condensed display fonts locally, with the original font licenses. — Codex /root
+- [x] Refresh the desktop sidebar, breadcrumbs, account menu, mobile drawer, and bottom navigation; add keyboard navigation search with Cmd/Ctrl+K. — Codex /root
+- [x] Redesign dashboard hierarchy, metrics, status strip, quick actions, and recent tickets while preserving the existing data services. — Codex /root
+- [x] Refresh storm event cards, contractor metrics/filters, review workspaces, reports, account pages, and contractor work surfaces. — Codex /root
+- [x] Improve mobile filter wrapping, compact time review controls, responsive summary grids, touch targets, keyboard-accessible records, and sign-in validation/password visibility. — Codex /root
+- [x] Validate TypeScript, scoped ESLint, and all 331 application tests; build production successfully in an isolated temporary copy. Exclude preserved iCloud dependency backups from Vitest discovery. — Codex /root
+- [x] Verify the real sign-in surface and isolated sample-record previews of protected staff/contractor components at desktop, tablet, and phone widths. Previews are visual QA, not evidence of an authenticated live workflow. — Codex /root
+- [x] Verify authenticated staff dashboard, storm events, and ticket queue; navigation search reached the live storm route and mobile contractor-name search returned the correct assigned ticket. — Codex /root
+- [ ] Complete remaining authenticated visual acceptance across review and contractor workflows. No database schema, policy, or production data changes were made.
+
+Visual QA images: `output/playwright/`.
+
+### Same Wi-Fi preview — 2026-10-03 (Codex /root)
+
+- [x] Read the current Wi-Fi address (`192.168.4.32`), allow that exact development origin, and run Next.js on `0.0.0.0:3000` for the requested local multi-device preview. — Codex /root
+- [ ] Confirm connection from the second computer; the host-side URL is `http://192.168.4.32:3000`. The development server and host Mac must remain running.

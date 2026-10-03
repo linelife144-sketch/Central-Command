@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -26,6 +26,7 @@ export function LoginForm() {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => { setIsReady(true); }, []);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -61,7 +62,7 @@ export function LoginForm() {
           .from('profiles')
           .select('role')
           .eq('id', user.id)
-          .single()) as any;
+          .single());
 
         redirectPath = getLandingPathForRole(profile?.role ?? null);
         void recordLastLogin(session?.access_token);
@@ -78,15 +79,15 @@ export function LoginForm() {
 
       router.push(redirectPath);
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please check your credentials.');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : null) || 'Failed to sign in. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -98,32 +99,39 @@ export function LoginForm() {
         <Input
           id="email"
           type="email"
+          autoComplete="username"
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? 'email-error' : undefined}
           placeholder="name@company.com"
           {...register('email')}
           disabled={isLoading || !isReady}
         />
         {errors.email && (
-          <p className="text-sm text-red-600">{errors.email.message}</p>
+          <p id="email-error" className="text-sm text-grid-danger-ink">{errors.email.message}</p>
         )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
+        <div className="relative"><Input
           id="password"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="current-password"
+          className="pr-12"
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'password-error' : undefined}
           placeholder="Enter your password"
           {...register('password')}
           disabled={isLoading || !isReady}
-        />
+        /><button type="button" className="cc-password-toggle" disabled={isLoading || !isReady} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(previous => !previous)}>{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>
         {errors.password && (
-          <p className="text-sm text-red-600">{errors.password.message}</p>
+          <p id="password-error" className="text-sm text-grid-danger-ink">{errors.password.message}</p>
         )}
       </div>
 
       <Button
         type="submit"
-        className="w-full"
+        className="w-full h-12"
         disabled={isLoading || !isReady}
       >
         {isLoading ? (
@@ -132,7 +140,7 @@ export function LoginForm() {
             Signing in...
           </>
         ) : (
-          'Sign in'
+          <>Sign in<ArrowRight className="ml-auto size-4" /></>
         )}
       </Button>
     </form>

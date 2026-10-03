@@ -107,9 +107,10 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="flex items-center justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="cc-section-heading">At a glance</h2>
         <Button
-          variant="storm"
+          variant="ghost"
           size="sm"
           disabled={isRefreshing || isLoading}
           onClick={() => {
@@ -128,7 +129,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
       ) : null}
 
       {metrics?.unavailable_metrics?.length ? <Alert><AlertDescription>Some metrics could not be loaded: {metrics.unavailable_metrics.join(', ')}. Ticket and crew counts are current.</AlertDescription></Alert> : null}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="stagger-children grid grid-cols-2 gap-4 sm:grid-cols-3">
         <MetricCard
           title="Active Tickets"
           value={activeTicketsValue}
@@ -146,6 +147,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
 
         <MetricCard
           title="Pending Reviews"
+          className="col-span-2 sm:col-span-1"
           value={pendingReviewValue}
           icon={<Clock className="h-4 w-4 text-grid-lightning" />}
           description={
@@ -161,23 +163,23 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
 
       </div>
 
-      <Card className="storm-surface">
-        <CardContent className="grid grid-cols-2 gap-3 pt-6 text-sm md:grid-cols-4">
-          <div className="storm-mini-stat rounded-md p-3">
+      <Card className="cc-status-strip gap-0 py-0">
+        <CardContent className="grid grid-cols-2 gap-0 px-0 text-sm md:grid-cols-4">
+          <div className="cc-status-stat">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">In Route</p>
             <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.in_route ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>
-          <div className="storm-mini-stat rounded-md p-3">
+          <div className="cc-status-stat">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">On Site</p>
             <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.on_site ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>
-          <div className="storm-mini-stat rounded-md p-3">
+          <div className="cc-status-stat">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">Pending Review</p>
             <p className="text-lg font-bold text-[#0a1733]">
               {metrics?.status_breakdown.pending_review ?? (isLoading ? '...' : 'Unavailable')}
             </p>
           </div>
-          <div className="storm-mini-stat rounded-md p-3">
+          <div className="cc-status-stat">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">Unassigned</p>
             <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.unassigned ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>

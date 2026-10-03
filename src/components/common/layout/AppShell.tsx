@@ -17,16 +17,18 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
   const { profile, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen bg-grid-shell">
+    <div className="cc-shell min-h-screen bg-grid-shell">
+      <a href="#main-content" className="cc-skip-link">Skip to content</a>
       {/* Top Bar - Desktop */}
       <TopBar
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         userName={profile ? `${profile.first_name} ${profile.last_name}` : 'User'}
         userRole={profile?.role || 'USER'}
         onSignOut={signOut}
+        portal={userRole}
       />
 
-      <div className="flex pt-16">
+      <div className="cc-shell-body flex">
         {/* Sidebar - Desktop */}
         <Sidebar
           isOpen={sidebarOpen}
@@ -35,8 +37,8 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
         />
 
         {/* Main Content */}
-        <main className="flex-1 min-h-[calc(100vh-4rem)] pb-20 lg:pb-8 px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-7xl mx-auto animate-lift-in">
+        <main id="main-content" tabIndex={-1} className="cc-main min-w-0 flex-1 outline-none">
+          <div className="cc-content mx-auto max-w-[1440px]">
             {isSuperAdminTestingEnabled() && (
               <div role="status" className="mb-4 rounded-lg border border-grid-warning bg-grid-warning-soft px-4 py-3 text-sm text-grid-navy">
                 <strong>Super Admin test session.</strong> Tickets and storm events save in this browser.
@@ -48,7 +50,7 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
       </div>
 
       {/* Bottom Navigation - Mobile */}
-      <BottomNav userRole={userRole} />
+      <BottomNav userRole={userRole} onMenuClick={() => setSidebarOpen(true)} />
     </div>
   );
 }

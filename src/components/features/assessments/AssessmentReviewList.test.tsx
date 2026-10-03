@@ -10,7 +10,7 @@ describe('AssessmentReviewList layout helpers', () => {
     expect(ASSESSMENT_REVIEW_LAYOUT_MODE).toBe('command-matrix');
   });
 
-  it('uses solid gold filter border classes', () => {
-    expect(ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS).toContain('border-[#ffc038]');
+  it('uses the shared filter border token', () => {
+    expect(ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS).toContain('border-border');
   });
 });

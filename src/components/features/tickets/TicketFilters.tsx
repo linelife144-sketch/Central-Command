@@ -54,19 +54,20 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
     }
 
     return (
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="cc-filter-bar flex flex-col gap-3 xl:flex-row">
+            <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
                 <Input
+                    aria-label="Search tickets"
                     placeholder="Search tickets..."
-                    className="pl-8"
+                    className="pl-10"
                     value={filters.search}
                     onChange={handleSearchChange}
                 />
             </div>
-            <div className="flex gap-2">
+            <div className="flex min-w-0 flex-wrap gap-2">
                 <Select value={filters.status} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger aria-label="Filter by status" className="min-w-0 flex-1 xl:w-[155px] xl:flex-none">
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -88,7 +89,7 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
                 </Select>
 
                 <Select value={filters.priority} onValueChange={handlePriorityChange}>
-                    <SelectTrigger className="w-[130px]">
+                    <SelectTrigger aria-label="Filter by priority" className="min-w-0 flex-1 xl:w-[145px] xl:flex-none">
                         <SelectValue placeholder="Priority" />
                     </SelectTrigger>
                     <SelectContent>
@@ -101,7 +102,7 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
                 </Select>
 
                 {(filters.search || filters.status !== "ALL" || filters.priority !== "ALL") && (
-                    <Button variant="ghost" size="icon" onClick={clearFilters} title="Clear filters">
+                    <Button variant="ghost" size="icon" onClick={clearFilters} aria-label="Clear filters" title="Clear filters">
                         <X className="h-4 w-4" />
                     </Button>
                 )}

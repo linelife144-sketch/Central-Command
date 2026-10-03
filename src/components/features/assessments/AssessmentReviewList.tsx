@@ -39,7 +39,7 @@ type DecisionSheetState = {
 
 export const ASSESSMENT_REVIEW_LAYOUT_MODE = 'command-matrix';
 export const ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS =
-  'assessment-command-control border-2 border-[#ffc038] bg-[#031a4a]/85 text-blue-50 placeholder:text-blue-200';
+  'cc-review-control border border-border bg-surface-raised text-grid-navy placeholder:text-muted-foreground';
 
 function toStartOfDayIso(dateValue: string): string | undefined {
   if (!dateValue) {
@@ -327,36 +327,36 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
   );
 
   return (
-    <div className="space-y-4 assessment-command-shell">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
+    <div className="space-y-4 cc-assessment-review">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <Card className="cc-review-card rounded-xl border border-border py-0">
           <CardContent className="p-3">
-            <p className="text-xs text-blue-100">Assessments</p>
-            <p className="text-lg font-semibold text-blue-50">{summary.total}</p>
+            <p className="text-xs text-muted-foreground">Assessments</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">{summary.total}</p>
           </CardContent>
         </Card>
-        <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
+        <Card className="cc-review-card rounded-xl border border-border py-0">
           <CardContent className="p-3">
-            <p className="text-xs text-blue-100">Pending</p>
-            <p className="text-lg font-semibold text-blue-50">{summary.pendingCount}</p>
+            <p className="text-xs text-muted-foreground">Pending</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">{summary.pendingCount}</p>
           </CardContent>
         </Card>
-        <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
+        <Card className="cc-review-card rounded-xl border border-border py-0">
           <CardContent className="p-3">
-            <p className="text-xs text-blue-100">Reviewed</p>
-            <p className="text-lg font-semibold text-blue-50">{summary.reviewedCount}</p>
+            <p className="text-xs text-muted-foreground">Reviewed</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">{summary.reviewedCount}</p>
           </CardContent>
         </Card>
-        <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
+        <Card className="cc-review-card rounded-xl border border-border py-0">
           <CardContent className="p-3">
-            <p className="text-xs text-blue-100">Approved</p>
-            <p className="text-lg font-semibold text-blue-50">{summary.approvedCount}</p>
+            <p className="text-xs text-muted-foreground">Approved</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">{summary.approvedCount}</p>
           </CardContent>
         </Card>
-        <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
+        <Card className="cc-review-card col-span-2 rounded-xl border border-border py-0 sm:col-span-1">
           <CardContent className="p-3">
-            <p className="text-xs text-blue-100">Needs Rework</p>
-            <p className="text-lg font-semibold text-blue-50">{summary.needsReworkCount}</p>
+            <p className="text-xs text-muted-foreground">Needs Rework</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">{summary.needsReworkCount}</p>
           </CardContent>
         </Card>
       </div>
@@ -367,13 +367,14 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
         </Alert>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[280px_1fr_320px]">
+      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,1fr)_260px]">
         <aside className="space-y-3 self-start xl:sticky xl:top-24">
-          <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
-            <CardContent className="space-y-3 p-4">
-              <p className="text-xs font-semibold tracking-[0.12em] text-[#ffe39f] uppercase">Filter Rail</p>
+          <Card className="cc-review-card rounded-xl border border-border">
+            <CardContent className="grid grid-cols-2 gap-3 p-4 lg:grid-cols-1">
+              <p className="col-span-2 text-xs font-semibold tracking-[0.12em] text-grid-navy uppercase lg:col-span-1">Filters</p>
               <Input
-                className={ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS}
+                aria-label="Search assessments"
+                className={`${ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS} col-span-2 lg:col-span-1`}
                 placeholder="Search ticket, contractor, cause"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
@@ -382,7 +383,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                 value={reviewedFilter}
                 onValueChange={(value) => setReviewedFilter(value as ReviewedFilterValue)}
               >
-                <SelectTrigger className={ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS}>
+                <SelectTrigger aria-label="Filter by review state" className={`${ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS} w-full min-w-0`}>
                   <SelectValue placeholder="Review state" />
                 </SelectTrigger>
                 <SelectContent>
@@ -395,7 +396,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                 value={priorityFilter}
                 onValueChange={(value) => setPriorityFilter(value as PriorityFilterValue)}
               >
-                <SelectTrigger className={ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS}>
+                <SelectTrigger aria-label="Filter by priority" className={`${ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS} w-full min-w-0`}>
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -410,7 +411,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                 value={decisionFilter}
                 onValueChange={(value) => setDecisionFilter(value as DecisionFilterValue)}
               >
-                <SelectTrigger className={ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS}>
+                <SelectTrigger aria-label="Filter by decision" className={`${ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS} col-span-2 w-full min-w-0 lg:col-span-1`}>
                   <SelectValue placeholder="Decision" />
                 </SelectTrigger>
                 <SelectContent>
@@ -419,14 +420,16 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                   <SelectItem value="NEEDS_REWORK">Needs Rework</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="col-span-2 grid grid-cols-2 gap-2 lg:col-span-1 lg:grid-cols-1">
                 <Input
+                  aria-label="Assessments from date"
                   className={ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS}
                   type="date"
                   value={fromDate}
                   onChange={(event) => setFromDate(event.target.value)}
                 />
                 <Input
+                  aria-label="Assessments through date"
                   className={ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS}
                   type="date"
                   value={toDate}
@@ -434,7 +437,8 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                 />
               </div>
               <Button
-                variant="storm"
+                className="col-span-2 w-full text-xs lg:col-span-1"
+                variant="default"
                 disabled={isLoading}
                 onClick={() => {
                   void loadAssessments();
@@ -444,7 +448,8 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                 Refresh Queue
               </Button>
               <Button
-                variant="storm"
+                className="col-span-2 w-full text-xs lg:col-span-1"
+                variant="default"
                 disabled={isSubmitting || selectedPendingAssessments.length === 0}
                 onClick={() => {
                   openDecisionSheet(selectedPendingAssessments, 'APPROVED', 'batch');
@@ -454,6 +459,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                 Approve Selected ({selectedPendingAssessments.length})
               </Button>
               <Button
+                className="col-span-2 w-full text-xs lg:col-span-1"
                 variant="destructive"
                 disabled={isSubmitting || selectedPendingAssessments.length === 0}
                 onClick={() => {
@@ -468,37 +474,38 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
         </aside>
 
         <section className="space-y-3">
-          <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
+          <Card className="cc-review-card rounded-xl border border-border">
             <CardContent className="p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.12em] text-[#ffe39f] uppercase">Queue Lane</p>
-                  <p className="text-sm text-blue-100">{assessments.length} assessments in scope</p>
+                  <p className="text-xs font-semibold tracking-[0.12em] text-grid-navy uppercase">Assessment queue</p>
+                  <p className="text-sm text-muted-foreground">{assessments.length} assessments in scope</p>
                 </div>
-                <Badge variant="outline" className="border-[#ffc038] text-blue-50">
+                <Badge variant="outline" className="border-border text-grid-navy">
                   {selectedAssessmentIds.length} selected
                 </Badge>
               </div>
 
               <div className="space-y-3">
                 {isLoading ? (
-                  <div className="rounded-xl border-2 border-[#ffc038] bg-[#041b4a]/70 px-4 py-6 text-sm text-blue-100">
+                  <div className="rounded-xl border border-border bg-surface-sunken px-4 py-6 text-sm text-muted-foreground">
                     Loading assessments...
                   </div>
                 ) : assessments.length === 0 ? (
-                  <div className="rounded-xl border-2 border-[#ffc038] bg-[#041b4a]/70 px-4 py-6 text-sm text-blue-100">
+                  <div className="rounded-xl border border-border bg-surface-sunken px-4 py-6 text-sm text-muted-foreground">
                     No assessments found for the selected filters.
                   </div>
                 ) : (
                   assessments.map((assessment) => (
                     <article
                       key={assessment.id}
-                      className="assessment-command-card rounded-xl border-2 border-[#ffc038] bg-[#052153]/78 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(0,18,74,0.34)]"
+                      className="cc-review-item rounded-xl border border-border bg-surface-raised p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevation-md"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           {assessment.review_state === 'PENDING' ? (
                             <Checkbox
+                              aria-label={`Select ${assessment.ticket_number ?? assessment.ticket_id}`}
                               checked={selectedAssessmentIds.includes(assessment.id)}
                               disabled={isSubmitting}
                               onCheckedChange={(checked) => updateSelected(assessment.id, checked === true)}
@@ -507,10 +514,10 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                             <span className="mt-1 inline-flex h-4 w-4 rounded-full bg-white/30" />
                           )}
                           <div>
-                            <p className="text-sm font-semibold text-blue-50">
+                            <p className="text-sm font-semibold text-grid-navy">
                               {assessment.contractor_name ?? assessment.contractor_id}
                             </p>
-                            <p className="text-xs text-blue-100">
+                            <p className="text-xs text-muted-foreground">
                               {assessment.ticket_number ?? assessment.ticket_id}
                             </p>
                           </div>
@@ -520,7 +527,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                         </Badge>
                       </div>
 
-                      <div className="mt-3 grid gap-2 text-xs text-blue-100 sm:grid-cols-2">
+                      <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                         <p>Priority: {toPriorityLabel(assessment.priority)}</p>
                         <p>Assessed: {assessment.assessed_at ? formatDate(assessment.assessed_at) : '-'}</p>
                         <p className="sm:col-span-2">Cause: {assessment.damage_cause ?? 'Not specified'}</p>
@@ -529,22 +536,22 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                       {assessment.safety_flags.length > 0 ? (
                         <div className="mt-3 flex flex-wrap gap-1">
                           {assessment.safety_flags.slice(0, 4).map((flag) => (
-                            <Badge key={`${assessment.id}-${flag}`} variant="outline" className="border-[#ffc038] text-blue-50">
+                            <Badge key={`${assessment.id}-${flag}`} variant="outline" className="border-border text-grid-navy">
                               {toSafetyFlagLabel(flag)}
                             </Badge>
                           ))}
                           {assessment.safety_flags.length > 4 ? (
-                            <Badge variant="outline" className="border-[#ffc038] text-blue-50">
+                            <Badge variant="outline" className="border-border text-grid-navy">
                               +{assessment.safety_flags.length - 4}
                             </Badge>
                           ) : null}
                         </div>
                       ) : null}
 
-                      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/20 pt-3">
+                      <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
                         <Button
                           size="sm"
-                          variant="storm"
+                          variant="default"
                           disabled={isSubmitting || assessment.review_state !== 'PENDING'}
                           onClick={() => openDecisionSheet([assessment], 'APPROVED', 'single')}
                         >
@@ -569,23 +576,23 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
           </Card>
         </section>
 
-        <aside className="self-start xl:sticky xl:top-24">
-          <Card className="storm-card rounded-xl border-2 border-[#ffc038]">
+        <aside className="self-start lg:col-span-2 2xl:col-span-1 2xl:sticky 2xl:top-24">
+          <Card className="cc-review-card rounded-xl border border-border">
             <CardContent className="space-y-3 p-4">
-              <p className="text-xs font-semibold tracking-[0.12em] text-[#ffe39f] uppercase">Context Dock</p>
+              <p className="text-xs font-semibold tracking-[0.12em] text-grid-navy uppercase">Selected assessment</p>
               {focusedAssessment ? (
                 <>
-                  <div className="space-y-1 rounded-lg border border-[#ffc038] bg-[#031a4a]/70 p-3">
-                    <p className="text-sm font-semibold text-blue-50">
+                  <div className="space-y-1 rounded-lg border border-border bg-surface-sunken p-3">
+                    <p className="text-sm font-semibold text-grid-navy">
                       {focusedAssessment.contractor_name ?? focusedAssessment.contractor_id}
                     </p>
-                    <p className="text-xs text-blue-100">{focusedAssessment.ticket_number ?? focusedAssessment.ticket_id}</p>
+                    <p className="text-xs text-muted-foreground">{focusedAssessment.ticket_number ?? focusedAssessment.ticket_id}</p>
                     <Badge variant={toReviewStateBadgeVariant(focusedAssessment)}>
                       {toReviewStateLabel(focusedAssessment)}
                     </Badge>
                   </div>
 
-                  <div className="space-y-2 text-xs text-blue-100">
+                  <div className="space-y-2 text-xs text-muted-foreground">
                     <p>Priority: {toPriorityLabel(focusedAssessment.priority)}</p>
                     <p>Equipment: {focusedAssessment.equipment_count}</p>
                     <p>Cause: {focusedAssessment.damage_cause ?? 'Not specified'}</p>
@@ -593,24 +600,24 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                   </div>
 
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-[#ffe39f] uppercase">Safety Flags</p>
+                    <p className="text-xs font-semibold text-grid-navy uppercase">Safety Flags</p>
                     {focusedAssessment.safety_flags.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {focusedAssessment.safety_flags.map((flag) => (
-                          <Badge key={`${focusedAssessment.id}-${flag}`} variant="outline" className="border-[#ffc038] text-blue-50">
+                          <Badge key={`${focusedAssessment.id}-${flag}`} variant="outline" className="border-border text-grid-navy">
                             {toSafetyFlagLabel(flag)}
                           </Badge>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-blue-100">No safety flags.</p>
+                      <p className="text-xs text-muted-foreground">No safety flags.</p>
                     )}
                   </div>
 
                   {focusedAssessment.review_state === 'PENDING' ? (
-                    <div className="space-y-2 border-t border-white/20 pt-3">
+                    <div className="space-y-2 border-t border-border pt-3">
                       <Button
-                        variant="storm"
+                        variant="default"
                         className="w-full justify-start"
                         disabled={isSubmitting}
                         onClick={() => openDecisionSheet([focusedAssessment], 'APPROVED', 'single')}
@@ -631,9 +638,9 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                   ) : null}
                 </>
               ) : (
-                <div className="rounded-lg border border-[#ffc038] bg-[#031a4a]/70 p-3 text-sm text-blue-100">
+                <div className="rounded-lg border border-border bg-surface-sunken p-3 text-sm text-muted-foreground">
                   <div className="flex items-start gap-2">
-                    <ShieldAlert className="mt-0.5 h-4 w-4 text-[#ffe39f]" />
+                    <ShieldAlert className="mt-0.5 h-4 w-4 text-grid-navy" />
                     <p>Select or load an assessment to view context details.</p>
                   </div>
                 </div>

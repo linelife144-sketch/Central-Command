@@ -39,7 +39,7 @@ type StatusFilterValue = TimeEntryStatus | 'ALL';
 type ReviewDecision = Extract<TimeEntryStatus, 'APPROVED' | 'REJECTED'>;
 
 export const TIME_REVIEW_FILTER_CONTROL_CLASS =
-  'border-2 border-[#ffc038] bg-[#031a4a]/85 text-blue-50 shadow-none focus-visible:border-[#ffc038] focus-visible:ring-[2px] focus-visible:ring-[#ffc038]';
+  'border border-border bg-surface-raised text-grid-navy shadow-none focus-visible:border-border focus-visible:ring-[2px] focus-visible:ring-[#ffc038]';
 
 export function getTimeReviewLayoutMode() {
   return 'operations-grid';
@@ -365,7 +365,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
         header: 'Actions',
         cell: (entry) => {
           if (entry.status !== 'PENDING') {
-            return <span className="text-xs text-blue-100">Reviewed</span>;
+            return <span className="text-xs text-muted-foreground">Reviewed</span>;
           }
 
           return (
@@ -382,7 +382,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
               </Button>
               <Button
                 size="sm"
-                variant="storm"
+                variant="default"
                 disabled={isSubmitting}
                 onClick={() => {
                   void handleSingleDecision(entry, 'APPROVED');
@@ -401,149 +401,62 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
 
   return (
     <div className="space-y-4 time-review-workbench">
-      <Card className="border-2 border-[#ffc038] bg-transparent">
-        <CardContent className="space-y-4 pt-6">
-          <div className="grid gap-4 xl:grid-cols-[1.25fr_0.95fr_0.8fr]">
-            <section className="space-y-3 rounded-[1.35rem] border-2 border-[#ffc038] bg-[linear-gradient(145deg,rgba(255,192,56,0.24)_0%,rgba(255,192,56,0.08)_100%)] p-4 shadow-[0_12px_26px_rgba(0,18,72,0.24)]">
-              <p className="text-[11px] font-semibold tracking-[0.14em] text-[#ffe39f] uppercase">Search + Scope</p>
-              <Input
-                className={TIME_REVIEW_FILTER_CONTROL_CLASS}
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search contractor, ticket, work type"
-              />
-              <div className="grid gap-2 sm:grid-cols-3">
-                <div className="rounded-md border-2 border-[#ffc038] bg-[#031742]/70 px-3 py-2">
-                  <p className="text-xs text-blue-100">Visible</p>
-                  <p className="text-lg font-semibold text-blue-50">{filteredEntries.length}</p>
-                </div>
-                <div className="rounded-md border-2 border-[#ffc038] bg-[#031742]/70 px-3 py-2">
-                  <p className="text-xs text-blue-100">Selected</p>
-                  <p className="text-lg font-semibold text-blue-50">{selectedEntryIds.length}</p>
-                </div>
-                <div className="rounded-md border-2 border-[#ffc038] bg-[#031742]/70 px-3 py-2">
-                  <p className="text-xs text-blue-100">Pending</p>
-                  <p className="text-lg font-semibold text-blue-50">{summary.pendingCount}</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="grid gap-3">
-              <div className="rounded-[1.1rem] border-2 border-[#ffc038] bg-white/8 p-3">
-                <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-blue-100 uppercase">Status Lane</p>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value) => setStatusFilter(value as StatusFilterValue)}
-                >
-                  <SelectTrigger className={TIME_REVIEW_FILTER_CONTROL_CLASS}>
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All statuses</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="APPROVED">Approved</SelectItem>
-                    <SelectItem value="REJECTED">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3 rounded-[1.1rem] border-2 border-[#ffc038] bg-white/8 p-3">
-                <p className="text-[11px] font-semibold tracking-[0.12em] text-blue-100 uppercase">Date Window</p>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-semibold tracking-[0.12em] text-blue-100 uppercase">From</p>
-                    <Input
-                      className={TIME_REVIEW_FILTER_CONTROL_CLASS}
-                      type="date"
-                      value={fromDate}
-                      onChange={(event) => setFromDate(event.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-semibold tracking-[0.12em] text-blue-100 uppercase">To</p>
-                    <Input
-                      className={TIME_REVIEW_FILTER_CONTROL_CLASS}
-                      type="date"
-                      value={toDate}
-                      onChange={(event) => setToDate(event.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <aside className="space-y-3 rounded-[1.2rem] border-2 border-[#ffc038] bg-[linear-gradient(145deg,#001445_0%,#00286a_58%,#0b4ea1_100%)] p-4 shadow-[0_14px_26px_rgba(0,20,80,0.34)]">
-              <p className="text-[11px] font-semibold tracking-[0.14em] text-[#ffe39f] uppercase">Action Rail</p>
-              <Button
-                variant="storm"
-                className="w-full justify-start"
-                disabled={isLoading}
-                onClick={() => {
-                  void loadEntries();
-                }}
-              >
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                Refresh Queue
-              </Button>
-
-              {mode === 'admin' ? (
-                <>
-                  <Button
-                    variant="storm"
-                    className="w-full justify-start"
-                    disabled={isSubmitting || filteredEntries.every((entry) => entry.status !== 'PENDING')}
-                    onClick={() => {
-                      const pendingIds = filteredEntries
-                        .filter((entry) => entry.status === 'PENDING')
-                        .map((entry) => entry.id);
-                      setSelectedEntryIds(pendingIds);
-                    }}
-                  >
-                    <CheckCheck className="mr-2 h-4 w-4" />
-                    Select Visible Pending
-                  </Button>
-                  <Button
-                    variant="storm"
-                    className="w-full justify-start"
-                    disabled={isSubmitting || selectedEntryIds.length === 0}
-                    onClick={() => setSelectedEntryIds([])}
-                  >
-                    Clear Selection
-                  </Button>
-                </>
-              ) : null}
-            </aside>
+      <Card className="cc-review-card">
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-2 sm:col-span-2 xl:col-span-2">
+              <label htmlFor="time-review-search" className="cc-eyebrow">Search the queue</label>
+              <Input id="time-review-search" className={TIME_REVIEW_FILTER_CONTROL_CLASS} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Contractor, ticket, or work type" />
+            </div>
+            <div className="space-y-2 sm:col-span-2 xl:col-span-2">
+              <span className="cc-eyebrow">Status</span>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilterValue)}>
+                <SelectTrigger aria-label="Filter time entries by status" className={`${TIME_REVIEW_FILTER_CONTROL_CLASS} w-full`}><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent><SelectItem value="ALL">All statuses</SelectItem><SelectItem value="PENDING">Pending</SelectItem><SelectItem value="APPROVED">Approved</SelectItem><SelectItem value="REJECTED">Rejected</SelectItem></SelectContent>
+              </Select>
+            </div>
+            <div className="grid min-w-0 grid-cols-2 gap-3 sm:col-span-2 xl:col-span-2">
+              <div className="min-w-0 space-y-2"><label htmlFor="time-review-from" className="cc-eyebrow">From</label><Input id="time-review-from" className={TIME_REVIEW_FILTER_CONTROL_CLASS} type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></div>
+              <div className="min-w-0 space-y-2"><label htmlFor="time-review-to" className="cc-eyebrow">To</label><Input id="time-review-to" className={TIME_REVIEW_FILTER_CONTROL_CLASS} type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></div>
+            </div>
+            <div className="flex flex-wrap items-end gap-2 sm:col-span-2 xl:col-span-2">
+              <Button variant="outline" size="sm" disabled={isLoading} onClick={() => { void loadEntries(); }}>{isLoading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}Refresh</Button>
+              {mode === 'admin' ? <>
+                <Button variant="outline" size="sm" disabled={isSubmitting || filteredEntries.every((entry) => entry.status !== 'PENDING')} onClick={() => setSelectedEntryIds(filteredEntries.filter((entry) => entry.status === 'PENDING').map((entry) => entry.id))}><CheckCheck className="size-4" />Select pending</Button>
+                <Button variant="ghost" size="sm" disabled={isSubmitting || selectedEntryIds.length === 0} onClick={() => setSelectedEntryIds([])}>Clear selection</Button>
+              </> : null}
+            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-12">
-            <Card className="rounded-[1rem] border-2 border-[#ffc038] sm:col-span-2 lg:col-span-2 2xl:col-span-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+            <Card className="rounded-[1rem] border border-border">
               <CardContent className="p-3">
-                <p className="text-xs text-blue-100">Entries</p>
-                <p className="text-lg font-semibold">{summary.entryCount}</p>
+                <p className="text-xs text-muted-foreground">Entries</p>
+                <p className="font-heading text-3xl font-semibold">{summary.entryCount}</p>
               </CardContent>
             </Card>
-            <Card className="rounded-[1rem] border-2 border-[#ffc038] 2xl:col-span-2">
+            <Card className="rounded-[1rem] border border-border">
               <CardContent className="p-3">
-                <p className="text-xs text-blue-100">Total Time</p>
-                <p className="text-lg font-semibold">{formatDuration(summary.totalMinutes)}</p>
+                <p className="text-xs text-muted-foreground">Total Time</p>
+                <p className="font-heading text-3xl font-semibold">{formatDuration(summary.totalMinutes)}</p>
               </CardContent>
             </Card>
-            <Card className="rounded-[1rem] border-2 border-[#ffc038] 2xl:col-span-2">
+            <Card className="rounded-[1rem] border border-border">
               <CardContent className="p-3">
-                <p className="text-xs text-blue-100">Billable Time</p>
-                <p className="text-lg font-semibold">{formatDuration(summary.billableMinutes)}</p>
+                <p className="text-xs text-muted-foreground">Billable Time</p>
+                <p className="font-heading text-3xl font-semibold">{formatDuration(summary.billableMinutes)}</p>
               </CardContent>
             </Card>
-            <Card className="rounded-[1rem] border-2 border-[#ffc038] 2xl:col-span-2">
+            <Card className="rounded-[1rem] border border-border">
               <CardContent className="p-3">
-                <p className="text-xs text-blue-100">Billable Amount</p>
-                <p className="text-lg font-semibold">{formatCurrency(summary.totalAmount)}</p>
+                <p className="text-xs text-muted-foreground">Billable Amount</p>
+                <p className="font-heading text-3xl font-semibold">{formatCurrency(summary.totalAmount)}</p>
               </CardContent>
             </Card>
-            <Card className="rounded-[1rem] border-2 border-[#ffc038] 2xl:col-span-2">
+            <Card className="rounded-[1rem] border border-border">
               <CardContent className="p-3">
-                <p className="text-xs text-blue-100">Pending Review</p>
-                <p className="text-lg font-semibold">{summary.pendingCount}</p>
+                <p className="text-xs text-muted-foreground">Pending Review</p>
+                <p className="font-heading text-3xl font-semibold">{summary.pendingCount}</p>
               </CardContent>
             </Card>
           </div>
@@ -551,7 +464,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
           {mode === 'admin' ? (
             <div className="flex flex-wrap gap-2 border-t pt-3">
               <Button
-                variant="storm"
+                variant="default"
                 disabled={isSubmitting || selectedPendingEntries.length === 0}
                 onClick={() => {
                   void handleBatchDecision('APPROVED');
@@ -593,11 +506,11 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
 
       <div className="space-y-3 md:hidden">
         {isLoading ? (
-          <div className="storm-surface rounded-xl p-6 text-center text-sm text-blue-100">
+          <div className="cc-work-panel rounded-xl p-6 text-center text-sm text-muted-foreground">
             Loading time entries...
           </div>
         ) : filteredEntries.length === 0 ? (
-          <div className="storm-surface rounded-xl p-6 text-center text-sm text-blue-100">
+          <div className="cc-work-panel rounded-xl p-6 text-center text-sm text-muted-foreground">
             No time entries found for the selected filters.
           </div>
         ) : (

@@ -18,7 +18,7 @@ function statusOf(contractor: ContractorListItem) {
   return contractor.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending';
 }
 const columns: Column<ContractorListItem>[] = [
-  { key: 'fullName', header: 'Name', cell: c => <Link className="font-medium text-grid-blue underline" href={`/admin/contractors/${c.id}`}>{c.fullName}</Link> },
+  { key: 'fullName', header: 'Name', cell: c => <Link className="font-semibold text-grid-navy underline-offset-4 hover:underline" href={`/admin/contractors/${c.id}`}>{c.fullName}</Link> },
   { key: 'businessName', header: 'Business', cell: c => c.businessName },
   { key: 'onboardingStatus', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
   { key: 'eligibleForAssignment', header: 'Eligible', cell: c => c.isActive && c.eligibleForAssignment ? 'Yes' : 'No' },
@@ -41,15 +41,15 @@ export default function ContractorsListPage() {
   return <div className="space-y-6">
     <PageHeader title="Contractors" description="Live workforce and assigned ticket counts"><Button asChild><Link href="/admin/contractors/invite">Invite Contractor</Link></Button></PageHeader>
     {query.error && <div role="alert">Unable to load contractors. {query.error instanceof Error ? query.error.message : ''} <Button variant="outline" onClick={() => query.refetch()}>Retry</Button></div>}
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="stagger-children grid grid-cols-2 xl:grid-cols-4 gap-4">
       <MetricCard title="Total" value={query.isPending ? '—' : contractors.length} />
       <MetricCard title="Active" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Active').length} />
       <MetricCard title="Pending" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Pending').length} />
       <MetricCard title="Eligible" value={query.isPending ? '—' : contractors.filter(c => c.isActive && c.eligibleForAssignment).length} />
     </div>
-    <div className="flex flex-col sm:flex-row gap-4">
-      <Input placeholder="Search by name, business, or email..." value={search} onChange={e => setSearch(e.target.value)} className="sm:max-w-xs" />
-      <Select value={status} onValueChange={setStatus}><SelectTrigger className="sm:max-w-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select>
+    <div className="cc-filter-bar flex flex-col sm:flex-row flex-wrap gap-3">
+      <Input aria-label="Search contractors" placeholder="Search by name, business, or email..." value={search} onChange={e => setSearch(e.target.value)} className="sm:max-w-xs" />
+      <Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Filter contractors by status" className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select>
       <Button variant="outline" onClick={() => query.refetch()}>Refresh</Button><Button variant="outline" onClick={exportCsv} disabled={query.isPending || Boolean(query.error)}>Export</Button>
     </div>
     {!query.error && <DataTable columns={columns} data={filtered} keyExtractor={c => c.id} isLoading={query.isPending} emptyMessage="No contractors match your filters." />}

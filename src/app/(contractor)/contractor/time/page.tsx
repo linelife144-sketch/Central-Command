@@ -15,10 +15,10 @@ export default function ContractorTimePage() {
         title="Time Tracking"
         description="Clock in and clock out with GPS verification for compliant field time entries."
       />
-      <div className="storm-surface rounded-xl p-4">
+      <div className="cc-work-panel p-4 sm:p-5">
         <TimeClock />
       </div>
-      <div className="storm-surface rounded-xl p-4">
+      <div className="cc-work-panel p-4 sm:p-5">
         <TimeEntryList
           mode="contractor"
           contractorId={contractorId}

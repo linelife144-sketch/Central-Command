@@ -52,10 +52,10 @@ describe('the admin shell renders the branded background', () => {
     expect(source).not.toContain('bg-slate-50');
   });
 
-  it('TopBar and Sidebar use elevation instead of flat white panels', () => {
-    expect(sourceOf('layout/TopBar.tsx')).toContain('shadow-elevation-sm');
-    expect(sourceOf('layout/Sidebar.tsx')).toContain('bg-surface-raised');
-    expect(sourceOf('layout/BottomNav.tsx')).toContain('shadow-elevation-lg');
+  it('shell components use the operations console surfaces', () => {
+    expect(sourceOf('layout/TopBar.tsx')).toContain('cc-topbar');
+    expect(sourceOf('layout/Sidebar.tsx')).toContain('cc-sidebar');
+    expect(sourceOf('layout/BottomNav.tsx')).toContain('cc-bottom-nav');
   });
 });
 

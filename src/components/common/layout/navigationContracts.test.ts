@@ -16,7 +16,7 @@ describe('navigation contracts', () => {
       expect.arrayContaining([
         expect.objectContaining({ href: '/admin/dashboard', label: 'Dashboard' }),
         expect.objectContaining({ href: '/admin/contractors', label: 'Contractors' }),
-        expect.objectContaining({ href: '/admin/storms/create', label: 'Storm Events' }),
+        expect.objectContaining({ href: '/admin/storms', label: 'Storm Events' }),
       ])
     );
   });
@@ -31,7 +31,7 @@ describe('navigation contracts', () => {
       expect.arrayContaining([
         { href: '/admin/dashboard', signalKey: 'reviews' },
         { href: '/tickets', signalKey: 'tickets' },
-        { href: '/admin/storms/create', signalKey: 'storms' },
+        { href: '/admin/storms', signalKey: 'storms' },
       ])
     );
   });

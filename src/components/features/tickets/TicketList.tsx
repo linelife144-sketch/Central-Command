@@ -65,18 +65,24 @@ export function TicketList({ userRole, userId }: TicketListProps) {
     }, [userRole, userId]);
 
     const filteredTickets = useMemo(() => {
+        const search = filters.search.trim().toLowerCase();
         return tickets.filter(ticket => {
-            const matchesSearch = filters.search === "" ||
-                ticket.ticket_number.toLowerCase().includes(filters.search.toLowerCase()) ||
-                ticket.utility_client.toLowerCase().includes(filters.search.toLowerCase()) ||
-                (ticket.work_description && ticket.work_description.toLowerCase().includes(filters.search.toLowerCase()));
+            const matchesSearch = !search || [
+                ticket.ticket_number,
+                ticket.utility_client,
+                ticket.work_description,
+                ticket.address,
+                ticket.city,
+                ticket.state,
+                ticket.assigned_to ? assigneeNames[ticket.assigned_to] : '',
+            ].filter(Boolean).join(' ').toLowerCase().includes(search);
 
             const matchesStatus = filters.status === "ALL" || ticket.status === filters.status;
             const matchesPriority = filters.priority === "ALL" || ticket.priority === filters.priority;
 
             return matchesSearch && matchesStatus && matchesPriority;
         });
-    }, [tickets, filters]);
+    }, [tickets, filters, assigneeNames]);
 
     const handleAssignTicket = async (contractorId: string) => {
         if (!assignRequest) return;
@@ -173,8 +179,8 @@ export function TicketList({ userRole, userId }: TicketListProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold tracking-tight">Tickets</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div><h2 className="cc-section-heading">Ticket queue</h2><p className="mt-1 text-xs text-muted-foreground">{isLoading ? 'Loading your workload…' : `${filteredTickets.length} ${filteredTickets.length === 1 ? 'ticket' : 'tickets'} in this view`}</p></div>
                 {userRole === 'admin' && (
                     <Button asChild>
                         <Link href="/tickets/create">
@@ -227,4 +233,3 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         </div>
     );
 }
-

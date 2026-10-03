@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Allow the current Wi-Fi address for local multi-device development.
+  allowedDevOrigins: ["192.168.4.32"],
   turbopack: {},
   webpack: (config, { dev }) => {
     // Prevent intermittent dev chunk corruption that causes MODULE_NOT_FOUND runtime errors.

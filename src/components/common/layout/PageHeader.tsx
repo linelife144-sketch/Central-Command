@@ -31,10 +31,10 @@ export function PageHeader({
   };
 
   return (
-    <div className="mb-6 animate-lift-in">
-      <div className="flex items-start justify-between gap-4">
+    <div className="cc-page-header">
+      <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
         <div className="flex-1 min-w-0">
-          {showBackButton && (
+          {(showBackButton || backHref) && (
             <Button
               variant="ghost"
               size="sm"
@@ -45,17 +45,18 @@ export function PageHeader({
               Back
             </Button>
           )}
-          <h1 className="text-2xl font-bold text-grid-navy">
+          <div className="cc-eyebrow mb-2"><span aria-hidden="true" />Central Command</div>
+          <h1 className="cc-page-title">
             {title}
           </h1>
           {description && (
-            <p className="mt-1 text-muted-foreground">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               {description}
             </p>
           )}
         </div>
         {children && (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="cc-page-actions flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
             {children}
           </div>
         )}

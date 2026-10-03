@@ -1,51 +1,51 @@
-# Graph Report - Central Command  (2026-10-01)
+# Graph Report - Central Command  (2026-10-03)
 
 ## Corpus Check
-- 354 files · ~127,587 words
+- 360 files · ~130,085 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 13 file(s) not represented in the graph (top: (none) 10, .log 1, .csv 1)
+- Unclassified: 20 file(s) not represented in the graph (top: (none) 10, .ttf 7, .log 1)
 
 ## Summary
-- 2209 nodes · 5980 edges · 143 communities (93 shown, 50 thin omitted)
+- 2225 nodes · 6080 edges · 153 communities (102 shown, 51 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 50 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b2f8ef81`
+- Built from commit: `326cfff6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - SelectContent
-- cn
-- react
-- Types Components
-- PhotoCapture.tsx
+- ReportsDashboard.tsx
+- Alert
+- templates/registry.ts
+- Badge
 - MapView.tsx
 - tickets/[id]/page.tsx
 - TicketFormRenderer.tsx
-- Sidebar.tsx
+- SyncStatus.tsx
 - contractorService.ts
-- Dexie Components
+- dexie.ts
 - ticketService.ts
-- Card
+- cn
 - Storm First Workflow Schema
-- dropdown-menu.tsx
-- lucide-react
+- react
+- useAuth
 - dashboardReportingService.ts
 - package.json
 - Application Package Dependencies
-- StatusUpdater.tsx
+- Label
 - User Provisioning
 - ocr-extract/route.ts
 - Storm Sop Workflow Tables Schema
 - expenseSubmissionService.ts
 - app/layout.tsx
-- templates/index.ts
+- PhotoCapture.tsx
 - AssessmentReviewList.tsx
 - assessmentReviewService.ts
 - Photo Storage Service
-- ticket-new-client-page.tsx
+- exif.ts
 - createLocal
 - vitest
 - ExpenseReviewList.tsx
@@ -57,33 +57,36 @@
 - buildReportExportArtifact
 - expenseProcessingService.ts
 - Assessment Catalog Service
-- assessmentReviewService.test.ts
-- Photo Upload Queue
-- ActiveTimer.tsx
-- Time Entry Service
+- Input
+- photoUploadQueue.ts
+- ticket-new-client-page.tsx
+- timeEntryService.ts
 - timeEntryManagementService.ts
 - Components Components
 - assessmentSubmissionService.ts
 - Tsconfig Components
-- appConfig.ts
+- TimeEntryList.tsx
 - Time Expense Tables Schema
 - useNavigationSignals.ts
 - expenseProcessing.ts
 - Storm Contractor Auth Alignment Schema
-- AuthProvider.tsx
+- client.ts
 - stormEventService.ts
+- TopBar.tsx
 - AssessmentForm.tsx
-- Time Entry Management Service
 - Core Tables Schema
-- assessmentPhotos.ts
+- photoValidation.ts
 - Button
 - validators.ts
-- utilityClients.ts
+- middleware.ts
 - generate-utility-config.cjs
 - Sw Components
-- TimeEntryList.tsx
-- ExpenseForm.tsx
+- contractor/map/page.tsx
+- next.config.ts
+- Card
 - buildDashboardReport
+- useGPSValidation.ts
+- imageCompression.ts
 - Ticket Templates Ocr Scaffold Schema
 - Add Storm Scope To Financial
 - Seed Via Api
@@ -91,20 +94,26 @@
 - Storm Event Utility Template Preload
 - Sw Components
 - Receipt Ocr Service
+- thumbnail.ts
 - createDashboardReportingService
 - @tanstack/react-query
 - Storm Event Sop Master Codes
 - Ticket Tables Schema
-- Thumbnail Components
+- sessionTimeout.ts
+- entergyTicketFormat.ts
+- statusUpdateFlow.ts
 - Create Storm Events Root Workflow
+- ExpenseForm.tsx
 - Triggers Schema
 - PriorityLevel
 - SafetyChecklist.tsx
-- contractorService.test.ts
+- hash.ts
+- storms/create/page.tsx
+- normalizeTicketForCache
 - Test Connection
 - Seed Db
+- LogoutHandler.tsx
 - Assessment Tables Schema
-- contractor/map/page.tsx
 - Navigation Config
 - routeOptimizationService.ts
 - Add Ceo Role And Lock
@@ -120,16 +129,16 @@
 - Postcss Components
 
 ## God Nodes (most connected - your core abstractions)
-1. `cn()` - 134 edges
-2. `Button()` - 111 edges
-3. `react` - 98 edges
-4. `Card()` - 83 edges
-5. `CardContent()` - 82 edges
-6. `vitest` - 68 edges
-7. `CardHeader()` - 64 edges
-8. `CardTitle()` - 62 edges
-9. `lucide-react` - 58 edges
-10. `next` - 53 edges
+1. `cn()` - 136 edges
+2. `Button()` - 113 edges
+3. `react` - 100 edges
+4. `Card()` - 85 edges
+5. `CardContent()` - 84 edges
+6. `vitest` - 69 edges
+7. `CardHeader()` - 66 edges
+8. `CardTitle()` - 64 edges
+9. `lucide-react` - 62 edges
+10. `next` - 56 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `expense_policies` --references--> `profiles`  [EXTRACTED]
@@ -146,71 +155,71 @@
 ## Import Cycles
 - None detected.
 
-## Communities (143 total, 50 thin omitted)
+## Communities (153 total, 51 thin omitted)
 
 ### Community 0 - "SelectContent"
-Cohesion: 0.14
-Nodes (41): columns, ContractorsListPage(), exportCsv(), statusOf(), CreateStormEventPage(), STATE_NAMES, STORM_EVENT_STATUS_OPTIONS, UTILITY_CLIENT_OPTIONS (+33 more)
+Cohesion: 0.20
+Nodes (27): columns, ContractorsListPage(), exportCsv(), statusOf(), addEquipmentItem(), CONDITION_OPTIONS, EquipmentAssessment(), removeEquipmentItem() (+19 more)
 
-### Community 1 - "cn"
-Cohesion: 0.09
-Nodes (38): radix-ui, AdminReportsPage(), DataTable(), DataTableProps, ProtectedRoute(), ProtectedRouteProps, amountToPercent(), buildDefaultDates() (+30 more)
+### Community 1 - "ReportsDashboard.tsx"
+Cohesion: 0.17
+Nodes (21): AdminReportsPage(), DataTable(), DataTableProps, ProtectedRoute(), ProtectedRouteProps, amountToPercent(), buildDefaultDates(), downloadArtifact() (+13 more)
 
-### Community 2 - "react"
-Cohesion: 0.12
-Nodes (31): @hookform/resolvers, react, react-hook-form, zod, toEquipmentLabel(), ForgotPasswordForm(), ForgotPasswordFormData, forgotPasswordSchema (+23 more)
+### Community 2 - "Alert"
+Cohesion: 0.10
+Nodes (37): @hookform/resolvers, react-hook-form, AuthConfirmInner(), AuthConfirmPage(), ConfirmSkeleton(), Status, ForgotPasswordForm(), ForgotPasswordFormData (+29 more)
 
-### Community 3 - "Types Components"
-Cohesion: 0.07
-Nodes (36): TicketFormRendererProps, CreateUtilityTicketInput, CENTERPOINT_TEMPLATE, centerpointPayloadSchema, DUKE_TEMPLATE, dukePayloadSchema, ENTERGY_TEMPLATE, entergyPayloadSchema (+28 more)
+### Community 3 - "templates/registry.ts"
+Cohesion: 0.06
+Nodes (44): zod, TicketFormRendererProps, CreateUtilityTicketInput, confidence(), extractEntergyFields(), extractMatch(), EXTRACTORS, stubUtilityExtractor() (+36 more)
 
-### Community 5 - "PhotoCapture.tsx"
-Cohesion: 0.22
-Nodes (12): class-variance-authority, ALL_PHOTO_TYPES, formatPhotoType(), PhotoCapture(), PhotoGallery(), renderGpsStatus(), TicketPriorityBadgeProps, Badge() (+4 more)
+### Community 5 - "Badge"
+Cohesion: 0.42
+Nodes (7): PhotoGallery(), renderGpsStatus(), Badge(), badgeVariants, formatCoordinates(), formatDateTime(), formatFileSize()
 
 ### Community 6 - "MapView.tsx"
 Cohesion: 0.11
 Nodes (34): mapbox-gl, buildGeofenceFeatureCollection(), buildGeofencePolygon(), GeofenceCircle(), GeofenceCircleProps, GeofenceFeatureCollection, isRenderableGeofence(), removeGeofenceLayers() (+26 more)
 
 ### Community 7 - "tickets/[id]/page.tsx"
-Cohesion: 0.08
-Nodes (35): date-fns, ContractorApprovalPage(), mockPending, PendingContractor, TicketDetailPage(), TicketDetailSkeleton(), TicketsPage(), dotStyles (+27 more)
+Cohesion: 0.12
+Nodes (32): ContractorApprovalPage(), mockPending, PendingContractor, TicketDetailPage(), TicketDetailSkeleton(), dotStyles, getVariantFromStatus(), sizeStyles (+24 more)
 
 ### Community 8 - "TicketFormRenderer.tsx"
-Cohesion: 0.14
-Nodes (20): TicketForm(), ticketFormSchema, TicketFormValues, applyFieldFormatting(), getFieldDefault(), StormHeaderSummary, TicketFormRenderer(), toFieldName() (+12 more)
+Cohesion: 0.13
+Nodes (20): TicketForm(), ticketFormSchema, TicketFormValues, applyFieldFormatting(), getFieldDefault(), StormHeaderSummary, remote, TicketFormRenderer() (+12 more)
 
-### Community 9 - "Sidebar.tsx"
-Cohesion: 0.20
-Nodes (13): adminNavItems, contractorNavItems, Sidebar(), SidebarProps, ScrollArea(), ScrollBar(), Sheet(), SheetContent() (+5 more)
+### Community 9 - "SyncStatus.tsx"
+Cohesion: 0.17
+Nodes (17): radix-ui, formatPayloadPreview(), formatTimestamp(), SyncStatus(), Sidebar(), SidebarProps, useSync(), DialogTrigger() (+9 more)
 
 ### Community 10 - "contractorService.ts"
-Cohesion: 0.10
-Nodes (23): onSubmit(), AssignableContractor, buildActiveTicketCountByContractor(), ContractorDetail, ContractorListFilters, ContractorListItem, fetchProfilesByIds(), fetchTicketRows() (+15 more)
+Cohesion: 0.09
+Nodes (22): onSubmit(), AssignableContractor, buildActiveTicketCountByContractor(), ContractorDetail, ContractorListFilters, ContractorListItem, fetchProfilesByIds(), fetchTicketRows() (+14 more)
 
-### Community 11 - "Dexie Components"
-Cohesion: 0.11
-Nodes (32): addToSyncQueue(), CachedTicketFilters, cacheTicket(), cacheTickets(), createId(), createSyncConflict(), deriveSyncStatus(), getCachedTickets() (+24 more)
+### Community 11 - "dexie.ts"
+Cohesion: 0.14
+Nodes (26): dexie, addToSyncQueue(), CachedTicketFilters, createId(), createSyncConflict(), getCachedTickets(), getLatestSyncItemForEntity(), GPSLocation (+18 more)
 
 ### Community 12 - "ticketService.ts"
 Cohesion: 0.12
-Nodes (22): StormPage(), StormWorkspace(), StatusUpdateFlowProps, StatusUpdaterProps, contractorService, dashboardTicketService, StormEventSummary, StormRosterMember (+14 more)
+Nodes (25): StormPage(), StormWorkspace(), StatusUpdateFlowProps, StatusUpdaterProps, TicketCardProps, TicketFiltersState, contractorService, DashboardTicketRow (+17 more)
 
-### Community 13 - "Card"
-Cohesion: 0.13
-Nodes (35): nextConfig, next, ContractorDetailPage(), ContractorInvitePage(), AdminDashboardPage(), ForgotPasswordPage(), metadata, LoginPage() (+27 more)
+### Community 13 - "cn"
+Cohesion: 0.09
+Nodes (24): react-day-picker, AvatarBadge(), AvatarGroup(), AvatarGroupCount(), AvatarImage(), Calendar(), CalendarDayButton(), CardAction() (+16 more)
 
 ### Community 14 - "Storm First Workflow Schema"
 Cohesion: 0.07
 Nodes (16): expense_item_storm_scope, invoice_line_storm_scope, invoice_storm_immutable, public.assign_contractor_to_storm(), public.create_storm_ticket(), public.enforce_expense_item_storm(), public.enforce_storm_payload(), public.enforce_ticket_roster_assignment() (+8 more)
 
-### Community 15 - "dropdown-menu.tsx"
-Cohesion: 0.10
-Nodes (25): AdminLayout(), ContractorLayout(), StormLayout(), AppShell(), AppShellProps, adminNavItems, BottomNav(), BottomNavProps (+17 more)
+### Community 15 - "react"
+Cohesion: 0.24
+Nodes (10): react, AdminLayout(), ContractorLayout(), StormLayout(), TicketsLayout(), AppShell(), AppShellProps, adminNavItems (+2 more)
 
-### Community 16 - "lucide-react"
-Cohesion: 0.20
-Nodes (18): lucide-react, AdminAccountPage(), AdminAssessmentReviewPage(), AdminExpenseReviewPage(), StormEventsPage(), ContractorAccountPage(), AssessmentCreateInner(), AssessmentCreateSkeleton() (+10 more)
+### Community 16 - "useAuth"
+Cohesion: 0.15
+Nodes (25): AdminAccountPage(), AdminAssessmentReviewPage(), AdminExpenseReviewPage(), AdminTimeReviewPage(), ContractorAccountPage(), AssessmentCreateInner(), AssessmentCreateSkeleton(), AssignedAssessmentTickets() (+17 more)
 
 ### Community 17 - "dashboardReportingService.ts"
 Cohesion: 0.08
@@ -218,23 +227,23 @@ Nodes (24): CLOSED_TICKET_STATUSES, CountEqClient, CountInClient, CountIsNotClie
 
 ### Community 18 - "package.json"
 Cohesion: 0.06
-Nodes (30): name, private, version, clsx, crypto-js, date-fns-tz, dexie, dexie-react-hooks (+22 more)
+Nodes (30): name, private, version, clsx, crypto-js, date-fns-tz, dexie-react-hooks, html5-qrcode (+22 more)
 
 ### Community 19 - "Application Package Dependencies"
 Cohesion: 0.06
 Nodes (33): dependencies, browser-image-compression, class-variance-authority, clsx, cmdk, crypto-js, date-fns, date-fns-tz (+25 more)
 
-### Community 20 - "StatusUpdater.tsx"
-Cohesion: 0.14
-Nodes (28): cmdk, formatPayloadPreview(), formatTimestamp(), SyncStatus(), statusButtonConfig, StatusUpdater(), mocks, TicketAssign() (+20 more)
+### Community 20 - "Label"
+Cohesion: 0.24
+Nodes (17): cmdk, statusButtonConfig, StatusUpdater(), mocks, TicketAssign(), TicketAssignProps, Command(), CommandDialog() (+9 more)
 
 ### Community 21 - "User Provisioning"
 Cohesion: 0.09
 Nodes (28): AuthUserSummary, AuthUserUpsertInput, ContractorUpsertInput, ExistingSuperAdmin, isRoleAliasWarning(), normalizeEmail(), normalizeHeader(), normalizeRole() (+20 more)
 
 ### Community 22 - "ocr-extract/route.ts"
-Cohesion: 0.08
-Nodes (34): @supabase/ssr, GET(), normalizeProfile(), PATCH(), ProfileRow, resolveAuthenticatedUser(), remote, extractError() (+26 more)
+Cohesion: 0.22
+Nodes (15): GET(), normalizeProfile(), PATCH(), ProfileRow, resolveAuthenticatedUser(), remote, extractError(), extractOcrText() (+7 more)
 
 ### Community 23 - "Storm Sop Workflow Tables Schema"
 Cohesion: 0.13
@@ -246,39 +255,39 @@ Nodes (29): LocalExpenseItem, LocalExpenseReport, createRemote(), defaultDepende
 
 ### Community 25 - "app/layout.tsx"
 Cohesion: 0.10
-Nodes (25): agentation, next-themes, metadata, RootLayout(), OfflineBanner(), readOnlineStatus(), shouldRenderOfflineBanner(), Agentation (+17 more)
+Nodes (26): agentation, barlow, manrope, metadata, RootLayout(), OfflineBanner(), readOnlineStatus(), shouldRenderOfflineBanner() (+18 more)
 
-### Community 26 - "templates/index.ts"
-Cohesion: 0.24
-Nodes (9): confidence(), extractEntergyFields(), extractMatch(), EXTRACTORS, stubUtilityExtractor(), TicketOcrExtractionResult, TicketOcrExtractor, TicketOcrRequest (+1 more)
+### Community 26 - "PhotoCapture.tsx"
+Cohesion: 0.17
+Nodes (19): ALL_PHOTO_TYPES, formatPhotoType(), PhotoCapture(), PhotoCaptureProps, PhotoGalleryProps, AssessmentPhotoMetadataInput, photoUploadQueue, assertPhotoMimeTypeAllowed() (+11 more)
 
 ### Community 27 - "AssessmentReviewList.tsx"
 Cohesion: 0.13
-Nodes (19): AssessmentDecisionSheetProps, ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS, ASSESSMENT_REVIEW_LAYOUT_MODE, AssessmentReviewList(), AssessmentReviewListProps, DecisionFilterValue, DecisionSheetState, parseError() (+11 more)
+Nodes (23): AssessmentDecisionForm(), AssessmentDecisionSheet(), AssessmentDecisionSheetProps, ASSESSMENT_REVIEW_FILTER_CONTROL_CLASS, ASSESSMENT_REVIEW_LAYOUT_MODE, AssessmentReviewList(), AssessmentReviewListProps, DecisionFilterValue (+15 more)
 
 ### Community 28 - "assessmentReviewService.ts"
-Cohesion: 0.12
-Nodes (26): applyFilters(), AssessmentReviewDependencies, assessmentReviewService, AssessmentReviewState, defaultDependencies, fetchContractorNames(), fetchEquipmentCounts(), fetchTicketNumbers() (+18 more)
+Cohesion: 0.09
+Nodes (32): applyFilters(), AssessmentReviewDependencies, AssessmentReviewListItem, assessmentReviewService, AssessmentReviewState, composeReviewNotes(), createAssessmentReviewService(), defaultDependencies (+24 more)
 
 ### Community 29 - "Photo Storage Service"
 Cohesion: 0.11
 Nodes (22): AuthClient, buildPhotoStoragePath(), ContractorsTableClient, getDefaultClient(), getFileExtension(), MediaAssetsTableClient, PHOTO_STORAGE_AUTH_ERROR, PHOTO_STORAGE_BUCKET (+14 more)
 
-### Community 30 - "ticket-new-client-page.tsx"
-Cohesion: 0.17
-Nodes (15): TicketNewPage(), TicketNewPageProps, TicketNewClientPage(), TicketNewClientPageProps, notifyTicketsChanged(), detectTicketOcrSourceType(), getNormalizedExtension(), TICKET_OCR_ACCEPT_ATTRIBUTE (+7 more)
+### Community 30 - "exif.ts"
+Cohesion: 0.22
+Nodes (14): exifreader, dmsToDecimal(), ExifTagLike, ExifTagMap, extractExifMetadataFromArrayBuffer(), extractExifMetadataFromFile(), extractExifMetadataFromTags(), normalizeNumericValue() (+6 more)
 
 ### Community 31 - "createLocal"
 Cohesion: 0.28
 Nodes (9): createId(), createLocal(), getExpenseMonthPeriod(), getOrCreateDraftReport(), normalizeExpenseDate(), processCreateInput(), resolveReceiptOcrText(), toRoundedAmount() (+1 more)
 
 ### Community 32 - "vitest"
-Cohesion: 0.17
-Nodes (18): vitest, TicketsLayout(), canPerformManagementAction(), getManagementActionForPath(), ManagementAction, normalizePath(), getPortalRole(), isAdminPortalPath() (+10 more)
+Cohesion: 0.12
+Nodes (19): @testing-library/react, vitest, remote, mocks, State(), canPerformManagementAction(), getManagementActionForPath(), ManagementAction (+11 more)
 
 ### Community 33 - "ExpenseReviewList.tsx"
-Cohesion: 0.11
-Nodes (26): Column, ExpenseList(), ExpenseListProps, ExpenseStatusFilter, parseError(), toCategoryLabel(), toStatusVariant(), EXPENSE_REVIEW_FILTER_CONTROL_CLASS (+18 more)
+Cohesion: 0.14
+Nodes (19): Column, EXPENSE_REVIEW_FILTER_CONTROL_CLASS, ExpenseReviewList(), ExpenseReviewListProps, getExpenseReviewLayoutMode(), parseError(), REVIEWABLE_STATUSES, ReviewDecision (+11 more)
 
 ### Community 34 - "SyncProvider.tsx"
 Cohesion: 0.13
@@ -290,7 +299,7 @@ Nodes (24): scripts, build, clean:next, dev, dev:fresh, lint, prebuild, predev (
 
 ### Community 36 - "types/index.ts"
 Cohesion: 0.08
-Nodes (27): DashboardTicketRow, getNextPossibleStatuses(), isValidTransition(), FIELD_STATUS_TRANSITIONS, FieldStatusTransition, getFieldStatusTransition(), isFieldStatusFlowStep(), CapturedPhoto (+19 more)
+Nodes (27): zustand, AuthContextType, getNextPossibleStatuses(), isValidTransition(), AuthState, useAuthStore, CapturedPhoto, Contractor (+19 more)
 
 ### Community 37 - "Application Package Dependencies"
 Cohesion: 0.09
@@ -312,25 +321,25 @@ Nodes (17): ExpenseFormProps, createExpenseProcessingService(), defaultDependenc
 Cohesion: 0.13
 Nodes (16): EquipmentSelectProps, WireSizeSelectProps, AssessmentCatalogDependencies, createAssessmentCatalogService(), defaultDependencies, EquipmentTypeOption, fetchEquipmentTypes(), fetchWireSizes() (+8 more)
 
-### Community 42 - "assessmentReviewService.test.ts"
-Cohesion: 0.29
-Nodes (4): composeReviewNotes(), createAssessmentReviewService(), ReviewedAssessment, reviewRemoteAssessment()
+### Community 42 - "Input"
+Cohesion: 0.15
+Nodes (19): CreateStormEventPage(), DAMAGE_CAUSE_OPTIONS, DamageClassification(), PRIORITY_OPTIONS, REPAIR_DECISION_OPTIONS, updateValue(), CATEGORY_OPTIONS, ExpenseItemForm() (+11 more)
 
-### Community 43 - "Photo Upload Queue"
-Cohesion: 0.13
-Nodes (15): PhotoCaptureProps, PhotoGalleryProps, getPendingPhotos(), LocalPhoto, AssessmentPhotoMetadataInput, createPhotoUploadQueue(), defaultDependencies, inferExtensionFromMimeType() (+7 more)
+### Community 43 - "photoUploadQueue.ts"
+Cohesion: 0.19
+Nodes (8): getPendingPhotos(), LocalPhoto, createPhotoUploadQueue(), defaultDependencies, inferExtensionFromMimeType(), PhotoUploadProcessResult, PhotoUploadQueueDependencies, toUploadFile()
 
-### Community 44 - "ActiveTimer.tsx"
-Cohesion: 0.25
-Nodes (16): ActiveTimer(), ActiveTimerProps, APP_CONFIG, formatDuration(), calculateBillableAmount(), calculateBillableMinutes(), calculateElapsedMinutes(), calculateElapsedSeconds() (+8 more)
+### Community 44 - "ticket-new-client-page.tsx"
+Cohesion: 0.15
+Nodes (17): TicketNewPage(), TicketNewPageProps, TicketNewClientPage(), TicketNewClientPageProps, GRID_TICKETS_CHANGED_EVENT, GRID_TICKETS_VERSION_KEY, notifyTicketsChanged(), detectTicketOcrSourceType() (+9 more)
 
-### Community 45 - "Time Entry Service"
-Cohesion: 0.13
-Nodes (18): LocalSyncStatus, buildClockInEntry(), ClockLocation, createEntryId(), createTimeEntryService(), defaultDependencies, fetchRemoteActiveEntry(), insertRemoteEntry() (+10 more)
+### Community 45 - "timeEntryService.ts"
+Cohesion: 0.11
+Nodes (22): LocalSyncStatus, LocalTimeEntry, SyncQueueOperation, TimeEntryManagementDependencies, timeEntryManagementService, buildClockInEntry(), ClockLocation, ClockOutRequest (+14 more)
 
 ### Community 46 - "timeEntryManagementService.ts"
-Cohesion: 0.15
-Nodes (17): defaultDependencies, entryMatchesFilters(), fetchContractorNames(), fetchRemoteEntries(), fetchTicketNumbers(), getLocalEntries(), mapLocalEntryToListItem(), mapRemoteRowToTimeEntry() (+9 more)
+Cohesion: 0.11
+Nodes (20): createTimeEntryManagementService(), defaultDependencies, entryMatchesFilters(), fetchContractorNames(), fetchRemoteEntries(), fetchTicketNumbers(), getLocalEntries(), mapLocalEntryToListItem() (+12 more)
 
 ### Community 47 - "Components Components"
 Cohesion: 0.10
@@ -344,17 +353,17 @@ Nodes (18): LocalAssessment, AssessmentEquipmentInput, composeEquipmentDescripti
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+11 more)
 
-### Community 50 - "appConfig.ts"
-Cohesion: 0.13
-Nodes (15): WORK_TYPE_OPTIONS, WorkTypeOption, WorkTypeSelectorProps, EQUIPMENT_CONDITIONS, EXPENSE_CATEGORIES, EXPENSE_STATUS, INVOICE_STATUS, NOTIFICATION_TYPES (+7 more)
+### Community 50 - "TimeEntryList.tsx"
+Cohesion: 0.06
+Nodes (49): date-fns, ActiveTimer(), ActiveTimerProps, TimeEntryCard(), TimeEntryCardProps, toWorkTypeLabel(), getTimeReviewLayoutMode(), parseError() (+41 more)
 
 ### Community 51 - "Time Expense Tables Schema"
 Cohesion: 0.19
 Nodes (17): expense_items, expense_policies, expense_reports, idx_expense_item_category, idx_expense_item_date, idx_expense_item_report, idx_expense_report_contractor, idx_expense_report_period (+9 more)
 
 ### Community 52 - "useNavigationSignals.ts"
-Cohesion: 0.19
-Nodes (17): SyncSnapshot, buildAdminRoleSignalCounts(), buildContractorRoleSignalCounts(), buildNavigationSignals(), clampCount(), loadContractorTicketsByAssignee(), loadRoleSignalCounts(), LoadRoleSignalCountsOptions (+9 more)
+Cohesion: 0.20
+Nodes (16): SyncSnapshot, buildAdminRoleSignalCounts(), buildContractorRoleSignalCounts(), buildNavigationSignals(), clampCount(), loadContractorTicketsByAssignee(), loadRoleSignalCounts(), LoadRoleSignalCountsOptions (+8 more)
 
 ### Community 53 - "expenseProcessing.ts"
 Cohesion: 0.20
@@ -364,37 +373,41 @@ Nodes (16): ProcessedCreateInput, calculateMileageExpense(), ExpenseDuplicateCan
 Cohesion: 0.12
 Nodes (5): private.active_profile_role(), protect_contractor_eligibility, protect_profile_authorization, provision_contractor_auth_profile, sync_contractor_managed_role
 
-### Community 55 - "AuthProvider.tsx"
-Cohesion: 0.14
-Nodes (13): @testing-library/react, zustand, AuthContext, AuthContextType, DEV_BYPASS_AUTH, DEV_MOCK_USER, PUBLIC_ROUTES, mocks (+5 more)
+### Community 55 - "client.ts"
+Cohesion: 0.12
+Nodes (15): @supabase/ssr, fetchRemoteActiveEntry(), insertRemoteEntry(), mapRemoteRowToTimeEntry(), updateRemoteEntry(), CompositeTypes, Constants, Database (+7 more)
 
 ### Community 56 - "stormEventService.ts"
-Cohesion: 0.08
-Nodes (21): remote, UtilityTicketDetails(), CLOSED_TICKET_STATUSES, CreateStormEventInput, mapStormEventRow(), normalizeStormEventStatus(), normalizeUtilityClientValue(), RemoteStormEventRow (+13 more)
+Cohesion: 0.07
+Nodes (23): CLOSED_TICKET_STATUSES, CreateStormEventInput, getActiveTicketCountByEventId(), isActiveTicketStatus(), mapStormEventRow(), normalizeStormEventStatus(), normalizeUtilityClientValue(), RemoteStormEventRow (+15 more)
 
-### Community 57 - "AssessmentForm.tsx"
-Cohesion: 0.22
-Nodes (15): AssessmentForm(), AssessmentFormProps, parseOptionalNumber(), toHumanPhotoType(), validateAssessmentDraft(), createAssessmentDraftId(), createDefaultDamageClassification(), createDefaultSafetyObservations() (+7 more)
+### Community 57 - "TopBar.tsx"
+Cohesion: 0.20
+Nodes (17): NavigationSearch(), adminNavItems, contractorNavItems, SidebarTrigger(), TopBar(), TopBarProps, CommandEmpty(), CommandGroup() (+9 more)
 
-### Community 58 - "Time Entry Management Service"
-Cohesion: 0.14
-Nodes (11): TimeEntryCardProps, LocalTimeEntry, SyncQueueOperation, createTimeEntryManagementService(), TimeEntryListItem, TimeEntryManagementDependencies, timeEntryManagementService, ClockOutRequest (+3 more)
+### Community 58 - "AssessmentForm.tsx"
+Cohesion: 0.23
+Nodes (14): AssessmentForm(), AssessmentFormProps, parseOptionalNumber(), toHumanPhotoType(), validateAssessmentDraft(), createAssessmentDraftId(), createDefaultDamageClassification(), createDefaultSafetyObservations() (+6 more)
 
 ### Community 59 - "Core Tables Schema"
 Cohesion: 0.23
 Nodes (12): contractor_banking, contractor_rates, contractors, idx_contractors_eligible, idx_contractors_profile, idx_contractors_status, idx_profiles_active, idx_profiles_email (+4 more)
 
-### Community 60 - "assessmentPhotos.ts"
-Cohesion: 0.06
-Nodes (43): browser-image-compression, exifreader, assertPhotoMimeTypeAllowed(), buildPhotoPreviewUrl(), countPhotosByType(), DEFAULT_REQUIRED_PHOTO_TYPES, PHOTO_MIME_TYPES, prepareCapturedPhoto() (+35 more)
+### Community 60 - "photoValidation.ts"
+Cohesion: 0.24
+Nodes (8): PhotoExifMetadata, validatePhotoFile(), ExistingPhotoChecksum, hasGps(), PHOTO_MIME_TYPES, PhotoValidationOptions, PhotoValidationResult, validateAssessmentPhoto()
 
 ### Community 61 - "Button"
 Cohesion: 0.12
-Nodes (20): react-day-picker, AdminError(), AdminErrorProps, AuthConfirmInner(), AuthConfirmPage(), ConfirmSkeleton(), Status, ContractorError() (+12 more)
+Nodes (20): class-variance-authority, lucide-react, AdminDashboardPage(), quickActions, AdminError(), AdminErrorProps, AuthLayout(), ContractorError() (+12 more)
 
 ### Community 62 - "validators.ts"
-Cohesion: 0.10
-Nodes (24): GPSValidationState, GPSValidationStatus, UseGPSValidationOptions, GPSWorkflowReading, GPSWorkflowTarget, GPSWorkflowValidationResult, validateGPSWorkflow(), assessmentSchema (+16 more)
+Cohesion: 0.12
+Nodes (15): assessmentSchema, einSchema, emailSchema, expenseItemSchema, FileValidationResult, GPSValidationResult, latitudeSchema, longitudeSchema (+7 more)
+
+### Community 63 - "middleware.ts"
+Cohesion: 0.24
+Nodes (8): isPasswordResetAllowedPath(), shouldEnforcePasswordReset(), isPublicRoute(), PUBLIC_ROUTE_PREFIXES, mocks, updateSession(), config, proxy()
 
 ### Community 64 - "generate-utility-config.cjs"
 Cohesion: 0.10
@@ -404,17 +417,25 @@ Nodes (17): cleanNextDuplicates(), CleanResult, TARGET_DIRECTORIES, cache, { cre
 Cohesion: 0.13
 Nodes (4): CACHE_NAMES, STATIC_ASSETS, sw, SyncEvent
 
-### Community 66 - "TimeEntryList.tsx"
-Cohesion: 0.15
-Nodes (17): AdminTimeReviewPage(), isGpsReadyForClockAction(), TimeClock(), WORK_TYPE_DEFAULT_RATES, getTimeReviewLayoutMode(), parseError(), ReviewDecision, StatusFilterValue (+9 more)
+### Community 66 - "contractor/map/page.tsx"
+Cohesion: 0.27
+Nodes (11): sonner, AdminMapPage(), getTicketCenter(), toMapTicket(), ContractorMapPage(), getTicketCenter(), toMapTicket(), isValidLngLat() (+3 more)
 
-### Community 68 - "ExpenseForm.tsx"
-Cohesion: 0.24
-Nodes (11): createInitialDraft(), ExpenseForm(), mapTicketsToOptions(), parseOptionalNumber(), toDateInputValue(), ExpenseItemDraft, ExpenseTicketOption, ACCEPTED_RECEIPT_TYPES (+3 more)
+### Community 68 - "Card"
+Cohesion: 0.15
+Nodes (34): next, ContractorDetailPage(), ContractorInvitePage(), StormEventsPage(), ForgotPasswordPage(), metadata, LoginPage(), metadata (+26 more)
 
 ### Community 69 - "buildDashboardReport"
 Cohesion: 0.22
 Nodes (9): buildDashboardReport(), getBucketLabel(), getBuckets(), getBucketStart(), normalizeNumber(), parseDateOrNull(), resolveContractorName(), roundCurrency() (+1 more)
+
+### Community 70 - "useGPSValidation.ts"
+Cohesion: 0.29
+Nodes (9): GPSValidationState, GPSValidationStatus, UseGPSValidationOptions, GPSWorkflowReading, GPSWorkflowTarget, GPSWorkflowValidationResult, validateGPSWorkflow(), validateGeofence() (+1 more)
+
+### Community 71 - "imageCompression.ts"
+Cohesion: 0.27
+Nodes (7): browser-image-compression, compressImageFile(), getImageCompressionOptions(), ImageCompressionLibraryOptions, ImageCompressionOptions, ImageCompressionResult, toFile()
 
 ### Community 72 - "Ticket Templates Ocr Scaffold Schema"
 Cohesion: 0.26
@@ -444,6 +465,10 @@ Nodes (3): BACKGROUND_SYNC_TAG_TO_MESSAGE, CACHE_NAMES, STATIC_ASSETS
 Cohesion: 0.20
 Nodes (9): tesseract.js, createReceiptOcrService(), defaultDependencies, defaultRecognize(), loadRecognizer(), OcrRecognitionResult, OcrRecognizer, ReceiptOcrDependencies (+1 more)
 
+### Community 79 - "thumbnail.ts"
+Cohesion: 0.27
+Nodes (9): generatePreview(), buildThumbnailFile(), calculateThumbnailDimensions(), fallbackResult(), generateImageThumbnail(), loadImageBitmap(), ThumbnailDimensions, ThumbnailGenerationResult (+1 more)
+
 ### Community 80 - "createDashboardReportingService"
 Cohesion: 0.20
 Nodes (10): createDashboardReportingService(), fetchAllTickets(), fetchContractorNames(), fetchPendingAssessments(), fetchPendingExpenseReports(), fetchPendingTimeEntries(), fetchReportExpenseReports(), fetchReportTickets() (+2 more)
@@ -456,25 +481,49 @@ Nodes (9): idx_customers_active, idx_storm_events_city_code, idx_storm_events_cu
 Cohesion: 0.35
 Nodes (10): idx_status_history_changed, idx_status_history_ticket, idx_tickets_assigned, idx_tickets_client, idx_tickets_coordinates, idx_tickets_priority, idx_tickets_scheduled, idx_tickets_status (+2 more)
 
-### Community 84 - "Thumbnail Components"
-Cohesion: 0.27
-Nodes (9): generatePreview(), buildThumbnailFile(), calculateThumbnailDimensions(), fallbackResult(), generateImageThumbnail(), loadImageBitmap(), ThumbnailDimensions, ThumbnailGenerationResult (+1 more)
+### Community 84 - "sessionTimeout.ts"
+Cohesion: 0.47
+Nodes (3): isSessionExpired(), MAX_INACTIVITY_MS, SESSION_ACTIVITY_COOKIE
+
+### Community 85 - "entergyTicketFormat.ts"
+Cohesion: 0.53
+Nodes (4): buildEntergySpecialInstructions(), buildEntergyWorkDescription(), countLine(), EntergyTicketFormatInput
+
+### Community 86 - "statusUpdateFlow.ts"
+Cohesion: 0.47
+Nodes (4): FIELD_STATUS_TRANSITIONS, FieldStatusTransition, getFieldStatusTransition(), isFieldStatusFlowStep()
 
 ### Community 88 - "Create Storm Events Root Workflow"
 Cohesion: 0.29
 Nodes (7): idx_storm_events_created_at, idx_storm_events_event_code, idx_storm_events_status, idx_storm_events_utility_client, idx_tickets_storm_event, public.storm_events, update_storm_events_updated_at
+
+### Community 89 - "ExpenseForm.tsx"
+Cohesion: 0.42
+Nodes (7): createInitialDraft(), ExpenseForm(), mapTicketsToOptions(), parseOptionalNumber(), toDateInputValue(), ExpenseItemDraft, ExpenseTicketOption
 
 ### Community 90 - "Triggers Schema"
 Cohesion: 0.20
 Nodes (6): ticket_number_trigger, ticket_status_change_trigger, update_contractors_updated_at, update_profiles_updated_at, update_tickets_updated_at, update_time_entries_updated_at
 
 ### Community 91 - "PriorityLevel"
-Cohesion: 0.27
-Nodes (10): DamageClassificationDraft, DamageClassificationProps, TicketFiltersState, AssessmentReviewFilters, AssessmentReviewListItem, AssessmentDamageClassificationInput, RemoteDamageAssessmentInsert, PriorityLevel (+2 more)
+Cohesion: 0.38
+Nodes (7): DamageClassificationDraft, DamageClassificationProps, AssessmentReviewFilters, AssessmentDamageClassificationInput, RemoteDamageAssessmentInsert, PriorityLevel, RepairDecision
 
 ### Community 92 - "SafetyChecklist.tsx"
 Cohesion: 0.19
 Nodes (9): SAFETY_FIELDS, SafetyChecklistProps, SafetyFieldConfig, updateField(), CreateAssessmentInput, createAssessmentSubmissionService(), RemoteDamageAssessmentRow, SAFETY_OBSERVATIONS (+1 more)
+
+### Community 93 - "hash.ts"
+Cohesion: 0.39
+Nodes (7): bufferToHex(), calculateSHA256Hash(), getSubtleCrypto(), HashSubtle, isArrayBuffer(), readBlobWithFileReader(), toArrayBuffer()
+
+### Community 94 - "storms/create/page.tsx"
+Cohesion: 0.29
+Nodes (5): STATE_NAMES, STORM_EVENT_STATUS_OPTIONS, UTILITY_CLIENT_OPTIONS, UTILITY_CLIENTS, UtilityClient
+
+### Community 95 - "normalizeTicketForCache"
+Cohesion: 0.25
+Nodes (7): cacheTicket(), cacheTickets(), deriveSyncStatus(), GridElectricDatabase, normalizeTicketForCache(), replaceTicketCache(), toIsoTimestamp()
 
 ### Community 96 - "Test Connection"
 Cohesion: 0.29
@@ -488,17 +537,13 @@ Nodes (3): { createClient }, path, supabase
 Cohesion: 0.39
 Nodes (7): damage_assessments, equipment_assessments, equipment_types, hazard_categories, idx_assessment_contractor, idx_assessment_ticket, wire_sizes
 
-### Community 100 - "contractor/map/page.tsx"
-Cohesion: 0.32
-Nodes (10): sonner, AdminMapPage(), getTicketCenter(), toMapTicket(), ContractorMapPage(), getTicketCenter(), toMapTicket(), isValidLngLat() (+2 more)
-
 ### Community 101 - "Navigation Config"
 Cohesion: 0.32
 Nodes (6): ADMIN_BOTTOM_NAV_ITEMS, ADMIN_SIDEBAR_NAV_ITEMS, CONTRACTOR_BOTTOM_NAV_ITEMS, CONTRACTOR_SIDEBAR_NAV_ITEMS, NavigationSignalKey, NavLinkItem
 
 ### Community 103 - "routeOptimizationService.ts"
-Cohesion: 0.15
-Nodes (13): isSessionExpired(), MAX_INACTIVITY_MS, SESSION_ACTIVITY_COOKIE, buildEntergySpecialInstructions(), buildEntergyWorkDescription(), countLine(), EntergyTicketFormatInput, haversineDistanceMeters() (+5 more)
+Cohesion: 0.50
+Nodes (6): haversineDistanceMeters(), isValidRouteStop(), OptimizedRouteResult, optimizeRoute(), RouteStop, toRadians()
 
 ### Community 104 - "Add Ceo Role And Lock"
 Cohesion: 0.39
@@ -521,24 +566,24 @@ Cohesion: 0.50
 Nodes (3): eslintConfig, eslint, eslint-config-next
 
 ## Knowledge Gaps
-- **528 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+523 more)
+- **530 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+525 more)
   These have ≤1 connection - possible missing edges. (Counts symbols only; 761 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **50 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **51 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `vitest` connect `vitest` to `react`, `Types Components`, `PhotoCapture.tsx`, `MapView.tsx`, `tickets/[id]/page.tsx`, `ticketService.ts`, `package.json`, `StatusUpdater.tsx`, `User Provisioning`, `ocr-extract/route.ts`, `app/layout.tsx`, `AssessmentReviewList.tsx`, `Photo Storage Service`, `ticket-new-client-page.tsx`, `ExpenseReviewList.tsx`, `SyncProvider.tsx`, `types/index.ts`, `buildReportExportArtifact`, `expenseProcessingService.ts`, `Assessment Catalog Service`, `assessmentReviewService.test.ts`, `Photo Upload Queue`, `ActiveTimer.tsx`, `appConfig.ts`, `useNavigationSignals.ts`, `expenseProcessing.ts`, `AuthProvider.tsx`, `stormEventService.ts`, `Time Entry Management Service`, `assessmentPhotos.ts`, `validators.ts`, `generate-utility-config.cjs`, `TimeEntryList.tsx`, `Receipt Ocr Service`, `Thumbnail Components`, `SafetyChecklist.tsx`, `contractorService.test.ts`, `Seed Db`, `Navigation Config`, `routeOptimizationService.ts`, `Expense Submission Service`?**
-  _High betweenness centrality (0.148) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `SelectContent`, `cn`, `PhotoCapture.tsx`, `MapView.tsx`, `tickets/[id]/page.tsx`, `TicketFormRenderer.tsx`, `Sidebar.tsx`, `ticketService.ts`, `Card`, `dropdown-menu.tsx`, `lucide-react`, `package.json`, `StatusUpdater.tsx`, `app/layout.tsx`, `AssessmentReviewList.tsx`, `ticket-new-client-page.tsx`, `vitest`, `ExpenseReviewList.tsx`, `SyncProvider.tsx`, `ActiveTimer.tsx`, `useNavigationSignals.ts`, `AuthProvider.tsx`, `stormEventService.ts`, `AssessmentForm.tsx`, `Button`, `validators.ts`, `TimeEntryList.tsx`, `ExpenseForm.tsx`, `@tanstack/react-query`, `contractor/map/page.tsx`?**
-  _High betweenness centrality (0.128) - this node is a cross-community bridge._
-- **Why does `cn()` connect `cn` to `SelectContent`, `react`, `PhotoCapture.tsx`, `MapView.tsx`, `tickets/[id]/page.tsx`, `TicketFormRenderer.tsx`, `Sidebar.tsx`, `Card`, `dropdown-menu.tsx`, `StatusUpdater.tsx`, `Button`?**
-  _High betweenness centrality (0.057) - this node is a cross-community bridge._
+- **Why does `vitest` connect `vitest` to `Alert`, `templates/registry.ts`, `MapView.tsx`, `TicketFormRenderer.tsx`, `contractorService.ts`, `ticketService.ts`, `package.json`, `Label`, `User Provisioning`, `ocr-extract/route.ts`, `app/layout.tsx`, `PhotoCapture.tsx`, `AssessmentReviewList.tsx`, `assessmentReviewService.ts`, `Photo Storage Service`, `exif.ts`, `ExpenseReviewList.tsx`, `SyncProvider.tsx`, `buildReportExportArtifact`, `expenseProcessingService.ts`, `Assessment Catalog Service`, `photoUploadQueue.ts`, `ticket-new-client-page.tsx`, `timeEntryService.ts`, `timeEntryManagementService.ts`, `TimeEntryList.tsx`, `useNavigationSignals.ts`, `expenseProcessing.ts`, `stormEventService.ts`, `photoValidation.ts`, `Button`, `middleware.ts`, `generate-utility-config.cjs`, `useGPSValidation.ts`, `imageCompression.ts`, `Receipt Ocr Service`, `thumbnail.ts`, `sessionTimeout.ts`, `entergyTicketFormat.ts`, `statusUpdateFlow.ts`, `SafetyChecklist.tsx`, `hash.ts`, `Seed Db`, `LogoutHandler.tsx`, `Navigation Config`, `routeOptimizationService.ts`, `Expense Submission Service`?**
+  _High betweenness centrality (0.146) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `SelectContent`, `ReportsDashboard.tsx`, `Alert`, `Badge`, `MapView.tsx`, `tickets/[id]/page.tsx`, `TicketFormRenderer.tsx`, `SyncStatus.tsx`, `ticketService.ts`, `cn`, `useAuth`, `package.json`, `Label`, `app/layout.tsx`, `PhotoCapture.tsx`, `AssessmentReviewList.tsx`, `vitest`, `ExpenseReviewList.tsx`, `SyncProvider.tsx`, `Input`, `ticket-new-client-page.tsx`, `TimeEntryList.tsx`, `useNavigationSignals.ts`, `stormEventService.ts`, `TopBar.tsx`, `AssessmentForm.tsx`, `Button`, `contractor/map/page.tsx`, `Card`, `useGPSValidation.ts`, `@tanstack/react-query`, `ExpenseForm.tsx`, `storms/create/page.tsx`, `LogoutHandler.tsx`?**
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
+- **Why does `cn()` connect `cn` to `SelectContent`, `ReportsDashboard.tsx`, `Alert`, `Card`, `Badge`, `MapView.tsx`, `tickets/[id]/page.tsx`, `TicketFormRenderer.tsx`, `SyncStatus.tsx`, `Input`, `react`, `TimeEntryList.tsx`, `Label`, `TopBar.tsx`, `AssessmentReviewList.tsx`, `Button`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
 - **What connects `$schema`, `style`, `rsc` to the rest of the system?**
-  _528 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `SelectContent` be split into smaller, more focused modules?**
-  _Cohesion score 0.137155297532656 - nodes in this community are weakly interconnected._
-- **Should `cn` be split into smaller, more focused modules?**
-  _Cohesion score 0.08821548821548822 - nodes in this community are weakly interconnected._
-- **Should `react` be split into smaller, more focused modules?**
-  _Cohesion score 0.12303422756706753 - nodes in this community are weakly interconnected._
+  _530 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Alert` be split into smaller, more focused modules?**
+  _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
+- **Should `templates/registry.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.059907834101382486 - nodes in this community are weakly interconnected._
+- **Should `MapView.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.1101010101010101 - nodes in this community are weakly interconnected._

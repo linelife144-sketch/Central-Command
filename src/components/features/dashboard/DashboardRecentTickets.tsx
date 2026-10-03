@@ -57,9 +57,9 @@ export function DashboardRecentTickets() {
     };
   }, [load]);
 
-  return <Card className="lg:col-span-2">
-    <CardHeader className="flex flex-row items-center justify-between">
-      <div><CardTitle>Recent Tickets</CardTitle><p aria-live="polite" className="mt-1 text-sm text-muted-foreground">Latest ticket data refreshes as changes come in.</p></div>
+  return <Card className="min-w-0 xl:col-span-2">
+    <CardHeader className="flex flex-wrap items-center justify-between gap-3 sm:flex-row">
+      <div><div className="cc-eyebrow mb-2">The latest from the field</div><CardTitle>Recent Tickets</CardTitle><p aria-live="polite" className="mt-2 text-xs text-muted-foreground">Ticket activity updates as changes come in.</p></div>
       <Button variant="ghost" size="sm" asChild><Link href="/tickets">View All</Link></Button>
     </CardHeader>
     <CardContent>

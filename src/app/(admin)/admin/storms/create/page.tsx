@@ -156,11 +156,11 @@ export default function CreateStormEventPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Create Storm Event"
-        description="Start a new storm event umbrella for tickets, contractors, time, expenses, and billing."
+        description="Start a response workspace for tickets, contractor crews, time, and assessments."
         backHref="/admin/storms"
       />
 
-      <Card className="storm-surface">
+      <Card className="cc-work-panel">
         <CardContent className="pt-6">
           <form className="space-y-6" onSubmit={onSubmit}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

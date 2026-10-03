@@ -11,7 +11,7 @@ export default function AdminReportsPage() {
         description="Analyze operational throughput and export billing/compliance reports."
       />
 
-      <div className="storm-surface rounded-xl p-4">
+      <div className="cc-work-panel p-4 sm:p-5">
         <ReportsDashboard />
       </div>
     </div>

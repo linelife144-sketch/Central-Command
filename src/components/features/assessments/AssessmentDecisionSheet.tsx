@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -36,8 +36,20 @@ export interface AssessmentDecisionSheetProps {
   onConfirm: (values: AssessmentDecisionFormValues) => Promise<void>;
 }
 
-export function AssessmentDecisionSheet({
-  open,
+export function AssessmentDecisionSheet(props: AssessmentDecisionSheetProps) {
+  return (
+    <Sheet onOpenChange={props.onOpenChange} open={props.open}>
+      <SheetContent
+        className="w-full border-l border-border bg-surface-raised p-0 text-grid-navy sm:max-w-md"
+        side="right"
+      >
+        <AssessmentDecisionForm key={`${props.open}:${props.defaultDecision}`} {...props} />
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function AssessmentDecisionForm({
   mode,
   targetCount,
   defaultDecision,
@@ -48,16 +60,6 @@ export function AssessmentDecisionSheet({
   const [decision, setDecision] = useState<AssessmentReviewDecision>(defaultDecision);
   const [reviewNotes, setReviewNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setDecision(defaultDecision);
-    setReviewNotes('');
-    setValidationError(null);
-  }, [defaultDecision, open]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -81,29 +83,24 @@ export function AssessmentDecisionSheet({
   const targetLabel = isBatch ? `${targetCount} selected assessments` : 'this assessment';
 
   return (
-    <Sheet onOpenChange={onOpenChange} open={open}>
-      <SheetContent
-        className="storm-surface border-l-2 border-l-[#ffc038] p-0 text-blue-50 sm:max-w-md"
-        side="right"
-      >
         <form className="flex h-full flex-col" onSubmit={handleSubmit}>
-          <SheetHeader className="border-b border-white/20">
-            <SheetTitle className="text-blue-50">Decision Review</SheetTitle>
-            <SheetDescription className="text-blue-100">
+          <SheetHeader className="border-b border-border bg-surface-sunken px-6 py-7">
+            <SheetTitle className="font-heading text-3xl text-grid-navy">Decision Review</SheetTitle>
+            <SheetDescription className="pr-4 text-muted-foreground">
               Confirm how you want to {decisionVerb} {targetLabel}.
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          <div className="flex-1 space-y-6 overflow-y-auto p-6">
             <div className="space-y-2">
-              <label className="text-xs font-semibold tracking-[0.12em] text-[#ffe39f] uppercase" htmlFor="assessment-decision">
+              <label className="text-sm font-semibold text-grid-navy" htmlFor="assessment-decision">
                 Decision
               </label>
               <Select
                 value={decision}
                 onValueChange={(value) => setDecision(value as AssessmentReviewDecision)}
               >
-                <SelectTrigger id="assessment-decision" className="border-2 border-[#ffc038] bg-[#031a4a]/85 text-blue-50">
+                <SelectTrigger id="assessment-decision" className="w-full">
                   <SelectValue placeholder="Decision" />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,7 +111,7 @@ export function AssessmentDecisionSheet({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold tracking-[0.12em] text-[#ffe39f] uppercase" htmlFor="assessment-review-notes">
+              <label className="text-sm font-semibold text-grid-navy" htmlFor="assessment-review-notes">
                 Notes {decision === 'NEEDS_REWORK' ? '(required)' : '(optional)'}
               </label>
               <Textarea
@@ -122,29 +119,28 @@ export function AssessmentDecisionSheet({
                 value={reviewNotes}
                 onChange={(event) => setReviewNotes(event.target.value)}
                 placeholder={decision === 'NEEDS_REWORK' ? 'Enter rework instructions' : 'Optional approval notes'}
-                className="min-h-28 border-2 border-[#ffc038] bg-[#031a4a]/85 text-blue-50 placeholder:text-blue-200"
+                className="min-h-36"
+                aria-invalid={Boolean(validationError)}
+                aria-describedby={validationError ? 'assessment-review-error' : undefined}
               />
-              {validationError ? <p className="text-xs text-amber-200">{validationError}</p> : null}
+              {validationError ? <p id="assessment-review-error" role="alert" className="text-sm text-grid-danger-ink">{validationError}</p> : null}
             </div>
           </div>
 
-          <SheetFooter className="border-t border-white/20">
+          <SheetFooter className="border-t border-border px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
-              className="border-white/70 bg-transparent text-blue-50 hover:bg-white/10 hover:text-blue-50"
               disabled={busy}
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" variant={decision === 'NEEDS_REWORK' ? 'destructive' : 'storm'} disabled={busy}>
+            <Button type="submit" variant={decision === 'NEEDS_REWORK' ? 'destructive' : 'default'} disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Confirm
             </Button>
           </SheetFooter>
         </form>
-      </SheetContent>
-    </Sheet>
   );
 }

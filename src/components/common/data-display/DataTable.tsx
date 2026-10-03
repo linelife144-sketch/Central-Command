@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Inbox } from 'lucide-react';
 
 export interface Column<T> {
   key: string;
@@ -70,8 +71,9 @@ export function DataTable<T>({
   if (data.length === 0) {
     return (
       <div className={cn('rounded-xl border border-border-strong bg-card shadow-elevation-sm', className)}>
-        <div className="flex items-center justify-center h-32 text-muted-foreground">
-          {emptyMessage}
+        <div role="status" className="cc-empty-state">
+          <span className="cc-empty-icon"><Inbox className="size-6" /></span>
+          <p>{emptyMessage}</p>
         </div>
       </div>
     );
@@ -98,6 +100,13 @@ export function DataTable<T>({
             <TableRow
               key={keyExtractor(row)}
               onClick={() => onRowClick?.(row)}
+              tabIndex={onRowClick ? 0 : undefined}
+              onKeyDown={event => {
+                if (onRowClick && event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                  event.preventDefault();
+                  onRowClick(row);
+                }
+              }}
               className={cn(
                 'transition-colors duration-200 ease-standard',
                 onRowClick && 'cursor-pointer hover:bg-accent/60'

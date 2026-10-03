@@ -10,7 +10,7 @@ describe('TimeEntryList layout helpers', () => {
     expect(getTimeReviewLayoutMode()).toBe('operations-grid');
   });
 
-  it('keeps solid gold filter border classes', () => {
-    expect(TIME_REVIEW_FILTER_CONTROL_CLASS).toContain('border-[#ffc038]');
+  it('uses the shared filter border token', () => {
+    expect(TIME_REVIEW_FILTER_CONTROL_CLASS).toContain('border-border');
   });
 });

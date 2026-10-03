@@ -17,10 +17,20 @@ export function TicketCard({ ticket, onClick, className, assigneeName }: TicketC
     return (
         <Card
             className={cn(
-                "hover:shadow-md transition-shadow cursor-pointer",
+                "cc-ticket-card transition-shadow",
+                onClick && "cursor-pointer hover:shadow-elevation-md",
                 className
             )}
             onClick={() => onClick?.(ticket)}
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            aria-label={onClick ? `Open ticket ${ticket.ticket_number}` : undefined}
+            onKeyDown={event => {
+                if (onClick && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    onClick(ticket);
+                }
+            }}
         >
             <CardHeader className="p-4 pb-2">
                 <div className="flex justify-between items-start">

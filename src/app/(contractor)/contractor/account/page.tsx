@@ -18,7 +18,7 @@ export default function ContractorAccountPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="storm-surface">
+        <Card className="cc-work-panel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-grid-navy">
               <User className="h-4 w-4" />
@@ -32,7 +32,7 @@ export default function ContractorAccountPage() {
           </CardContent>
         </Card>
 
-        <Card className="storm-surface">
+        <Card className="cc-work-panel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-grid-navy">
               <Settings className="h-4 w-4" />

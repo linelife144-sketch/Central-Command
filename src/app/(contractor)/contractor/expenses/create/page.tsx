@@ -21,7 +21,7 @@ export default function ContractorExpenseCreatePage() {
         backHref="/contractor/expenses"
       />
 
-      <div className="storm-surface rounded-xl p-4">
+      <div className="cc-work-panel p-4 sm:p-5">
         <ExpenseForm
           contractorId={contractorId}
           onSaved={() => {

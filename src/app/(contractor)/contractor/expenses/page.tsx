@@ -16,7 +16,7 @@ export default function ContractorExpensesPage() {
         description="Track and submit reimbursable expenses with receipt attachments."
       />
 
-      <div className="storm-surface rounded-xl p-4">
+      <div className="cc-work-panel p-4 sm:p-5">
         <ExpenseList contractorId={contractorId} />
       </div>
     </div>

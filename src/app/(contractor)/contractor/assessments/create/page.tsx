@@ -16,11 +16,11 @@ function AssessmentCreateSkeleton() {
     <div className="space-y-6">
       <div className="h-9 w-64 rounded-lg bg-grid-storm-100 animate-pulse" />
       <div className="h-10 w-96 max-w-full rounded-lg bg-grid-storm-100 animate-pulse" />
-      <div className="storm-surface rounded-xl p-4">
+      <div className="cc-work-panel p-4 sm:p-5">
         <div className="space-y-3">
-          <div className="h-10 w-full rounded-md bg-white/20 animate-pulse" />
-          <div className="h-10 w-full rounded-md bg-white/20 animate-pulse" />
-          <div className="h-24 w-full rounded-md bg-white/20 animate-pulse" />
+          <div className="h-10 w-full rounded-md bg-grid-storm-100 animate-pulse" />
+          <div className="h-10 w-full rounded-md bg-grid-storm-100 animate-pulse" />
+          <div className="h-24 w-full rounded-md bg-grid-storm-100 animate-pulse" />
         </div>
       </div>
     </div>
@@ -32,7 +32,7 @@ function AssignedAssessmentTickets({contractorId}:{contractorId?:string}) {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(false);
   useEffect(()=>{
-    let active=true;setLoading(true);setError(false);setTickets([]);
+    let active=true;
     if(!contractorId) return ()=>{active=false;};
     ticketService.getTicketsByAssignee(contractorId).then(rows=>{if(active)setTickets(rows);}).catch(()=>{if(active)setError(true);}).finally(()=>{if(active)setLoading(false);});
     return ()=>{active=false;};
@@ -64,14 +64,14 @@ function AssessmentCreateInner() {
         backHref={backHref}
       />
 
-      <div className="storm-surface rounded-xl p-4">
+      <div className="cc-work-panel p-4 sm:p-5">
         {ticketId ? <AssessmentForm
           ticketId={ticketId}
           contractorId={contractorId}
           onSaved={() => {
             router.push(backHref);
           }}
-        /> : <AssignedAssessmentTickets contractorId={contractorId} />}
+        /> : <AssignedAssessmentTickets key={contractorId ?? 'resolving'} contractorId={contractorId} />}
       </div>
     </div>
   );

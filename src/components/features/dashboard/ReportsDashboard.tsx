@@ -279,32 +279,32 @@ export function ReportsDashboard() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-slate-500">Tickets Created</p>
-            <p className="text-lg font-semibold">
+            <p className="text-xs text-muted-foreground">Tickets Created</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">
               {report ? formatNumber(report.totals.tickets_created) : isLoading ? '...' : '0'}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-slate-500">Approved Time</p>
-            <p className="text-lg font-semibold">
+            <p className="text-xs text-muted-foreground">Approved Time</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">
               {report ? formatCurrency(report.totals.approved_time_amount) : isLoading ? '...' : formatCurrency(0)}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-slate-500">Approved Expenses</p>
-            <p className="text-lg font-semibold">
+            <p className="text-xs text-muted-foreground">Approved Expenses</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">
               {report ? formatCurrency(report.totals.approved_expense_amount) : isLoading ? '...' : formatCurrency(0)}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-slate-500">Pending Reviews</p>
-            <p className="text-lg font-semibold">
+            <p className="text-xs text-muted-foreground">Pending Reviews</p>
+            <p className="font-heading text-3xl font-semibold text-grid-navy">
               {report ? formatNumber(report.totals.pending_reviews) : isLoading ? '...' : '0'}
             </p>
           </CardContent>
@@ -317,18 +317,18 @@ export function ReportsDashboard() {
         </CardHeader>
         <CardContent>
           {!report || report.series.length === 0 ? (
-            <div className="rounded-md border border-grid-surface bg-grid-surface px-4 py-8 text-center text-sm text-slate-500">
+            <div className="rounded-md border border-grid-surface bg-grid-surface px-4 py-8 text-center text-sm text-muted-foreground">
               {isLoading ? 'Loading chart data...' : 'No report data available for the selected range.'}
             </div>
           ) : (
             <>
-              <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-600">
+              <div className="mb-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded bg-blue-500" />
+                  <span className="h-2.5 w-2.5 rounded bg-grid-blue" />
                   Approved Time
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded bg-emerald-500" />
+                  <span className="h-2.5 w-2.5 rounded bg-grid-lightning" />
                   Approved Expenses
                 </span>
               </div>
@@ -336,23 +336,23 @@ export function ReportsDashboard() {
                 <div className="flex min-w-[640px] items-end gap-3 pb-2">
                   {report.series.map((point) => (
                     <div key={point.bucket_start} className="flex min-w-[72px] flex-1 flex-col items-center gap-2">
-                      <div className="flex h-44 w-full items-end justify-center gap-1 rounded-md border bg-slate-50 px-2 py-2">
+                      <div className="flex h-44 w-full items-end justify-center gap-1 rounded-md border bg-surface-sunken px-2 py-2">
                         <div
-                          className={cn('w-3 rounded-sm bg-blue-500 transition-all')}
+                          className={cn('w-3 rounded-sm bg-grid-blue transition-all')}
                           style={{
                             height: `${amountToPercent(point.approved_time_amount, chartMax)}%`,
                           }}
                           title={`Approved Time: ${formatCurrency(point.approved_time_amount)}`}
                         />
                         <div
-                          className={cn('w-3 rounded-sm bg-emerald-500 transition-all')}
+                          className={cn('w-3 rounded-sm bg-grid-lightning transition-all')}
                           style={{
                             height: `${amountToPercent(point.approved_expense_amount, chartMax)}%`,
                           }}
                           title={`Approved Expense: ${formatCurrency(point.approved_expense_amount)}`}
                         />
                       </div>
-                      <p className="text-center text-[11px] text-slate-600">{point.label}</p>
+                      <p className="text-center text-[11px] text-muted-foreground">{point.label}</p>
                     </div>
                   ))}
                 </div>
@@ -368,7 +368,7 @@ export function ReportsDashboard() {
         </CardHeader>
         <CardContent>
           {!report || report.contractors.length === 0 ? (
-            <div className="rounded-md border border-grid-surface bg-grid-surface px-4 py-8 text-center text-sm text-slate-500">
+            <div className="rounded-md border border-grid-surface bg-grid-surface px-4 py-8 text-center text-sm text-muted-foreground">
               {isLoading ? 'Loading contractor data...' : 'No contractor activity found for this range.'}
             </div>
           ) : (

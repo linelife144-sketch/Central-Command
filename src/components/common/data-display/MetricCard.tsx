@@ -18,10 +18,10 @@ interface MetricCardProps {
 
 const variantStyles: Record<NonNullable<MetricCardProps['variant']>, string> = {
   default: '',
-  accent: 'bg-grid-blue-soft border-grid-brand',
-  success: 'bg-grid-success-soft border-grid-success',
-  warning: 'bg-grid-warning-soft border-grid-warning',
-  danger: 'bg-grid-danger-soft border-grid-danger',
+  accent: 'cc-metric-accent',
+  success: 'cc-metric-success',
+  warning: 'cc-metric-warning',
+  danger: 'cc-metric-danger',
 };
 
 export function MetricCard({
@@ -42,19 +42,19 @@ export function MetricCard({
     : 'text-muted-foreground';
 
   return (
-    <Card variant="interactive" className={cn(variantStyles[variant], className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className={cn('cc-metric', variantStyles[variant], className)}>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-0">
+        <CardTitle className="font-sans text-xs font-semibold leading-relaxed text-muted-foreground">
           {title}
         </CardTitle>
         {icon && (
-          <div className="w-8 h-8 bg-surface-raised text-grid-brand-ink border border-border rounded-lg flex items-center justify-center shadow-elevation-xs">
+          <div className="cc-metric-icon">
             {icon}
           </div>
         )}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-foreground tabular-nums">
+        <div className={cn('cc-metric-value', String(value).length > 8 && 'cc-metric-long-value')}>
           {value}
         </div>
         {(description || trend) && (
