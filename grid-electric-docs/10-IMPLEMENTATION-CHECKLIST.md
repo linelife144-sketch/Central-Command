@@ -697,4 +697,5 @@ Visual QA images: `output/playwright/`.
 ### Same Wi-Fi preview — 2026-10-03 (Codex /root)
 
 - [x] Read the current Wi-Fi address (`192.168.4.32`), allow that exact development origin, and run Next.js on `0.0.0.0:3000` for the requested local multi-device preview. — Codex /root
+- [x] Verify HTTP 200 on the LAN and localhost sign-in URLs, plus a browser render of the LAN sign-in form. — Codex /root
 - [ ] Confirm connection from the second computer; the host-side URL is `http://192.168.4.32:3000`. The development server and host Mac must remain running.
