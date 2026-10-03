@@ -29,7 +29,8 @@ async function getCurrentProfileRole(): Promise<UserRole | null> {
 
 async function assertAllowed(action: ManagementAction): Promise<void> {
   const role = isSuperAdminTestingEnabled() ? SUPER_ADMIN_TEST_PROFILE.role : await getCurrentProfileRole();
-  if (!canPerformManagementAction(role, action)) {
+  const { data: permissions } = isSuperAdminTestingEnabled() ? { data: undefined } : await supabase.rpc('get_my_permissions' as never);
+  if (!canPerformManagementAction(role, action, permissions ?? {})) {
     throw new Error('You do not have permission to create tickets.');
   }
 }

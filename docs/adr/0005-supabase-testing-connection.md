@@ -27,6 +27,6 @@ The local runtime directory must remain available for these links. Reinstall wit
 
 ## Existing pending items
 
-Jeanie Campbell's CEO invitation remains pending; no account or privileges were fabricated. Supabase still reports an existing leaked-password protection warning. [Remediation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+On 2026-10-03, the user authorized Jeanie Campbell (`jcampbell@gridelectriccorp.com`) as the second Super Admin. Her Auth account and active SUPER_ADMIN profile now exist, with the role synchronized into trusted app metadata. A private activation link was generated without sending email; first sign-in and password setup remain pending. The database now permits at most two Super Admin profiles. The previously observed leaked-password protection advisory is tracked separately. [Remediation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 
 The master progress tracker referenced by AGENTS.md is missing, so this ADR records the authorized work and verification instead.

@@ -93,8 +93,8 @@ const UTILITY_CLIENT_OPTIONS = [
 
 export default function CreateStormEventPage() {
   const router = useRouter();
-  const { profile, isLoading } = useAuth();
-  const canCreateStormEvent = canPerformManagementAction(profile?.role, 'storm_event_write');
+  const { profile, isLoading, permissions } = useAuth();
+  const canCreateStormEvent = canPerformManagementAction(profile?.role, 'storm_event_write', permissions);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventCode, setEventCode] = useState('');
   const [name, setName] = useState('');

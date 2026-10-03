@@ -31,8 +31,8 @@ interface TicketNewClientPageProps {
 export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { profile } = useAuth();
-  const canCreate = canPerformManagementAction(profile?.role, 'ticket_entry_write');
+  const { profile, permissions } = useAuth();
+  const canCreate = canPerformManagementAction(profile?.role, 'ticket_entry_write', permissions);
 
   const [stormName, setStormName] = useState('');
   const [eventCode, setEventCode] = useState('');

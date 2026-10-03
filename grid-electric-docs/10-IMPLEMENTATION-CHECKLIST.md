@@ -696,6 +696,21 @@ Visual QA images: `output/playwright/`.
 
 ### Same Wi-Fi preview — 2026-10-03 (Codex /root)
 
+- [x] Correct the allowed development origin to the user-confirmed `192.168.1.72`; reproduce disabled login fields before the correction, then verify JavaScript asset HTTP 200, enabled email/password inputs, email typing, and password visibility on the actual LAN login page after reload. No credentials submitted. — Codex /root
+
 - [x] Read the current Wi-Fi address (`192.168.4.32`), allow that exact development origin, and run Next.js on `0.0.0.0:3000` for the requested local multi-device preview. — Codex /root
 - [x] Verify HTTP 200 on the LAN and localhost sign-in URLs, plus a browser render of the LAN sign-in form. — Codex /root
 - [ ] Confirm connection from the second computer; the host-side URL is `http://192.168.4.32:3000`. The development server and host Mac must remain running.
+
+### Second Super Admin — 2026-10-03 (Codex /root)
+
+- [x] Create the requested `jcampbell@gridelectriccorp.com` Auth account in Central Command, activate her SUPER_ADMIN profile, and synchronize trusted app metadata. Preserve David's existing account. — Codex /root
+- [x] Replace the one-Super-Admin index with a private, bounded two-Super-Admin trigger; verify that a third account is rejected and no test row is created. — Codex /root
+- [x] Generate a one-time invite activation link without sending email or placing tokens in project files. Require Jeanie to set her own password. — Codex /root
+- [ ] Verify Jeanie's first sign-in after she activates the account and sets her password on her own computer.
+
+### Password setup readability — 2026-10-03 (Codex /root)
+
+- [x] Remove the legacy dark-panel class from password setup; use the refreshed auth typography, navy headings/labels, dark instructions, readable error colors, and blue primary action. — Codex /root
+- [x] Add field descriptions, validation alert semantics, and new-password autocomplete; retain password requirements and submission behavior. — Codex /root
+- [x] Verify desktop and phone rendering in an isolated preview without changing account credentials; TypeScript, scoped ESLint, and 26 relevant tests pass. — Codex /root

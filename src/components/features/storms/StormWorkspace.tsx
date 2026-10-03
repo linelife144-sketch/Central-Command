@@ -16,14 +16,14 @@ import type { Ticket } from '@/types';
 import { toast } from 'sonner';
 
 export function StormWorkspace({ stormId }: { stormId: string }) {
-  const { profile } = useAuth();
+  const { profile, permissions } = useAuth();
   const [storm, setStorm] = useState<StormEventSummary | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [roster, setRoster] = useState<StormRosterMember[]>([]);
   const [options, setOptions] = useState<Array<{ id: string; displayName: string }>>([]);
   const [selected, setSelected] = useState(''); const [name, setName] = useState('');
   const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
-  const canManage = canPerformManagementAction(profile?.role, 'contractor_assignment_write');
+  const canManage = canPerformManagementAction(profile?.role, 'contractor_assignment_write', permissions);
   const reload = useCallback(async () => {
     setError('');
     try {

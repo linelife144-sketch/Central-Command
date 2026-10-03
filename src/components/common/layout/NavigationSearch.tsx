@@ -6,11 +6,14 @@ import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { adminNavItems, contractorNavItems } from './Sidebar';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { mayOpenPath } from '@/lib/auth/permissionCatalog';
 
 export function NavigationSearch({ portal }: { portal: 'admin' | 'contractor' }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const items = portal === 'admin' ? adminNavItems : contractorNavItems;
+  const { permissions } = useAuth();
+  const items = portal === 'admin' ? adminNavItems.filter(item => mayOpenPath(item.href, permissions)) : contractorNavItems;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

@@ -14,11 +14,11 @@ import { getErrorMessage, isAuthOrPermissionError } from '@/lib/utils/errorHandl
 import { toast } from 'sonner';
 
 export default function StormEventsPage() {
-  const { profile } = useAuth();
+  const { profile, permissions } = useAuth();
   const [stormEvents, setStormEvents] = useState<StormEventSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const canManageStormEvents = canPerformManagementAction(profile?.role, 'storm_event_write');
-  const canCreateTicketEntries = canPerformManagementAction(profile?.role, 'ticket_entry_write');
+  const canManageStormEvents = canPerformManagementAction(profile?.role, 'storm_event_write', permissions);
+  const canCreateTicketEntries = canPerformManagementAction(profile?.role, 'ticket_entry_write', permissions);
 
   useEffect(() => {
     let active = true;

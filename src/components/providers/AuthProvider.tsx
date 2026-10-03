@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { User as AppUser } from '@/types';
 import { isSuperAdminTestingEnabled, SUPER_ADMIN_TEST_PROFILE } from '@/lib/testing/superAdminTesting';
+import { resolvePermissions, type PermissionKey, type PermissionMap } from '@/lib/auth/permissionCatalog';
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +15,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  permissions: PermissionMap;
+  can: (key: PermissionKey) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(DEV_BYPASS_AUTH ? DEV_MOCK_USER : null);
   const [profile, setProfile] = useState<AppUser | null>(DEV_BYPASS_AUTH ? DEV_MOCK_PROFILE : null);
   const [isLoading, setIsLoading] = useState(!DEV_BYPASS_AUTH);
+  const [permissions, setPermissions] = useState<PermissionMap>(DEV_BYPASS_AUTH ? resolvePermissions(DEV_MOCK_PROFILE.role) : {});
 
   const currentUserId = useRef<string | null>(DEV_BYPASS_AUTH ? DEV_MOCK_USER.id : null);
 
@@ -78,6 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data) {
         setProfile(data.is_active ? data as AppUser : null);
+        if (data.role !== 'CONTRACTOR') {
+          const { data: map, error: permissionsError } = await supabase.rpc('get_my_permissions' as never);
+          if (currentUserId.current !== userId) return;
+          setPermissions(!permissionsError && data.is_active ? map as PermissionMap : {});
+        } else setPermissions({});
       }
     } catch (error) {
       console.error('Error in fetchProfile:', error);
@@ -104,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         currentUserId.current = null;
         setUser(null);
         setProfile(null);
+        setPermissions({});
         router.push('/login');
       } else {
         router.push('/admin/dashboard');
@@ -183,6 +193,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (DEV_BYPASS_AUTH || !user?.id) return;
+    const refresh = () => { if (document.visibilityState === 'visible') void refreshProfile(); };
+    window.addEventListener('focus', refresh);
+    const timer = setInterval(refresh, 30000);
+    return () => { window.removeEventListener('focus', refresh); clearInterval(timer); };
+    // Session identity is the lifetime of this refresh subscription.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   // Handle route protection
   useEffect(() => {
     if (DEV_BYPASS_AUTH) return;
@@ -200,6 +220,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: DEV_BYPASS_AUTH ? true : !!user,
     signOut,
     refreshProfile,
+    permissions,
+    can: (key: PermissionKey) => permissions[key] === true,
   };
 
   return (

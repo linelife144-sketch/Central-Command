@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isPasswordResetAllowedPath, shouldEnforcePasswordReset } from '@/lib/auth/passwordResetGate';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
+import { mayOpenPath, permissionLanding, type PermissionMap } from '@/lib/auth/permissionCatalog';
 
 const PUBLIC_ROUTE_PREFIXES = [
   '/login',
@@ -131,6 +132,12 @@ export async function updateSession(request: NextRequest) {
   const role = profile.role;
   const isAdminRole = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'CEO';
   const isContractorRole = role === 'CONTRACTOR';
+  let permissions: PermissionMap = {};
+  if (isAdminRole) {
+    const { data, error: permissionError } = await supabase.rpc('get_my_permissions' as never);
+    if (!permissionError && data) permissions = data as PermissionMap;
+  }
+  if (pathname === '/forbidden') return supabaseResponse;
 
   // If user must set/reset password, ensure they stay on or get directed to /set-password
   if (shouldEnforcePasswordReset(profile.must_reset_password, pathname)) {
@@ -148,7 +155,7 @@ export async function updateSession(request: NextRequest) {
   if (pathname === '/' || isPublicRoute(pathname)) {
     const targetUrl = request.nextUrl.clone();
     if (isAdminRole) {
-      targetUrl.pathname = '/admin/dashboard';
+      targetUrl.pathname = permissionLanding(permissions);
     } else if (isContractorRole) {
       targetUrl.pathname = '/contractor/time';
     } else {
@@ -169,6 +176,13 @@ export async function updateSession(request: NextRequest) {
   if (pathname.startsWith('/contractor/') && !isContractorRole) {
     const forbiddenUrl = request.nextUrl.clone();
     forbiddenUrl.pathname = '/forbidden';
+    return redirectWithSession(forbiddenUrl);
+  }
+
+  if (isAdminRole && !mayOpenPath(pathname, permissions)) {
+    const forbiddenUrl = request.nextUrl.clone();
+    forbiddenUrl.pathname = '/forbidden';
+    forbiddenUrl.search = '';
     return redirectWithSession(forbiddenUrl);
   }
 

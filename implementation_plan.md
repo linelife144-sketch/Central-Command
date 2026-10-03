@@ -17,32 +17,38 @@ Revamp the Central Command design system so the UI feels reactive and premium �
 No domain types change. New TypeScript surface is limited to variant unions and one new prop.
 
 **`src/components/ui/button.tsx`**
+
 ```ts
 variant: "default" | "storm" | "destructive" | "outline" |
          "secondary" | "ghost" | "link" | "elevated" | "accent" | "glass"
 ```
+
 - `elevated` — raised light surface, `--shadow-elevation-md`, lifts to `lg` on hover.
 - `accent` — navy→grid-blue brand gradient, `--shadow-brand`, lift + brighten on hover.
 - `glass` — translucent, `backdrop-blur`, hairline border; for use over `.storm-surface` / `.bg-grid-shell`.
 
 **`src/components/ui/card.tsx`**
+
 ```ts
 type CardVariant = "default" | "elevated" | "interactive" | "glass";
 interface CardProps extends React.ComponentProps<"div"> { variant?: CardVariant }
 ```
+
 `variant` is optional with `"default"`, so all existing `<Card className=…>` call sites keep working untouched. Rendered as `data-variant={variant}` on the existing `data-slot="card"` element (already targeted by `.storm-card [data-slot='card-title']` rules, so the attribute is safe to add).
 
 **`src/components/ui/badge.tsx`**
+
 ```ts
 variant: "default" | "secondary" | "destructive" | "outline" |
          "ghost" | "link" | "success" | "warning" | "danger" | "info" | "brand"
 ```
+
 New keys are additive; `data-variant` is already emitted and is used by the `.storm-card [data-slot='button'][data-variant='destructive']` selector pattern, so no selector breakage.
 
 **`src/app/globals.css` — `@theme` namespace additions** (these *are* the design-system types; Tailwind v4 generates utilities from them):
 
 | Token | Generates | Intent (brand colors unchanged) |
-|---|---|---|
+| --- | --- | --- |
 | `--shadow-elevation-xs` | `shadow-elevation-xs` | hairline lift |
 | `--shadow-elevation-sm` | `shadow-elevation-sm` | cards at rest |
 | `--shadow-elevation-md` | `shadow-elevation-md` | raised / hover state |
@@ -63,13 +69,12 @@ New `:root` / `.dark` semantic tokens (brand-preserving):
 
 **Brand palette promoted into the `--color-grid-*` namespace.** Previously the `--grid-*` hexes were plain CSS variables, so `bg-grid-storm-100` (used in 5 existing files) and `bg-grid-navy-dark/70` resolved to nothing. They are now real theme colors, which also enables opacity modifiers and gradient stops (`from-grid-storm-100`).
 
-
 ## Files
 
 ### New files
 
 | Path | Purpose |
-|---|---|
+| --- | --- |
 | `src/components/ui/theme.contract.test.ts` | Vitest contract test: asserts every new token exists in `globals.css`, brand hexes are unchanged, every new `cva` variant resolves, storm classes still exist, and reduced-motion support is intact. |
 | `implementation_plan.md` | This document. |
 
@@ -88,7 +93,7 @@ New `:root` / `.dark` semantic tokens (brand-preserving):
 ### Modified files (all in `src/components/ui/`)
 
 | File | Change |
-|---|---|
+| --- | --- |
 | `button.tsx` | New `elevated`, `accent`, `glass` variants; brand shadow + hover lift + press feedback on `default`; `storm` variant untouched. |
 | `card.tsx` | New `cardVariants` (default/elevated/interactive/glass) + optional `variant` prop + `data-variant`. |
 | `badge.tsx` | New `success`/`warning`/`danger`/`info`/`brand` soft variants with matching borders + ink text; press feedback. |
@@ -110,8 +115,6 @@ New `:root` / `.dark` semantic tokens (brand-preserving):
 ### Files explicitly NOT modified
 
 `src/app/layout.tsx`, `src/app/**/page.tsx`, `src/components/features/**`, `src/components/common/**`, `package.json`, `postcss.config.mjs`, `components.json`.
-
-
 
 ## Functions
 
@@ -191,6 +194,7 @@ next build             # "Compiled successfully" + "Finished TypeScript"
 # Phase 2 — Build Blockers + Admin Portal Restyle
 
 ## Overview
+
 Fix the two prerender failures and the watch-mode `test` script, then close the
 visual gap that made the admin portal look unchanged after Phase 1.
 
@@ -204,13 +208,14 @@ which was out of scope and hardcoded `slate`/`blue-600`/`bg-white`. Worse,
 `bg-card` via `twMerge`.
 
 ## Types
+
 No type changes. `StatusVariant` and `MetricCardProps['variant']` keep their
 exact unions — only the style maps behind them changed.
 
 ## Files
 
 | File | Change |
-|---|---|
+| --- | --- |
 | `scripts/clean-next-duplicates.ts` | **New.** Removes macOS-forked `* 2.ts` / `* 2.json` artifacts. Scoped to `.next/types` and `.next/dev/types` only — a broad recursive sweep of `.next` is unsafe because Turbopack emits chunk names that legitimately contain `" 2"`. |
 | `scripts/clean-next-duplicates.test.ts` | **New.** 6 tests: removal, false-positive protection, idempotency, missing-dir no-op, default-scope guard. |
 | `package.json` | `predev`/`prebuild` hooks; `test` → `vitest run` (`test:watch` keeps watching). |
@@ -228,22 +233,27 @@ exact unions — only the style maps behind them changed.
 | `src/components/common/legacy-color-guard.test.ts` | **New.** Fails if any default-Tailwind-palette class reappears in `src/components/common/**`. |
 
 ## Functions
+
 - **New:** `AuthConfirmInner()`, `ConfirmSkeleton()`; `AssessmentCreateInner()`, `AssessmentCreateSkeleton()`; `cleanNextDuplicates()`.
 - **Modified:** none. All existing component signatures and exports preserved.
 
 ## Classes
+
 No new custom CSS classes needed — Phase 2 only consumes Phase 1's token set.
 
 ## Dependencies
+
 **None.** Uses React's built-in `Suspense`.
 
 ## Testing
+
 **New:** `scripts/clean-next-duplicates.test.ts` (6 tests),
 `src/components/common/legacy-color-guard.test.ts` (17 tests).
 
 **Validation results:**
+
 | Check | Result |
-|---|---|
+| --- | --- |
 | `npm run typecheck` | clean |
 | `eslint` on `common`, `ui`, new scripts | 0 problems |
 | `npx vitest run` | **276/276 pass**, 57 files (was 249/55) |
@@ -252,6 +262,7 @@ No new custom CSS classes needed — Phase 2 only consumes Phase 1's token set.
 | Emission order | `.shadow-elevation-sm` @55,561 → `.storm-card` @149,741 — storm still wins |
 
 **Bugs found and fixed during Phase 2:**
+
 1. A JSDoc comment containing `**/*.ts` closed the block comment early
    (the `*/` inside it terminated the comment), breaking both
    `node --experimental-strip-types` and the vitest/oxc transform.
@@ -263,6 +274,7 @@ No new custom CSS classes needed — Phase 2 only consumes Phase 1's token set.
    that in with a regression test.
 
 ## Implementation Order
+
 1. `scripts/clean-next-duplicates.ts` + `predev`/`prebuild` — remove the
    stale-artifact landmine first.
 2. `/auth/confirm` Suspense, then `contractor/assessments/create` Suspense.
@@ -275,6 +287,7 @@ No new custom CSS classes needed — Phase 2 only consumes Phase 1's token set.
 8. Full validation + CSS compile + emission-order check.
 
 ## Remaining Work
+
 - `test:e2e`, `test:mobile`, `test:cross-browser` still fail: there is no
   `playwright.config.ts` and no `*.spec.ts` anywhere in the repo. Pre-existing.
 - ~45 files remain on the old `slate`/`blue` dialect (feature components, auth
@@ -282,5 +295,3 @@ No new custom CSS classes needed — Phase 2 only consumes Phase 1's token set.
 - `Sidebar.tsx` and `BottomNav.tsx` still maintain local nav arrays that
   duplicate `navigationConfig.ts`, so `navigationContracts.test.ts` does not
   actually cover the rendered nav. Flagged, not fixed.
-
-

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { canPerformManagementAction } from '@/lib/auth/authorization';
+import { resolvePermissions, type PermissionOverrides } from '@/lib/auth/permissionCatalog';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { validateTicketOcrIntakeFile } from '@/lib/tickets/ocr/fileIntake';
@@ -101,7 +101,11 @@ export async function POST(request: Request) {
   }
 
   const role = await resolveUserRole(user.id);
-  if (!canPerformManagementAction(role, 'ticket_entry_write')) {
+  const admin = createAdminClient();
+  const { data: overrides, error: permissionsError } = await admin.from('user_permissions' as never).select('permission_key,effect').eq('profile_id', user.id);
+  const map = Object.fromEntries((overrides ?? []).map((row: { permission_key: string; effect: string }) => [row.permission_key, row.effect])) as PermissionOverrides;
+  const { data: actorProfile } = await admin.from('profiles').select('is_active,must_reset_password').eq('id', user.id).single();
+  if (permissionsError || !actorProfile?.is_active || actorProfile.must_reset_password || !resolvePermissions(role, map)['admin.tickets.edit']) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

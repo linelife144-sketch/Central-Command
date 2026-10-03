@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { resolvePermissions, type PermissionOverrides } from '@/lib/auth/permissionCatalog';
 
 type ProfileRow = Record<string, unknown> & {
   id?: string;
@@ -68,9 +69,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
+    const { data: overrides, error: permissionError } = await admin.from('user_permissions' as never).select('permission_key,effect').eq('profile_id', user.id);
+    if (permissionError) return NextResponse.json({ error: 'Unable to resolve permissions.' }, { status: 503 });
+    const map = Object.fromEntries((overrides ?? []).map((row: { permission_key: string; effect: string }) => [row.permission_key, row.effect])) as PermissionOverrides;
     return NextResponse.json({
       profile: normalizeProfile(data as ProfileRow),
-    });
+      permissions: resolvePermissions(data.role, map, data.is_active),
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown profile fetch error.';
     return NextResponse.json({ error: message }, { status: 500 });

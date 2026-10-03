@@ -26,7 +26,7 @@ const columns: Column<ContractorListItem>[] = [
   { key: 'alerts', header: 'Alerts', cell: c => c.alerts.join('; ') || '—' },
 ];
 export default function ContractorsListPage() {
-  const { profile } = useAuth();
+  const { profile, can } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const query = useQuery({ queryKey: ['contractors', profile?.id], queryFn: () => contractorService.listContractors(), enabled: Boolean(profile), refetchInterval: 15000, refetchOnWindowFocus: true });
@@ -39,7 +39,7 @@ export default function ContractorsListPage() {
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'contractors.csv'; anchor.click(); URL.revokeObjectURL(url);
   }
   return <div className="space-y-6">
-    <PageHeader title="Contractors" description="Live workforce and assigned ticket counts"><Button asChild><Link href="/admin/contractors/invite">Invite Contractor</Link></Button></PageHeader>
+    <PageHeader title="Contractors" description="Live workforce and assigned ticket counts">{can('admin.users.edit') && <Button asChild><Link href="/admin/contractors/invite">Invite Contractor</Link></Button>}</PageHeader>
     {query.error && <div role="alert">Unable to load contractors. {query.error instanceof Error ? query.error.message : ''} <Button variant="outline" onClick={() => query.refetch()}>Retry</Button></div>}
     <div className="stagger-children grid grid-cols-2 xl:grid-cols-4 gap-4">
       <MetricCard title="Total" value={query.isPending ? '—' : contractors.length} />

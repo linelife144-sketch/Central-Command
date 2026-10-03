@@ -101,6 +101,7 @@ function toStatusVariant(status: ExpenseStatus): 'pending' | 'approved' | 'rejec
 
 interface ExpenseReviewListProps {
   reviewerId?: string;
+  canEdit?: boolean;
 }
 
 export const EXPENSE_REVIEW_FILTER_CONTROL_CLASS =
@@ -110,7 +111,7 @@ export function getExpenseReviewLayoutMode() {
   return 'ledger';
 }
 
-export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
+export function ExpenseReviewList({ reviewerId, canEdit = true }: ExpenseReviewListProps) {
   const [expenses, setExpenses] = useState<ExpenseListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -343,7 +344,7 @@ export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
           REVIEWABLE_STATUSES.has(expense.report_status) ? (
             <Checkbox
               checked={selectedExpenseIds.includes(expense.id)}
-              disabled={isSubmitting}
+              disabled={!canEdit || isSubmitting}
               onCheckedChange={(checked) => updateSelected(expense.id, checked === true)}
             />
           ) : null,
@@ -414,7 +415,7 @@ export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
               <Button
                 size="sm"
                 variant="storm"
-                disabled={isSubmitting}
+                disabled={!canEdit || isSubmitting}
                 onClick={() => {
                   void handleSingleDecision(expense, 'APPROVED');
                 }}
@@ -425,7 +426,7 @@ export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
               <Button
                 size="sm"
                 variant="destructive"
-                disabled={isSubmitting}
+                disabled={!canEdit || isSubmitting}
                 onClick={() => {
                   void handleSingleDecision(expense, 'REJECTED');
                 }}
@@ -533,7 +534,7 @@ export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
               <Button
                 variant="storm"
                 className="w-full justify-start"
-                disabled={isSubmitting || reviewableSelectedExpenses.length === 0}
+                disabled={!canEdit || isSubmitting || reviewableSelectedExpenses.length === 0}
                 onClick={() => {
                   void handleBatchDecision('APPROVED');
                 }}
@@ -544,7 +545,7 @@ export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
               <Button
                 variant="destructive"
                 className="w-full justify-start"
-                disabled={isSubmitting || reviewableSelectedExpenses.length === 0}
+                disabled={!canEdit || isSubmitting || reviewableSelectedExpenses.length === 0}
                 onClick={() => {
                   void handleBatchDecision('REJECTED');
                 }}
@@ -658,7 +659,7 @@ export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
                       <Button
                         size="sm"
                         variant="storm"
-                        disabled={isSubmitting}
+                        disabled={!canEdit || isSubmitting}
                         onClick={() => {
                           void handleSingleDecision(expense, 'APPROVED');
                         }}
@@ -668,7 +669,7 @@ export function ExpenseReviewList({ reviewerId }: ExpenseReviewListProps) {
                       <Button
                         size="sm"
                         variant="destructive"
-                        disabled={isSubmitting}
+                        disabled={!canEdit || isSubmitting}
                         onClick={() => {
                           void handleSingleDecision(expense, 'REJECTED');
                         }}

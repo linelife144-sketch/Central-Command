@@ -5,7 +5,7 @@ import { TimeEntryList } from '@/components/features/time-tracking';
 import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function AdminTimeReviewPage() {
-  const { profile } = useAuth();
+  const { profile, can } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -17,7 +17,7 @@ export default function AdminTimeReviewPage() {
       <section className="min-w-0">
         <TimeEntryList
           mode="admin"
-          reviewerId={profile?.id}
+          reviewerId={profile?.id} canEdit={can('admin.time.edit')}
         />
       </section>
     </div>

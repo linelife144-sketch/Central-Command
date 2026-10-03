@@ -5,7 +5,7 @@ import { AssessmentReviewList } from '@/components/features/assessments';
 import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function AdminAssessmentReviewPage() {
-  const { profile } = useAuth();
+  const { profile, can } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -15,7 +15,7 @@ export default function AdminAssessmentReviewPage() {
       />
 
       <section className="min-w-0">
-        <AssessmentReviewList reviewerId={profile?.id} />
+        <AssessmentReviewList reviewerId={profile?.id} canEdit={can('admin.assessments.edit')} />
       </section>
     </div>
   );

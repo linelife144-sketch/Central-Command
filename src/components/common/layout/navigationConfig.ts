@@ -10,6 +10,7 @@ export interface NavLinkItem {
 }
 
 export const ADMIN_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
+  { href: '/admin/users', label: 'People & access' },
   {
     href: '/admin/dashboard',
     label: 'Dashboard',

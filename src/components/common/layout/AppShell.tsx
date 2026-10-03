@@ -6,6 +6,8 @@ import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
+import { usePathname } from 'next/navigation';
+import { mayOpenPath } from '@/lib/auth/permissionCatalog';
 
 interface AppShellProps {
   children: ReactNode;
@@ -14,7 +16,9 @@ interface AppShellProps {
 
 export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, permissions, isLoading } = useAuth();
+  const pathname = usePathname();
+  const allowed = userRole === 'contractor' || mayOpenPath(pathname, permissions);
 
   return (
     <div className="cc-shell min-h-screen bg-grid-shell">
@@ -34,6 +38,7 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           userRole={userRole}
+          permissions={permissions}
         />
 
         {/* Main Content */}
@@ -44,13 +49,13 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
                 <strong>Super Admin test session.</strong> Tickets and storm events save in this browser.
               </div>
             )}
-            {children}
+            {isLoading ? <p role="status" className="p-6 text-grid-body">Loading your workspace…</p> : allowed ? children : <div role="alert" className="cc-work-panel p-6 text-grid-navy">You do not have access to this module. Choose an available page from navigation.</div>}
           </div>
         </main>
       </div>
 
       {/* Bottom Navigation - Mobile */}
-      <BottomNav userRole={userRole} onMenuClick={() => setSidebarOpen(true)} />
+      <BottomNav userRole={userRole} permissions={permissions} onMenuClick={() => setSidebarOpen(true)} />
     </div>
   );
 }

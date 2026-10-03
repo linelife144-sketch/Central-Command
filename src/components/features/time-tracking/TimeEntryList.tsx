@@ -47,6 +47,7 @@ export function getTimeReviewLayoutMode() {
 
 export interface TimeEntryListProps {
   mode: 'contractor' | 'admin';
+  canEdit?: boolean;
   contractorId?: string;
   reviewerId?: string;
 }
@@ -93,7 +94,7 @@ function toWorkTypeLabel(workType: string): string {
     .join(' ');
 }
 
-export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListProps) {
+export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true }: TimeEntryListProps) {
   const [entries, setEntries] = useState<TimeEntryListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -373,7 +374,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
               <Button
                 size="sm"
                 variant="destructive"
-                disabled={isSubmitting}
+                disabled={!canEdit || isSubmitting}
                 onClick={() => {
                   void handleSingleDecision(entry, 'REJECTED');
                 }}
@@ -383,7 +384,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
               <Button
                 size="sm"
                 variant="default"
-                disabled={isSubmitting}
+                disabled={!canEdit || isSubmitting}
                 onClick={() => {
                   void handleSingleDecision(entry, 'APPROVED');
                 }}
@@ -397,7 +398,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
     }
 
     return baseColumns;
-  }, [handleSingleDecision, isSubmitting, mode, selectedEntryIds, updateSelected]);
+  }, [handleSingleDecision, isSubmitting, canEdit, mode, selectedEntryIds, updateSelected]);
 
   return (
     <div className="space-y-4 time-review-workbench">
@@ -422,8 +423,8 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
             <div className="flex flex-wrap items-end gap-2 sm:col-span-2 xl:col-span-2">
               <Button variant="outline" size="sm" disabled={isLoading} onClick={() => { void loadEntries(); }}>{isLoading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}Refresh</Button>
               {mode === 'admin' ? <>
-                <Button variant="outline" size="sm" disabled={isSubmitting || filteredEntries.every((entry) => entry.status !== 'PENDING')} onClick={() => setSelectedEntryIds(filteredEntries.filter((entry) => entry.status === 'PENDING').map((entry) => entry.id))}><CheckCheck className="size-4" />Select pending</Button>
-                <Button variant="ghost" size="sm" disabled={isSubmitting || selectedEntryIds.length === 0} onClick={() => setSelectedEntryIds([])}>Clear selection</Button>
+                <Button variant="outline" size="sm" disabled={!canEdit || isSubmitting || filteredEntries.every((entry) => entry.status !== 'PENDING')} onClick={() => setSelectedEntryIds(filteredEntries.filter((entry) => entry.status === 'PENDING').map((entry) => entry.id))}><CheckCheck className="size-4" />Select pending</Button>
+                <Button variant="ghost" size="sm" disabled={!canEdit || isSubmitting || selectedEntryIds.length === 0} onClick={() => setSelectedEntryIds([])}>Clear selection</Button>
               </> : null}
             </div>
           </div>
@@ -465,7 +466,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
             <div className="flex flex-wrap gap-2 border-t pt-3">
               <Button
                 variant="default"
-                disabled={isSubmitting || selectedPendingEntries.length === 0}
+                disabled={!canEdit || isSubmitting || selectedPendingEntries.length === 0}
                 onClick={() => {
                   void handleBatchDecision('APPROVED');
                 }}
@@ -475,7 +476,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
               </Button>
               <Button
                 variant="destructive"
-                disabled={isSubmitting || selectedPendingEntries.length === 0}
+                disabled={!canEdit || isSubmitting || selectedPendingEntries.length === 0}
                 onClick={() => {
                   void handleBatchDecision('REJECTED');
                 }}
@@ -520,7 +521,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId }: TimeEntryListP
               entry={entry}
               selected={selectedEntryIds.includes(entry.id)}
               showSelection={mode === 'admin'}
-              showReviewActions={mode === 'admin'}
+              showReviewActions={mode === 'admin' && canEdit}
               reviewBusy={isSubmitting}
               onSelectChange={(selected) => updateSelected(entry.id, selected)}
               onApprove={(selectedEntry) => {

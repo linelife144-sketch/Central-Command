@@ -1,5 +1,6 @@
 import type { UserRole } from '../../types';
 import { isSuperAdminClassRole } from './roleGuards';
+import type { PermissionMap } from './permissionCatalog';
 
 export type ManagementAction =
   | 'storm_event_write'
@@ -35,8 +36,13 @@ export function getManagementActionForPath(pathname: string): ManagementAction |
 
 export function canPerformManagementAction(
   role: UserRole | string | null | undefined,
-  action: ManagementAction
+  action: ManagementAction,
+  permissions?: PermissionMap
 ): boolean {
+  if (permissions) {
+    const key = action === 'storm_event_write' ? 'admin.storms.edit' : action === 'ticket_entry_write' ? 'admin.tickets.edit' : 'admin.assignments.edit';
+    return permissions[key] === true;
+  }
   if (action === 'storm_event_write') {
     return isSuperAdminClassRole(role);
   }

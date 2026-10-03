@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div className="relative z-10"><BrandMark tone="light" portalLabel="Secure Access" /></div>
       <div className="cc-auth-copy relative z-10">
         <div className="cc-eyebrow"><span aria-hidden="true" />Powering the response</div>
-        <h1>When the storm hits,<br />you&apos;re <em>ready.</em></h1>
+        <h1>When the storm hits,<br />{' '}you&apos;re <em>ready.</em></h1>
         <p>Your crews. Your fieldwork. One connected workspace to move from first dispatch to final assessment.</p>
         <div className="cc-auth-stages">
           {['Coordinate', 'Dispatch', 'Assess'].map((stage, index) => <div key={stage}><span>0{index + 1}</span><strong>{stage}</strong><ArrowUpRight className="size-4" /></div>)}

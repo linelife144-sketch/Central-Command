@@ -210,7 +210,7 @@ export function SetPasswordForm() {
 
   if (isBootstrapping) {
     return (
-      <div className="flex items-center justify-center py-8 text-slate-500">
+      <div className="flex items-center justify-center py-8 text-muted-foreground" role="status">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         Preparing account setup...
       </div>
@@ -218,7 +218,7 @@ export function SetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -226,38 +226,45 @@ export function SetPasswordForm() {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="password">New Password</Label>
+        <Label htmlFor="password" className="font-semibold text-grid-navy">New password</Label>
         <Input
           id="password"
           type="password"
+          autoComplete="new-password"
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'password-requirements password-error' : 'password-requirements'}
           placeholder="Enter your new password"
           {...register('password')}
           disabled={isLoading}
         />
         {errors.password && (
-          <p className="text-sm text-red-600">{errors.password.message}</p>
+          <p id="password-error" role="alert" className="text-sm text-grid-danger-ink">{errors.password.message}</p>
         )}
-        <p className="text-xs text-slate-500">
+        <p id="password-requirements" className="text-sm leading-relaxed text-grid-body">
           Must be at least 12 characters with uppercase, lowercase, number, and special character.
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <Label htmlFor="confirmPassword" className="font-semibold text-grid-navy">Confirm password</Label>
         <Input
           id="confirmPassword"
           type="password"
+          autoComplete="new-password"
+          aria-invalid={Boolean(errors.confirmPassword)}
+          aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
           placeholder="Confirm your new password"
           {...register('confirmPassword')}
           disabled={isLoading}
         />
         {errors.confirmPassword && (
-          <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+          <p id="confirm-password-error" role="alert" className="text-sm text-grid-danger-ink">{errors.confirmPassword.message}</p>
         )}
       </div>
 
       <Button
         type="submit"
+        variant="default"
         className="w-full"
         disabled={isLoading || !userId}
       >

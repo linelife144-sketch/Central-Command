@@ -11,13 +11,13 @@ export const metadata: Metadata = {
 
 export default function SetPasswordPage() {
   return (
-    <Card className="storm-surface w-full shadow-card">
-      <CardHeader className="space-y-1 text-center">
-        <div className="flex justify-center mb-4">
-          <BrandMark portalLabel="Secure Access" variant="full" />
+    <Card className="w-full text-grid-navy">
+      <CardHeader className="space-y-2">
+        <div className="mb-5 lg:hidden">
+          <BrandMark portalLabel="Secure Access" variant="full" tone="dark" />
         </div>
-        <CardTitle className="text-2xl font-bold text-grid-navy">Set your password</CardTitle>
-        <CardDescription>
+        <CardTitle role="heading" aria-level={2} className="cc-auth-title text-grid-navy">Set your password</CardTitle>
+        <CardDescription className="text-sm leading-relaxed text-grid-body">
           You need to set a permanent password before accessing the app.
         </CardDescription>
       </CardHeader>

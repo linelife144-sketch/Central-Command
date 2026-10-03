@@ -8,11 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { BrandMark } from '@/components/common/brand/BrandMark';
 import { cn } from '@/lib/utils';
+import { mayOpenPath, permissionLanding, type PermissionMap } from '@/lib/auth/permissionCatalog';
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   userRole: 'admin' | 'contractor';
+  permissions?: PermissionMap;
 }
 
 export const adminNavItems = [
@@ -26,6 +28,7 @@ export const adminNavItems = [
   { href: '/admin/assessment-review', label: 'Assessments', icon: FileText, group: 'Review & reporting' },
   { href: '/admin/reports', label: 'Reports', icon: ChartNoAxesCombined, group: 'Review & reporting' },
   { href: '/admin/account', label: 'Account', icon: Settings, group: 'Workspace' },
+  { href: '/admin/users', label: 'People & access', icon: Users, group: 'Workspace' },
 ];
 
 export const contractorNavItems = [
@@ -37,11 +40,11 @@ export const contractorNavItems = [
   { href: '/contractor/account', label: 'Account', icon: Settings, group: 'Workspace' },
 ];
 
-export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, userRole, permissions = {} }: SidebarProps) {
   const pathname = usePathname();
-  const navItems = userRole === 'admin' ? adminNavItems : contractorNavItems;
+  const navItems = userRole === 'admin' ? adminNavItems.filter(item => mayOpenPath(item.href, permissions)) : contractorNavItems;
   const groups = [...new Set(navItems.map(item => item.group))];
-  const home = userRole === 'admin' ? '/admin/dashboard' : '/tickets';
+  const home = userRole === 'admin' ? permissionLanding(permissions) : '/tickets';
 
   const content = () => (
     <div className="cc-sidebar flex h-full flex-col">
@@ -73,11 +76,11 @@ export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
         </nav>
       </ScrollArea>
       <div className="cc-sidebar-footer">
-        <Link href={userRole === 'admin' ? '/admin/storms' : '/tickets'} onClick={onClose} className="cc-sidebar-callout">
+        {(userRole === 'contractor' || permissions['admin.storms.view']) && <Link href={userRole === 'admin' ? '/admin/storms' : '/tickets'} onClick={onClose} className="cc-sidebar-callout">
           <CloudLightning className="size-5 text-grid-lightning" />
           <span><strong>{userRole === 'admin' ? 'Storm operations' : 'Ready for the field'}</strong><small>{userRole === 'admin' ? 'View your response workspaces' : 'Your next assignment starts here'}</small></span>
           <ArrowUpRight className="size-4 shrink-0" />
-        </Link>
+        </Link>}
         <p>GRID ELECTRIC <span>COMMAND / 01</span></p>
       </div>
     </div>

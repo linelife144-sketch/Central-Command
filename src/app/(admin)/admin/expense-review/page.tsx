@@ -5,7 +5,7 @@ import { ExpenseReviewList } from '@/components/features/expenses';
 import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function AdminExpenseReviewPage() {
-  const { profile } = useAuth();
+  const { profile, can } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -15,7 +15,7 @@ export default function AdminExpenseReviewPage() {
       />
 
       <div className="cc-work-panel p-4 sm:p-5">
-        <ExpenseReviewList reviewerId={profile?.id} />
+        <ExpenseReviewList reviewerId={profile?.id} canEdit={can('admin.expenses.edit')} />
       </div>
     </div>
   );

@@ -130,9 +130,10 @@ function toSafetyFlagLabel(flag: string): string {
 
 interface AssessmentReviewListProps {
   reviewerId?: string;
+  canEdit?: boolean;
 }
 
-export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) {
+export function AssessmentReviewList({ reviewerId, canEdit = true }: AssessmentReviewListProps) {
   const [assessments, setAssessments] = useState<AssessmentReviewListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -450,7 +451,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
               <Button
                 className="col-span-2 w-full text-xs lg:col-span-1"
                 variant="default"
-                disabled={isSubmitting || selectedPendingAssessments.length === 0}
+                disabled={!canEdit || isSubmitting || selectedPendingAssessments.length === 0}
                 onClick={() => {
                   openDecisionSheet(selectedPendingAssessments, 'APPROVED', 'batch');
                 }}
@@ -461,7 +462,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
               <Button
                 className="col-span-2 w-full text-xs lg:col-span-1"
                 variant="destructive"
-                disabled={isSubmitting || selectedPendingAssessments.length === 0}
+                disabled={!canEdit || isSubmitting || selectedPendingAssessments.length === 0}
                 onClick={() => {
                   openDecisionSheet(selectedPendingAssessments, 'NEEDS_REWORK', 'batch');
                 }}
@@ -507,7 +508,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                             <Checkbox
                               aria-label={`Select ${assessment.ticket_number ?? assessment.ticket_id}`}
                               checked={selectedAssessmentIds.includes(assessment.id)}
-                              disabled={isSubmitting}
+                              disabled={!canEdit || isSubmitting}
                               onCheckedChange={(checked) => updateSelected(assessment.id, checked === true)}
                             />
                           ) : (
@@ -552,7 +553,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                         <Button
                           size="sm"
                           variant="default"
-                          disabled={isSubmitting || assessment.review_state !== 'PENDING'}
+                          disabled={!canEdit || isSubmitting || assessment.review_state !== 'PENDING'}
                           onClick={() => openDecisionSheet([assessment], 'APPROVED', 'single')}
                         >
                           <Check className="h-3.5 w-3.5" />
@@ -561,7 +562,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                         <Button
                           size="sm"
                           variant="destructive"
-                          disabled={isSubmitting || assessment.review_state !== 'PENDING'}
+                          disabled={!canEdit || isSubmitting || assessment.review_state !== 'PENDING'}
                           onClick={() => openDecisionSheet([assessment], 'NEEDS_REWORK', 'single')}
                         >
                           <Wrench className="h-3.5 w-3.5" />
@@ -619,7 +620,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                       <Button
                         variant="default"
                         className="w-full justify-start"
-                        disabled={isSubmitting}
+                        disabled={!canEdit || isSubmitting}
                         onClick={() => openDecisionSheet([focusedAssessment], 'APPROVED', 'single')}
                       >
                         <Check className="h-4 w-4" />
@@ -628,7 +629,7 @@ export function AssessmentReviewList({ reviewerId }: AssessmentReviewListProps) 
                       <Button
                         variant="destructive"
                         className="w-full justify-start"
-                        disabled={isSubmitting}
+                        disabled={!canEdit || isSubmitting}
                         onClick={() => openDecisionSheet([focusedAssessment], 'NEEDS_REWORK', 'single')}
                       >
                         <Wrench className="h-4 w-4" />

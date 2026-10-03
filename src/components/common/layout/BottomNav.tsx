@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Clock, LayoutDashboard, Map, Menu, Ticket, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { mayOpenPath, type PermissionMap } from '@/lib/auth/permissionCatalog';
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Home', icon: LayoutDashboard },
@@ -17,9 +18,9 @@ const contractorNavItems = [
   { href: '/contractor/time', label: 'Time', icon: Clock },
 ];
 
-export function BottomNav({ userRole, onMenuClick }: { userRole: 'admin' | 'contractor'; onMenuClick: () => void }) {
+export function BottomNav({ userRole, onMenuClick, permissions = {} }: { userRole: 'admin' | 'contractor'; onMenuClick: () => void; permissions?: PermissionMap }) {
   const pathname = usePathname();
-  const items = userRole === 'admin' ? adminNavItems : contractorNavItems;
+  const items = userRole === 'admin' ? adminNavItems.filter(item => mayOpenPath(item.href, permissions)) : contractorNavItems;
   return <nav aria-label="Mobile navigation" className="cc-bottom-nav lg:hidden">
     <div className="flex h-16 items-center">
       {items.map(item => {
