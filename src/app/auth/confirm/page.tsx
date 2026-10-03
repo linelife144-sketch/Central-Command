@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { getLandingPathForRole } from '@/lib/auth/roleLanding';
+import { recordLastLogin } from '@/lib/auth/recordLogin';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -67,12 +69,11 @@ function AuthConfirmInner() {
         .single();
 
       setStatus('success');
+      void recordLastLogin(data.session.access_token);
 
-      const role = (profile as any)?.role;
-      const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'CEO';
-
+      const landingPath = getLandingPathForRole((profile as any)?.role ?? null);
       setTimeout(() => {
-        router.replace(isAdmin ? '/admin/dashboard' : '/contractor/time');
+        router.replace(landingPath);
       }, 800);
     };
 

@@ -6,6 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { getLandingPathForRole } from '@/lib/auth/roleLanding';
+import { recordLastLogin } from '@/lib/auth/recordLogin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -93,9 +95,8 @@ export function MagicLinkForm() {
         .eq('id', verifyData.session.user.id)
         .single();
 
-      const role = (profile as any)?.role;
-      const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'CEO';
-      router.replace(isAdmin ? '/admin/dashboard' : '/contractor/time');
+      void recordLastLogin(verifyData.session.access_token);
+      router.replace(getLandingPathForRole((profile as any)?.role ?? null));
     } catch (err: any) {
       setError(err.message || 'Invalid code. Please check your email and try again.');
     } finally {

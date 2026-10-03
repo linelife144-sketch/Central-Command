@@ -6,6 +6,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/lib/supabase/client';
+import { getLandingPathForRole } from '@/lib/auth/roleLanding';
+import { recordLastLogin } from '@/lib/auth/recordLogin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,9 +52,10 @@ export function LoginForm() {
 
       // Fetch user profile to determine correct role-specific portal redirect
       const { data: sessionData } = await supabase.auth.getSession();
-      const user = sessionData.session?.user;
+      const session = sessionData.session;
+      const user = session?.user;
 
-      let redirectPath = '/contractor/time';
+      let redirectPath = '/login';
       if (user) {
         const { data: profile } = (await supabase
           .from('profiles')
@@ -60,12 +63,8 @@ export function LoginForm() {
           .eq('id', user.id)
           .single()) as any;
 
-        if (profile) {
-          const role = profile.role;
-          if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'CEO') {
-            redirectPath = '/admin/dashboard';
-          }
-        }
+        redirectPath = getLandingPathForRole(profile?.role ?? null);
+        void recordLastLogin(session?.access_token);
       }
 
       // Capture optional query parameter redirect

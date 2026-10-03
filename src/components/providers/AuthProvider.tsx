@@ -26,6 +26,7 @@ const PUBLIC_ROUTES = [
   '/set-password',
   '/magic-link',
   '/forbidden',
+  '/logout',
 ];
 
 const DEV_BYPASS_AUTH = isSuperAdminTestingEnabled();

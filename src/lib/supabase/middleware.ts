@@ -11,6 +11,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   '/magic-link',
   '/auth/confirm',  // PKCE magic-link callback — must be public
   '/forbidden',
+  '/logout',
 ];
 
 function isPublicRoute(pathname: string): boolean {
