@@ -3,7 +3,7 @@ import { isPermissionKey, type PermissionOverrides } from './permissionCatalog';
 
 export const permissionUpdateSchema = z.object({
   overrides: z.record(z.string(), z.enum(['allow', 'deny'])).refine(value => Object.keys(value).every(isPermissionKey), 'Unknown permission key.'),
-  version: z.string().nullable(),
+  version: z.string().uuid().nullable(),
 }).strict();
 
 export function validatePermissionOverrides(overrides: PermissionOverrides): string | null {

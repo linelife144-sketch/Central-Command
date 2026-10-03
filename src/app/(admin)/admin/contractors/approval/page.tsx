@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@/components/providers/AuthProvider';
 import { useState } from 'react';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
@@ -59,6 +60,8 @@ const mockPending: PendingContractor[] = [
 ];
 
 export default function ContractorApprovalPage() {
+  const { can } = useAuth();
+
   const [selectedSub, setSelectedSub] = useState<PendingContractor | null>(mockPending[0]);
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -148,14 +151,14 @@ export default function ContractorApprovalPage() {
                     <Button
                       variant="outline"
                       onClick={handleReject}
-                      disabled={isRejecting}
+                      disabled={isRejecting || !can('admin.contractors.edit')}
                     >
                       <XCircle className="w-4 h-4 mr-2" />
                       Reject
                     </Button>
                     <Button
                       onClick={handleApprove}
-                      disabled={isApproving}
+                      disabled={isApproving || !can('admin.contractors.edit')}
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Approve

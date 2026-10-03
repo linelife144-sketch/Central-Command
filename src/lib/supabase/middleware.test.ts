@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(), getUser: vi.fn(), signOut: vi.fn(), single: vi.fn(),
-  select: vi.fn(), eq: vi.fn(), from: vi.fn(),
+  select: vi.fn(), eq: vi.fn(), from: vi.fn(), rpc: vi.fn(),
 }));
 vi.mock('@supabase/ssr', () => ({ createServerClient: mocks.create }));
 vi.mock('@/lib/testing/superAdminTesting', () => ({ isSuperAdminTestingEnabled: () => false }));
@@ -19,10 +19,11 @@ describe('real Supabase session routing', () => {
     mocks.eq.mockReturnValue({ single: mocks.single });
     mocks.from.mockReturnValue({ select: mocks.select });
     mocks.create.mockReturnValue({
-      auth: { getUser: mocks.getUser, signOut: mocks.signOut }, from: mocks.from,
+      auth: { getUser: mocks.getUser, signOut: mocks.signOut }, from: mocks.from, rpc: mocks.rpc,
     });
     mocks.getUser.mockResolvedValue({ data: { user: { id: 'real-user' } } });
     mocks.single.mockResolvedValue({ data: { role: 'SUPER_ADMIN', is_active: true, must_reset_password: false }, error: null });
+    mocks.rpc.mockResolvedValue({ data: { 'admin.dashboard.view': true, 'admin.tickets.view': true }, error: null });
   });
 
   it('uses the publishable key and preserves every refreshed cookie on login redirect', async () => {
@@ -49,6 +50,22 @@ describe('real Supabase session routing', () => {
     const response = await updateSession(new NextRequest('http://localhost:3000/admin/dashboard'));
     expect(response.headers.get('location')).toBe('http://localhost:3000/login?redirect=%2Fadmin%2Fdashboard');
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('denies a pasted hidden module URL and does not loop on forbidden', async () => {
+    mocks.rpc.mockResolvedValue({data:{'admin.time.view':false},error:null});
+    expect((await updateSession(new NextRequest('http://localhost:3000/admin/time-review'))).headers.get('location')).toBe('http://localhost:3000/forbidden');
+    expect((await updateSession(new NextRequest('http://localhost:3000/forbidden'))).headers.get('location')).toBeNull();
+  });
+  it('uses the first permitted module when the dashboard is hidden', async () => {
+    mocks.rpc.mockResolvedValue({data:{'admin.dashboard.view':false,'admin.time.view':true},error:null});
+    expect((await updateSession(new NextRequest('http://localhost:3000/login'))).headers.get('location')).toBe('http://localhost:3000/admin/time-review');
+  });
+  it('fails closed on permission errors and retains defaults only before the migration exists', async () => {
+    mocks.rpc.mockResolvedValue({data:null,error:{code:'42501',message:'denied'}});
+    expect((await updateSession(new NextRequest('http://localhost:3000/admin/dashboard'))).headers.get('location')).toBe('http://localhost:3000/forbidden');
+    mocks.rpc.mockResolvedValue({data:null,error:{code:'PGRST202',message:'get_my_permissions is missing'}});
+    expect((await updateSession(new NextRequest('http://localhost:3000/admin/dashboard'))).headers.get('location')).toBeNull();
   });
 
   it('reads the reset requirement and keeps account setup accessible', async () => {

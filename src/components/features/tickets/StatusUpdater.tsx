@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { TicketAssign } from './TicketAssign';
 import { isAdminClassRole } from '@/lib/auth/roleGuards';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 interface StatusUpdaterProps {
   ticket: Ticket;
@@ -44,6 +45,8 @@ const statusButtonConfig: Record<TicketStatus, { label: string; variant: 'defaul
 };
 
 export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: StatusUpdaterProps) {
+  const { can } = useAuth();
+  const canEdit = !isAdminClassRole(userRole) || can('admin.tickets.edit');
   const [isUpdating, setIsUpdating] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<TicketStatus | null>(null);
   const [reason, setReason] = useState('');
@@ -102,7 +105,7 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
             key={status}
             variant={config.variant}
             onClick={() => handleStatusClick(status)}
-            disabled={isUpdating}
+            disabled={!canEdit || isUpdating}
             className="font-semibold"
           >
             {isUpdating && pendingStatus === status && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -111,7 +114,7 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
         );
       })}
 
-      {canReassign && <Button onClick={() => setIsAssignOpen(true)} disabled={isUpdating}>Reassign</Button>}
+      {canReassign && <Button onClick={() => setIsAssignOpen(true)} disabled={!canEdit || isUpdating}>Reassign</Button>}
 
       <TicketAssign isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)}
         stormEventId={ticket.storm_event_id ?? undefined} currentAssigneeId={ticket.assigned_to} ticketNumber={ticket.ticket_number}
@@ -145,7 +148,7 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={isUpdating}>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={!canEdit || isUpdating}>
               Cancel
             </Button>
             <Button 

@@ -30,17 +30,17 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
       const event = await stormEventService.getStormEventById(stormId);
       if (!event) throw new Error('Storm event not found.');
       setStorm(event);
-      const [allTickets, members, available] = await Promise.all([ticketService.getTickets(), stormRosterService.list(stormId), stormRosterService.listOptions()]);
+      const [allTickets, members, available] = await Promise.all([permissions['admin.tickets.view'] ? ticketService.getTickets() : Promise.resolve([]), permissions['admin.assignments.view'] ? stormRosterService.list(stormId) : Promise.resolve([]), canManage ? stormRosterService.listOptions() : Promise.resolve([])]);
       setTickets(allTickets.filter(ticket => ticket.storm_event_id === stormId)); setRoster(members); setOptions(available);
     } catch (error) { setError(error instanceof Error ? error.message : 'Unable to load storm.'); }
     finally { setLoading(false); }
-  }, [stormId]);
+  }, [stormId, permissions, canManage]);
   useEffect(() => { void reload(); }, [reload]);
   if (loading) return <p>Loading storm workspace...</p>;
   if (!storm) return <div role="alert">{error || 'Storm not found.'} <Link href="/admin/storms">Back to storm events</Link></div>;
   return <div className="space-y-8">
     <PageHeader title={storm.name} description={`${storm.utilityClient} · ${storm.status}`} backHref="/admin/storms">
-      <Button asChild variant="storm"><Link href={`/storms/${stormId}/tickets/new`}>Create Ticket</Link></Button>
+      {permissions['admin.tickets.edit'] && <Button asChild variant="storm"><Link href={`/storms/${stormId}/tickets/new`}>Create Ticket</Link></Button>}
     </PageHeader>
     <div className="storm-surface border-l-4 border-l-grid-blue rounded-xl p-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-grid-muted">Storm event code</p>
@@ -48,7 +48,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
       <p className="mt-3 text-sm text-grid-muted">Contractors, tickets, time, and expenses belong to this event. Ticket forms use {storm.utilityClient} rules.</p>
     </div>
     {error && <p role="alert" className="text-destructive">{error}</p>}
-    <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-contractors">
+    {permissions['admin.assignments.view'] && <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-contractors">
       <h2 id="storm-contractors" className="text-xl font-semibold text-white">Contractors</h2>
       {roster.length ? <ul className="divide-y">{roster.map(member => <li key={member.contractorId} className="py-3">{member.displayName}</li>)}</ul> : <p className="text-sm text-grid-muted">No contractors assigned to this storm yet.</p>}
       {canManage && <form className="flex flex-wrap items-end gap-3" onSubmit={async event => {
@@ -64,7 +64,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
         try { const contractor = localTestStore.createContractor(name); await stormRosterService.assign(stormId, contractor.id); setName(''); await reload(); }
         catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to create test contractor.'); } finally { setSaving(false); }
       }}><div className="flex-1 space-y-2"><Label htmlFor="test-contractor-name">Test contractor name</Label><Input id="test-contractor-name" required value={name} onChange={event => setName(event.target.value)} /></div><Button disabled={saving} type="submit" variant="storm">Create Test Contractor</Button></form> : canManage ? <p className="text-sm"><Link className="text-grid-blue underline" href="/admin/contractors/invite">Onboard a new contractor</Link> before assigning them to this storm.</p> : null}
-    </section>
+    </section>}
     <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-tickets"><h2 id="storm-tickets" className="text-xl font-semibold text-white">Tickets · {tickets.length}</h2>
       {tickets.length ? <ul className="divide-y">{tickets.map(ticket => <li key={ticket.id} className="flex justify-between gap-3 py-3"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticket_number}</Link><span>{ticket.status}</span></li>)}</ul> : <p className="text-sm text-grid-muted">Create the first {storm.utilityClient} ticket for this event.</p>}
     </section>

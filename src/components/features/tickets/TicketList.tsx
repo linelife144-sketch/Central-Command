@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { TicketFilters, TicketFiltersState } from './TicketFilters';
 import { TicketCard } from './TicketCard';
 import { TicketAssign } from './TicketAssign';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
 import { contractorService } from '@/lib/services/contractorService';
 
@@ -25,6 +26,8 @@ interface TicketListProps {
 }
 
 export function TicketList({ userRole, userId }: TicketListProps) {
+    const { can } = useAuth();
+    const canEdit = userRole === 'admin' && can('admin.tickets.edit');
     const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -150,7 +153,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                             View
                         </Link>
                     </Button>
-                    {userRole === 'admin' && (
+                    {canEdit && (
                         <Button
                             variant="ghost"
                             size="icon"
@@ -181,7 +184,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div><h2 className="cc-section-heading">Ticket queue</h2><p className="mt-1 text-xs text-muted-foreground">{isLoading ? 'Loading your workload…' : `${filteredTickets.length} ${filteredTickets.length === 1 ? 'ticket' : 'tickets'} in this view`}</p></div>
-                {userRole === 'admin' && (
+                {canEdit && (
                     <Button asChild>
                         <Link href="/tickets/create">
                             <Plus className="mr-2 h-4 w-4" /> Create Ticket

@@ -1,4 +1,4 @@
--- Draft: generate the migration with the Supabase CLI before applying.
+-- Per-user staff module access and one-person contractor invitations.
 -- Existing contractor policies and role boundaries are preserved.
 BEGIN;
 CREATE TABLE private.permission_catalog (
@@ -265,6 +265,19 @@ BEGIN
  END IF;
  RETURN NEW;
 END $$;
+
+CREATE FUNCTION private.guard_profile_deletion() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
+BEGIN
+ IF current_user='authenticated' THEN
+  IF OLD.id=auth.uid() OR OLD.role::text='CEO' OR NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'Protected account cannot be deleted'; END IF;
+  PERFORM pg_advisory_xact_lock(734918206);
+  IF OLD.role::text='SUPER_ADMIN' AND NOT EXISTS(SELECT 1 FROM public.profiles p WHERE p.id<>OLD.id AND p.role::text='SUPER_ADMIN' AND p.is_active AND private.has_permission(p.id,'admin.users.edit')) THEN RAISE EXCEPTION 'Keep one active Super Admin'; END IF;
+ END IF;
+ RETURN OLD;
+END $$;
+REVOKE ALL ON FUNCTION private.guard_profile_deletion() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER protect_profile_deletion BEFORE DELETE ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.guard_profile_deletion();
+
 -- Patch invoker RPC role gates without changing their transactional business logic.
 DO $$ DECLARE item record; definition text; key text; BEGIN
  FOR item IN SELECT p.oid,p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('create_storm_ticket','assign_contractor_to_storm') LOOP

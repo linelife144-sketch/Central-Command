@@ -85,7 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.role !== 'CONTRACTOR') {
           const { data: map, error: permissionsError } = await supabase.rpc('get_my_permissions' as never);
           if (currentUserId.current !== userId) return;
-          setPermissions(!permissionsError && data.is_active ? map as PermissionMap : {});
+          const pendingMigration = permissionsError?.code === 'PGRST202' && permissionsError.message.includes('get_my_permissions');
+          setPermissions(data.is_active ? pendingMigration ? resolvePermissions(data.role) : !permissionsError ? map as PermissionMap : {} : {});
         } else setPermissions({});
       }
     } catch (error) {

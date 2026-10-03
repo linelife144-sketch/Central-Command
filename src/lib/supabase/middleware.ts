@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isPasswordResetAllowedPath, shouldEnforcePasswordReset } from '@/lib/auth/passwordResetGate';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
-import { mayOpenPath, permissionLanding, type PermissionMap } from '@/lib/auth/permissionCatalog';
+import { mayOpenPath, permissionLanding, resolvePermissions, type PermissionMap } from '@/lib/auth/permissionCatalog';
 
 const PUBLIC_ROUTE_PREFIXES = [
   '/login',
@@ -119,7 +119,7 @@ export async function updateSession(request: NextRequest) {
     .from('profiles')
     .select('role, is_active, must_reset_password')
     .eq('id', user.id)
-    .single()) as any;
+    .single()) as { data: { role: string; is_active: boolean; must_reset_password: boolean } | null; error: unknown };
 
   if (error || !profile || !profile.is_active) {
     // If profile fetching fails, sign them out and redirect to login
@@ -136,6 +136,7 @@ export async function updateSession(request: NextRequest) {
   if (isAdminRole) {
     const { data, error: permissionError } = await supabase.rpc('get_my_permissions' as never);
     if (!permissionError && data) permissions = data as PermissionMap;
+    else if (permissionError?.code === 'PGRST202' && permissionError.message.includes('get_my_permissions')) permissions = resolvePermissions(role);
   }
   if (pathname === '/forbidden') return supabaseResponse;
 

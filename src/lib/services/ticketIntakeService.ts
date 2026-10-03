@@ -5,6 +5,7 @@ import { commonTicketCreateSchema, getTicketTemplateByUtilityClient, getTicketTe
 import { supabase } from '@/lib/supabase/client';
 import { canPerformManagementAction, type ManagementAction } from '@/lib/auth/authorization';
 import type { UserRole } from '@/types';
+import { resolvePermissions } from '@/lib/auth/permissionCatalog';
 import type { UtilityClient, TicketTemplateDefinition } from '@/lib/tickets/templates';
 import type { CommonTicketCreateInput } from '@/lib/tickets/templates';
 import { normalizeUtilityClient } from '@/lib/tickets/templates';
@@ -29,8 +30,9 @@ async function getCurrentProfileRole(): Promise<UserRole | null> {
 
 async function assertAllowed(action: ManagementAction): Promise<void> {
   const role = isSuperAdminTestingEnabled() ? SUPER_ADMIN_TEST_PROFILE.role : await getCurrentProfileRole();
-  const { data: permissions } = isSuperAdminTestingEnabled() ? { data: undefined } : await supabase.rpc('get_my_permissions' as never);
-  if (!canPerformManagementAction(role, action, permissions ?? {})) {
+  const { data: permissions, error } = isSuperAdminTestingEnabled() ? { data: resolvePermissions(role), error: null } : await supabase.rpc('get_my_permissions' as never);
+  const pendingMigration = error?.code === 'PGRST202' && error.message.includes('get_my_permissions');
+  if (!canPerformManagementAction(role, action, pendingMigration ? resolvePermissions(role) : permissions ?? {})) {
     throw new Error('You do not have permission to create tickets.');
   }
 }

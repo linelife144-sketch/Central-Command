@@ -440,7 +440,7 @@ export function ExpenseReviewList({ reviewerId, canEdit = true }: ExpenseReviewL
           ),
       },
     ],
-    [handleSingleDecision, isSubmitting, selectedExpenseIds, updateSelected],
+    [handleSingleDecision, isSubmitting, canEdit, selectedExpenseIds, updateSelected],
   );
 
   return (

@@ -70,7 +70,8 @@ export async function GET(request: Request) {
     }
 
     const { data: overrides, error: permissionError } = await admin.from('user_permissions' as never).select('permission_key,effect').eq('profile_id', user.id);
-    if (permissionError) return NextResponse.json({ error: 'Unable to resolve permissions.' }, { status: 503 });
+    const pendingMigration = permissionError?.code === 'PGRST205' && permissionError.message.includes('user_permissions');
+    if (permissionError && !pendingMigration) return NextResponse.json({ error: 'Unable to resolve permissions.' }, { status: 503 });
     const map = Object.fromEntries((overrides ?? []).map((row: { permission_key: string; effect: string }) => [row.permission_key, row.effect])) as PermissionOverrides;
     return NextResponse.json({
       profile: normalizeProfile(data as ProfileRow),

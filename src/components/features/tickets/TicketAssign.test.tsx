@@ -2,6 +2,7 @@ import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 const mocks = vi.hoisted(() => ({ roster: vi.fn(), assign: vi.fn(), updateStatus: vi.fn() }));
+vi.mock('@/components/providers/AuthProvider',()=>({useAuth:()=>({can:()=>true})}));
 vi.mock('@/lib/services/stormRosterService', () => ({ stormRosterService: { listAssignable: mocks.roster } }));
 vi.mock('@/lib/services/ticketService', () => ({ ticketService: { assignTicket: mocks.assign, updateTicketStatus: mocks.updateStatus } }));
 vi.mock('@/components/ui/select', () => ({

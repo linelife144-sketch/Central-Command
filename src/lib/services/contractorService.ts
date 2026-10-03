@@ -24,6 +24,7 @@ interface RemoteProfileRow {
   email: string;
   phone: string | null;
   is_active: boolean;
+  is_email_verified?: boolean;
 }
 
 interface RemoteTicketRow {
@@ -52,6 +53,7 @@ export interface ContractorListItem {
   phone: string | null;
   activeTicketCount: number;
   alerts: string[];
+  emailVerified?: boolean;
 }
 
 export interface ContractorListFilters {
@@ -66,6 +68,7 @@ export interface AssignableContractor {
 }
 
 export interface ContractorDetail {
+  emailVerified?: boolean;
   id: string;
   profileId: string;
   fullName: string;
@@ -139,7 +142,7 @@ async function fetchProfilesByIds(profileIds: string[]): Promise<Map<string, Rem
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from('profiles') as any)
-    .select('id, first_name, last_name, email, phone, is_active')
+    .select('id, first_name, last_name, email, phone, is_active, is_email_verified')
     .in('id', profileIds);
 
   if (error) {
@@ -301,7 +304,8 @@ export const contractorService = {
         businessType: row.business_type,
         city: row.city,
         state: row.state,
-        isActive: profile?.is_active ?? false,
+        emailVerified: profile?.is_email_verified,
+      isActive: profile?.is_active ?? false,
       onboardingStatus: row.onboarding_status,
         eligibleForAssignment: row.is_eligible_for_assignment,
         eligibilityReason: row.eligibility_reason,
@@ -415,6 +419,7 @@ export const contractorService = {
       businessPhone: row.business_phone,
       city: row.city,
       state: row.state,
+      emailVerified: profile?.is_email_verified,
       isActive: profile?.is_active ?? false,
       onboardingStatus: row.onboarding_status,
       eligibleForAssignment: row.is_eligible_for_assignment,

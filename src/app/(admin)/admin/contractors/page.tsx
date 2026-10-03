@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/layout/PageHeader';
@@ -28,6 +28,18 @@ const columns: Column<ContractorListItem>[] = [
 export default function ContractorsListPage() {
   const { profile, can } = useAuth();
   const [search, setSearch] = useState('');
+  const [invitations, setInvitations] = useState<Array<{profile_id:string;email:string;sent_at:string;last_result:string;send_count:number}>>([]);
+  const [inviteError, setInviteError] = useState('');
+  const loadInvitations = async () => {
+    try { const response = await fetch('/api/admin/contractors/invite',{cache:'no-store'}); const data = await response.json(); if (!response.ok) throw new Error(data.error); setInvitations(data.invitations); } catch(error) {setInviteError(error instanceof Error ? error.message : 'Unable to load invitations.');}
+  };
+  useEffect(() => { void loadInvitations(); }, []);
+  const resend = async (email:string) => {
+    const person = contractors.find(person=>person.email.toLowerCase()===email.toLowerCase());
+    if (!person) return;
+    const [first_name,...last] = person.fullName.split(' ');
+    try { const response=await fetch('/api/admin/contractors/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,first_name,last_name:last.join(' '),resend:true})});const result=await response.json();if(!response.ok)throw new Error(result.error);await loadInvitations(); }catch(error){setInviteError(error instanceof Error ? error.message : 'Unable to resend.');}
+  };
   const [status, setStatus] = useState('all');
   const query = useQuery({ queryKey: ['contractors', profile?.id], queryFn: () => contractorService.listContractors(), enabled: Boolean(profile), refetchInterval: 15000, refetchOnWindowFocus: true });
   const contractors = query.data ?? [];
@@ -40,6 +52,8 @@ export default function ContractorsListPage() {
   }
   return <div className="space-y-6">
     <PageHeader title="Contractors" description="Live workforce and assigned ticket counts">{can('admin.users.edit') && <Button asChild><Link href="/admin/contractors/invite">Invite Contractor</Link></Button>}</PageHeader>
+    {invitations.length > 0 && <section className="cc-work-panel p-5"><h2 className="mb-4 font-semibold text-grid-navy">Invitations</h2><div className="divide-y">{invitations.map(invite => {const accepted=contractors.find(person=>person.profileId===invite.profile_id)?.emailVerified;return <div key={invite.profile_id} className="flex flex-wrap items-center gap-3 py-3 text-sm"><div className="min-w-0 flex-1"><p className="break-all font-medium text-grid-navy">{invite.email}</p><p className="text-xs text-grid-body">Last sent {new Date(invite.sent_at).toLocaleString()}</p></div><span className="text-grid-body">{accepted ? 'Accepted' : invite.last_result === 'failed' ? 'Failed' : 'Invited'}</span>{can('admin.users.edit') && !accepted && <Button size="sm" variant="outline" onClick={()=>resend(invite.email)}>Resend invite</Button>}</div>;})}</div></section>}
+    {inviteError && <p role="alert" className="text-sm text-grid-danger-ink">{inviteError}</p>}
     {query.error && <div role="alert">Unable to load contractors. {query.error instanceof Error ? query.error.message : ''} <Button variant="outline" onClick={() => query.refetch()}>Retry</Button></div>}
     <div className="stagger-children grid grid-cols-2 xl:grid-cols-4 gap-4">
       <MetricCard title="Total" value={query.isPending ? '—' : contractors.length} />

@@ -52,8 +52,8 @@ export function permissionForPath(pathname: string): PermissionKey | null {
   if (pathname === '/tickets' || pathname.startsWith('/tickets/')) return 'admin.tickets.view';
   if (pathname === '/admin/storms/create' || /\/storms\/.*\/edit$/.test(pathname)) return 'admin.storms.edit';
   if (pathname.startsWith('/storms/')) return 'admin.storms.view';
-  const module = PERMISSION_MODULES.find(module => module.id !== 'assignments' && (pathname === module.path || pathname.startsWith(`${module.path}/`)));
-  return module ? `admin.${module.id}.view` : null;
+  const area = PERMISSION_MODULES.find(module => module.id !== 'assignments' && (pathname === module.path || pathname.startsWith(`${module.path}/`)));
+  return area ? `admin.${area.id}.view` : null;
 }
 export function mayOpenPath(path: string, permissions: PermissionMap): boolean {
   const key = permissionForPath(path);

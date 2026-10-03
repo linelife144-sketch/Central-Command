@@ -14,6 +14,7 @@ import {
 import { GRID_TICKETS_CHANGED_EVENT, GRID_TICKETS_VERSION_KEY } from '@/lib/tickets/events';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { cn } from '@/lib/utils';
 
 interface DashboardMetricsProps {
@@ -29,6 +30,7 @@ function toErrorMessage(error: unknown): string {
 }
 
 export function DashboardMetrics({ className }: DashboardMetricsProps) {
+  const { can } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetricsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -130,20 +132,20 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
 
       {metrics?.unavailable_metrics?.length ? <Alert><AlertDescription>Some metrics could not be loaded: {metrics.unavailable_metrics.join(', ')}. Ticket and crew counts are current.</AlertDescription></Alert> : null}
       <div className="stagger-children grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <MetricCard
+        {can('admin.tickets.view') && <MetricCard
           title="Active Tickets"
           value={activeTicketsValue}
           icon={<Ticket className="h-4 w-4 text-grid-lightning" />}
           description="Open lifecycle workload"
-        />
+        />}
 
-        <MetricCard
+        {can('admin.contractors.view') && <MetricCard
           title="Active Contractor Crews"
           value={fieldCrewsValue}
           icon={<Users className="h-4 w-4 text-grid-lightning" />}
           description={metrics ? `${metrics.on_site_crews} on site · assigned to active tickets` : 'Active assignments'}
           variant="accent"
-        />
+        />}
 
         <MetricCard
           title="Pending Reviews"
@@ -163,7 +165,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
 
       </div>
 
-      <Card className="cc-status-strip gap-0 py-0">
+      {can('admin.tickets.view') && <Card className="cc-status-strip gap-0 py-0">
         <CardContent className="grid grid-cols-2 gap-0 px-0 text-sm md:grid-cols-4">
           <div className="cc-status-stat">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">In Route</p>
@@ -184,7 +186,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
             <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.unassigned ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   );
 }

@@ -12,6 +12,7 @@ export async function requirePermission(key: PermissionKey) {
   const { data: profile } = await client.from('profiles').select('id,role,is_active,must_reset_password').eq('id', user.id).single();
   if (!profile?.is_active || profile.must_reset_password) throw new AccessError('Finish account setup before continuing.', 403);
   const { data, error: permissionError } = await client.rpc('get_my_permissions' as never);
+  if (permissionError?.code === 'PGRST202' && permissionError.message.includes('get_my_permissions')) throw new AccessError('The permissions database update is awaiting approval. Changes and invitations are not enabled yet.', 503);
   if (permissionError || !(data as PermissionMap | null)?.[key]) throw new AccessError('You do not have permission for this action.', 403);
   return { client, user, profile, permissions: data as PermissionMap };
 }

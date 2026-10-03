@@ -39,6 +39,11 @@ export async function inviteContractor(actorId: string, input: unknown) {
     await audit('INVITE_FAILED', 'Unexpected existing Auth role', data.user.id);
     throw new AccessError('The existing account has a protected role.', 409);
   }
+  const { error: metadataError } = await admin.auth.admin.updateUserById(data.user.id, { app_metadata: { ...data.user.app_metadata, role: 'CONTRACTOR' } });
+  if (metadataError) {
+    await audit('INVITE_FAILED', 'Email sent; trusted role metadata could not be saved', data.user.id);
+    throw new AccessError('The email was sent, but account setup needs repair. Use Resend invite to retry.', 500);
+  }
   // This transaction creates/repairs the business row, password gate, invite status and audit together.
   const { data: result, error: finalizeError } = await admin.rpc('finalize_contractor_invite' as never, {
     p_actor_id: actorId, p_profile_id: data.user.id, p_first_name: payload.first_name, p_last_name: payload.last_name, p_email: payload.email, p_phone: payload.phone || null, p_resend: payload.resend,
