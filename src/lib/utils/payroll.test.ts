@@ -77,7 +77,7 @@ describe('resolveContractorHourlyRate', () => {
       roleDefaults: [],
       contractorRates: [],
       role: 'DRIVER',
-      workType: 'ADMIN',
+      workType: 'STANDBY',
       asOf: '2026-06-01',
     });
 
@@ -113,7 +113,7 @@ describe('resolveUtilityBillRate', () => {
     const rate = resolveUtilityBillRate({
       rates: [{ stormEventId: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 }],
       stormEventId: null,
-      workType: 'TRAINING',
+      workType: 'TRAVEL',
     });
 
     expect(rate).toBeNull();

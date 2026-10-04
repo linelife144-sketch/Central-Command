@@ -810,3 +810,16 @@ This tracker records the user's authorized Phase 4 feature work. Implementation 
 - [x] Switched the **Created** column from `formatDate` to `formatDateTime` so the ticket creation time is visible, not just the date. — Cline
 - [x] Removed the global Online/Offline connection pill (`cc-connection`) from `TopBar.tsx` app-wide (admin + contractor shells), including the now-unused `online` state/effect, `Wifi`/`WifiOff` imports, and the dead `.cc-connection` CSS rules in `globals.css`. The existing offline-queue `OfflineBanner` is unaffected. — Cline
 - [x] Verified with `tsc --noEmit` (clean), scoped `eslint` (clean), and the full `vitest` suite (458/458 tests, 87 files). Confirmed via a local dev server that `/tickets` and `/login` compile and render without error. — Cline
+
+
+### Contractor onboarding: add records instead of invitations — 2026-10-04 (Codex /root)
+
+- [x] Replace the invitation page with `/admin/contractors/add`, redirect the old URL, remove invitation/resend controls, and disable the legacy send service and API. — Codex /root
+- [x] Add contractor contact details, pending onboarding status and a linked pay agreement atomically with an audit entry, without creating an Auth account or sending email. Display unlinked records by contact name and keep them out of dispatch until approved with active access. — Codex /root
+- [x] Format phone numbers as `(318) 555-0123`; display currency with a dollar sign, grouping and two decimals; remove custom multiplier entry and timezone selection, retaining the configured timezone. — Codex /root
+- [x] Apply live migration `20261004202255_add_contractor_records_and_remove_unused_work_types` to Central Command: remove Admin/Training from the enum and rate tables; archive removed rate configuration in the audit trail. Preserve all ten shifts and six immutable pay agreements. — Codex /root
+- [x] Regenerate live database types; pass 462 tests in 92 files, TypeScript, scoped ESLint, isolated webpack production build and eight isolated PGlite suites. Pass live rollback checks for linked save, duplicate/type rejection, staff reads and worker isolation; retain zero fixtures. — Codex /root
+- [x] Verify the real signed-in browser add form, phone/currency displays, four work types, retired-route redirect, duplicate rejection and desktop/phone containment. No successful create was retained from browser testing. — Codex /root
+- [x] Preserve concurrent contractor-list realtime/Assigned Tickets changes and unrelated TopBar changes; refresh the AST-only source graph with generated Next.js caches excluded. — Codex /root
+
+Evidence: `docs/testing/contractor-add-verification.json`, `docs/testing/contractor-add-local.json`, and `scripts/verification/contractor-add-live-rollback.sql`. Remaining onboarding steps and account activation are follow-up work; adding a record does not grant portal access.

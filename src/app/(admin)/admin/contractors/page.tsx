@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
@@ -12,8 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { contractorService, type ContractorListItem } from '@/lib/services/contractorService';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { supabase } from '@/lib/supabase/client';
 
 function statusOf(contractor: ContractorListItem) {
+  if (!contractor.profileId && contractor.onboardingStatus !== 'APPROVED') return 'Pending';
   if (!contractor.isActive) return 'Inactive';
   return contractor.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending';
 }
@@ -21,49 +23,42 @@ const columns: Column<ContractorListItem>[] = [
   { key: 'fullName', header: 'Name', cell: c => <Link className="font-semibold text-grid-navy underline-offset-4 hover:underline" href={`/admin/contractors/${c.id}`}>{c.fullName}</Link> },
   { key: 'businessName', header: 'Business', cell: c => c.businessName },
   { key: 'onboardingStatus', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
-  { key: 'eligibleForAssignment', header: 'Eligible', cell: c => c.isActive && c.eligibleForAssignment ? 'Yes' : 'No' },
-  { key: 'activeTicketCount', header: 'Active Tickets', cell: c => c.activeTicketCount },
+  { key: 'assignedTicketCount', header: 'Assigned Tickets', cell: c => c.assignedTicketCount },
   { key: 'alerts', header: 'Alerts', cell: c => c.alerts.join('; ') || '—' },
 ];
 export default function ContractorsListPage() {
   const { profile, can } = useAuth();
   const [search, setSearch] = useState('');
-  const [invitations, setInvitations] = useState<Array<{profile_id:string;email:string;first_name:string;last_name:string;sent_at:string;last_result:string;send_count:number}>>([]);
-  const [inviteError, setInviteError] = useState('');
-  const loadInvitations = async () => {
-    try { const response = await fetch('/api/admin/contractors/invite',{cache:'no-store'}); const data = await response.json(); if (!response.ok) throw new Error(data.error); setInvitations(data.invitations); } catch(error) {setInviteError(error instanceof Error ? error.message : 'Unable to load invitations.');}
-  };
-  useEffect(() => { void loadInvitations(); }, []);
-  const resend = async (email:string) => {
-    const person = contractors.find(person=>person.email.toLowerCase()===email.toLowerCase());
-    const invitation = invitations.find(invite=>invite.email.toLowerCase()===email.toLowerCase());
-    const [fallbackFirst,...last] = (person?.fullName ?? '').split(' ');
-    const first_name = invitation?.first_name || fallbackFirst;
-    const last_name = invitation?.last_name || last.join(' ');
-    if (!first_name || !last_name) {setInviteError('Open Invite Contractor and re-enter the name to repair this account.');return;}
-    try { const response=await fetch('/api/admin/contractors/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,first_name,last_name,resend:true})});const result=await response.json();if(!response.ok)throw new Error(result.error);await loadInvitations(); }catch(error){setInviteError(error instanceof Error ? error.message : 'Unable to resend.');}
-  };
   const [status, setStatus] = useState('all');
+  const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ['contractors', profile?.id], queryFn: () => contractorService.listContractors(), enabled: Boolean(profile), refetchInterval: 15000, refetchOnWindowFocus: true });
+  useEffect(() => {
+    if (!profile) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => { if (timer) clearTimeout(timer); timer = setTimeout(() => { void queryClient.invalidateQueries({ queryKey: ['contractors'] }); }, 200); };
+    const channel = supabase.channel('admin-contractors-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contractors' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refresh)
+      .subscribe();
+    return () => { if (timer) clearTimeout(timer); void supabase.removeChannel(channel); };
+  }, [profile, queryClient]);
   const contractors = query.data ?? [];
   const filtered = contractors.filter(c => [c.fullName, c.businessName, c.email].join(' ').toLowerCase().includes(search.toLowerCase()) && (status === 'all' || statusOf(c).toLowerCase() === status))
     .sort((a, b) => Number(!a.isActive) - Number(!b.isActive) || a.fullName.localeCompare(b.fullName));
   function exportCsv() {
-    const rows = [['Name','Business','Email','Status','Eligible','Active Tickets'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.isActive && c.eligibleForAssignment),String(c.activeTicketCount)])];
+    const rows = [['Name','Business','Email','Status','Assigned Tickets'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.assignedTicketCount)])];
     const content = rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""').replace(/^[=+@-]/,"'") + '"').join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'contractors.csv'; anchor.click(); URL.revokeObjectURL(url);
   }
   return <div className="space-y-6">
-    <PageHeader title="Contractors" description="Live workforce and assigned ticket counts">{can('admin.users.edit') && <Button asChild><Link href="/admin/contractors/invite">Invite Contractor</Link></Button>}</PageHeader>
-    {invitations.length > 0 && <section className="cc-work-panel p-5"><h2 className="mb-4 font-semibold text-grid-navy">Invitations</h2><div className="divide-y">{invitations.map(invite => {const accepted=contractors.find(person=>person.profileId===invite.profile_id)?.emailVerified;return <div key={invite.profile_id} className="flex flex-wrap items-center gap-3 py-3 text-sm"><div className="min-w-0 flex-1"><p className="break-all font-medium text-grid-navy">{invite.email}</p><p className="text-xs text-grid-body">Last sent {new Date(invite.sent_at).toLocaleString()}</p></div><span className="text-grid-body">{accepted ? 'Accepted' : invite.last_result === 'failed' ? 'Failed' : 'Invited'}</span>{can('admin.users.edit') && !accepted && <Button size="sm" variant="outline" onClick={()=>resend(invite.email)}>Resend invite</Button>}</div>;})}</div></section>}
-    {inviteError && <p role="alert" className="text-sm text-grid-danger-ink">{inviteError}</p>}
+    <PageHeader title="Contractors" description="Live workforce and assigned ticket counts">{can('admin.contractors.edit') && can('admin.payroll.edit') && <Button asChild><Link href="/admin/contractors/add">Add Contractor</Link></Button>}</PageHeader>
     {query.error && <div role="alert">Unable to load contractors. {query.error instanceof Error ? query.error.message : ''} <Button variant="outline" onClick={() => query.refetch()}>Retry</Button></div>}
     <div className="stagger-children grid grid-cols-2 xl:grid-cols-4 gap-4">
       <MetricCard title="Total" value={query.isPending ? '—' : contractors.length} />
       <MetricCard title="Active" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Active').length} />
       <MetricCard title="Pending" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Pending').length} />
-      <MetricCard title="Eligible" value={query.isPending ? '—' : contractors.filter(c => c.isActive && c.eligibleForAssignment).length} />
     </div>
     <div className="cc-filter-bar flex flex-col sm:flex-row flex-wrap gap-3">
       <Input aria-label="Search contractors" placeholder="Search by name, business, or email..." value={search} onChange={e => setSearch(e.target.value)} className="sm:max-w-xs" />

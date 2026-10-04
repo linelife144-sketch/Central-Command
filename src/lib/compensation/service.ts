@@ -20,7 +20,7 @@ export async function getPayAgreements(contractorId: string): Promise<PayAgreeme
   }
   const { data, error } = await supabase.from('contractor_pay_agreements').select('id,contractor_id,effective_from,terms,created_at,created_by').eq('contractor_id', contractorId).order('effective_from', { ascending: false });
   if (error) throw error;
-  const agreements = (data ?? []).map(row => ({ ...row, terms: compensationTermsSchema.parse(row.terms) }));
+  const agreements = (data ?? []).map(row => ({ ...row, terms: compensationTermsSchema.parse({ ...row.terms as object, work_type_rates: Object.fromEntries(Object.entries((row.terms as unknown as { work_type_rates: Record<string, number> }).work_type_rates).filter(([key]) => !['ADMIN', 'TRAINING'].includes(key))) }) }));
   if (viewerId) {
     const { data: owner } = await supabase.from('contractors').select('profile_id').eq('id', contractorId).single();
     if (owner?.profile_id === viewerId) await db.payAgreements.bulkPut(agreements.map(row => ({ ...row, viewer_profile_id: viewerId })));

@@ -25,6 +25,10 @@ export default function LoginPage() {
       </CardHeader>
       <CardContent className="space-y-4">
         <LoginForm />
+        <div className="rounded-2xl border border-grid-blue/20 bg-grid-blue/5 p-4 text-sm">
+          <p className="mb-1 text-grid-body">New contractor?</p>
+          <Link href="/setup-account" className="font-bold text-grid-blue underline-offset-4 hover:underline">Set up account →</Link>
+        </div>
         
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs">
           <Link 

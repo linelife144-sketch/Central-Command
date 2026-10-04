@@ -28,7 +28,7 @@ const PUBLIC_ROUTES = [
   '/forgot-password',
   '/reset-password',
   '/set-password',
-  '/magic-link',
+  '/magic-link', '/setup-account',
   '/auth/confirm',
   '/forbidden',
   '/logout',

@@ -4,7 +4,9 @@ import type { ContractorRole } from '@/types';
 
 interface RemoteContractorRow {
   id: string;
-  profile_id: string;
+  profile_id: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   business_name: string;
   business_type: string | null;
   city: string | null;
@@ -41,7 +43,7 @@ interface RemoteTicketRow {
 
 export interface ContractorListItem {
   id: string;
-  profileId: string;
+  profileId: string | null;
   fullName: string;
   businessName: string;
   businessType: string | null;
@@ -53,7 +55,7 @@ export interface ContractorListItem {
   eligibilityReason: string | null;
   email: string;
   phone: string | null;
-  activeTicketCount: number;
+  assignedTicketCount: number;
   alerts: string[];
   emailVerified?: boolean;
   role: ContractorRole;
@@ -73,7 +75,7 @@ export interface AssignableContractor {
 export interface ContractorDetail {
   emailVerified?: boolean;
   id: string;
-  profileId: string;
+  profileId: string | null;
   fullName: string;
   businessName: string;
   businessType: string | null;
@@ -88,7 +90,7 @@ export interface ContractorDetail {
   eligibleForAssignment: boolean;
   eligibilityReason: string | null;
   role: ContractorRole;
-  activeTicketCount: number;
+  assignedTicketCount: number;
   totalTicketCount: number;
   createdAt: string;
   updatedAt: string;
@@ -111,7 +113,7 @@ function formatFullName(profile?: RemoteProfileRow): string {
   return fullName.length > 0 ? fullName : profile.email;
 }
 
-function isActiveTicketStatus(status: string): boolean {
+function isOpenTicketStatus(status: string): boolean {
   const normalized = status.toUpperCase();
   return normalized !== 'CLOSED' && normalized !== 'ARCHIVED' && normalized !== 'EXPIRED';
 }
@@ -181,11 +183,11 @@ async function fetchTicketRows(contractorIds: string[]): Promise<RemoteTicketRow
   return (data ?? []) as RemoteTicketRow[];
 }
 
-function buildActiveTicketCountByContractor(ticketRows: RemoteTicketRow[]): Map<string, number> {
+function buildAssignedTicketCountByContractor(ticketRows: RemoteTicketRow[]): Map<string, number> {
   const counts = new Map<string, number>();
 
   for (const row of ticketRows) {
-    if (!row.assigned_to || !isActiveTicketStatus(row.status)) {
+    if (!row.assigned_to || !isOpenTicketStatus(row.status)) {
       continue;
     }
 
@@ -258,6 +260,8 @@ export const contractorService = {
     const contractorColumns = [
       'id',
       'profile_id',
+      'first_name',
+      'last_name',
       'business_name',
       'business_type',
       'city',
@@ -292,7 +296,7 @@ export const contractorService = {
     }
 
     const rows = (data ?? []) as RemoteContractorRow[];
-    const profileIds = rows.map((row) => row.profile_id);
+    const profileIds = rows.map((row) => row.profile_id).filter((id): id is string => !!id);
     const contractorIds = rows.map((row) => row.id);
 
     const [profilesById, ticketRows] = await Promise.all([
@@ -300,11 +304,11 @@ export const contractorService = {
       fetchTicketRows(contractorIds),
     ]);
 
-    const activeTicketCountByContractor = buildActiveTicketCountByContractor(ticketRows);
+    const assignedTicketCountByContractor = buildAssignedTicketCountByContractor(ticketRows);
 
     const mappedItems = rows.map((row) => {
-      const profile = profilesById.get(row.profile_id);
-      const fullName = formatFullName(profile);
+      const profile = row.profile_id ? profilesById.get(row.profile_id) : undefined;
+      const fullName = profile ? formatFullName(profile) : `${row.first_name ?? ''} ${row.last_name ?? ''}`.trim() || row.business_name;
       const email = profile?.email ?? row.business_email ?? '';
 
       return {
@@ -322,7 +326,7 @@ export const contractorService = {
         eligibilityReason: row.eligibility_reason,
         email,
         phone: profile?.phone ?? row.business_phone,
-        activeTicketCount: activeTicketCountByContractor.get(row.id) ?? 0,
+        assignedTicketCount: assignedTicketCountByContractor.get(row.id) ?? 0,
         alerts: buildAlerts(row),
         role: row.role,
       } satisfies ContractorListItem;
@@ -363,6 +367,8 @@ export const contractorService = {
     const contractorColumns = [
       'id',
       'profile_id',
+      'first_name',
+      'last_name',
       'business_name',
       'business_type',
       'city',
@@ -400,12 +406,12 @@ export const contractorService = {
 
     const row = contractorData as RemoteContractorRow;
     const [profilesById, ticketRows] = await Promise.all([
-      fetchProfilesByIds([row.profile_id]),
+      fetchProfilesByIds(row.profile_id ? [row.profile_id] : []),
       fetchTicketRows([row.id]),
     ]);
 
-    const profile = profilesById.get(row.profile_id);
-    const activeTicketCountByContractor = buildActiveTicketCountByContractor(ticketRows);
+    const profile = row.profile_id ? profilesById.get(row.profile_id) : undefined;
+    const assignedTicketCountByContractor = buildAssignedTicketCountByContractor(ticketRows);
     const totalTicketCountByContractor = buildTotalTicketCountByContractor(ticketRows);
 
     const recentTickets = ticketRows
@@ -423,7 +429,7 @@ export const contractorService = {
     return {
       id: row.id,
       profileId: row.profile_id,
-      fullName: formatFullName(profile),
+      fullName: profile ? formatFullName(profile) : `${row.first_name ?? ''} ${row.last_name ?? ''}`.trim() || row.business_name,
       businessName: row.business_name,
       businessType: row.business_type,
       email: profile?.email ?? row.business_email ?? '',
@@ -438,7 +444,7 @@ export const contractorService = {
       eligibleForAssignment: row.is_eligible_for_assignment,
       eligibilityReason: row.eligibility_reason,
       role: row.role,
-      activeTicketCount: activeTicketCountByContractor.get(row.id) ?? 0,
+      assignedTicketCount: assignedTicketCountByContractor.get(row.id) ?? 0,
       totalTicketCount: totalTicketCountByContractor.get(row.id) ?? 0,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

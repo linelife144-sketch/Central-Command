@@ -60,10 +60,11 @@ export function LoginForm() {
       if (user) {
         const { data: profile } = (await supabase
           .from('profiles')
-          .select('role')
+          .select('role,is_active')
           .eq('id', user.id)
           .single());
 
+        if (!profile?.is_active) { await supabase.auth.signOut(); throw new Error('This account is inactive. Contact your administrator.'); }
         redirectPath = getLandingPathForRole(profile?.role ?? null);
         void recordLastLogin(session?.access_token);
       }
@@ -72,7 +73,7 @@ export function LoginForm() {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const redirectParam = params.get('redirect');
-        if (redirectParam) {
+        if (redirectParam?.startsWith('/') && !redirectParam.startsWith('//')) {
           redirectPath = redirectParam;
         }
       }

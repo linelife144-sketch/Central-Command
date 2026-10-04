@@ -10,6 +10,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   '/reset-password',
   '/set-password',
   '/magic-link',
+  '/setup-account',
   '/auth/confirm',  // PKCE magic-link callback — must be public
   '/forbidden',
   '/logout',
@@ -150,6 +151,23 @@ export async function updateSession(request: NextRequest) {
   // Allow password setup/recovery routes and auth confirmation to proceed without dashboard redirect
   if (isPasswordResetAllowedPath(pathname) || pathname === '/auth/confirm') {
     return supabaseResponse;
+  }
+
+  if (isContractorRole && !pathname.startsWith('/admin/')) {
+    const { data: contractor, error: contractorError } = await supabase.from('contractors')
+      .select('id,onboarding_completed_at').eq('profile_id', user.id).eq('is_deleted', false).maybeSingle();
+    if (contractorError || !contractor) {
+      const target = request.nextUrl.clone(); target.pathname = '/forbidden'; target.search = '';
+      return redirectWithSession(target);
+    }
+    if (!contractor.onboarding_completed_at && pathname !== '/contractor/onboarding' && pathname !== '/logout') {
+      const target = request.nextUrl.clone(); target.pathname = '/contractor/onboarding'; target.search = '';
+      return redirectWithSession(target);
+    }
+    if (contractor.onboarding_completed_at && pathname === '/contractor/onboarding') {
+      const target = request.nextUrl.clone(); target.pathname = '/contractor/time'; target.search = '';
+      return redirectWithSession(target);
+    }
   }
 
   // Handle redirect if user is on public routes (like login or root page)

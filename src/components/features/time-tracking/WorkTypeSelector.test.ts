@@ -11,8 +11,6 @@ describe('WORK_TYPE_OPTIONS', () => {
       'EMERGENCY_RESPONSE',
       'TRAVEL',
       'STANDBY',
-      'ADMIN',
-      'TRAINING',
     ]);
   });
 });

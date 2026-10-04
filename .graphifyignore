@@ -16,3 +16,6 @@ grid-electric-docs/
 *.webp
 *.ico
 *.mp4
+
+# Exclude all generated Next.js verification/runtime output.
+.next*/

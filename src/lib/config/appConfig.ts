@@ -76,8 +76,6 @@ export const WORK_TYPES = {
   EMERGENCY_RESPONSE: 'EMERGENCY_RESPONSE',
   TRAVEL: 'TRAVEL',
   STANDBY: 'STANDBY',
-  ADMIN: 'ADMIN',
-  TRAINING: 'TRAINING',
 } as const;
 
 // Contractor payroll roles — one per contractor, separate from

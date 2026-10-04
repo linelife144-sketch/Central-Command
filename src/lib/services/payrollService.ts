@@ -74,8 +74,6 @@ const WORK_TYPES_LIST: WorkType[] = [
   'EMERGENCY_RESPONSE',
   'TRAVEL',
   'STANDBY',
-  'ADMIN',
-  'TRAINING',
 ];
 
 interface RemoteRoleRateDefaultRow {

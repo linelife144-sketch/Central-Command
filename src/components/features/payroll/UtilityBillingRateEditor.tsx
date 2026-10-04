@@ -29,8 +29,6 @@ const WORK_TYPES_ORDER: WorkType[] = [
   'EMERGENCY_RESPONSE',
   'TRAVEL',
   'STANDBY',
-  'ADMIN',
-  'TRAINING',
 ];
 
 function toWorkTypeLabel(workType: WorkType): string {

@@ -11,6 +11,4 @@ export const WORK_TYPE_OPTIONS: WorkTypeOption[] = [
   { value: WORK_TYPES.EMERGENCY_RESPONSE, label: 'Emergency Response' },
   { value: WORK_TYPES.TRAVEL, label: 'Travel' },
   { value: WORK_TYPES.STANDBY, label: 'Standby' },
-  { value: WORK_TYPES.ADMIN, label: 'Admin' },
-  { value: WORK_TYPES.TRAINING, label: 'Training' },
 ];

@@ -48,7 +48,7 @@ export function resolvePermissions(role: string | null | undefined, overrides: P
 export function permissionForPath(pathname: string): PermissionKey | null {
   if (pathname === '/admin/account' || pathname.startsWith('/admin/account/')) return null;
   if (pathname.startsWith('/admin/users')) return 'admin.users.view';
-  if (pathname.startsWith('/admin/contractors/invite')) return 'admin.users.edit';
+  if (pathname.startsWith('/admin/contractors/add') || pathname.startsWith('/admin/contractors/invite')) return 'admin.contractors.edit';
   if (pathname === '/tickets/create' || /^\/storms\/[^/]+\/tickets\/new/.test(pathname)) return 'admin.tickets.edit';
   if (pathname === '/tickets' || pathname.startsWith('/tickets/')) return 'admin.tickets.view';
   if (pathname === '/admin/storms/create' || /\/storms\/.*\/edit$/.test(pathname)) return 'admin.storms.edit';

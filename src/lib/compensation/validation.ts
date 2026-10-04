@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 import { z } from 'zod';
 
 export const payRoles = ['STORM_MANAGER', 'TEAM_LEAD', 'SR_DAMAGE_ASSESSER', 'DAMAGE_ASSESSER', 'DRIVER'] as const;
-export const payWorkTypes = ['STANDARD_ASSESSMENT', 'EMERGENCY_RESPONSE', 'TRAVEL', 'STANDBY', 'ADMIN', 'TRAINING'] as const;
+export const payWorkTypes = ['STANDARD_ASSESSMENT', 'EMERGENCY_RESPONSE', 'TRAVEL', 'STANDBY'] as const;
 const money = z.number().finite().positive().max(999999).refine(value => Math.abs(value * 100 - Math.round(value * 100)) < 0.000001, 'Use at most two decimal places.');
 const multiplier = z.number().finite().min(0.000001).max(100);
 const tier = z.object({ after_hours: z.number().finite().nonnegative().max(168), multiplier }).strict();

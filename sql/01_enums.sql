@@ -35,9 +35,7 @@ CREATE TYPE work_type AS ENUM (
   'STANDARD_ASSESSMENT',
   'EMERGENCY_RESPONSE',
   'TRAVEL',
-  'STANDBY',
-  'ADMIN',
-  'TRAINING'
+  'STANDBY'
 );
 
 -- Expense Categories

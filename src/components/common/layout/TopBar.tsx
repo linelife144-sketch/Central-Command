@@ -39,7 +39,7 @@ export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal }: T
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="cc-user-trigger" aria-label={`Open account menu for ${userName}`}>
             <Avatar className="size-9"><AvatarFallback className="cc-user-avatar">{initials}</AvatarFallback></Avatar>
-            <div className="hidden text-left sm:block"><p className="text-xs font-bold text-grid-navy">{userName}</p><p className="mt-0.5 text-[10px] capitalize text-muted-foreground">{userRole.toLowerCase().replaceAll('_', ' ')}</p></div>
+            <div className="hidden text-left sm:block"><p className="text-xs font-bold text-grid-navy">{userName}</p><p className="mt-0.5 text-[10px] capitalize text-muted-foreground">{userRole === 'CEO' ? 'CEO' : userRole.toLowerCase().replaceAll('_', ' ')}</p></div>
             <ChevronDown className="hidden size-3.5 text-muted-foreground sm:block" />
           </Button>
         </DropdownMenuTrigger>

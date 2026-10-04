@@ -120,17 +120,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
+    if (!existingProfile.is_active) return NextResponse.json({ error: 'Inactive account.' }, { status: 403 });
+    if (typeof payload.must_reset_password === 'boolean') return NextResponse.json({ error: 'Complete password setup to change this flag.' }, { status: 403 });
     const updatePayload: Record<string, unknown> = {};
     if (typeof payload.last_login_at === 'string' && payload.last_login_at.length > 0) {
       updatePayload.last_login_at = payload.last_login_at;
     }
 
-    if (
-      typeof payload.must_reset_password === 'boolean'
-      && Object.prototype.hasOwnProperty.call(existingProfile, 'must_reset_password')
-    ) {
-      updatePayload.must_reset_password = payload.must_reset_password;
-    }
 
     if (Object.keys(updatePayload).length === 0) {
       return NextResponse.json({ ok: true, applied: false });

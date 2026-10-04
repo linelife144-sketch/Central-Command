@@ -1,0 +1,14 @@
+{
+  "environment": "isolated PGlite database; not live browser proof",
+  "tests": [
+    "enum removal preserves existing shift and supported rates",
+    "contact, agreement and audit save without an Auth account",
+    "duplicates and nonprivileged actors are rejected",
+    "removed rates and invalid pay cannot leave a partial contact",
+    "downstream agreement failure rolls back the contact and audit",
+    "authenticated callers cannot execute the server-only function",
+    "anonymous callers cannot execute the server-only function",
+    "removed enums cannot be reintroduced through rate or shift inserts"
+  ],
+  "passed": 8
+}

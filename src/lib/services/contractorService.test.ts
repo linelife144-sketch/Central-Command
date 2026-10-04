@@ -30,7 +30,7 @@ describe('canonical contractor queries', () => {
       return query({data:[],error:null});
     });
     const rows = await contractorService.listContractors();
-    expect(rows[0]).toMatchObject({fullName:'QA Crew',isActive:false,activeTicketCount:1});
+    expect(rows[0]).toMatchObject({fullName:'QA Crew',isActive:false,assignedTicketCount:1});
     expect(contractorQuery.eq).toHaveBeenCalledWith('is_deleted', false);
     expect(ticketQuery.eq).toHaveBeenCalledWith('is_deleted', false);
     expect(await contractorService.listAssignableContractors()).toEqual([]);
@@ -41,4 +41,11 @@ describe('canonical contractor queries', () => {
     expect(await contractorService.listContractors()).toEqual([]);
     expect(remote.from).not.toHaveBeenCalled();
   });
+});
+
+it('displays an added contractor without an account and excludes them from dispatch', async () => {
+  remote.from.mockImplementation((table: string) => query({ data: table === 'contractors' ? [{ id: 'record', profile_id: null, first_name: 'QA', last_name: 'Added', business_name: 'QA Added', business_email: 'qa@example.test', business_phone: '(318) 555-0123', onboarding_status: 'PENDING', is_eligible_for_assignment: false }] : [], error: null }));
+  expect((await contractorService.listContractors())[0]).toMatchObject({ profileId: null, fullName: 'QA Added', email: 'qa@example.test', isActive: false, onboardingStatus: 'PENDING' });
+  expect(await contractorService.listAssignableContractors()).toEqual([]);
+  expect(remote.from.mock.calls.some(call => call[0] === 'profiles')).toBe(false);
 });

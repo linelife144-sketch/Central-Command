@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-04",
+  "project": "xcvacmreerrypygpritq",
+  "migration": "20261004202255_add_contractor_records_and_remove_unused_work_types",
+  "application_tests": {
+    "files": 92,
+    "passed": 462,
+    "environment": "isolated copy of selected Desktop source; NODE_OPTIONS=--no-experimental-webstorage avoids Node 25 storage collisions"
+  },
+  "checks": {
+    "typecheck": "passed",
+    "scoped_lint": "passed",
+    "production_build": "passed; isolated webpack build, 43 pages",
+    "isolated_database_suites": 8
+  },
+  "live_database": {
+    "environment": "live transaction checks with rollback; not browser success-create proof",
+    "passed": [
+      "atomic contact/agreement/audit linkage",
+      "duplicate rejection",
+      "removed-work-type rejection",
+      "privileged staff can read added record",
+      "authenticated callers cannot invoke server function",
+      "contractors cannot read unrelated added records"
+    ],
+    "retained_test_records": 0,
+    "shift_count": 10,
+    "wages_unchanged": 6194.65,
+    "billing_unchanged": 11508.68,
+    "agreement_hash_unchanged": "43c6e6838a1219ce81d23e54db514c09",
+    "agreements_unchanged": 6,
+    "auth_accounts_created": 0
+  },
+  "browser": {
+    "identity": "existing real David McCarty Super Admin session",
+    "url": "http://localhost:3000/admin/contractors/add",
+    "checks": [
+      "legacy invite URL redirects to add",
+      "formatted phone (318) 555-0123 visually verified",
+      "wage displays $85.00 after blur",
+      "custom multiplier input absent",
+      "timezone selector absent",
+      "four work-type overrides only",
+      "actual add endpoint rejects existing fictional QA contractor email",
+      "form contained at desktop 1546x900 and phone 390x844"
+    ],
+    "successful_create": "verified at live database level inside rollback; no retained browser-created record",
+    "emails_sent": 0
+  },
+  "notes": [
+    "Preserved concurrent Assigned Tickets/realtime contractor-list edits and unrelated TopBar edits.",
+    "Historical pay-agreement JSON retains removed rate keys; forward-use readers discard them and new writes reject them.",
+    "No Git commits, merges, pushes or app deployment performed."
+  ]
+}

@@ -49,7 +49,6 @@ export function SetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [profileRole, setProfileRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -113,7 +112,6 @@ export function SetPasswordForm() {
 
         if (active) {
           setUserId(resolvedUser.id);
-          setProfileRole(profile.role);
         }
       } catch {
         if (active) {
@@ -152,7 +150,7 @@ export function SetPasswordForm() {
         throw sessionError;
       }
 
-      let accessToken = currentSession?.access_token;
+      const accessToken = currentSession?.access_token;
       if (!accessToken) {
         const {
           data: { session: refreshedSession },
@@ -163,43 +161,15 @@ export function SetPasswordForm() {
           throw new Error('Your session expired. Please sign in again.');
         }
 
-        accessToken = refreshedSession.access_token;
       }
 
-      const { error: passwordError } = await supabase.auth.updateUser({
-        password: data.password,
+      const response = await fetch('/api/auth/complete-password-setup', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: data.password }),
       });
-
-      if (passwordError) {
-        throw passwordError;
-      }
-
-      const profileResponse = await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken
-            ? {
-              Authorization: `Bearer ${accessToken}`,
-            }
-            : {}),
-        },
-        body: JSON.stringify({
-          must_reset_password: false,
-        }),
-      });
-
-      if (!profileResponse.ok) {
-        const body = await profileResponse.text();
-        throw new Error(body || 'Password updated but profile sync failed. Please contact an administrator.');
-      }
-
-      const profilePayload = (await profileResponse.json()) as { applied?: boolean };
-      if (profilePayload.applied === false) {
-        throw new Error('Password updated but reset flag was not applied. Please contact an administrator.');
-      }
-
-      router.push(getLandingPathForRole(profileRole));
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to set password.');
+      router.push(result.next);
       router.refresh();
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Unable to set your password. Please try again.'));

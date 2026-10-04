@@ -31,7 +31,6 @@ const WORK_TYPES_ORDER: WorkType[] = [
   'EMERGENCY_RESPONSE',
   'TRAVEL',
   'STANDBY',
-  'TRAINING',
 ];
 
 // Display overrides for work types whose column header differs from the

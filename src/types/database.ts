@@ -448,6 +448,8 @@ export type Database = {
       }
       contractors: {
         Row: {
+          account_setup_requested_at: string | null
+          vehicle_registration_photo_path: string | null
           address_line1: string | null
           address_line2: string | null
           approved_at: string | null
@@ -462,9 +464,11 @@ export type Database = {
           eligibility_reason: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          first_name: string | null
           id: string
           is_deleted: boolean | null
           is_eligible_for_assignment: boolean | null
+          last_name: string | null
           onboarding_completed_at: string | null
           onboarding_status: string | null
           profile_id: string | null
@@ -477,6 +481,8 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          account_setup_requested_at?: string | null
+          vehicle_registration_photo_path?: string | null
           address_line1?: string | null
           address_line2?: string | null
           approved_at?: string | null
@@ -491,9 +497,11 @@ export type Database = {
           eligibility_reason?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          first_name?: string | null
           id?: string
           is_deleted?: boolean | null
           is_eligible_for_assignment?: boolean | null
+          last_name?: string | null
           onboarding_completed_at?: string | null
           onboarding_status?: string | null
           profile_id?: string | null
@@ -506,6 +514,8 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          account_setup_requested_at?: string | null
+          vehicle_registration_photo_path?: string | null
           address_line1?: string | null
           address_line2?: string | null
           approved_at?: string | null
@@ -520,9 +530,11 @@ export type Database = {
           eligibility_reason?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          first_name?: string | null
           id?: string
           is_deleted?: boolean | null
           is_eligible_for_assignment?: boolean | null
+          last_name?: string | null
           onboarding_completed_at?: string | null
           onboarding_status?: string | null
           profile_id?: string | null
@@ -3219,6 +3231,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_contractor_account_setup: { Args: { p_email: string }; Returns: Json }
+      complete_account_password_setup: { Args: { p_profile_id: string }; Returns: undefined }
+      complete_contractor_onboarding: { Args: { p_profile_id: string; p_details: Json }; Returns: undefined }
+      add_contractor_record: {
+        Args: {
+          p_actor_id: string
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+          p_terms: Json
+        }
+        Returns: Json
+      }
       assign_contractor_to_storm: {
         Args: { p_contractor_id: string; p_storm_id: string }
         Returns: undefined
@@ -3355,8 +3381,6 @@ export type Database = {
         | "EMERGENCY_RESPONSE"
         | "TRAVEL"
         | "STANDBY"
-        | "ADMIN"
-        | "TRAINING"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3561,8 +3585,6 @@ export const Constants = {
         "EMERGENCY_RESPONSE",
         "TRAVEL",
         "STANDBY",
-        "ADMIN",
-        "TRAINING",
       ],
     },
   },

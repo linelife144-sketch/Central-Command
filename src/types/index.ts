@@ -40,23 +40,13 @@ export interface Contractor {
   business_email?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
-  onboarding_status: OnboardingStatus;
   onboarding_completed_at?: string;
-  approved_by?: string;
-  approved_at?: string;
-  is_eligible_for_assignment: boolean;
-  eligibility_reason?: string;
+  vehicle_registration_photo_path?: string;
   role: ContractorRole;
   created_at: string;
   updated_at: string;
 }
 
-export type OnboardingStatus =
-  | 'PENDING'
-  | 'IN_PROGRESS'
-  | 'COMPLETE'
-  | 'APPROVED'
-  | 'SUSPENDED';
 
 // Payroll role model — one role per contractor, separate from profiles.role
 // (the CEO/SUPER_ADMIN/ADMIN/CONTRACTOR authorization enum).
@@ -211,9 +201,7 @@ export type WorkType =
   | 'STANDARD_ASSESSMENT'
   | 'EMERGENCY_RESPONSE'
   | 'TRAVEL'
-  | 'STANDBY'
-  | 'ADMIN'
-  | 'TRAINING';
+  | 'STANDBY';
 
 export type TimeEntryStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 

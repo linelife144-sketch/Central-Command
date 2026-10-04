@@ -23,10 +23,10 @@ export default function ContractorDetailPage() {
   if (!c) return <div><PageHeader title="Contractor not found" showBackButton backHref="/admin/contractors" /></div>;
   return <div className="space-y-6">
     <PageHeader title={c.fullName} description={c.businessName} showBackButton backHref="/admin/contractors"><Button variant="outline" onClick={() => query.refetch()}>Refresh</Button></PageHeader>
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4"><MetricCard title="Active Tickets" value={c.activeTicketCount} /><MetricCard title="Total Tickets" value={c.totalTicketCount} /><MetricCard title="Eligible" value={c.isActive && c.eligibleForAssignment ? 'Yes' : 'No'} /></div>
+    <div className="grid grid-cols-2 gap-4"><MetricCard title="Assigned Tickets" value={c.assignedTicketCount} /><MetricCard title="Total Tickets" value={c.totalTicketCount} /></div>
     <Card><CardHeader><CardTitle>Contractor account</CardTitle></CardHeader><CardContent className="space-y-3">
-      <StatusBadge status={!c.isActive ? 'Inactive' : c.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending'} />
-      {(profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO') && c.profileId !== profile.id && <div><Button variant="outline" onClick={async () => { try { await contractorService.setContractorActive(c.profileId, !c.isActive); await query.refetch(); } catch (e) { window.alert(e instanceof Error ? e.message : 'Unable to update status.'); } }}>{c.isActive ? 'Mark inactive' : 'Reactivate'}</Button></div>}
+      <StatusBadge status={!c.profileId ? 'Pending' : !c.isActive ? 'Inactive' : c.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending'} />
+      {(profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO') && c.profileId && c.profileId !== profile.id && <div><Button variant="outline" onClick={async () => { try { await contractorService.setContractorActive(c.profileId!, !c.isActive); await query.refetch(); } catch (e) { window.alert(e instanceof Error ? e.message : 'Unable to update status.'); } }}>{c.isActive ? 'Mark inactive' : 'Reactivate'}</Button></div>}
       <p>Email: {c.email}</p><p>Phone: {c.phone || 'Not provided'}</p><p>Location: {[c.city,c.state].filter(Boolean).join(', ') || 'Not provided'}</p>
       <p>Business type: {c.businessType || 'Not provided'}</p><p>Onboarding: {c.onboardingStatus}</p><p>Joined: {formatDate(c.createdAt)}</p>
       {!c.eligibleForAssignment && <p>Assignment eligibility: {c.eligibilityReason || 'Not eligible'}</p>}
