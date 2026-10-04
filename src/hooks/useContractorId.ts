@@ -11,13 +11,12 @@ interface UseContractorIdResult {
 }
 
 export function useContractorId(profileId?: string): UseContractorIdResult {
-  const [contractorId, setContractorId] = useState<string | undefined>(undefined);
+  const [resolved, setResolved] = useState<{ profileId?: string; id?: string }>({});
+  const contractorId = resolved.profileId === profileId ? resolved.id : undefined;
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!profileId) {
-      setContractorId(undefined);
-      setIsLoading(false);
       return;
     }
 
@@ -29,8 +28,15 @@ export function useContractorId(profileId?: string): UseContractorIdResult {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !sessionData.session) {
           if (active) {
-            setContractorId(profileId);
+            setResolved({ profileId, id: profileId });
           }
+          return;
+        }
+
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          const { db } = await import('@/lib/db/dexie');
+          const cached = await db.payAgreements.where('viewer_profile_id').equals(profileId).first();
+          if (active) setResolved({ profileId, id: cached?.contractor_id });
           return;
         }
 
@@ -48,14 +54,14 @@ export function useContractorId(profileId?: string): UseContractorIdResult {
 
         if (active) {
           const resolvedId = Array.isArray(data) && data.length > 0 ? (data[0]?.id as string | undefined) : undefined;
-          setContractorId(resolvedId ?? profileId);
+          setResolved({ profileId, id: resolvedId });
         }
       } catch (error) {
         if (!isAuthOrPermissionError(error)) {
           console.warn('Failed to resolve contractor ID:', getErrorLogContext(error));
         }
         if (active) {
-          setContractorId(profileId);
+          setResolved({ profileId, id: profileId });
         }
       } finally {
         if (active) {
@@ -64,12 +70,12 @@ export function useContractorId(profileId?: string): UseContractorIdResult {
       }
     };
 
-    void resolveContractorId();
+    void Promise.resolve().then(resolveContractorId);
 
     return () => {
       active = false;
     };
   }, [profileId]);
 
-  return { contractorId, isLoading };
+  return { contractorId, isLoading: !!profileId && isLoading };
 }

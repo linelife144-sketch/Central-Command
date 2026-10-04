@@ -101,6 +101,8 @@ export const ticketService = {
         if (isSuperAdminTestingEnabled()) {
             return localTestStore.getTickets().filter((ticket) => ticket.assigned_to === assigneeId);
         }
+        const { db } = await import('@/lib/db/dexie');
+        if (typeof navigator !== 'undefined' && !navigator.onLine) return await db.tickets.where('assigned_to').equals(assigneeId).toArray() as unknown as Ticket[];
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
@@ -108,6 +110,7 @@ export const ticketService = {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
+        await db.tickets.bulkPut((data??[]).map(ticket=>({...ticket,updated_at:ticket.updated_at??ticket.created_at??new Date().toISOString(),assigned_to:ticket.assigned_to??undefined,storm_event_id:ticket.storm_event_id??undefined,work_description:ticket.work_description??undefined,latitude:ticket.latitude??undefined,longitude:ticket.longitude??undefined,synced:true,sync_status:'synced' as const})));
         return data as Ticket[];
     },
 

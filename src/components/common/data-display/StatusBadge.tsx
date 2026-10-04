@@ -30,7 +30,7 @@ const variantStyles: Record<StatusVariant, string> = {
   info: 'bg-grid-info-soft text-grid-info-ink border-grid-info',
   neutral: 'bg-muted text-muted-foreground border-border-strong',
   active: 'bg-grid-success-soft text-grid-success-ink border-grid-success',
-  inactive: 'bg-muted text-muted-foreground border-border-strong',
+  inactive: 'bg-grid-danger-soft text-grid-danger-ink border-grid-danger',
   pending: 'bg-grid-warning-soft text-grid-warning-ink border-grid-warning',
   approved: 'bg-grid-success-soft text-grid-success-ink border-grid-success',
   rejected: 'bg-grid-danger-soft text-grid-danger-ink border-grid-danger',
@@ -44,7 +44,7 @@ const dotStyles: Record<StatusVariant, string> = {
   info: 'bg-grid-info',
   neutral: 'bg-grid-gray-400',
   active: 'bg-grid-success',
-  inactive: 'bg-grid-gray-400',
+  inactive: 'bg-grid-danger',
   pending: 'bg-grid-warning',
   approved: 'bg-grid-success',
   rejected: 'bg-grid-danger',
@@ -61,16 +61,19 @@ function getVariantFromStatus(status: string): StatusVariant {
   const s = status.toUpperCase();
   
   switch (s) {
+    case 'ACTIVE':
     case 'APPROVED':
     case 'COMPLETE':
     case 'CLOSED':
       return 'success';
     
+    case 'PENDING':
     case 'PENDING_REVIEW':
     case 'IN_PROGRESS':
     case 'ASSIGNED':
       return 'warning';
     
+    case 'INACTIVE':
     case 'REJECTED':
     case 'NEEDS_REWORK':
     case 'EXPIRED':

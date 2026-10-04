@@ -244,6 +244,12 @@ function sortByName(items: ContractorListItem[]): ContractorListItem[] {
 }
 
 export const contractorService = {
+  /** Sets profiles.is_active (Inactive = false). Enforced server-side: only SUPER_ADMIN/CEO may change it. */
+  async setContractorActive(profileId: string, isActive: boolean): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from('profiles') as any).update({ is_active: isActive }).eq('id', profileId);
+    if (error) throw new Error(error.message);
+  },
   async listContractors(filters: ContractorListFilters = {}): Promise<ContractorListItem[]> {
     if (!(await hasActiveSession())) {
       return [];

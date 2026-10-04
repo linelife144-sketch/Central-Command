@@ -26,6 +26,7 @@ export default function ContractorDetailPage() {
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4"><MetricCard title="Active Tickets" value={c.activeTicketCount} /><MetricCard title="Total Tickets" value={c.totalTicketCount} /><MetricCard title="Eligible" value={c.isActive && c.eligibleForAssignment ? 'Yes' : 'No'} /></div>
     <Card><CardHeader><CardTitle>Contractor account</CardTitle></CardHeader><CardContent className="space-y-3">
       <StatusBadge status={!c.isActive ? 'Inactive' : c.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending'} />
+      {(profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO') && c.profileId !== profile.id && <div><Button variant="outline" onClick={async () => { try { await contractorService.setContractorActive(c.profileId, !c.isActive); await query.refetch(); } catch (e) { window.alert(e instanceof Error ? e.message : 'Unable to update status.'); } }}>{c.isActive ? 'Mark inactive' : 'Reactivate'}</Button></div>}
       <p>Email: {c.email}</p><p>Phone: {c.phone || 'Not provided'}</p><p>Location: {[c.city,c.state].filter(Boolean).join(', ') || 'Not provided'}</p>
       <p>Business type: {c.businessType || 'Not provided'}</p><p>Onboarding: {c.onboardingStatus}</p><p>Joined: {formatDate(c.createdAt)}</p>
       {!c.eligibleForAssignment && <p>Assignment eligibility: {c.eligibilityReason || 'Not eligible'}</p>}

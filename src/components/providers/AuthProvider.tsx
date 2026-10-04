@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { User as AppUser } from '@/types';
 import { isSuperAdminTestingEnabled, SUPER_ADMIN_TEST_PROFILE } from '@/lib/testing/superAdminTesting';
+import { saveVerifiedFieldProfile, readVerifiedFieldProfile, clearPrivateBrowserState } from '@/lib/auth/fieldIdentityCache';
 import { resolvePermissions, type PermissionKey, type PermissionMap } from '@/lib/auth/permissionCatalog';
 
 interface AuthContextType {
@@ -65,7 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     // A previously verified field identity stays usable while disconnected.
     // No profile or permissions are invented for a new offline session.
-    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setProfile(current => current?.id === userId && current.role === 'CONTRACTOR' ? current : readVerifiedFieldProfile(userId)); setPermissions({}); return;
+    }
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -99,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
+        saveVerifiedFieldProfile(data as AppUser);
         setProfile(data.is_active ? data as AppUser : null);
         if (data.role !== 'CONTRACTOR') {
           const { data: map, error: permissionsError } = await supabase.rpc('get_my_permissions');
@@ -129,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       await supabase.auth.signOut();
+      await clearPrivateBrowserState();
       if (!DEV_BYPASS_AUTH) {
         currentUserId.current = null;
         setUser(null);
@@ -194,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setProfile(current => sameUser && current?.role === 'CONTRACTOR' ? current : null);
         setPermissions({});
+        if (!sameUser && currentUserId.current !== readVerifiedFieldProfile(session?.user.id ?? '')?.id) void clearPrivateBrowserState();
 
         if (session?.user) {
           setIsLoading(true);

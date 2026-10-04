@@ -39,7 +39,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     ".next-payroll-validation/types/**/*.ts",
-    ".next-payroll-validation/dev/types/**/*.ts"
+    ".next-payroll-validation/dev/types/**/*.ts",
+    ".next-payroll-final/types/**/*.ts",
+    ".next-payroll-final/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

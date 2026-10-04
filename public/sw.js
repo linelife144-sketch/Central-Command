@@ -3,10 +3,9 @@
  */
 
 const CACHE_NAMES = {
-  static: 'grid-electric-static-v2',
-  dynamic: 'grid-electric-dynamic-v2',
-  images: 'grid-electric-images-v2',
-  api: 'grid-electric-api-v2',
+  static: 'grid-electric-static-v3',
+  dynamic: 'grid-electric-dynamic-v3',
+  images: 'grid-electric-images-v3',
 };
 
 const STATIC_ASSETS = ['/', '/manifest.webmanifest', '/favicon.ico'];
@@ -18,10 +17,6 @@ const BACKGROUND_SYNC_TAG_TO_MESSAGE = {
   'sync-expenses': 'SYNC_EXPENSES',
   'sync-photos': 'SYNC_PHOTOS',
 };
-
-const IS_LOCAL_DEV_HOST =
-  self.location.hostname === 'localhost'
-  || self.location.hostname === '127.0.0.1';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -158,18 +153,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (IS_LOCAL_DEV_HOST) {
-    // Let the browser handle dev requests natively. Proxying through the SW
-    // thread (via event.respondWith(fetch(request))) can hang/timeout while
-    // the dev server is compiling, which blocks chunk loads like app/layout.js.
-    return;
-  }
-
   const url = new URL(request.url);
   const isSameOrigin = url.origin === self.location.origin;
   const isAllowedExternal = url.hostname.includes('supabase.co') || url.hostname.includes('mapbox.com');
 
   if (!isSameOrigin && !isAllowedExternal) {
+    return;
+  }
+
+  // Auth, row reads, guarded financial RPCs, and private Supabase media are never shared caches.
+  // Offline operations and wage-only reads use the owner-scoped IndexedDB stores.
+  if (url.hostname.endsWith('.supabase.co') || isApiRequest(url)) {
+    event.respondWith(fetch(request));
     return;
   }
 
@@ -185,19 +180,6 @@ self.addEventListener('fetch', (event) => {
 
   if (isStaticAsset(url.pathname)) {
     event.respondWith(cacheFirst(request, CACHE_NAMES.static));
-    return;
-  }
-
-  if (isApiRequest(url)) {
-    event.respondWith(
-      staleWhileRevalidate(request, CACHE_NAMES.api).catch(
-        () =>
-          new Response(JSON.stringify({ error: 'offline', queued: true }), {
-            status: 503,
-            headers: { 'Content-Type': 'application/json' },
-          }),
-      ),
-    );
     return;
   }
 

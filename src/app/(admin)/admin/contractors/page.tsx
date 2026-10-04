@@ -46,7 +46,8 @@ export default function ContractorsListPage() {
   const [status, setStatus] = useState('all');
   const query = useQuery({ queryKey: ['contractors', profile?.id], queryFn: () => contractorService.listContractors(), enabled: Boolean(profile), refetchInterval: 15000, refetchOnWindowFocus: true });
   const contractors = query.data ?? [];
-  const filtered = contractors.filter(c => [c.fullName, c.businessName, c.email].join(' ').toLowerCase().includes(search.toLowerCase()) && (status === 'all' || statusOf(c).toLowerCase() === status));
+  const filtered = contractors.filter(c => [c.fullName, c.businessName, c.email].join(' ').toLowerCase().includes(search.toLowerCase()) && (status === 'all' || statusOf(c).toLowerCase() === status))
+    .sort((a, b) => Number(!a.isActive) - Number(!b.isActive) || a.fullName.localeCompare(b.fullName));
   function exportCsv() {
     const rows = [['Name','Business','Email','Status','Eligible','Active Tickets'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.isActive && c.eligibleForAssignment),String(c.activeTicketCount)])];
     const content = rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""').replace(/^[=+@-]/,"'") + '"').join(',')).join('\r\n');

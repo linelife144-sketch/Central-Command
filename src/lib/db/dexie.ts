@@ -20,6 +20,7 @@ export interface LocalTicket {
   latitude?: number;
   longitude?: number;
   assigned_to?: string;
+  storm_event_id?: string;
   utility_client: string;
   work_description?: string;
   synced: boolean;
