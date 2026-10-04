@@ -14,6 +14,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -35,7 +36,7 @@ const ticketFormSchema = z.object({
     work_order_ref: z.string().optional(),
     work_description: z.string().min(10, "Description must be at least 10 characters"),
     special_instructions: z.string().optional(),
-    priority: z.enum(["A", "B", "C", "X"]),
+    is_important: z.boolean(),
     status: z.enum(["DRAFT", "ASSIGNED", "REJECTED", "IN_ROUTE", "ON_SITE", "IN_PROGRESS", "COMPLETE", "PENDING_REVIEW", "APPROVED", "NEEDS_REWORK", "CLOSED", "ARCHIVED", "EXPIRED"]),
     scheduled_date: z.string().min(1, "Scheduled date is required"),
     due_date: z.string().min(1, "Due date is required"),
@@ -55,8 +56,7 @@ export function TicketForm() {
     const { profile } = useAuth()
     
     const stormEventIdParam = searchParams.get("storm_event_id") || ""
-    const requestedPriority = searchParams.get("priority")
-    const initialPriority = ticketFormSchema.shape.priority.safeParse(requestedPriority)
+    const initialImportant = searchParams.get("important") === "true"
     const [stormEvents, setStormEvents] = useState<StormEventSummary[]>([])
     const [loadingStorms, setLoadingStorms] = useState(true)
 
@@ -70,7 +70,7 @@ export function TicketForm() {
             work_order_ref: "",
             work_description: "",
             special_instructions: "",
-            priority: initialPriority.success ? initialPriority.data : "C",
+            is_important: initialImportant,
             status: "DRAFT",
             scheduled_date: "",
             due_date: "",
@@ -279,23 +279,21 @@ export function TicketForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <FormField
                         control={form.control}
-                        name="priority"
+                        name="is_important"
                         render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Priority *</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="A">A - Critical</SelectItem>
-                                        <SelectItem value="B">B - Urgent</SelectItem>
-                                        <SelectItem value="C">C - Standard</SelectItem>
-                                        <SelectItem value="X">X - Hold</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <FormItem className="flex flex-row items-start space-y-0 gap-3 rounded-xl border p-4">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value === true}
+                                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel>Important ticket</FormLabel>
+                                    <p className="text-sm text-muted-foreground">
+                                        Check only when there is an environmental hazard (e.g., an oil leak) or the public is in danger.
+                                    </p>
+                                </div>
                                 <FormMessage />
                             </FormItem>
                         )}

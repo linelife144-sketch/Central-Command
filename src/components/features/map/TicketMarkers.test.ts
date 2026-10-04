@@ -13,7 +13,7 @@ const tickets: MapTicketMarker[] = [
     latitude: 32.7767,
     longitude: -96.797,
     status: 'ASSIGNED',
-    priority: 'A',
+    isImportant: true,
   },
   {
     id: 'a2',
@@ -21,7 +21,7 @@ const tickets: MapTicketMarker[] = [
     latitude: 999,
     longitude: -96.7,
     status: 'DRAFT',
-    priority: 'B',
+    isImportant: false,
   },
 ];
 

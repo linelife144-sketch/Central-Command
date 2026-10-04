@@ -140,11 +140,17 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true, 
   }, [fromDate, mode, statusFilter, contractorId, toDate]);
 
   useEffect(() => {
-    void loadEntries();
+    void Promise.resolve().then(loadEntries);
   }, [loadEntries, refreshKey]);
 
   useEffect(() => {
-    setSelectedEntryIds((previous) => previous.filter((id) => entries.some((entry) => entry.id === id)));
+    const handleSync = () => { void loadEntries(); };
+    window.addEventListener('time-entries-synced', handleSync);
+    return () => window.removeEventListener('time-entries-synced', handleSync);
+  }, [loadEntries]);
+
+  useEffect(() => {
+    void Promise.resolve().then(() => setSelectedEntryIds((previous) => previous.filter((id) => entries.some((entry) => entry.id === id))));
   }, [entries]);
 
   const filteredEntries = useMemo(() => {
@@ -344,6 +350,8 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true, 
         header: 'Wages',
         cell: entry => timeEntryMoney(entry).wage === undefined ? '—' : formatCurrency(timeEntryMoney(entry).wage!),
       },
+      { key: 'regular', header: 'Regular Hours', cell: entry => entry.regular_minutes === undefined ? '—' : (entry.regular_minutes / 60).toFixed(2) },
+      { key: 'overtime', header: 'Overtime Hours', cell: entry => entry.overtime_minutes === undefined ? '—' : (entry.overtime_minutes / 60).toFixed(2) },
       {
         key: 'reimbursement', header: 'Approved Reimbursement',
         cell: entry => timeEntryMoney(entry).reimbursement === undefined ? '—' : formatCurrency(timeEntryMoney(entry).reimbursement!),
@@ -364,21 +372,6 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true, 
         ),
       },
     );
-
-    if (mode === 'admin') {
-      baseColumns.push(
-        {
-          key: 'utility_bill_amount',
-          header: 'Utility Bill',
-          cell: (entry) =>
-            typeof entry.utility_bill_amount === 'number' ? formatCurrency(entry.utility_bill_amount) : '—',
-        },
-        {
-          key: 'margin', header: 'Margin',
-          cell: entry => timeEntryMoney(entry).margin === undefined ? '—' : formatCurrency(timeEntryMoney(entry).margin!),
-        },
-      );
-    }
 
     if (mode === 'admin') {
       baseColumns.push({
@@ -470,8 +463,8 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true, 
             </Card>
             <Card className="rounded-[1rem] border border-border">
               <CardContent className="p-3">
-                <p className="text-xs text-muted-foreground">Billable Amount</p>
-                <p className="font-heading text-3xl font-semibold">{formatCurrency(summary.totalAmount)}</p>
+                <p className="text-xs text-muted-foreground">Wages</p>
+                <p className="font-heading text-3xl font-semibold">{summary.totalAmount === undefined ? 'Awaiting sync' : formatCurrency(summary.totalAmount)}</p>
               </CardContent>
             </Card>
             <Card className="rounded-[1rem] border border-border">

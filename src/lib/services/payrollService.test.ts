@@ -64,7 +64,7 @@ describe('createPayrollService.getPayrollSummary', () => {
       ),
     });
 
-    const summary = await service.getPayrollSummary();
+    const summary = await service.getPayrollSummary({ includeFinancial: true });
 
     expect(summary.rows).toHaveLength(2);
     const janeRow = summary.rows.find((row) => row.contractorId === 'c-1');
@@ -127,7 +127,7 @@ describe('createPayrollService.getPayrollSummary', () => {
       ),
     });
 
-    const summary = await service.getPayrollSummary();
+    const summary = await service.getPayrollSummary({ includeFinancial: true });
 
     expect(summary.rows[0]?.taxablePayroll).toBe(999.99);
     expect(summary.rows[0]?.utilityBillAmount).toBe(111.11);
@@ -156,7 +156,7 @@ describe('createPayrollService.getPayrollSummary', () => {
       ),
     });
 
-    const summary = await service.getPayrollSummary();
+    const summary = await service.getPayrollSummary({ includeFinancial: true });
 
     expect(summary.rows[0]?.reimbursementTotal).toBe(25);
     expect(summary.rows[0]?.totalPayout).toBe(125);

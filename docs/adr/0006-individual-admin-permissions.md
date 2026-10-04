@@ -2,7 +2,7 @@
 
 Date: 2026-10-03  
 Agent: Codex /root  
-Status: Local implementation verified; live database application awaiting explicit approval.
+Status: Applied to live Supabase with explicit user approval; staff save/reload and database enforcement verified. Email delivery and second staff/device acceptance remain open.
 
 ## Requested behavior
 
@@ -31,19 +31,29 @@ The shared catalog defines 12 modules and 21 permission keys. Unknown keys and c
 
 Edit requires View for the same module. Account self-service remains available. Data shown in dashboards, maps, and reports also follows the underlying module's database access. Crew rosters remain inside storm workspaces, so their screen context requires Storm events View; contractor selection follows Contractors View. These existing screen relationships are distinct from the individual permission switches.
 
-Super Admin defaults permit all keys. CEO defaults permit general staff modules but exclude user administration, and executive permissions are locked. Admin defaults permit general views and contractor/time/expense/assessment edits; storm, ticket, and roster edits require an explicit grant. User administration cannot be granted to an Admin or Contractor. A person cannot change their own permissions. The database protects executive accounts and the last active access administrator.
+Super Admin defaults permit all keys. CEO defaults permit general staff modules but exclude user administration, and executive permissions are locked. Admin defaults permit general views and contractor/time/expense/assessment edits; storm, ticket, roster, and payroll edits require an explicit grant. User administration cannot be granted to an Admin or Contractor. A person cannot change their own permissions. The database protects executive accounts and the last active access administrator.
 
 ## Enforcement and persistence
 
 `src/lib/auth/permissionCatalog.ts` supplies the catalog, role defaults, route rules, and effective permission calculation. The auth provider refreshes access on window focus and every 30 seconds. Navigation, direct route middleware, application shells, and mutation controls all use the same permission keys.
 
-`supabase/admin_user_permissions.sql` is the canonical **unapplied SQL draft**, not an entry in migration history. It adds permission overrides and revision tokens, permission lookup and save functions, and invitation storage. Saves validate the authenticated actor, serialize account-access changes, reject stale revisions, and commit overrides, revisions, and audit entries together. Authenticated clients cannot write permission or invitation records directly.
+`supabase/admin_user_permissions.sql` is the consolidated installation SQL. Exact deployed history is preserved in the three CLI-created migration files listed below. It adds permission overrides and revision tokens, permission lookup and save functions, and invitation storage. Saves validate the authenticated actor, serialize account-access changes, reject stale revisions, and commit overrides, revisions, and audit entries together. Authenticated clients cannot write permission or invitation records directly.
 
-The draft replaces staff role checks and adds restrictive module policies on 24 operational tables, with additional profile restrictions (25 public tables in total) and bucket-scoped vehicle-photo restrictions on storage.objects. Existing contractor policies and ownership predicates remain. Profile authorization/deletion triggers protect account roles and activity. Existing ticket creation and roster assignment invoker functions receive permission checks while retaining their transactional business logic. Invitation finalization is a service-role-only invoker function, with an additional verified actor permission check.
+The migration replaces staff role checks and adds restrictive module policies on 24 operational tables, with additional profile restrictions (25 public tables in total) and bucket-scoped vehicle-photo restrictions on storage.objects. Existing contractor policies and ownership predicates remain. Profile authorization/deletion triggers protect account roles and activity. Existing ticket creation and roster assignment invoker functions receive permission checks while retaining their transactional business logic. Invitation finalization is a service-role-only invoker function, with an additional verified actor permission check.
 
-The read-only live access baseline in `supabase/admin_permissions_access_baseline.json` contains the 66 existing policies and three affected function definitions captured before application. It contains schema definitions, not account secrets. Re-read the baseline before applying if other migrations land first.
+The original early baseline remains in `supabase/admin_permissions_access_baseline.json`. The refreshed pre-application snapshot `supabase/admin_permissions_preapply_20261003.json` contains all 127 policies (124 public and 3 storage), three affected functions, profile triggers, relevant columns, and original service-role privileges. It reflects the payroll changes deployed before this permission migration.
 
-While the draft is pending, only the specifically missing permissions RPC/table falls back to legacy role defaults on existing screens. Other permission errors fail closed. New administration APIs return an explicit 503 explaining that the database update is awaiting approval; they cannot save permissions or send invitations during this state.
+Applied with explicit user approval on 2026-10-03 to `xcvacmreerrypygpritq`:
+
+| Live version | Migration | Result |
+| --- | --- | --- |
+| `20261004010249` | `individual_admin_permissions_and_contractor_invitations` | Catalog, overrides/revisions, RPCs, staff RLS, profile guards, invitation storage/finalizer |
+| `20261004010952` | `grant_invitation_finalizer_contractor_access` | Service role SELECT/INSERT on contractors and INSERT on audit_logs, required by the invoker finalizer and failure audit |
+| `20261004011222` | `cache_identity_in_admin_permission_policies` | Cache auth identity in the new module policies without changing their access predicates |
+
+Each migration file was generated with Supabase CLI, populated, applied, then matched to its observed live history version. The consolidated SQL includes the follow-up fixes; the original applied file retains its exact deployed contents. Database TypeScript types were regenerated from the live schema. The new permission/invitation tables and RPCs use typed calls; nullable phone and initial revision parameters are explicitly represented in those types.
+
+Preflight corrected the missing Payroll keys in the current-user RPC. Live verification then exposed missing legacy service-role table grants that the original isolated fixture had assumed existed; the follow-up grants and revised fixture address that gap. The pending-migration fallback is dormant now that the RPCs exist; other permission errors still fail closed.
 
 ## Invitation activation
 
@@ -55,24 +65,23 @@ The confirmation page accepts both token-hash email templates and standard invit
 
 Reference: [Supabase email redirects](https://supabase.com/docs/guides/auth/redirect-urls), [inviting a user](https://supabase.com/docs/reference/javascript/auth-admin-inviteuserbyemail), and [email templates](https://supabase.com/docs/guides/auth/auth-email-templates).
 
-## Validation and activation gates
+## Validation and remaining acceptance
 
-- All 355 application tests pass. Regression coverage includes independent module flags, direct links, fail-closed snapshots, identity changes, strict payload validation, duplicate/resend behavior, provider/finalization errors, and callback variants.
-- TypeScript and scoped ESLint pass. The production build is run from an isolated temporary checkout so the user's running development server keeps its own build artifacts.
-- `node scripts/verification/admin-permissions.mjs` passes 17 isolated PostgreSQL/PGlite checks for SQL execution, RLS read/write denial, stale revision rejection, audit persistence, self/executive protection, password gates, contractor isolation, service-only finalization, linked records, and preservation of approved contractor data on resend. These are not live Supabase acceptance tests.
-- The actual new components were checked with sample accounts at desktop and phone sizes: toggles, save feedback, protected contractor settings, navigation, and invitation form layout. Images in `output/playwright/*permissions*preview.jpg` and `*invite*preview.jpg` are explicitly labeled visual previews. No preview action changed a live account or sent email.
-- Live security advisors report the pre-existing leaked-password-protection warning. Advisors must be rerun after approved application; this current result does not validate unapplied SQL.
+- All 441 application tests pass across 85 files. TypeScript passes. Scoped ESLint has no errors (two existing unused declarations in ticketIntakeService.ts). An isolated webpack production build succeeds with 41 routes while the user's dev server keeps its build artifacts.
+- `node scripts/verification/admin-permissions.mjs` passes 19 isolated PostgreSQL/PGlite checks. The fixture now mirrors the original missing service-role contractor/audit grants, and snapshot coverage requires all 21 catalog keys, including Payroll.
+- `scripts/verification/admin-permissions-live-rollback.sql` passes **23 live database/RLS checks** using simulated request identities. Overrides, revisions, audit binding, stale-save rejection, direct denied writes, allowed storm edits, independent Payroll access, profile protections, RPC gates, contractor isolation, service-only invitation finalization, linked business records and resend preservation pass. Every fixture, test identity and temporary edit rolls back; no email is sent. Evidence is in `docs/testing/admin-permissions-live-integrity.json`.
+- Real David staff browser acceptance: People & access loads both staff accounts and 12 modules. An explicit Reports allow equivalent to Jeanie's existing default is saved and survives reload; resetting to role defaults is saved afterward. Both Super Admins retain all 21 permissions, no overrides remain, and two legitimate save audits are retained. The enabled invitation form blocks empty submission with required-field validation. Screenshots are in `output/playwright/permissions-live-saved.png` and `invitation-live-validation.png`.
+- Real QA Alex contractor browser acceptance after migration: LAN sign-in succeeds, Time Tracking displays the configured $85/h rate, My Tickets shows only assigned ticket `2026100101`, and direct `/admin/users` is redirected to `/forbidden`. The QA session is signed out afterward; no field submission is performed. Screenshot: `output/playwright/permissions-contractor-isolation.png`.
+- Live policy comparison confirms all 72 original policies without staff-role predicates remain byte-for-byte equivalent, including contractor ownership predicates. The separate contractor status/history and assessment-read blockers remain outstanding.
+- Security advisors report only the existing [leaked-password-protection warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). The performance follow-up resolves all 99 unwrapped identity calls in new module policies; auth-initplan findings return from 124 to the prior 25. Other existing performance findings remain. Full results are in `docs/testing/admin-permissions-live-advisors.json`.
+- The activation record `docs/testing/admin-permissions-activation.json` distinguishes real browser checks from simulated database checks.
 
-Before enabling the features:
+Remaining acceptance:
 
-1. Obtain explicit approval to apply the prepared access-control change to live project `xcvacmreerrypygpritq`. Automatic review rejected the earlier attempt because the broad persistent deployment was not specifically authorized.
-2. Resolve the CLI migration-file generation block. Its sandbox escalation was rejected because the workspace is out of credits; do not reroute the CLI to bypass that review. Generate the tracked migration through the normal Supabase CLI workflow, then populate it from the approved draft.
-3. Apply the approved migration, regenerate database TypeScript types, remove temporary `as never` casts for the newly typed tables/RPCs, and rerun checks/advisors.
-4. Verify two real staff sessions: saved overrides persist after reload, denied direct URLs and direct database mutations fail, allowed changes succeed, and other modules remain available. Preserve a functioning access administrator throughout.
-5. Use an explicitly approved recipient to verify one email delivery, confirmation on a separate browser/computer, password setup, Auth/profile/contractor identity binding, and accepted status. Verify duplicate rejection and resend separately. No invitation emails have been sent as part of this implementation turn.
-6. Recheck existing contractor ticket isolation and portal behavior against live RLS. Pre-existing contractor status/history and assessment-read blockers remain separate work and are not declared fixed by this staff-permissions change.
+1. Verify two independent real staff sessions with an actual module restriction, direct route denial, allowed edits and other modules available. The live database proves denial, but the second staff browser session has not been used.
+2. With an explicitly approved recipient, verify SMTP/template/redirect configuration, actual email delivery, separate-computer confirmation/password setup, linked identity, accepted status, duplicate rejection and resend. No invitation emails have been sent.
+3. Complete physical device GPS/photo/time/claim workflows over trusted HTTPS as tracked in the implementation plan.
 
-The draft is transactional, so an application error rolls it back. After a successful application, a rollback must restore the captured policy/function definitions and remove the new restrictions through a reviewed migration. Preserve permission, invitation, and audit data before removing any new storage; do not use a blind table drop as rollback.
+The applied migrations are transactional. A rollback must restore the captured policy/function definitions and revoke only the additional server-role grants through a reviewed migration. Preserve permission, invitation and audit data before removing any new storage.
 
-
-Payroll extension (2026-10-03): Payroll View/Edit is independent of Time Review. Ordinary admins receive Payroll View by default, with edits requiring an explicit allow. Payroll readers may read underlying time entries and contractor names; time reviewers may read vehicle-claim amounts. Existing contractor ownership policies still apply. Rate and claim writes require Payroll Edit in the unapplied draft. Storage restrictions apply only to time-entry-photos and preserve existing ownership checks. The separate payroll-integrity repair changes two existing trigger functions without grants or role promotions and is also unapplied after automatic approval review rejected its live deployment.
+Payroll extension (2026-10-03): Payroll View/Edit is independent of Time Review. Ordinary Admins receive Payroll View by default, with edits requiring an explicit allow. Payroll readers may read underlying time entries and contractor names; time reviewers may read vehicle-claim amounts. Existing contractor ownership policies still apply. Rate and claim writes require Payroll Edit. Vehicle-photo restrictions apply only to time-entry-photos. The separate payroll-integrity repair was approved and applied as `20261004002801_preserve_payroll_snapshots_and_guard_vehicle_claims`; its 20 live database checks and remaining device acceptance are recorded in the implementation plan.

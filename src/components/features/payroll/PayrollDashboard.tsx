@@ -30,6 +30,7 @@ export interface PayrollDashboardProps {
   reviewerId?: string;
   canEdit?: boolean;
   canViewStorms?: boolean;
+  includeFinancial?: boolean;
 }
 
 function toDateInputValue(date: Date): string {
@@ -80,7 +81,7 @@ const ALL_STORMS_VALUE = 'ALL';
  * everything an admin needs to see what's owed, what's billable, and the
  * resulting margin, in one place.
  */
-export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = true }: PayrollDashboardProps) {
+export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = true, includeFinancial = false }: PayrollDashboardProps) {
   const defaultPeriod = useMemo(() => buildDefaultPeriod(), []);
   const [from, setFrom] = useState(defaultPeriod.from);
   const [to, setTo] = useState(defaultPeriod.to);
@@ -102,6 +103,7 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
     setError(null);
     try {
       const result = await payrollService.getPayrollSummary({
+        includeFinancial,
         from: new Date(`${from}T00:00:00`).toISOString(),
         to: new Date(`${to}T23:59:59.999`).toISOString(),
         stormEventId: stormEventId === ALL_STORMS_VALUE ? undefined : stormEventId,
@@ -113,10 +115,14 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
     } finally {
       setIsLoading(false);
     }
-  }, [from, to, stormEventId]);
+  }, [from, to, stormEventId, includeFinancial]);
 
   useEffect(() => {
-    void loadSummary();
+    void Promise.resolve().then(loadSummary);
+    const timer = window.setInterval(() => { void loadSummary(); }, 30000);
+    const refreshed = () => { void loadSummary(); };
+    window.addEventListener('time-entries-synced', refreshed);
+    return () => { window.clearInterval(timer); window.removeEventListener('time-entries-synced', refreshed); };
   }, [loadSummary]);
 
   const handleExport = async () => {
@@ -188,14 +194,14 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
       ) : null}
 
       <p className="text-sm text-muted-foreground">Totals include completed shifts awaiting review. Rejected shifts are excluded; vehicle reimbursement counts after approval.</p>
-      <PayrollSummaryCards totals={summary?.totals ?? null} isLoading={isLoading} />
+      <PayrollSummaryCards includeFinancial={includeFinancial} totals={summary?.totals ?? null} isLoading={isLoading} />
 
       <Card>
         <CardHeader>
-          <CardTitle>Contractor Payroll &amp; Margin</CardTitle>
+          <CardTitle>{includeFinancial ? 'Contractor Payroll & Margin' : 'Contractor Payroll'}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ContractorPayrollTable rows={summary?.rows ?? []} isLoading={isLoading} />
+          <ContractorPayrollTable includeFinancial={includeFinancial} rows={summary?.rows ?? []} isLoading={isLoading} />
         </CardContent>
       </Card>
 
@@ -210,11 +216,11 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
 
       <div className="grid gap-6 lg:grid-cols-2">
         <RoleRateEditor canEdit={canEdit} />
-        <UtilityBillingRateEditor
+        {includeFinancial && <UtilityBillingRateEditor
           canEdit={canEdit}
           stormEventId={stormEventId === ALL_STORMS_VALUE ? null : stormEventId}
           title={stormEventId === ALL_STORMS_VALUE ? 'Global Utility Bill Rates' : 'Storm Utility Bill Rates'}
-        />
+        />}
       </div>
     </div>
   );

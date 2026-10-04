@@ -120,11 +120,13 @@ describe('calculateTimeEntrySummary', () => {
           clock_in_at: '2026-02-12T08:00:00.000Z',
           clock_out_at: '2026-02-12T10:00:00.000Z',
           break_minutes: 15,
+          payroll_amount: 175,
           work_type_rate: 100,
           status: 'PENDING',
         },
         {
           clock_in_at: '2026-02-12T11:00:00.000Z',
+          clock_out_at: '2026-02-12T12:00:00.000Z',
           total_minutes: 60,
           billable_minutes: 60,
           billable_amount: 90,
@@ -135,6 +137,7 @@ describe('calculateTimeEntrySummary', () => {
           clock_in_at: '2026-02-12T12:00:00.000Z',
           clock_out_at: '2026-02-12T12:30:00.000Z',
           break_minutes: 0,
+          payroll_amount: 40,
           work_type_rate: 80,
           status: 'REJECTED',
         },
@@ -151,5 +154,15 @@ describe('calculateTimeEntrySummary', () => {
       approvedCount: 1,
       rejectedCount: 1,
     });
+  });
+
+  it('uses saved overtime wages and never estimates an unsynced wage', () => {
+    const entry = {
+      clock_in_at: '2026-09-30T11:00:00Z', clock_out_at: '2026-10-01T03:00:00Z',
+      work_type_rate: 65, billable_amount: 1040, payroll_amount: 1300,
+      status: 'PENDING', sync_status: 'SYNCED',
+    };
+    expect(calculateTimeEntrySummary([entry]).totalAmount).toBe(1300);
+    expect(calculateTimeEntrySummary([{ ...entry, sync_status: 'PENDING' }]).totalAmount).toBeUndefined();
   });
 });

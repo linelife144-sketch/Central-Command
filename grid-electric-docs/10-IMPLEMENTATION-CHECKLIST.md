@@ -668,7 +668,7 @@ interface SyncManager {
 - [x] TypeScript check and 29 targeted tests passed across eight suites.
 - [ ] Complete contractor status progression after approval of scoped Supabase status permissions.
 - [ ] Restore assessment reads after approval of the scoped SELECT grant with existing RLS.
-- [ ] Finish staff contractor provisioning: one-person invitation implementation is locally complete as recorded below; live migration and actual invitation acceptance remain pending.
+- [ ] Finish staff contractor provisioning: one-person invitation implementation and live migration are complete as recorded below; actual email delivery and recipient activation remain pending.
 - GPS/location testing is deferred by the user for a later build.
 
 This checklist records the testing progress. Source changes are local; no deployment or Git operation performed.
@@ -719,17 +719,19 @@ Visual QA images: `output/playwright/`.
 
 This tracker records the user's authorized Phase 4 feature work. Implementation details and activation gates are in `docs/adr/0006-individual-admin-permissions.md`.
 
-- [x] Build People & access directory and per-person View/Edit controls for 11 modules and 19 permission keys, using the blue/navy/gold theme. — Codex /root
+- [x] Build People & access directory and per-person View/Edit controls for 12 modules and 21 permission keys, using the blue/navy/gold theme. — Codex /root
 - [x] Apply permission-aware navigation, protected direct routes, screen mounting, and staff mutation controls; retain contractor portal behavior. — Codex /root
-- [x] Prepare atomic audited database permission saves, restrictive RLS, revision conflict detection, and self/executive/last-administrator protections in the unapplied SQL draft. — Codex /root
+- [x] Prepare atomic audited database permission saves, restrictive RLS, revision conflict detection, and self/executive/last-administrator protections in the applied permissions migration. — Codex /root
 - [x] Build one-person contractor invitation, duplicate/resend handling, trusted role binding, linked business-record finalization, password setup, status, and audit handling. — Codex /root
 - [x] Support token-hash and standard invitation callbacks, preserve the public callback route, and clear permission snapshots when session identity changes. — Codex /root
-- [x] Pass all 355 application tests, TypeScript, scoped ESLint, isolated production build, and 17 isolated PGlite database checks. Verify sample-account previews at desktop/phone widths. — Codex /root
-- [x] Capture the current live policy/function baseline for review and rollback preparation. No access-control migration or email sends occurred. — Codex /root
-- [x] Verify the existing real David McCarty staff session still loads its dashboard and the new People & access page reports the migration-pending guard; verify typing in the LAN login email field without submitting credentials. — Codex /root
-- [ ] Obtain explicit approval and apply the prepared change to live Supabase project `xcvacmreerrypygpritq`; automatic review rejected the broad persistent deployment without specific authorization. — Codex /root
-- [ ] Generate the tracked migration with Supabase CLI after its workspace-credit approval-review failure is resolved; regenerate database types after application. — Codex /root
-- [ ] Verify saved permissions in real staff sessions, direct live RLS denial, current security advisors, and unchanged contractor isolation. — Codex /root
+- [x] Verify the initial local baseline: 355 application tests, TypeScript, scoped ESLint, isolated production build, and 17 isolated PGlite database checks. Verify sample-account previews at desktop/phone widths. — Codex /root
+- [x] Capture the initial live policy/function baseline for review and rollback preparation before activation; refresh it to 127 policies before applying. — Codex /root
+- [x] Before activation, verify the existing real David McCarty staff session still loads its dashboard and the new People & access page reports the migration-pending guard; verify typing in the LAN login email field without submitting credentials. — Codex /root
+- [x] Apply the explicitly approved permissions/invitation migration `20261004010249` to live project `xcvacmreerrypygpritq`; follow up with the required server-role grants (`20261004010952`) and cached policy identity (`20261004011222`). — Codex /root
+- [x] Generate the tracked migrations with Supabase CLI, match filenames to observed live history, regenerate database types, and remove temporary permission/invitation casts. — Codex /root
+- [x] Verify real David browser save/reload/reset for Jeanie using equivalent role defaults, 23 live rollback database checks, 19 isolated checks, current advisors, and all 72 unchanged original non-staff policies. Both Super Admins retain full access; test fixtures roll back. Evidence: `docs/testing/admin-permissions-activation.json`. — Codex /root
+- [x] Verify real QA contractor LAN sign-in, configured rate, assigned-ticket isolation, and denied direct People & access URL after migration; sign out the QA session. Refresh the AST graph to 2,555 nodes / 7,152 edges / 166 communities. — Codex /root
+- [ ] Verify an actual module restriction across two independent real staff browser sessions; database denial is proven but second staff browser acceptance remains open. — Codex /root
 - [ ] Verify SMTP/redirect configuration and actual invitation delivery, separate-computer activation, password setup, linked identity, duplicate rejection, and resend with an approved recipient. — Codex /root
 
 ### Implementation-plan state review — 2026-10-03 (Codex /root)
@@ -737,7 +739,7 @@ This tracker records the user's authorized Phase 4 feature work. Implementation 
 - [x] Review `implementation_plan.md`, current Git status/diffs/history, and Graphify queries against the existing 2,394-node graph. Review only; no application code or live database changes. — Codex /root
 - [x] Verify current local baseline: 431 tests pass across 85 files; TypeScript passes with build metadata written outside the live runtime. — Codex /root
 - [x] Complete Phase 3 Step 14 locally: preserve costing snapshots, display wages/reimbursement/payout, add admin billing/margin, refresh totals, and preserve offline storm/costing fields. — Codex /root
-- [x] Reconcile Payroll navigation and local authorization: actual Sidebar/search includes Payroll, independent View/Edit keys are in the catalog, and controls respect edit access. Live module-policy deployment remains pending. — Codex /root
+- [x] Reconcile Payroll navigation and local authorization: actual Sidebar/search includes Payroll, independent View/Edit keys are in the catalog, and controls respect edit access. Live module policies were applied with approval in migration `20261004010249`. — Codex /root
 - [ ] Finish Step 15 device acceptance using trusted HTTPS. The approved payroll repair, live database checks, and Phase 3 migration-file reconciliation are complete; Step 16 uses authorized dummy pilot rates. See the Phase 3 completion entry below. — Codex /root
 
 ### Project guidance cleanup — 2026-10-03 (Codex /root)
@@ -755,4 +757,56 @@ This tracker records the user's authorized Phase 4 feature work. Implementation 
 - [x] Verify real QA contractor Wi-Fi sign-in, configured rate, totals refresh, identity after reload, and staff Payroll route denial. GPS failure correctly blocks clock-in. — Codex /root
 - [ ] Complete actual device shift/photo/claim/review workflow and displayed linked totals using a trusted HTTPS address. Current HTTP LAN browser testing cannot supply the required GPS reading. — Codex /root
 - [x] Restore all five applied Phase 3 payroll migrations via CLI-created files, use confirmed live versions, and compare recovered SQL against recorded live history. — Codex /root
-- [ ] Apply the separately prepared per-user permission/invitation migration after its existing approval gate. — Codex /root
+- [x] Apply the separately approved per-user permission/invitation migration and follow-up grants/performance fixes; verify 23 live database checks and real staff save/reload. — Codex /root
+
+### Four QA workers and weekly overtime — 2026-10-03 (Codex /root)
+
+- [x] Completion audit: re-read live state; four active approved profiles have real Auth sign-ins and one QA ticket each. Six clock records reconcile, but weekly migration remains absent and all six reviews remain pending. Same explicit-approval blocker persists for three consecutive goal turns; full acceptance remains incomplete. — Codex /root
+
+- [x] Verify persisted submitted totals on all four worker screens after reload; label the wage total as Wages to distinguish it from customer billing. — Codex /root
+
+- [x] Create four live Supabase Auth/profile/approved contractor accounts: QA Casey Storm Manager, QA Jordan Team Lead, QA Taylor Senior Assessor, and QA Riley Driver. Use separate worker access and payroll roles; retain existing QA Damage Assessors to cover the fifth class. — Codex /root
+- [x] Create QA-PAY-20261003 storm, confirmed roster membership, and one linked assigned QA ticket per new worker; retain generated passwords in the ignored local `.env.qa-payroll-credentials.json`. — Codex /root
+- [x] Verify each new account signs in through the real browser and survives reload. Verify read-only assigned wage, ticket selection, work-type dropdown, and break dropdown. — Codex /root
+- [x] Run one browser clock-in/out per new worker with emulated GPS (10m accuracy) and exactly 16 hours on September 21, 2026. Read back real linked records: 960 billable minutes each; wages $1,840 / $1,680 / $1,520 / $1,040; customer billing $2,800 each. Reconcile 64h / $6,080 wages / $11,200 billing / $5,120 margin before reimbursement. — Codex /root
+- [x] Implement local 24-hour shift validation, assigned-ticket linkage, persisted GPS accuracy, and validation errors that cannot masquerade as offline success. — Codex /root
+- [x] Prepare CLI-created migration `20261004025622_weekly_overtime_and_clock_validation.sql`: Monday-Sunday America/Chicago week, 1.5x after 40 worked hours, separate regular/overtime snapshots, frozen clock-in rates, chronological/nonoverlapping shifts, break/GPS/ticket validation, staff-bound review, and restrictive worker isolation. — Codex /root
+- [x] Add identity-scoped, chronological offline time upload processing with server snapshot preservation and queue reconciliation. Pass 446 tests across 86 files, TypeScript, scoped ESLint, and isolated webpack build. Pass 15 isolated database suites, including 30 role/work-type combinations, weekly threshold/reset, week split, DST, snapshot protection, and permissive-policy isolation. — Codex /root
+- [x] Verify two real QA Driver offline clock-in/out shifts upload exactly once on reconnection: 60 minutes / $65 wages / $175 billing, then 15-minute break / 45 paid minutes / $48.75 wages / $131.25 billing. Confirm all six QA shifts total 66 elapsed hours, 65.75 paid hours, $6,193.75 wages, $11,506.25 billing, $5,312.50 margin before reimbursement. — Codex /root
+- [x] Fix and verify offline financial display and identity: unsynced wage totals remain unknown, queued pending minutes remain visible, previously loaded own-worker snapshots remain cached, sync refreshes submitted totals, and the verified worker identity survives offline focus plus the 30-second background refresh. Keep sign-out/account-change isolation tested. Pass 452 tests across 86 files, TypeScript, scoped ESLint, and isolated production build. — Codex /root
+- [ ] Apply weekly migration after explicit approval. Automatic approval review rejected live deployment because it changes costing, triggers, and access control for all workers. No live weekly schema or policy changes have been applied. — Codex /root
+- [ ] Verify staff review and Payroll dashboard through the existing staff Chrome session after explicit authorization. Automatic approval review rejected generating a sign-in link and accessing that session without specific authorization; no new staff credential was created. — Codex /root
+- [ ] Finish live weekly overtime and offline allocation under the proposed migration, reimbursement submission/review, and physical device GPS/photo acceptance. Six browser shifts establish below-threshold clock/wage/billing and current-backend offline behavior only. Evidence: `docs/testing/payroll-test-workers.json`, `docs/testing/payroll-worker-acceptance.json`, and `output/playwright/payroll-*.png`. — Codex /root
+- [ ] Finish live weekly overtime and offline allocation under the proposed migration, reimbursement submission/review, and physical device GPS/photo acceptance. Six browser shifts establish below-threshold clock/wage/billing and current-backend offline behavior only. Evidence: `docs/testing/payroll-test-workers.json`, `docs/testing/payroll-worker-acceptance.json`, and `output/playwright/payroll-*.png`. — Codex /root
+
+### Dashboard status strip — Completed tile — 2026-10-04 (Cline)
+
+- [x] Add a `completed` count to `DashboardMetricsData['status_breakdown']` in `dashboardReportingService.ts`, computed from active `COMPLETE` tickets alongside `in_route` / `on_site` / `pending_review`. — Cline
+- [x] Collapse the duplicated super-admin local-test breakdown into a call to `buildDashboardMetrics` so the two implementations cannot drift. — Cline
+- [x] Render a fifth `Completed` tile in `DashboardMetrics.tsx`, widen the strip to `md:grid-cols-5`, add the fifth status-dot color, and generalize the mobile strip border rules from a fixed 2x2 to `nth-child(2n)` / `:last-child` so the new cell has no stray borders. — Cline
+- [x] Extend `dashboardReportingService.test.ts` and `useNavigationSignals.test.ts` fixtures; pass 452 tests across 86 files and `tsc --noEmit`. — Cline
+
+### Ticket importance replaces A/B/C/X priority — 2026-10-04 (Cline)
+
+- [x] Apply live Supabase migration `ticket_importance_replaces_priority`: add `tickets.is_important boolean NOT NULL DEFAULT false`, backfill legacy Critical (`priority = 'A'`) to `true`, recreate index as `idx_tickets_is_important`, drop the `priority` column, and rewrite `create_storm_ticket` to consume `p_common->>'is_important'`. Assessments keep their own NFPA `priority_level`. — Cline
+- [x] Replace `TicketPriorityBadge` with `TicketImportanceBadge` (red destructive ⚠ *Important* vs. neutral secondary *Standard*) and wire it into the ticket detail page, ticket list column, and ticket card. — Cline
+- [x] Swap the A/B/C/X select for an *Important ticket* checkbox on both ticket creation forms, describing the rule: environmental hazard (e.g., oil leak) or the public in danger. Update the ticket list filter to All/**Important**/**Standard**, map marker accents + popups, contractor recent-ticket summary, and the dashboard Emergency dispatch deep link (`?important=true`). — Cline
+- [x] Update `Ticket.is_important`, validators, template common schema, `ticketIntakeService`, `localTestStore`, Dexie local ticket type, `contractorService`, `sql/03_ticket_tables.sql`, and affected tests; `tsc --noEmit` clean and 46/46 tests pass in the ticket/map/store/dexie suites. — Cline
+
+
+### Configurable contractor time and payroll — 2026-10-04 (Codex /root)
+
+- [x] Supersede the unapplied fixed-weekly proposal with the user-approved effective contractor agreement plan; preserve historical snapshots. — Codex /root
+- [x] Implement local agreement validation, flat/weekly tiers, exact break/vehicle intervals, segmented wages/allowance, invitation setup recovery, and wage-only projections/cache cleanup. — Codex /root
+- [x] Pass fourteen isolated PGlite calculation/ownership/access suites; this is local database evidence only. — Codex /root
+- [ ] Complete UI/unit checks, live migration validation, type generation, and authenticated linked-record acceptance. — Codex /root
+- [ ] Complete physical iPad GPS/photo acceptance through trusted HTTPS. Onboarding remains a separate branch. — Codex /root
+
+### `/tickets` list page feedback — 2026-10-04 (Cline)
+
+- [x] Reorder `TicketList.tsx` desktop columns so **Assigned To** is the second column (after **Ticket #**), per field feedback that crew assignment is the first thing staff scan for. — Cline
+- [x] Add `getFeederFromPayload()` in `src/lib/tickets/templates/feeder.ts`, exported from `lib/tickets/templates`, resolving a ticket's feeder/circuit number from its utility payload (`feeder` for Entergy, `feeder_or_circuit_id` for Duke/CenterPoint/Oncor/FPL/TECO). Added `ticketService.getUtilityPayloadsByTicketIds()` for a single batched `ticket_payloads` fetch (live + local-test-store paths) so the list avoids N+1 requests. Renamed the column header to **Utility / Feeder** and show `Feeder <value>` beneath the utility client when present, falling back to the work description. — Cline
+- [x] Renamed the **Location** column to **Outage Location** and switched its cell to `formatAddress()` so it renders the full street/city/state/zip instead of a partial join. — Cline
+- [x] Switched the **Created** column from `formatDate` to `formatDateTime` so the ticket creation time is visible, not just the date. — Cline
+- [x] Removed the global Online/Offline connection pill (`cc-connection`) from `TopBar.tsx` app-wide (admin + contractor shells), including the now-unused `online` state/effect, `Wifi`/`WifiOff` imports, and the dead `.cc-connection` CSS rules in `globals.css`. The existing offline-queue `OfflineBanner` is unaffected. — Cline
+- [x] Verified with `tsc --noEmit` (clean), scoped `eslint` (clean), and the full `vitest` suite (458/458 tests, 87 files). Confirmed via a local dev server that `/tickets` and `/login` compile and render without error. — Cline

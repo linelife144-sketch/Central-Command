@@ -25,19 +25,19 @@ afterEach(cleanup);
 
 describe('PayrollSummaryCards', () => {
   it('shows placeholders while loading with no totals yet', () => {
-    render(<PayrollSummaryCards totals={null} isLoading />);
+    render(<PayrollSummaryCards includeFinancial totals={null} isLoading />);
 
     expect(screen.getAllByText('…').length).toBeGreaterThan(0);
   });
 
   it('shows em-dash placeholders when not loading and there are no totals', () => {
-    render(<PayrollSummaryCards totals={null} isLoading={false} />);
+    render(<PayrollSummaryCards includeFinancial totals={null} isLoading={false} />);
 
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 
   it('renders formatted currency and percent values from totals', () => {
-    render(<PayrollSummaryCards totals={buildTotals()} />);
+    render(<PayrollSummaryCards includeFinancial totals={buildTotals()} />);
 
     expect(screen.getByText('$500.00')).not.toBeNull();
     expect(screen.getByText('$25.00')).not.toBeNull();
@@ -48,7 +48,7 @@ describe('PayrollSummaryCards', () => {
   });
 
   it('renders a negative margin in the danger color class', () => {
-    render(<PayrollSummaryCards totals={buildTotals({ marginAmount: -50, marginPercent: -10 })} />);
+    render(<PayrollSummaryCards includeFinancial totals={buildTotals({ marginAmount: -50, marginPercent: -10 })} />);
 
     const marginValue = screen.getByText('-$50.00');
     expect(marginValue.className).toContain('text-grid-danger-ink');

@@ -61,12 +61,11 @@ describe('VehicleReimbursementCapture', () => {
     expect(submitButton.disabled).toBe(false);
   });
 
-  it('shows a capped preview when declared hours exceed the shift length', () => {
-    render(<VehicleReimbursementCapture entry={buildEntry({ billable_minutes: 120 })} contractorId="c-1" />);
-
-    fireEvent.change(screen.getByLabelText(/hours vehicle was used/i), { target: { value: '5' } });
-
-    expect(screen.getByText(/capped at the 2\.0h shift length/i)).not.toBeNull();
+  it('shows recorded hours and the saved allowance without editable hours', () => {
+    render(<VehicleReimbursementCapture entry={buildEntry({ calculation_version: 'AGREEMENT', vehicle_minutes: 120, vehicle_allowance_amount: 12 })} contractorId="c-1" />);
+    expect((screen.getByLabelText(/hours vehicle was used/i) as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText(/hours vehicle was used/i) as HTMLInputElement).value).toBe('2');
+    expect(screen.getByText('$12.00')).not.toBeNull();
   });
 
   it('submits the claim with the entered values once valid', async () => {

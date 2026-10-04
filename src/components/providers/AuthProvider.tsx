@@ -63,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch user profile from profiles table
   const fetchProfile = async (userId: string) => {
+    // A previously verified field identity stays usable while disconnected.
+    // No profile or permissions are invented for a new offline session.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -73,6 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (currentUserId.current !== userId) return;
 
       if (error) {
+        if (!error.code && typeof navigator !== 'undefined' && !navigator.onLine) {
+          setProfile(current => current?.id === userId && current.role === 'CONTRACTOR' ? current : null);
+          setPermissions({});
+          return;
+        }
         setProfile(null);
         setPermissions({});
         // Supabase returns a `PostgrestError` (a class extending Error). The
@@ -93,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data) {
         setProfile(data.is_active ? data as AppUser : null);
         if (data.role !== 'CONTRACTOR') {
-          const { data: map, error: permissionsError } = await supabase.rpc('get_my_permissions' as never);
+          const { data: map, error: permissionsError } = await supabase.rpc('get_my_permissions');
           if (currentUserId.current !== userId) return;
           const pendingMigration = permissionsError?.code === 'PGRST202' && permissionsError.message.includes('get_my_permissions');
           setPermissions(data.is_active ? pendingMigration ? resolvePermissions(data.role) : !permissionsError && map ? map as PermissionMap : {} : {});
@@ -181,9 +189,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (profileTimer) clearTimeout(profileTimer);
+        const sameUser = currentUserId.current === session?.user.id;
         currentUserId.current = session?.user.id ?? null;
         setUser(session?.user ?? null);
-        setProfile(null);
+        setProfile(current => sameUser && current?.role === 'CONTRACTOR' ? current : null);
         setPermissions({});
 
         if (session?.user) {
@@ -208,10 +217,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (DEV_BYPASS_AUTH || !user?.id) return;
-    const refresh = () => { if (document.visibilityState === 'visible') void refreshProfile(); };
+    const refresh = () => { if (navigator.onLine && document.visibilityState === 'visible') void refreshProfile(); };
     window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
     const timer = setInterval(refresh, 30000);
-    return () => { window.removeEventListener('focus', refresh); clearInterval(timer); };
+    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); clearInterval(timer); };
     // Session identity is the lifetime of this refresh subscription.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);

@@ -2,9 +2,9 @@
 
 export const APP_CONFIG = {
   // Time tracking
-  MAX_TIME_ENTRY_HOURS: 12,
+  MAX_TIME_ENTRY_HOURS: 24,
   WARNING_TIME_ENTRY_HOURS: 8,
-  AUTO_CLOCK_OUT_ENABLED: true,
+  AUTO_CLOCK_OUT_ENABLED: false,
   
   // GPS
   GEOFENCE_RADIUS_METERS: 500,
@@ -68,14 +68,6 @@ export const TICKET_STATUSES = {
   CLOSED: 'CLOSED',
   ARCHIVED: 'ARCHIVED',
   EXPIRED: 'EXPIRED',
-} as const;
-
-// Priority levels (NFPA 70B)
-export const PRIORITY_LEVELS = {
-  A: 'A', // Critical
-  B: 'B', // Urgent
-  C: 'C', // Standard
-  X: 'X', // Hold
 } as const;
 
 // Work types

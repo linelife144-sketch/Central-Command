@@ -1,7 +1,8 @@
+import { testCompensation } from '../compensation/testFixtures';
 import { describe, expect, it } from 'vitest';
 import { contractorInviteSchema } from './contractorInviteValidation';
 describe('one-person contractor invitations', () => {
-  const person = {first_name:' Alex ',last_name:'Rivera',email:'ALEX@example.com'};
+  const person = {first_name:' Alex ',last_name:'Rivera',email:'ALEX@example.com',compensation:testCompensation};
   it('normalizes one email and does not accept role, password, or batches', () => {
     expect(contractorInviteSchema.parse(person)).toMatchObject({first_name:'Alex',email:'alex@example.com',resend:false});
     for(const payload of [[person], {...person, role:'SUPER_ADMIN'}, {...person,temp_password:'unsafe'}, {...person,email:['a@example.com','b@example.com']}]) expect(contractorInviteSchema.safeParse(payload).success).toBe(false);

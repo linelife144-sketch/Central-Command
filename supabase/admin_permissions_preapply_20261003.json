@@ -1,0 +1,1916 @@
+{
+  "columns": [
+    {
+      "table": "audit_logs",
+      "name": "id",
+      "required": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "table": "audit_logs",
+      "name": "action",
+      "required": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "entity_type",
+      "required": true,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "entity_id",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "user_id",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "user_role",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "old_values",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "new_values",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "change_summary",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "ip_address",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "user_agent",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "session_id",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "audit_logs",
+      "name": "created_at",
+      "required": false,
+      "default": "now()"
+    },
+    {
+      "table": "audit_logs",
+      "name": "created_date",
+      "required": false,
+      "default": "CURRENT_DATE"
+    },
+    {
+      "table": "contractors",
+      "name": "id",
+      "required": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "table": "contractors",
+      "name": "profile_id",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "business_name",
+      "required": true,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "business_type",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "tax_id",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "tax_id_encrypted",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "address_line1",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "address_line2",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "city",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "state",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "zip_code",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "business_phone",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "business_email",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "emergency_contact_name",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "emergency_contact_phone",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "onboarding_status",
+      "required": false,
+      "default": "'PENDING'::character varying"
+    },
+    {
+      "table": "contractors",
+      "name": "onboarding_completed_at",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "approved_by",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "approved_at",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "is_eligible_for_assignment",
+      "required": false,
+      "default": "false"
+    },
+    {
+      "table": "contractors",
+      "name": "eligibility_reason",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "created_at",
+      "required": false,
+      "default": "now()"
+    },
+    {
+      "table": "contractors",
+      "name": "updated_at",
+      "required": false,
+      "default": "now()"
+    },
+    {
+      "table": "contractors",
+      "name": "created_by",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "updated_by",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "contractors",
+      "name": "is_deleted",
+      "required": false,
+      "default": "false"
+    },
+    {
+      "table": "contractors",
+      "name": "role",
+      "required": true,
+      "default": "'DAMAGE_ASSESSER'::contractor_role"
+    },
+    {
+      "table": "profiles",
+      "name": "id",
+      "required": true,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "email",
+      "required": true,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "first_name",
+      "required": true,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "last_name",
+      "required": true,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "phone",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "role",
+      "required": true,
+      "default": "'CONTRACTOR'::user_role"
+    },
+    {
+      "table": "profiles",
+      "name": "is_active",
+      "required": false,
+      "default": "true"
+    },
+    {
+      "table": "profiles",
+      "name": "is_email_verified",
+      "required": false,
+      "default": "false"
+    },
+    {
+      "table": "profiles",
+      "name": "must_reset_password",
+      "required": true,
+      "default": "false"
+    },
+    {
+      "table": "profiles",
+      "name": "last_login_at",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "mfa_enabled",
+      "required": false,
+      "default": "false"
+    },
+    {
+      "table": "profiles",
+      "name": "mfa_secret_encrypted",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "created_at",
+      "required": false,
+      "default": "now()"
+    },
+    {
+      "table": "profiles",
+      "name": "updated_at",
+      "required": false,
+      "default": "now()"
+    },
+    {
+      "table": "profiles",
+      "name": "created_by",
+      "required": false,
+      "default": null
+    },
+    {
+      "table": "profiles",
+      "name": "updated_by",
+      "required": false,
+      "default": null
+    }
+  ],
+  "policies": [
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "profiles_update_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "UPDATE",
+      "qual": "(id = auth.uid())",
+      "with_check": "((id = auth.uid()) AND ((current_user_role() = 'SUPER_ADMIN'::text) OR ((role)::text = current_user_role())))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "profiles_insert_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(is_admin() AND (((role)::text <> 'SUPER_ADMIN'::text) OR is_super_admin()))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "profiles_delete_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "DELETE",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_events",
+      "policyname": "storm_events_write_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_attachments",
+      "policyname": "ticket_attachments_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_attachments",
+      "policyname": "ticket_attachments_write_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_payloads",
+      "policyname": "ticket_payloads_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_payloads",
+      "policyname": "ticket_payloads_write_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_extraction_sessions",
+      "policyname": "ticket_extraction_sessions_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_extraction_sessions",
+      "policyname": "ticket_extraction_sessions_write_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_templates",
+      "policyname": "ticket_templates_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_templates",
+      "policyname": "ticket_templates_write_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customers",
+      "policyname": "customers_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customers",
+      "policyname": "customers_write_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utilities",
+      "policyname": "utilities_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utilities",
+      "policyname": "utilities_write_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "profiles_update_super_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "UPDATE",
+      "qual": "is_super_admin()",
+      "with_check": "is_super_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "profiles_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_logs",
+      "policyname": "notifications_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "role_rate_defaults",
+      "policyname": "role_rate_defaults_select",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "SELECT",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "role_rate_defaults",
+      "policyname": "role_rate_defaults_admin_write",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "role_rate_defaults",
+      "policyname": "role_rate_defaults_admin_update",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "UPDATE",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "role_rate_defaults",
+      "policyname": "role_rate_defaults_admin_delete",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "DELETE",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utility_billing_rates",
+      "policyname": "utility_billing_rates_select",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "SELECT",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utility_billing_rates",
+      "policyname": "utility_billing_rates_admin_write",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utility_billing_rates",
+      "policyname": "utility_billing_rates_admin_update",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "UPDATE",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utility_billing_rates",
+      "policyname": "utility_billing_rates_admin_delete",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "DELETE",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "role_rate_defaults",
+      "policyname": "role_rate_defaults_active_profile",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utility_billing_rates",
+      "policyname": "utility_billing_rates_active_profile",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "time_entry_vehicle_claims",
+      "policyname": "vehicle_claims_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM contractors c\n  WHERE ((c.id = time_entry_vehicle_claims.contractor_id) AND (c.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "time_entry_vehicle_claims",
+      "policyname": "vehicle_claims_insert_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(EXISTS ( SELECT 1\n   FROM contractors c\n  WHERE ((c.id = time_entry_vehicle_claims.contractor_id) AND (c.profile_id = auth.uid()))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "time_entry_vehicle_claims",
+      "policyname": "vehicle_claims_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "public"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "time_entry_vehicle_claims",
+      "policyname": "vehicle_claims_active_profile",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "time_entry_photos_insert_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((bucket_id = 'time-entry-photos'::text) AND (EXISTS ( SELECT 1\n   FROM contractors c\n  WHERE ((c.profile_id = auth.uid()) AND ((storage.foldername(objects.name))[1] = (c.id)::text)))))"
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "time_entry_photos_select_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'time-entry-photos'::text) AND (EXISTS ( SELECT 1\n   FROM contractors c\n  WHERE ((c.profile_id = auth.uid()) AND ((storage.foldername(objects.name))[1] = (c.id)::text)))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "time_entry_photos_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "((bucket_id = 'time-entry-photos'::text) AND is_admin())",
+      "with_check": "((bucket_id = 'time-entry-photos'::text) AND is_admin())"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_phase_steps",
+      "policyname": "storm_event_phase_steps_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_roster_revisions",
+      "policyname": "storm_event_roster_revisions_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_roster_members",
+      "policyname": "storm_event_roster_members_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_authorization_logs",
+      "policyname": "storm_event_authorization_logs_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_documents",
+      "policyname": "storm_event_documents_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_logistics_entries",
+      "policyname": "storm_event_logistics_entries_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": "is_admin()"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_banking",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_rates",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_payloads",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tickets",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_attachments",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractors",
+      "policyname": "contractors_select_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(profile_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractors",
+      "policyname": "contractors_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractors",
+      "policyname": "contractors_update_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "UPDATE",
+      "qual": "(profile_id = auth.uid())",
+      "with_check": "(profile_id = auth.uid())"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractors",
+      "policyname": "contractors_write_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tickets",
+      "policyname": "tickets_select_assigned",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(assigned_to IN ( SELECT contractors.id\n   FROM contractors\n  WHERE (contractors.profile_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "profiles_select_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_events",
+      "policyname": "storm_events_select_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tickets",
+      "policyname": "tickets_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "time_entries",
+      "policyname": "time_entries_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(contractor_id IN ( SELECT contractors.id\n   FROM contractors\n  WHERE (contractors.profile_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "time_entries",
+      "policyname": "time_entries_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_reports",
+      "policyname": "expense_reports_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(contractor_id IN ( SELECT contractors.id\n   FROM contractors\n  WHERE (contractors.profile_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_reports",
+      "policyname": "expense_reports_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_items",
+      "policyname": "expense_items_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (expense_reports er\n     JOIN contractors s ON ((er.contractor_id = s.id)))\n  WHERE ((expense_items.expense_report_id = er.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_items",
+      "policyname": "expense_items_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "damage_assessments",
+      "policyname": "damage_assessments_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(contractor_id IN ( SELECT contractors.id\n   FROM contractors\n  WHERE (contractors.profile_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "damage_assessments",
+      "policyname": "damage_assessments_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "equipment_assessments",
+      "policyname": "equipment_assessments_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (damage_assessments da\n     JOIN contractors s ON ((da.contractor_id = s.id)))\n  WHERE ((equipment_assessments.damage_assessment_id = da.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "equipment_assessments",
+      "policyname": "equipment_assessments_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_logs",
+      "policyname": "notifications_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "sync_queue",
+      "policyname": "sync_queue_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "sync_queue",
+      "policyname": "sync_queue_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tax_1099_tracking",
+      "policyname": "tax_1099_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM contractors s\n  WHERE ((tax_1099_tracking.contractor_id = s.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tax_1099_tracking",
+      "policyname": "tax_1099_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_status_history",
+      "policyname": "ticket_status_history_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (tickets t\n     JOIN contractors s ON ((t.assigned_to = s.id)))\n  WHERE ((ticket_status_history.ticket_id = t.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_status_history",
+      "policyname": "ticket_status_history_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_routes",
+      "policyname": "ticket_routes_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "equipment_types",
+      "policyname": "equipment_types_read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(auth.role() = 'authenticated'::text)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "hazard_categories",
+      "policyname": "hazard_categories_read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(auth.role() = 'authenticated'::text)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "wire_sizes",
+      "policyname": "wire_sizes_read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(auth.role() = 'authenticated'::text)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_policies",
+      "policyname": "expense_policies_read",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(auth.role() = 'authenticated'::text)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "equipment_types",
+      "policyname": "equipment_types_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "hazard_categories",
+      "policyname": "hazard_categories_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "wire_sizes",
+      "policyname": "wire_sizes_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_policies",
+      "policyname": "expense_policies_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractors",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_rates",
+      "policyname": "rates_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM contractors s\n  WHERE ((contractor_rates.contractor_id = s.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_rates",
+      "policyname": "rates_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_banking",
+      "policyname": "banking_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM contractors s\n  WHERE ((contractor_banking.contractor_id = s.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_banking",
+      "policyname": "banking_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_invoices",
+      "policyname": "invoices_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM contractors s\n  WHERE ((contractor_invoices.contractor_id = s.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_invoices",
+      "policyname": "invoices_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "invoice_line_items",
+      "policyname": "invoice_line_items_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (contractor_invoices si\n     JOIN contractors s ON ((si.contractor_id = s.id)))\n  WHERE ((invoice_line_items.invoice_id = si.id) AND (s.profile_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "invoice_line_items",
+      "policyname": "invoice_line_items_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "media_assets",
+      "policyname": "media_select_own",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(uploaded_by = auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "media_assets",
+      "policyname": "media_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "audit_logs",
+      "policyname": "audit_logs_admin",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "is_admin()",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "audit_logs",
+      "policyname": "audit_logs_no_insert",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "false"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "audit_logs",
+      "policyname": "audit_logs_no_update",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "UPDATE",
+      "qual": "false",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "audit_logs",
+      "policyname": "audit_logs_no_delete",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "DELETE",
+      "qual": "false",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_extraction_sessions",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_status_history",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_routes",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_events",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_templates",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_policies",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_items",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "time_entries",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "expense_reports",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "hazard_categories",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "wire_sizes",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "equipment_types",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "damage_assessments",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "equipment_assessments",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customers",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "utilities",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_phase_steps",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_roster_revisions",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_roster_members",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_authorization_logs",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contractor_invoices",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_documents",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "storm_event_logistics_entries",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "invoice_line_items",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tax_1099_tracking",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "media_assets",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "audit_logs",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_logs",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "sync_queue",
+      "policyname": "active_profile_required",
+      "permissive": "RESTRICTIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "ALL",
+      "qual": "(private.active_profile_role() IS NOT NULL)",
+      "with_check": "(private.active_profile_role() IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "ticket_payloads",
+      "policyname": "ticket_payloads_select_assigned",
+      "permissive": "PERMISSIVE",
+      "roles": [
+        "authenticated"
+      ],
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (tickets t\n     JOIN contractors c ON ((c.id = t.assigned_to)))\n  WHERE ((t.id = ticket_payloads.ticket_id) AND (c.profile_id = ( SELECT auth.uid() AS uid)) AND (NOT t.is_deleted))))",
+      "with_check": null
+    }
+  ],
+  "functions": [
+    {
+      "name": "public.create_storm_ticket",
+      "definition": "CREATE OR REPLACE FUNCTION public.create_storm_ticket(p_storm_id uuid, p_common jsonb, p_payload jsonb, p_confidence jsonb DEFAULT '{}'::jsonb, p_warnings text[] DEFAULT '{}'::text[])\n RETURNS uuid\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nDECLARE storm public.storm_events%ROWTYPE; ticket_id uuid; number text;\nBEGIN\n  IF NOT EXISTS(SELECT 1 FROM public.profiles WHERE id=auth.uid() AND role::text IN ('CEO','SUPER_ADMIN')) THEN RAISE EXCEPTION 'Only authorized users can create tickets'; END IF;\n  SELECT * INTO storm FROM public.storm_events WHERE id=p_storm_id AND NOT is_deleted FOR SHARE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'Create or select a storm first'; END IF;\n  PERFORM public.validate_storm_ticket_payload(p_storm_id,p_payload);\n  number:=CASE WHEN storm.utility_client='ENTERGY' THEN p_payload->>'incident_number' ELSE p_payload->>'external_ticket_id' END;\n  IF coalesce(btrim(number),'')='' THEN RAISE EXCEPTION 'Utility ticket number is required'; END IF;\n  INSERT INTO public.tickets(storm_event_id,ticket_number,utility_client,template_key,status,priority,source_type,address,work_description,created_by)\n    VALUES(storm.id,number,storm.utility_client,storm.ticket_template_key,\n      coalesce(p_common->>'status','DRAFT')::public.ticket_status,coalesce(p_common->>'priority','C')::public.priority_level,\n      coalesce(p_common->>'source_type','MANUAL')::public.ticket_source_type,p_payload->>'address_line',storm.name||' - '||number,auth.uid()) RETURNING id INTO ticket_id;\n  INSERT INTO public.ticket_payloads(ticket_id,payload,payload_version,extraction_confidence,extraction_warnings)\n    VALUES(ticket_id,p_payload,coalesce((storm.config_snapshot->>'payload_version')::integer,1),p_confidence,p_warnings);\n  RETURN ticket_id;\nEND $function$\n"
+    },
+    {
+      "name": "public.assign_contractor_to_storm",
+      "definition": "CREATE OR REPLACE FUNCTION public.assign_contractor_to_storm(p_storm_id uuid, p_contractor_id uuid)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nDECLARE revision uuid;\nBEGIN\n  IF NOT EXISTS(SELECT 1 FROM public.profiles WHERE id=auth.uid() AND role::text IN ('CEO','SUPER_ADMIN')) THEN RAISE EXCEPTION 'Only authorized users can assign contractors'; END IF;\n  PERFORM 1 FROM public.storm_events WHERE id=p_storm_id AND NOT is_deleted FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'Create a storm first'; END IF;\n  IF NOT EXISTS(SELECT 1 FROM public.contractors WHERE id=p_contractor_id AND onboarding_status::text='APPROVED' AND is_eligible_for_assignment) THEN RAISE EXCEPTION 'Select an approved, eligible contractor'; END IF;\n  SELECT id INTO revision FROM public.storm_event_roster_revisions WHERE storm_event_id=p_storm_id AND NOT is_locked ORDER BY revision_number DESC LIMIT 1;\n  IF revision IS NULL THEN\n    IF EXISTS(SELECT 1 FROM public.storm_event_roster_revisions WHERE storm_event_id=p_storm_id) THEN RAISE EXCEPTION 'The storm roster is locked. Create an unlocked roster revision first'; END IF;\n    INSERT INTO public.storm_event_roster_revisions(storm_event_id,revision_number,revision_label,created_by) VALUES(p_storm_id,0,'Initial roster',auth.uid()) RETURNING id INTO revision;\n  END IF;\n  IF EXISTS(SELECT 1 FROM public.storm_event_roster_members WHERE roster_revision_id=revision AND contractor_id=p_contractor_id AND member_status<>'REMOVED') THEN RETURN; END IF;\n  INSERT INTO public.storm_event_roster_members(roster_revision_id,contractor_id,member_status,created_by) VALUES(revision,p_contractor_id,'CONFIRMED',auth.uid());\nEND $function$\n"
+    },
+    {
+      "name": "private.guard_profile_authorization",
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_profile_authorization()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nBEGIN\n  IF TG_OP='INSERT' THEN\n    IF current_user='authenticated' AND NOT public.is_super_admin() AND NEW.role::text <> 'CONTRACTOR' THEN\n      RAISE EXCEPTION 'Only Super Admin can grant elevated account roles';\n    END IF;\n    RETURN NEW;\n  END IF;\n  IF current_user='authenticated' AND NOT public.is_super_admin() AND\n    (NEW.role IS DISTINCT FROM OLD.role OR NEW.is_active IS DISTINCT FROM OLD.is_active OR\n     NEW.is_email_verified IS DISTINCT FROM OLD.is_email_verified OR NEW.must_reset_password IS DISTINCT FROM OLD.must_reset_password OR\n     NEW.mfa_enabled IS DISTINCT FROM OLD.mfa_enabled OR NEW.mfa_secret_encrypted IS DISTINCT FROM OLD.mfa_secret_encrypted) THEN\n    RAISE EXCEPTION 'Only authorized account administrators can change authorization fields';\n  END IF;\n  RETURN NEW;\nEND $function$\n"
+    }
+  ],
+  "triggers": [
+    {
+      "table": "profiles",
+      "definition": "CREATE TRIGGER protect_profile_authorization BEFORE INSERT OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.guard_profile_authorization()"
+    },
+    {
+      "table": "profiles",
+      "definition": "CREATE TRIGGER sync_contractor_managed_role AFTER INSERT OR UPDATE OF role ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.sync_profile_managed_role()"
+    },
+    {
+      "table": "profiles",
+      "definition": "CREATE TRIGGER trg_enforce_max_two_super_admins BEFORE INSERT OR UPDATE OF role ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.enforce_max_two_super_admins()"
+    },
+    {
+      "table": "profiles",
+      "definition": "CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    }
+  ],
+  "service_role_preapply_privileges": {
+    "contractors": {
+      "select": false,
+      "insert": false,
+      "update": false
+    },
+    "audit_logs": {
+      "select": false,
+      "insert": false,
+      "update": false
+    }
+  }
+}

@@ -85,7 +85,7 @@ export function RoleRateEditor({ canEdit = false }: { canEdit?: boolean } = {}) 
   }, []);
 
   useEffect(() => {
-    void loadRates();
+    void Promise.resolve().then(loadRates);
   }, [loadRates]);
 
   const handleSave = async (role: ContractorRole, workType: WorkType) => {

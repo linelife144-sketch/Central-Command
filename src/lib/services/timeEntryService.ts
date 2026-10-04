@@ -1,3 +1,7 @@
+import { v4 as uuid } from 'uuid';
+import { uploadClockPhoto, clockPhotoPath } from '../compensation/clockPhotos';
+import { changeTimeInterval, closeTimeIntervals, breakMinutesFromIntervals, type TimeInterval } from '../compensation/validation';
+import { TIME_ENTRY_WAGE_COLUMNS, type WageTimeEntryRow } from '../compensation/timeEntryProjection';
 import {
   db,
   queueTimeEntry,
@@ -6,12 +10,12 @@ import {
   type SyncQueueOperation,
 } from '../db/dexie';
 import { APP_CONFIG } from '../config/appConfig';
-import { validateTimeEntryDuration } from '../utils/validators';
+import { timeEntrySchema, validateGPS, validateTimeEntryDuration } from '../utils/validators';
 import { calculateBillableMinutes } from '../utils/timeTracking';
 import type { TimeEntry, WorkType, SyncStatus, TimeEntryStatus } from '../../types';
 import type { Database } from '../../types/database';
 
-type RemoteTimeEntryRow = Database['public']['Tables']['time_entries']['Row'];
+type RemoteTimeEntryRow = WageTimeEntryRow;
 type RemoteTimeEntryInsert = Database['public']['Tables']['time_entries']['Insert'];
 type RemoteTimeEntryUpdate = Database['public']['Tables']['time_entries']['Update'];
 
@@ -29,17 +33,20 @@ export interface ClockInRequest {
   ticketId?: string;
   stormEventId?: string;
   location: ClockLocation;
+  photoFile?: File;
 }
 
 export interface ClockOutRequest {
   entry: TimeEntry;
   breakMinutes: number;
   location: ClockLocation;
+  photoFile?: File;
 }
 
 interface TimeEntryServiceDependencies {
   isOnline: () => boolean;
   now: () => Date;
+  uploadPhoto: typeof uploadClockPhoto;
   fetchRemoteActiveEntry: (contractorId: string) => Promise<TimeEntry | null>;
   insertRemoteEntry: (payload: RemoteTimeEntryInsert) => Promise<TimeEntry>;
   updateRemoteEntry: (id: string, updates: RemoteTimeEntryUpdate) => Promise<TimeEntry>;
@@ -80,14 +87,16 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     clock_in_at: row.clock_in_at,
     clock_in_latitude: row.clock_in_latitude ?? undefined,
     clock_in_longitude: row.clock_in_longitude ?? undefined,
+    clock_in_accuracy: row.clock_in_accuracy ?? undefined,
     clock_out_at: row.clock_out_at ?? undefined,
     clock_out_latitude: row.clock_out_latitude ?? undefined,
     clock_out_longitude: row.clock_out_longitude ?? undefined,
+    clock_out_accuracy: row.clock_out_accuracy ?? undefined,
     work_type: row.work_type as WorkType,
     work_type_rate: row.work_type_rate,
-    total_minutes: row.total_minutes ?? undefined,
+    total_minutes: row.calculation_version === 'AGREEMENT' && row.clock_out_at ? (Date.parse(row.clock_out_at) - Date.parse(row.clock_in_at)) / 60000 : row.total_minutes ?? undefined,
     break_minutes: row.break_minutes ?? 0,
-    billable_minutes: row.billable_minutes ?? undefined,
+    billable_minutes: row.paid_minutes_exact ?? row.billable_minutes ?? undefined,
     billable_amount: row.billable_amount ?? undefined,
     status: row.status as TimeEntryStatus,
     reviewed_by: row.reviewed_by ?? undefined,
@@ -101,9 +110,20 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     // trigger. Surfaced for display only; never recomputed client-side.
     contractor_role: row.contractor_role ?? undefined,
     pay_rate_applied: row.pay_rate_applied ?? undefined,
+    clock_in_photo_url: row.clock_in_photo_url ?? undefined,
+    clock_out_photo_url: row.clock_out_photo_url ?? undefined,
     payroll_amount: row.payroll_amount ?? undefined,
-    utility_bill_rate_applied: row.utility_bill_rate_applied ?? undefined,
-    utility_bill_amount: row.utility_bill_amount ?? undefined,
+    activity_intervals: (row.activity_intervals ?? []) as unknown as TimeEntry['activity_intervals'],
+    pay_segments: (row.pay_segments ?? []) as unknown as TimeEntry['pay_segments'],
+    paid_minutes_exact: row.paid_minutes_exact ?? undefined,
+    vehicle_minutes: row.vehicle_minutes ?? undefined,
+    vehicle_allowance_amount: row.vehicle_allowance_amount ?? undefined,
+    calculation_version: row.calculation_version,
+    regular_minutes: row.regular_minutes ?? undefined,
+    overtime_minutes: row.overtime_minutes ?? undefined,
+    regular_pay_amount: row.regular_pay_amount ?? undefined,
+    overtime_pay_amount: row.overtime_pay_amount ?? undefined,
+    overtime_rate_applied: row.overtime_rate_applied ?? undefined,
   };
 }
 
@@ -118,10 +138,14 @@ function mapLocalEntryToTimeEntry(entry: LocalTimeEntry): TimeEntry {
     clock_in_at: entry.clock_in_at,
     clock_in_latitude: entry.clock_in_latitude,
     clock_in_longitude: entry.clock_in_longitude,
+    clock_in_accuracy: entry.clock_in_accuracy,
     clock_in_photo_url: entry.clock_in_photo_url,
+    clock_in_photo_file: entry.clock_in_photo_file,
+    clock_out_photo_file: entry.clock_out_photo_file,
     clock_out_at: entry.clock_out_at,
     clock_out_latitude: entry.clock_out_latitude,
     clock_out_longitude: entry.clock_out_longitude,
+    clock_out_accuracy: entry.clock_out_accuracy,
     clock_out_photo_url: entry.clock_out_photo_url,
     work_type: entry.work_type as WorkType,
     work_type_rate: entry.work_type_rate,
@@ -130,8 +154,17 @@ function mapLocalEntryToTimeEntry(entry: LocalTimeEntry): TimeEntry {
     contractor_role: entry.contractor_role,
     pay_rate_applied: entry.pay_rate_applied,
     payroll_amount: entry.payroll_amount,
-    utility_bill_rate_applied: entry.utility_bill_rate_applied,
-    utility_bill_amount: entry.utility_bill_amount,
+    activity_intervals: entry.activity_intervals,
+    pay_segments: entry.pay_segments,
+    paid_minutes_exact: entry.paid_minutes_exact,
+    vehicle_minutes: entry.vehicle_minutes,
+    vehicle_allowance_amount: entry.vehicle_allowance_amount,
+    calculation_version: entry.calculation_version,
+    overtime_rate_applied: entry.overtime_rate_applied,
+    overtime_pay_amount: entry.overtime_pay_amount,
+    regular_pay_amount: entry.regular_pay_amount,
+    overtime_minutes: entry.overtime_minutes,
+    regular_minutes: entry.regular_minutes,
     status: entry.status as TimeEntryStatus,
     sync_status: toSyncStatus(entry.sync_status),
     created_at: createdAt,
@@ -147,10 +180,14 @@ function mapTimeEntryToLocalEntry(entry: TimeEntry): LocalTimeEntry {
     clock_in_at: entry.clock_in_at,
     clock_in_latitude: entry.clock_in_latitude,
     clock_in_longitude: entry.clock_in_longitude,
+    clock_in_accuracy: entry.clock_in_accuracy,
     clock_in_photo_url: entry.clock_in_photo_url,
+    clock_in_photo_file: entry.clock_in_photo_file,
+    clock_out_photo_file: entry.clock_out_photo_file,
     clock_out_at: entry.clock_out_at,
     clock_out_latitude: entry.clock_out_latitude,
     clock_out_longitude: entry.clock_out_longitude,
+    clock_out_accuracy: entry.clock_out_accuracy,
     clock_out_photo_url: entry.clock_out_photo_url,
     work_type: entry.work_type,
     work_type_rate: entry.work_type_rate,
@@ -159,8 +196,17 @@ function mapTimeEntryToLocalEntry(entry: TimeEntry): LocalTimeEntry {
     contractor_role: entry.contractor_role,
     pay_rate_applied: entry.pay_rate_applied,
     payroll_amount: entry.payroll_amount,
-    utility_bill_rate_applied: entry.utility_bill_rate_applied,
-    utility_bill_amount: entry.utility_bill_amount,
+    activity_intervals: entry.activity_intervals,
+    pay_segments: entry.pay_segments,
+    paid_minutes_exact: entry.paid_minutes_exact,
+    vehicle_minutes: entry.vehicle_minutes,
+    vehicle_allowance_amount: entry.vehicle_allowance_amount,
+    calculation_version: entry.calculation_version,
+    overtime_rate_applied: entry.overtime_rate_applied,
+    overtime_pay_amount: entry.overtime_pay_amount,
+    regular_pay_amount: entry.regular_pay_amount,
+    overtime_minutes: entry.overtime_minutes,
+    regular_minutes: entry.regular_minutes,
     status: entry.status,
     synced: entry.sync_status === 'SYNCED',
     sync_status: toLocalSyncStatus(entry.sync_status),
@@ -174,7 +220,7 @@ function createEntryId(): string {
     return globalThis.crypto.randomUUID();
   }
 
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return uuid();
 }
 
 function buildClockInEntry(request: ClockInRequest, nowIso: string): TimeEntry {
@@ -190,6 +236,9 @@ function buildClockInEntry(request: ClockInRequest, nowIso: string): TimeEntry {
     work_type: request.workType,
     work_type_rate: request.workTypeRate,
     break_minutes: request.breakMinutes,
+    activity_intervals: [],
+    calculation_version: 'AGREEMENT',
+    clock_in_photo_file: request.photoFile,
     status: 'PENDING',
     sync_status: 'PENDING',
     created_at: nowIso,
@@ -209,7 +258,7 @@ async function fetchRemoteActiveEntry(contractorId: string): Promise<TimeEntry |
   const { supabase } = await import('../supabase/client');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const query = (supabase.from('time_entries') as any)
-    .select('*')
+    .select(TIME_ENTRY_WAGE_COLUMNS)
     .eq('contractor_id', contractorId)
     .is('clock_out_at', null)
     .order('clock_in_at', { ascending: false })
@@ -230,12 +279,14 @@ async function fetchRemoteActiveEntry(contractorId: string): Promise<TimeEntry |
 async function insertRemoteEntry(payload: RemoteTimeEntryInsert): Promise<TimeEntry> {
   const { supabase } = await import('../supabase/client');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('time_entries') as any).insert([payload]).select().single();
+  const { data, error } = await (supabase.from('time_entries') as any).insert([payload]).select(TIME_ENTRY_WAGE_COLUMNS).single();
   if (error) {
     throw error;
   }
 
-  return mapRemoteRowToTimeEntry(data as RemoteTimeEntryRow);
+  const mapped = mapRemoteRowToTimeEntry(data as RemoteTimeEntryRow);
+  await db.timeEntries.put({ ...mapTimeEntryToLocalEntry(mapped), synced: true, sync_status: 'synced' });
+  return mapped;
 }
 
 async function updateRemoteEntry(id: string, updates: RemoteTimeEntryUpdate): Promise<TimeEntry> {
@@ -244,14 +295,16 @@ async function updateRemoteEntry(id: string, updates: RemoteTimeEntryUpdate): Pr
   const { data, error } = await (supabase.from('time_entries') as any)
     .update(updates)
     .eq('id', id)
-    .select()
+    .select(TIME_ENTRY_WAGE_COLUMNS)
     .single();
 
   if (error) {
     throw error;
   }
 
-  return mapRemoteRowToTimeEntry(data as RemoteTimeEntryRow);
+  const mapped = mapRemoteRowToTimeEntry(data as RemoteTimeEntryRow);
+  await db.timeEntries.put({ ...mapTimeEntryToLocalEntry(mapped), synced: true, sync_status: 'synced' });
+  return mapped;
 }
 
 async function getLocalActiveEntry(contractorId: string): Promise<LocalTimeEntry | null> {
@@ -270,6 +323,7 @@ async function getLocalActiveEntry(contractorId: string): Promise<LocalTimeEntry
 const defaultDependencies: TimeEntryServiceDependencies = {
   isOnline: defaultIsOnline,
   now: () => new Date(),
+  uploadPhoto: uploadClockPhoto,
   fetchRemoteActiveEntry,
   insertRemoteEntry,
   updateRemoteEntry,
@@ -281,6 +335,7 @@ export interface TimeEntryService {
   getActiveEntry: (contractorId: string) => Promise<TimeEntry | null>;
   clockIn: (request: ClockInRequest) => Promise<TimeEntry>;
   clockOut: (request: ClockOutRequest) => Promise<TimeEntry>;
+  recordActivity: (entry: TimeEntry, kind: TimeInterval['kind'], action: 'START' | 'STOP') => Promise<TimeEntry>;
 }
 
 export function createTimeEntryService(
@@ -310,18 +365,28 @@ export function createTimeEntryService(
     },
 
     async clockIn(request: ClockInRequest): Promise<TimeEntry> {
+      timeEntrySchema.parse({ work_type: request.workType, break_minutes: request.breakMinutes });
+      const gps = validateGPS(request.location.latitude, request.location.longitude, request.location.accuracy ?? null);
+      if (!gps.valid) throw new Error(gps.error);
+      if (!request.stormEventId) throw new Error('Select an assigned ticket with a storm event before clocking in.');
       const nowIso = dependencies.now().toISOString();
       const pendingEntry = buildClockInEntry(request, nowIso);
+      if (request.photoFile) pendingEntry.clock_in_photo_url = clockPhotoPath(request.contractorId, pendingEntry.id, 'in');
 
       if (dependencies.isOnline()) {
         try {
+          if (request.photoFile) await dependencies.uploadPhoto(request.contractorId, pendingEntry.id, 'in', request.photoFile);
           return await dependencies.insertRemoteEntry({
+            id: pendingEntry.id,
+            clock_in_photo_url: pendingEntry.clock_in_photo_url,
+            activity_intervals: [],
             contractor_id: request.contractorId,
             ticket_id: request.ticketId ?? null,
             storm_event_id: request.stormEventId ?? null,
             clock_in_at: nowIso,
             clock_in_latitude: request.location.latitude,
             clock_in_longitude: request.location.longitude,
+            clock_in_accuracy: request.location.accuracy,
             work_type: request.workType,
             work_type_rate: request.workTypeRate,
             break_minutes: request.breakMinutes,
@@ -330,7 +395,9 @@ export function createTimeEntryService(
             created_at: nowIso,
             updated_at: nowIso,
           });
-        } catch {
+        } catch (error) {
+          // A server validation/RLS rejection is not an offline success.
+          if (error && typeof error === 'object' && 'code' in error) throw error;
           // Fall through to local queue.
         }
       }
@@ -344,7 +411,24 @@ export function createTimeEntryService(
       return queuedEntry;
     },
 
+    async recordActivity(entry, kind, action) {
+      if (entry.clock_out_at) throw new Error('This shift is already closed.');
+      const nowIso = dependencies.now().toISOString();
+      const intervals = changeTimeInterval(entry.activity_intervals ?? [], kind, action, nowIso);
+      const updated = { ...entry, activity_intervals: intervals, updated_at: nowIso };
+      if (dependencies.isOnline() && entry.sync_status === 'SYNCED') {
+        try { return await dependencies.updateRemoteEntry(entry.id, { activity_intervals: intervals, updated_at: nowIso }); }
+        catch (error) { if (error && typeof error === 'object' && 'code' in error) throw error; }
+      }
+      const queued = { ...updated, sync_status: 'PENDING' as const };
+      await dependencies.queueLocalEntry(mapTimeEntryToLocalEntry(queued), 'UPDATE');
+      return queued;
+    },
+
     async clockOut(request: ClockOutRequest): Promise<TimeEntry> {
+      timeEntrySchema.parse({ work_type: request.entry.work_type, break_minutes: request.entry.calculation_version === 'AGREEMENT' ? 0 : request.breakMinutes });
+      const gps = validateGPS(request.location.latitude, request.location.longitude, request.location.accuracy ?? null);
+      if (!gps.valid) throw new Error(gps.error);
       const nowIso = dependencies.now().toISOString();
       const clockOutAt = new Date(nowIso);
       const clockInAt = new Date(request.entry.clock_in_at);
@@ -358,12 +442,17 @@ export function createTimeEntryService(
         throw new Error(durationValidation.error ?? 'Time entry duration is invalid.');
       }
 
-      const breakMinutes = Math.max(0, request.breakMinutes);
+      const activities = closeTimeIntervals(request.entry.activity_intervals ?? [], nowIso);
+      const breakMinutes = request.entry.calculation_version === 'AGREEMENT' ? breakMinutesFromIntervals(activities, nowIso) : Math.max(0, request.breakMinutes);
+      if (breakMinutes > durationValidation.durationMinutes) throw new Error('Break cannot exceed the shift duration.');
       const billableMinutes = calculateBillableMinutes(durationValidation.durationMinutes, breakMinutes);
       const billableAmount = (billableMinutes / 60) * request.entry.work_type_rate;
 
       const updatedEntry: TimeEntry = {
         ...request.entry,
+        activity_intervals: activities,
+        clock_out_photo_file: request.photoFile,
+        clock_out_photo_url: request.photoFile ? clockPhotoPath(request.entry.contractor_id, request.entry.id, 'out') : request.entry.clock_out_photo_url,
         clock_out_at: nowIso,
         clock_out_latitude: request.location.latitude,
         clock_out_longitude: request.location.longitude,
@@ -389,6 +478,7 @@ export function createTimeEntryService(
       }
 
       try {
+        if (request.photoFile) await dependencies.uploadPhoto(request.entry.contractor_id, request.entry.id, 'out', request.photoFile);
         // total_minutes, billable_minutes, and billable_amount are GENERATED
         // ALWAYS columns in Postgres — they cannot be written directly.
         // payroll_amount, utility_bill_amount, and the rate snapshots are
@@ -397,15 +487,18 @@ export function createTimeEntryService(
         // columns are sent here; the server is the source of truth for
         // every money figure.
         return await dependencies.updateRemoteEntry(request.entry.id, {
+          activity_intervals: activities,
+          clock_out_photo_url: updatedEntry.clock_out_photo_url,
           clock_out_at: nowIso,
           clock_out_latitude: request.location.latitude,
           clock_out_longitude: request.location.longitude,
           clock_out_accuracy: request.location.accuracy,
-          break_minutes: breakMinutes,
+          break_minutes: Math.round(breakMinutes),
           updated_at: nowIso,
           sync_status: 'SYNCED',
         });
-      } catch {
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error) throw error;
         const localEntry = mapTimeEntryToLocalEntry({
           ...updatedEntry,
           sync_status: 'PENDING',
@@ -421,3 +514,18 @@ export function createTimeEntryService(
 }
 
 export const timeEntryService = createTimeEntryService();
+
+/** Recover the wage-only completed shift after sync or a page reload. */
+export async function getLastCompletedEntry(contractorId: string): Promise<TimeEntry | null> {
+  const local = await db.timeEntries.where('contractor_id').equals(contractorId).toArray();
+  const cached = local.filter(row => row.clock_out_at).sort((a,b) => Date.parse(b.clock_out_at!) - Date.parse(a.clock_out_at!))[0];
+  if (!defaultDependencies.isOnline()) return cached ? mapLocalEntryToTimeEntry(cached) : null;
+  const { supabase } = await import('../supabase/client');
+  const { data, error } = await supabase.from('time_entries').select(TIME_ENTRY_WAGE_COLUMNS).eq('contractor_id', contractorId).eq('is_deleted', false).not('clock_out_at','is',null).order('clock_out_at',{ascending:false}).limit(1);
+  if (error) throw error;
+  if (cached && cached.sync_status !== 'synced' && (!data?.[0] || Date.parse(cached.clock_out_at!) >= Date.parse(data[0].clock_out_at!))) return mapLocalEntryToTimeEntry(cached);
+  if (!data?.[0]) return null;
+  const { data: claim, error: claimError } = await supabase.from('time_entry_vehicle_claims').select('id').eq('time_entry_id',data[0].id).maybeSingle();
+  if (claimError) throw claimError;
+  return claim ? null : mapRemoteRowToTimeEntry(data[0]);
+}

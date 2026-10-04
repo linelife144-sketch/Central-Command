@@ -1,4 +1,5 @@
 'use client';
+import { isSuperAdminClassRole } from '@/lib/auth/roleGuards';
 
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { PayrollDashboard } from '@/components/features/payroll';
@@ -10,11 +11,11 @@ export default function AdminPayrollPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Payroll & Profit"
-        description="Contractor payroll, vehicle reimbursements, utility billing, and margin."
+        title={isSuperAdminClassRole(profile?.role) ? 'Payroll & Profit' : 'Payroll'}
+        description={isSuperAdminClassRole(profile?.role) ? 'Contractor payroll, vehicle reimbursements, utility billing, and margin.' : 'Contractor hours, wages, vehicle allowances, and approvals.'}
       />
 
-      <PayrollDashboard reviewerId={profile?.id} canEdit={can('admin.payroll.edit')} canViewStorms={can('admin.storms.view')} />
+      <PayrollDashboard key={`${profile?.id}:${profile?.role}`} includeFinancial={isSuperAdminClassRole(profile?.role)} reviewerId={profile?.id} canEdit={can('admin.payroll.edit')} canViewStorms={can('admin.storms.view')} />
     </div>
   );
 }

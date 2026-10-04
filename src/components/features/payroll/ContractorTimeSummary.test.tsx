@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({ listEntries: vi.fn() }));
 vi.mock('@/lib/services/timeEntryManagementService', () => ({
@@ -36,6 +36,20 @@ afterEach(() => {
 });
 
 describe('ContractorTimeSummary', () => {
+  it('records offline pending hours and refreshes saved wages after upload', async () => {
+    mocks.listEntries.mockResolvedValueOnce([
+      buildEntry({ billable_minutes: undefined, payroll_amount: undefined, sync_status: 'PENDING', status: 'PENDING' }),
+    ]).mockResolvedValue([
+      buildEntry({ payroll_amount: 600, vehicle_reimbursement_amount: 0, status: 'PENDING' }),
+    ]);
+    render(<ContractorTimeSummary contractorId="c-1" />);
+    await waitFor(() => expect(screen.getAllByText('Awaiting sync').length).toBeGreaterThan(0));
+    expect(screen.getByText('Pending Hours').parentElement?.textContent).toContain('6h');
+    act(() => window.dispatchEvent(new Event('time-entries-synced')));
+    await waitFor(() => expect(screen.getAllByText('$600.00').length).toBeGreaterThan(0));
+    expect(screen.queryByText('Awaiting sync')).toBeNull();
+  });
+
   it('shows approved and pending hours as separate figures', async () => {
     mocks.listEntries.mockResolvedValue([
       buildEntry({ id: 'time-1', status: 'APPROVED', billable_minutes: 360 }),

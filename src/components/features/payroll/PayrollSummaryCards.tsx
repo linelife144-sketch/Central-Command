@@ -7,6 +7,7 @@ import type { PayrollTotals } from '@/types';
 export interface PayrollSummaryCardsProps {
   totals: PayrollTotals | null;
   isLoading?: boolean;
+  includeFinancial?: boolean;
 }
 
 function CardValue({ children }: { children: React.ReactNode }) {
@@ -18,7 +19,7 @@ function CardValue({ children }: { children: React.ReactNode }) {
  * payroll, vehicle reimbursements, total payout, utility billing, and
  * margin — mirrors ReportsDashboard's metric-card row pattern.
  */
-export function PayrollSummaryCards({ totals, isLoading = false }: PayrollSummaryCardsProps) {
+export function PayrollSummaryCards({ totals, isLoading = false, includeFinancial = false }: PayrollSummaryCardsProps) {
   const placeholder = isLoading ? '…' : '—';
 
   return (
@@ -47,10 +48,11 @@ export function PayrollSummaryCards({ totals, isLoading = false }: PayrollSummar
           <CardValue>{totals ? formatCurrency(totals.totalPayout) : placeholder}</CardValue>
         </CardContent>
       </Card>
+      {includeFinancial && <>
       <Card>
         <CardContent className="p-3">
           <p className="text-xs text-muted-foreground">Utility Billing</p>
-          <CardValue>{totals ? formatCurrency(totals.utilityBillAmount) : placeholder}</CardValue>
+          <CardValue>{totals ? formatCurrency((totals.utilityBillAmount ?? 0)) : placeholder}</CardValue>
         </CardContent>
       </Card>
       <Card>
@@ -58,19 +60,21 @@ export function PayrollSummaryCards({ totals, isLoading = false }: PayrollSummar
           <p className="text-xs text-muted-foreground">Margin</p>
           <p
             className={`font-heading text-3xl font-semibold ${
-              totals && totals.marginAmount < 0 ? 'text-grid-danger-ink' : 'text-grid-success-ink'
+              totals && (totals.marginAmount ?? 0) < 0 ? 'text-grid-danger-ink' : 'text-grid-success-ink'
             }`}
           >
-            {totals ? formatCurrency(totals.marginAmount) : placeholder}
+            {totals ? formatCurrency((totals.marginAmount ?? 0)) : placeholder}
           </p>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="p-3">
           <p className="text-xs text-muted-foreground">Margin %</p>
-          <CardValue>{totals ? `${totals.marginPercent.toFixed(1)}%` : placeholder}</CardValue>
+          <CardValue>{totals ? `${(totals.marginPercent ?? 0).toFixed(1)}%` : placeholder}</CardValue>
         </CardContent>
       </Card>
+      </>}
+      {(['submittedWages','approvedWages','approvedPayout'] as const).map((key, index) => <Card key={key}><CardContent className="p-3"><p className="text-xs text-muted-foreground">{['Submitted wages','Approved wages','Approved payout'][index]}</p><CardValue>{totals ? formatCurrency(totals[key] ?? 0) : placeholder}</CardValue></CardContent></Card>)}
       <Card>
         <CardContent className="p-3">
           <p className="text-xs text-muted-foreground">Contractors</p>

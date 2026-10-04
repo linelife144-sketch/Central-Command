@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Keep verification builds separate from a running development server.
+  distDir: process.env.CC_NEXT_DIST_DIR || '.next',
   // Allow the current Wi-Fi address for local multi-device development.
   allowedDevOrigins: ["192.168.1.72"],
   turbopack: {},

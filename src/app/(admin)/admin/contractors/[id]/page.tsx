@@ -31,6 +31,6 @@ export default function ContractorDetailPage() {
       {!c.eligibleForAssignment && <p>Assignment eligibility: {c.eligibilityReason || 'Not eligible'}</p>}
     </CardContent></Card>
     {can('admin.payroll.view') && <ContractorPayrollEditor contractorId={c.id} currentRole={c.role} canEdit={can('admin.payroll.edit')} canChangeRole={profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO'} onRoleChanged={() => query.refetch()} />}
-    <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><StatusBadge status={ticket.status} /><span>{ticket.utilityClient} · Priority {ticket.priority}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>
+    <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><StatusBadge status={ticket.status} /><span>{ticket.utilityClient}{ticket.isImportant ? ' · Important' : ''}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>
   </div>;
 }

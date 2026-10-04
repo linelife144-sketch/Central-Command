@@ -6,10 +6,12 @@ import { CheckCircle2, Mail, Send, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CompensationFields, emptyCompensationDraft, draftToTerms } from '@/components/features/payroll/CompensationFields';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 
 export default function ContractorInvitePage() {
   const [form, setForm] = useState({first_name:'',last_name:'',email:'',phone:''});
+  const [compensation, setCompensation] = useState(emptyCompensationDraft);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -17,7 +19,7 @@ export default function ContractorInvitePage() {
   const send = async (resend = false) => {
     setPending(true); setError(''); setMessage(''); setDuplicate(false);
     try {
-      const response = await fetch('/api/admin/contractors/invite', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...form,resend})});
+      const response = await fetch('/api/admin/contractors/invite', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...form,resend,compensation:draftToTerms(compensation)})});
       const result = await response.json();
       if (!response.ok) {setDuplicate(response.status === 409 && result.error.includes('Resend')); throw new Error(result.error);}
       setMessage(result.message);
@@ -31,6 +33,7 @@ export default function ContractorInvitePage() {
         <div className="grid gap-5 sm:grid-cols-2">{(['first_name','last_name'] as const).map(key => <div key={key} className="space-y-2"><Label htmlFor={key}>{key === 'first_name' ? 'First name' : 'Last name'}</Label><Input id={key} required maxLength={80} autoComplete={key === 'first_name' ? 'given-name' : 'family-name'} value={form[key]} disabled={pending} onChange={event => setForm({...form,[key]:event.target.value})} /></div>)}</div>
         <div className="space-y-2"><Label htmlFor="invite-email">Email address</Label><Input id="invite-email" type="email" required autoComplete="email" placeholder="name@company.com" value={form.email} disabled={pending} onChange={event => setForm({...form,email:event.target.value})} /><p className="text-xs text-grid-body">The setup link will be sent to this address.</p></div>
         <div className="space-y-2"><Label htmlFor="invite-phone">Phone <span className="font-normal text-grid-body">(optional)</span></Label><Input id="invite-phone" type="tel" maxLength={30} autoComplete="tel" value={form.phone} disabled={pending} onChange={event => setForm({...form,phone:event.target.value})} /></div>
+        <CompensationFields value={compensation} onChange={setCompensation} disabled={pending} />
         {error && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-grid-danger-ink">{error}{duplicate && <Button type="button" variant="outline" className="mt-3" disabled={pending} onClick={() => send(true)}>Resend invite</Button>}</div>}
         {message && <div role="status" className="flex gap-3 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"><CheckCircle2 className="size-5 shrink-0" /><p>{message}<Link href="/admin/contractors" className="mt-2 block font-semibold underline">View contractors</Link></p></div>}
         <div className="flex flex-wrap items-center gap-3 border-t pt-5"><Button type="submit" disabled={pending || !!message}><Send className="size-4" />{pending ? 'Sending…' : 'Send invitation'}</Button>{message && <Button type="button" variant="outline" onClick={() => {setMessage('');setForm({first_name:'',last_name:'',email:'',phone:''});}}>Invite another person</Button>}</div>

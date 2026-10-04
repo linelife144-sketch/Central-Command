@@ -1,3 +1,5 @@
+import { getPayAgreements, savePayAgreement } from '../compensation/service';
+import type { CompensationTerms } from '../compensation/validation';
 // Central Command - Payroll & Utility Billing Service
 //
 // Reads/writes role rate defaults, utility billing rates, contractor rate
@@ -26,6 +28,7 @@ import type {
 } from '../../types';
 
 export interface PayrollFilters {
+  includeFinancial?: boolean;
   from?: string;
   to?: string;
   stormEventId?: string;
@@ -37,6 +40,10 @@ export interface ContractorRateProfile {
   role: ContractorRole;
   workTypeRates: Partial<Record<WorkType, number>>;
   missingWorkTypes: WorkType[];
+  payPolicy?: CompensationTerms['policy'];
+  driverEligible?: boolean;
+  vehicleAllowanceEnabled?: boolean;
+  vehicleHourlyRate?: number;
 }
 
 export interface ReportExportArtifact {
@@ -86,12 +93,6 @@ interface RemoteUtilityBillingRateRow {
   currency: string | null;
 }
 
-interface RemoteContractorRateRow {
-  work_type: string;
-  hourly_rate: number;
-  effective_from: string;
-  effective_to: string | null;
-}
 
 interface RemotePayrollTimeEntryRow {
   id: string;
@@ -100,7 +101,8 @@ interface RemotePayrollTimeEntryRow {
   total_minutes: number | null;
   billable_minutes: number | null;
   payroll_amount: number | null;
-  utility_bill_amount: number | null;
+  utility_bill_amount?: number | null;
+  paid_minutes_exact?: number | null;
 }
 
 interface RemoteVehicleClaimRow {
@@ -365,82 +367,26 @@ async function defaultWriteUtilityBillingRate(input: {
 }
 
 async function defaultFetchContractorRateProfile(contractorId: string): Promise<ContractorRateProfile> {
-  const client = await getDefaultClient();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: contractorData, error: contractorError } = await (client.from('contractors') as any)
-    .select('id, role')
-    .eq('id', contractorId)
-    .single();
-
-  if (contractorError) {
-    throw new Error('Unable to load contractor payroll profile.');
-  }
-
-  const role = (contractorData as { role: string }).role as ContractorRole;
-
-  const [roleDefaults, contractorRates] = await Promise.all([
-    defaultFetchRoleRateDefaults(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (client.from('contractor_rates') as any)
-      .select('work_type, hourly_rate, effective_from, effective_to')
-      .eq('contractor_id', contractorId)
-      .then((result: { data: RemoteContractorRateRow[] | null; error: unknown }) => {
-        if (result.error) {
-          throw new Error('Unable to load contractor rate overrides.');
-        }
-        return result.data ?? [];
-      }),
-  ]);
-
-  const today = new Date().toISOString();
-  const { resolveContractorHourlyRate } = await import('../utils/payroll');
-
+  const agreements = await getPayAgreements(contractorId);
+  const current = agreements.find(agreement => Date.parse(agreement.effective_from) <= Date.now());
+  if (!current) throw new Error('Save a contractor pay agreement before clocking in.');
+  const role = current.terms.role;
   const workTypeRates: Partial<Record<WorkType, number>> = {};
-  const missingWorkTypes: WorkType[] = [];
-
-  for (const workType of WORK_TYPES_LIST) {
-    const resolved = resolveContractorHourlyRate({
-      roleDefaults,
-      contractorRates: contractorRates.map((rate: RemoteContractorRateRow) => ({
-        workType: rate.work_type as WorkType,
-        hourlyRate: rate.hourly_rate,
-        effectiveFrom: rate.effective_from,
-        effectiveTo: rate.effective_to,
-      })),
-      role,
-      workType,
-      asOf: today,
-    });
-
-    if (resolved === null) {
-      missingWorkTypes.push(workType);
-    } else {
-      workTypeRates[workType] = resolved;
-    }
-  }
-
-  return {
-    contractorId,
-    role,
-    workTypeRates,
-    missingWorkTypes,
-  };
+  if (current) for (const type of WORK_TYPES_LIST) workTypeRates[type] = current.terms.work_type_rates[type] ?? current.terms.base_hourly_rate;
+  return { contractorId, role: current?.terms.role ?? role, workTypeRates,
+    missingWorkTypes: WORK_TYPES_LIST.filter(type => workTypeRates[type] === undefined),
+    payPolicy: current?.terms.policy, driverEligible: current?.terms.driver_eligible,
+    vehicleAllowanceEnabled: current?.terms.vehicle_allowance_enabled, vehicleHourlyRate: current?.terms.vehicle_hourly_rate };
 }
 
 async function defaultWriteContractorRole(input: {
   contractorId: string;
   role: ContractorRole;
 }): Promise<void> {
-  const client = await getDefaultClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (client.from('contractors') as any)
-    .update({ role: input.role, updated_at: new Date().toISOString() })
-    .eq('id', input.contractorId);
-
-  if (error) {
-    throw error;
-  }
+  const agreements = await getPayAgreements(input.contractorId);
+  const current = agreements.find(agreement => Date.parse(agreement.effective_from) <= Date.now());
+  if (!current) throw new Error('Save a contractor pay agreement first.');
+  await savePayAgreement(input.contractorId, { effective_from: new Date().toISOString(), terms: { ...current.terms, role: input.role } });
 }
 
 async function defaultWriteContractorWorkTypeRate(input: {
@@ -448,28 +394,22 @@ async function defaultWriteContractorWorkTypeRate(input: {
   workType: WorkType;
   hourlyRate: number;
 }): Promise<void> {
-  const client = await getDefaultClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (client.from('contractor_rates') as any).upsert(
-    {
-      contractor_id: input.contractorId,
-      work_type: input.workType,
-      hourly_rate: input.hourlyRate,
-      effective_from: new Date().toISOString().slice(0, 10),
-    },
-    { onConflict: 'contractor_id,work_type,effective_from' },
-  );
-
-  if (error) {
-    throw error;
-  }
+  const agreements = await getPayAgreements(input.contractorId);
+  const current = agreements.find(agreement => Date.parse(agreement.effective_from) <= Date.now());
+  if (!current) throw new Error('Save a contractor pay agreement first.');
+  await savePayAgreement(input.contractorId, { effective_from: new Date().toISOString(), terms: { ...current.terms, work_type_rates: { ...current.terms.work_type_rates, [input.workType]: input.hourlyRate } } });
 }
 
 async function defaultFetchPayrollTimeEntries(filters: PayrollFilters): Promise<RemotePayrollTimeEntryRow[]> {
   const client = await getDefaultClient();
+  if (filters.includeFinancial) {
+    const { data, error } = await client.rpc('get_privileged_payroll_entries', { p_from: filters.from, p_to: filters.to, p_storm: filters.stormEventId, p_contractor: filters.contractorId });
+    if (error) throw error;
+    return data as unknown as RemotePayrollTimeEntryRow[];
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (client.from('time_entries') as any)
-    .select('id, contractor_id, status, total_minutes, billable_minutes, payroll_amount, utility_bill_amount, clock_in_at, storm_event_id')
+    .select('id, contractor_id, status, total_minutes, billable_minutes, payroll_amount, paid_minutes_exact, clock_in_at, storm_event_id')
     .eq('is_deleted', false)
     .not('clock_out_at', 'is', null)
     .neq('status', 'REJECTED');
@@ -583,9 +523,9 @@ export function createPayrollService(overrides: Partial<PayrollDependencies> = {
         contractorName: contractorInfoById.get(entry.contractor_id)?.name ?? 'Unknown Contractor',
         role: contractorInfoById.get(entry.contractor_id)?.role ?? 'DAMAGE_ASSESSER',
         totalMinutes: entry.total_minutes ?? 0,
-        billableMinutes: entry.billable_minutes ?? 0,
+        billableMinutes: entry.paid_minutes_exact ?? entry.billable_minutes ?? 0,
         payrollAmount: entry.payroll_amount ?? 0,
-        utilityBillAmount: entry.utility_bill_amount,
+        utilityBillAmount: entry.utility_bill_amount ?? null,
         status: entry.status ?? 'PENDING',
       }));
 
@@ -606,6 +546,7 @@ export function createPayrollService(overrides: Partial<PayrollDependencies> = {
       );
 
       const totals = summarizePayroll(rows);
+      if (!filters.includeFinancial) for (const record of [...rows, totals]) { delete record.utilityBillAmount; delete record.marginAmount; delete record.marginPercent; }
 
       const now = new Date().toISOString();
       return {
@@ -613,6 +554,7 @@ export function createPayrollService(overrides: Partial<PayrollDependencies> = {
         periodEnd: filters.to ?? now,
         stormEventId: filters.stormEventId,
         generatedAt: now,
+        includeFinancial: filters.includeFinancial === true,
         rows,
         totals,
       };
@@ -673,6 +615,7 @@ export function createPayrollService(overrides: Partial<PayrollDependencies> = {
       const csvContent = buildPayrollCsv(summary.rows, {
         periodStart: summary.periodStart,
         periodEnd: summary.periodEnd,
+        includeFinancial: summary.includeFinancial === true,
       });
 
       const timestamp = generatedAt.toISOString().replace(/[:.]/g, '-');

@@ -107,7 +107,7 @@ export function TicketFormRenderer({
 
     return {
       status: 'DRAFT',
-      priority: 'C',
+      is_important: false,
       source_type: 'MANUAL',
       source_file_id: undefined,
       raw_ocr_text: '',
@@ -171,11 +171,19 @@ export function TicketFormRenderer({
             await onSubmitTicket(values);
           })}
         >
-          <FormField control={form.control} name="priority" render={({ field }) => (
-            <FormItem><FormLabel>Priority</FormLabel><Select value={String(field.value)} onValueChange={field.onChange}>
-              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-              <SelectContent>{['A', 'B', 'C', 'X'].map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent>
-            </Select><FormMessage /></FormItem>
+          <FormField control={form.control} name="is_important" render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <div className="flex items-start gap-3 rounded-xl border border-[rgba(255,192,56,0.75)] bg-[rgba(255,192,56,0.08)] p-4">
+                  <Checkbox id="ticket-is-important" className="mt-0.5" checked={field.value === true} onCheckedChange={(checked) => field.onChange(checked === true)} />
+                  <div className="space-y-1">
+                    <FormLabel htmlFor="ticket-is-important" className="font-semibold text-white">Important ticket</FormLabel>
+                    <p className="text-xs text-blue-100/90">Check only when there is an environmental hazard (e.g., an oil leak) or the public is in danger. Otherwise the ticket stays Standard.</p>
+                  </div>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )} />
           <div className="storm-surface rounded-xl border border-[rgba(255,192,56,0.75)] p-4">
             <p className="mb-3 text-sm font-bold text-white">OCR Intake</p>

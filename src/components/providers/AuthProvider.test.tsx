@@ -39,7 +39,33 @@ describe('real Supabase auth provider', () => {
     mocks.single.mockResolvedValue({ data: { id: 'real-user', role: 'SUPER_ADMIN', is_active: true }, error: null });
     mocks.rpc.mockResolvedValue({ data: { 'admin.time.view': true }, error: null });
   });
-  afterEach(cleanup);
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+
+  it('keeps a verified worker identity on offline refresh and clears it on sign-out', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'real-user' } } }, error: null });
+    mocks.single.mockResolvedValue({ data: { id: 'real-user', role: 'CONTRACTOR', is_active: true }, error: null });
+    render(<AuthProvider><State /></AuthProvider>);
+    await waitFor(() => expect(screen.getByText('real-user:CONTRACTOR')).toBeTruthy());
+    const queries = mocks.from.mock.calls.length;
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    act(() => { window.dispatchEvent(new Event('focus')); onAuth('TOKEN_REFRESHED', { user: { id: 'real-user' } }); });
+    await waitFor(() => expect(screen.getByText('real-user:CONTRACTOR')).toBeTruthy());
+    expect(mocks.from.mock.calls.length).toBe(queries);
+    expect(screen.getByText('time-hidden')).toBeTruthy();
+    act(() => onAuth('SIGNED_OUT', null));
+    await waitFor(() => expect(screen.getByText('signed-out:no-profile')).toBeTruthy());
+  });
+
+  it('cannot carry the previous worker profile into another offline account', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'real-user' } } }, error: null });
+    mocks.single.mockResolvedValue({ data: { id: 'real-user', role: 'CONTRACTOR', is_active: true }, error: null });
+    render(<AuthProvider><State /></AuthProvider>);
+    await waitFor(() => expect(screen.getByText('real-user:CONTRACTOR')).toBeTruthy());
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    act(() => onAuth('SIGNED_IN', { user: { id: 'different-user' } }));
+    await waitFor(() => expect(screen.getByText('different-user:no-profile')).toBeTruthy());
+    expect(screen.getByText('time-hidden')).toBeTruthy();
+  });
 
   it('starts signed out instead of using a synthetic Super Admin', async () => {
     render(<AuthProvider><State /></AuthProvider>);

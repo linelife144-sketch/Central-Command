@@ -125,7 +125,8 @@ export function resolveVehicleClaimAmount(input: {
   billableMinutes: number;
   hourlyRate?: number;
 }): { amount: number; cappedHours: number; capped: boolean } {
-  const rate = input.hourlyRate ?? 5;
+  if (input.hourlyRate === undefined || !Number.isFinite(input.hourlyRate) || input.hourlyRate < 0) throw new Error('A configured vehicle allowance rate is required.');
+  const rate = input.hourlyRate;
   const shiftHours = Math.max(0, input.billableMinutes) / 60;
   const declared = Math.max(0, input.declaredHours);
 
@@ -213,6 +214,9 @@ export function buildContractorPayrollRow(input: {
     totalMinutes,
     billableMinutes,
     taxablePayroll,
+    submittedWages: round2(entries.filter(entry => entry.status.toUpperCase() === 'PENDING').reduce((sum, entry) => sum + entry.payrollAmount, 0)),
+    approvedWages: round2(entries.filter(entry => entry.status.toUpperCase() === 'APPROVED').reduce((sum, entry) => sum + entry.payrollAmount, 0)),
+    approvedPayout: round2(entries.filter(entry => entry.status.toUpperCase() === 'APPROVED').reduce((sum, entry) => sum + entry.payrollAmount, 0) + reimbursementTotal),
     reimbursementTotal,
     totalPayout,
     utilityBillAmount,
@@ -237,9 +241,12 @@ export function summarizePayroll(rows: ContractorPayrollRow[]): PayrollTotals {
       totalMinutes: acc.totalMinutes + row.totalMinutes,
       billableMinutes: acc.billableMinutes + row.billableMinutes,
       taxablePayroll: round2(acc.taxablePayroll + row.taxablePayroll),
+      submittedWages: round2((acc.submittedWages ?? 0) + (row.submittedWages ?? 0)),
+      approvedWages: round2((acc.approvedWages ?? 0) + (row.approvedWages ?? 0)),
+      approvedPayout: round2((acc.approvedPayout ?? 0) + (row.approvedPayout ?? 0)),
       reimbursementTotal: round2(acc.reimbursementTotal + row.reimbursementTotal),
       totalPayout: round2(acc.totalPayout + row.totalPayout),
-      utilityBillAmount: round2(acc.utilityBillAmount + row.utilityBillAmount),
+      utilityBillAmount: round2(acc.utilityBillAmount + (row.utilityBillAmount ?? 0)),
       marginAmount: 0,
       marginPercent: 0,
     }),
@@ -249,6 +256,7 @@ export function summarizePayroll(rows: ContractorPayrollRow[]): PayrollTotals {
       totalMinutes: 0,
       billableMinutes: 0,
       taxablePayroll: 0,
+      submittedWages: 0, approvedWages: 0, approvedPayout: 0,
       reimbursementTotal: 0,
       totalPayout: 0,
       utilityBillAmount: 0,
@@ -275,7 +283,7 @@ function escapeCsvCell(value: string): string {
 
 export function buildPayrollCsv(
   rows: ContractorPayrollRow[],
-  meta: { periodStart: string; periodEnd: string },
+  meta: { periodStart: string; periodEnd: string; includeFinancial?: boolean },
 ): string {
   const header = [
     'Contractor',
@@ -286,9 +294,8 @@ export function buildPayrollCsv(
     'Taxable Payroll',
     'Vehicle Reimbursement',
     'Total Payout',
-    'Utility Bill',
-    'Margin',
-    'Margin %',
+    ...(meta.includeFinancial === false ? [] : ['Utility Bill', 'Margin', 'Margin %']),
+    'Submitted Wages', 'Approved Wages', 'Approved Payout',
     'Pending Entries',
     'Pending Vehicle Claims',
   ];
@@ -305,9 +312,8 @@ export function buildPayrollCsv(
       row.taxablePayroll.toFixed(2),
       row.reimbursementTotal.toFixed(2),
       row.totalPayout.toFixed(2),
-      row.utilityBillAmount.toFixed(2),
-      row.marginAmount.toFixed(2),
-      `${row.marginPercent.toFixed(1)}%`,
+      ...(meta.includeFinancial === false ? [] : [(row.utilityBillAmount ?? 0).toFixed(2), (row.marginAmount ?? 0).toFixed(2), `${(row.marginPercent ?? 0).toFixed(1)}%`]),
+      (row.submittedWages ?? 0).toFixed(2), (row.approvedWages ?? 0).toFixed(2), (row.approvedPayout ?? 0).toFixed(2),
       String(row.pendingEntries),
       String(row.pendingVehicleClaims),
     ]),

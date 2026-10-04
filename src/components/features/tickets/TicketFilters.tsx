@@ -4,13 +4,13 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Search, X } from "lucide-react"
-import { TicketStatus, PriorityLevel } from "@/types"
+import { TicketStatus } from "@/types"
 import { useState, useEffect } from "react"
 
 export interface TicketFiltersState {
     search: string
     status: TicketStatus | "ALL"
-    priority: PriorityLevel | "ALL"
+    importance: "ALL" | "IMPORTANT" | "STANDARD"
 }
 
 interface TicketFiltersProps {
@@ -21,7 +21,7 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
     const [filters, setFilters] = useState<TicketFiltersState>({
         search: "",
         status: "ALL",
-        priority: "ALL",
+        importance: "ALL",
     })
 
     // Debounce search input
@@ -41,15 +41,15 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
         setFilters(prev => ({ ...prev, status: value as TicketStatus | "ALL" }))
     }
 
-    const handlePriorityChange = (value: string) => {
-        setFilters(prev => ({ ...prev, priority: value as PriorityLevel | "ALL" }))
+    const handleImportanceChange = (value: string) => {
+        setFilters(prev => ({ ...prev, importance: value as TicketFiltersState["importance"] }))
     }
 
     const clearFilters = () => {
         setFilters({
             search: "",
             status: "ALL",
-            priority: "ALL",
+            importance: "ALL",
         })
     }
 
@@ -88,20 +88,18 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
                     </SelectContent>
                 </Select>
 
-                <Select value={filters.priority} onValueChange={handlePriorityChange}>
-                    <SelectTrigger aria-label="Filter by priority" className="min-w-0 flex-1 xl:w-[145px] xl:flex-none">
-                        <SelectValue placeholder="Priority" />
+                <Select value={filters.importance} onValueChange={handleImportanceChange}>
+                    <SelectTrigger aria-label="Filter by importance" className="min-w-0 flex-1 xl:w-[145px] xl:flex-none">
+                        <SelectValue placeholder="Importance" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="ALL">All Priorities</SelectItem>
-                        <SelectItem value="A">Critical (A)</SelectItem>
-                        <SelectItem value="B">Urgent (B)</SelectItem>
-                        <SelectItem value="C">Standard (C)</SelectItem>
-                        <SelectItem value="X">Hold (X)</SelectItem>
+                        <SelectItem value="ALL">All Tickets</SelectItem>
+                        <SelectItem value="IMPORTANT">Important</SelectItem>
+                        <SelectItem value="STANDARD">Standard</SelectItem>
                     </SelectContent>
                 </Select>
 
-                {(filters.search || filters.status !== "ALL" || filters.priority !== "ALL") && (
+                {(filters.search || filters.status !== "ALL" || filters.importance !== "ALL") && (
                     <Button variant="ghost" size="icon" onClick={clearFilters} aria-label="Clear filters" title="Clear filters">
                         <X className="h-4 w-4" />
                     </Button>

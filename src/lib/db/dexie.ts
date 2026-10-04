@@ -1,3 +1,5 @@
+import { scrubBillingFields } from '../compensation/timeEntryProjection';
+import type { TimeInterval, PaySegment, PayAgreement } from '../compensation/validation';
 // Central Command - Dexie.js IndexedDB Configuration
 
 import Dexie, { Table } from 'dexie';
@@ -13,7 +15,7 @@ export interface LocalTicket {
   id: string;
   ticket_number: string;
   status: string;
-  priority: string;
+  is_important: boolean;
   address: string;
   latitude?: number;
   longitude?: number;
@@ -34,10 +36,14 @@ export interface LocalTimeEntry {
   clock_in_at: string;
   clock_in_latitude?: number;
   clock_in_longitude?: number;
+  clock_in_accuracy?: number;
   clock_in_photo_url?: string;
+  clock_in_photo_file?: Blob;
+  clock_out_photo_file?: Blob;
   clock_out_at?: string;
   clock_out_latitude?: number;
   clock_out_longitude?: number;
+  clock_out_accuracy?: number;
   clock_out_photo_url?: string;
   work_type: string;
   work_type_rate: number;
@@ -55,8 +61,24 @@ export interface LocalTimeEntry {
   contractor_role?: ContractorRole;
   pay_rate_applied?: number;
   payroll_amount?: number;
-  utility_bill_rate_applied?: number;
-  utility_bill_amount?: number;
+  regular_minutes?: number;
+  overtime_minutes?: number;
+  regular_pay_amount?: number;
+  overtime_pay_amount?: number;
+  overtime_rate_applied?: number;
+  activity_intervals?: TimeInterval[];
+  pay_segments?: PaySegment[];
+  paid_minutes_exact?: number;
+  vehicle_minutes?: number;
+  vehicle_allowance_amount?: number;
+  calculation_version?: string;
+  total_minutes?: number;
+  billable_minutes?: number;
+  billable_amount?: number;
+  ticket_number?: string;
+  contractor_name?: string;
+  vehicle_reimbursement_amount?: number;
+  vehicle_claim_status?: string;
 }
 
 export interface LocalExpenseReport {
@@ -221,7 +243,7 @@ function normalizeTimeEntryForQueue(timeEntry: LocalTimeEntry): LocalTimeEntry {
   const timestamp = nowIsoTimestamp();
 
   return {
-    ...timeEntry,
+    ...scrubBillingFields(timeEntry),
     synced: false,
     sync_status: 'pending',
     retry_count: timeEntry.retry_count ?? 0,
@@ -292,6 +314,7 @@ export class GridElectricDatabase extends Dexie {
   syncQueue!: Table<SyncQueueItem>;
   conflicts!: Table<LocalSyncConflict>;
   gpsLocations!: Table<GPSLocation>;
+  payAgreements!: Table<PayAgreement & { viewer_profile_id: string }>;
 
   constructor() {
     super('GridElectricDB');
@@ -408,6 +431,21 @@ export class GridElectricDatabase extends Dexie {
           timeEntry.pay_rate_applied = backfilled.pay_rate_applied;
         });
       });
+    this.version(5).stores({}).upgrade(async transaction => {
+      await transaction.table('timeEntries').toCollection().modify(row => {
+        delete row.utility_bill_amount; delete row.utility_bill_rate_applied;
+      });
+      await transaction.table('syncQueue').toCollection().modify(row => {
+        if (row.entity_type === 'time_entry' && row.payload && typeof row.payload === 'object') row.payload = scrubBillingFields(row.payload);
+      });
+      await transaction.table('conflicts').toCollection().modify(row => {
+        if (row.entity_type === 'time_entry') for (const key of ['local_payload', 'server_payload', 'resolved_payload']) {
+          if (row[key] && typeof row[key] === 'object') row[key] = scrubBillingFields(row[key]);
+        }
+      });
+    });
+    this.version(6).stores({ payAgreements: '&id, contractor_id, viewer_profile_id, [viewer_profile_id+contractor_id]' });
+
   }
 }
 
@@ -664,7 +702,7 @@ export async function queueTimeEntry(
 ): Promise<string> {
   const entryId = timeEntry.id || createId();
   const normalizedEntry = normalizeTimeEntryForQueue({
-    ...timeEntry,
+    ...scrubBillingFields(timeEntry),
     id: entryId,
   });
 

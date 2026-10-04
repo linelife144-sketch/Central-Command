@@ -1,94 +1,13 @@
-import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-
-const mocks = vi.hoisted(() => ({
-  getContractorRateProfile: vi.fn(),
-  updateContractorRole: vi.fn(),
-  updateContractorWorkTypeRate: vi.fn(),
-}));
-vi.mock('@/lib/services/payrollService', () => ({
-  payrollService: {
-    getContractorRateProfile: mocks.getContractorRateProfile,
-    updateContractorRole: mocks.updateContractorRole,
-    updateContractorWorkTypeRate: mocks.updateContractorWorkTypeRate,
-  },
-}));
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
-interface MockSelectProps {
-  value?: string;
-  onValueChange?: (value: string) => void;
-  disabled?: boolean;
-  children?: React.ReactNode;
-}
-
-interface MockSelectItemProps {
-  value: string;
-  children?: React.ReactNode;
-}
-
-vi.mock('@/components/ui/select', () => ({
-  Select: ({ value, onValueChange, disabled, children }: MockSelectProps) => (
-    <select
-      aria-label="Role"
-      value={value}
-      disabled={disabled}
-      onChange={(event) => onValueChange?.(event.target.value)}
-    >
-      {children}
-    </select>
-  ),
-  SelectTrigger: ({ children }: MockSelectProps) => children,
-  SelectValue: () => null,
-  SelectContent: ({ children }: MockSelectProps) => children,
-  SelectItem: ({ value, children }: MockSelectItemProps) => <option value={value}>{children}</option>,
-}));
-
+import { testCompensation, testPayrollConfiguration } from '@/lib/compensation/testFixtures';
+const mocks = vi.hoisted(() => ({ get: vi.fn(), save: vi.fn(), config: vi.fn() }));
+vi.mock('@/lib/compensation/service', () => ({ getPayAgreements: mocks.get, savePayAgreement: mocks.save, getPayrollConfiguration: mocks.config }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import { ContractorPayrollEditor } from './ContractorPayrollEditor';
-
-afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
-});
-
-describe('ContractorPayrollEditor', () => {
-  it('renders the current role and resolved rates once loaded', async () => {
-    mocks.getContractorRateProfile.mockResolvedValue({
-      contractorId: 'c-1',
-      role: 'DRIVER',
-      workTypeRates: { STANDARD_ASSESSMENT: 65 },
-      missingWorkTypes: ['EMERGENCY_RESPONSE', 'TRAVEL', 'STANDBY', 'ADMIN', 'TRAINING'],
-    });
-
-    render(<ContractorPayrollEditor canEdit canChangeRole contractorId="c-1" currentRole="DRIVER" />);
-
-    await waitFor(() => expect(screen.queryByText(/loading rates/i)).toBeNull());
-
-    expect(screen.getAllByText('No rate configured').length).toBeGreaterThan(0);
-  });
-
-  it('surfaces the server guard error message when a role change is rejected', async () => {
-    const { toast } = await import('sonner');
-    mocks.getContractorRateProfile.mockResolvedValue({
-      contractorId: 'c-1',
-      role: 'DRIVER',
-      workTypeRates: {},
-      missingWorkTypes: [],
-    });
-    mocks.updateContractorRole.mockRejectedValue(
-      new Error('Only authorized administrators can approve contractor eligibility'),
-    );
-
-    render(<ContractorPayrollEditor canEdit canChangeRole contractorId="c-1" currentRole="DRIVER" />);
-    await waitFor(() => expect(screen.queryByText(/loading rates/i)).toBeNull());
-
-    fireEvent.change(screen.getByRole('combobox', { name: 'Role' }), { target: { value: 'TEAM_LEAD' } });
-
-    await waitFor(() =>
-      expect(mocks.updateContractorRole).toHaveBeenCalledWith({ contractorId: 'c-1', role: 'TEAM_LEAD' }),
-    );
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith('Only authorized administrators can approve contractor eligibility'),
-    );
-  });
+afterEach(() => { cleanup(); vi.clearAllMocks(); });
+function setup() { mocks.config.mockResolvedValue(testPayrollConfiguration); mocks.get.mockResolvedValue([{ id: 'agreement', contractor_id: 'c-1', effective_from: '2026-01-01T00:00:00Z', terms: testCompensation }]); mocks.save.mockResolvedValue({}); }
+describe('contractor pay agreement editor', () => {
+  it('shows immutable history and disables editing for Admin', async () => { setup(); render(<ContractorPayrollEditor contractorId="c-1" currentRole="DRIVER" />); await screen.findByText(/Agreement history \(1\)/); expect(screen.getByLabelText('Base hourly wage ($)').matches(':disabled')).toBe(true); expect(screen.queryByRole('button', { name: 'Save new agreement' })).toBeNull(); });
+  it('saves a new effective version instead of overwriting an old wage', async () => { setup(); render(<ContractorPayrollEditor contractorId="c-1" currentRole="DRIVER" canEdit />); await screen.findByText(/Agreement history \(1\)/); await waitFor(() => expect(screen.getByLabelText('Base hourly wage ($)').matches(':disabled')).toBe(false)); fireEvent.change(screen.getByLabelText('Base hourly wage ($)'), { target: { value: '75' } }); fireEvent.change(screen.getByLabelText('Effective time'), { target: { value: '2027-01-04T14:00' } }); fireEvent.click(screen.getByRole('button', { name: 'Save new agreement' })); await waitFor(() => expect(mocks.save).toHaveBeenCalledWith('c-1', expect.objectContaining({ effective_from: new Date('2027-01-04T14:00').toISOString(), terms: expect.objectContaining({ base_hourly_rate: 75, policy: testCompensation.policy }) }))); });
 });

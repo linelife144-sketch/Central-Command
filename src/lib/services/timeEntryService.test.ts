@@ -84,12 +84,14 @@ describe('createTimeEntryService', () => {
 
     const entry = await service.clockIn({
       contractorId: 'sub-1',
+      stormEventId: 'storm-1',
       workType: 'STANDARD_ASSESSMENT',
       workTypeRate: 100,
       breakMinutes: 0,
       location: {
         latitude: 27.95,
         longitude: -82.46,
+        accuracy: 20,
       },
     });
 
@@ -117,6 +119,7 @@ describe('createTimeEntryService', () => {
       location: {
         latitude: 27.95,
         longitude: -82.46,
+        accuracy: 20,
       },
     });
 
@@ -152,6 +155,7 @@ describe('createTimeEntryService', () => {
       location: {
         latitude: 27.95,
         longitude: -82.46,
+        accuracy: 20,
       },
     });
 
@@ -201,6 +205,7 @@ describe('createTimeEntryService', () => {
       location: {
         latitude: 27.95,
         longitude: -82.46,
+        accuracy: 20,
       },
     });
 
@@ -209,32 +214,29 @@ describe('createTimeEntryService', () => {
     expect(insertPayload.storm_event_id).toBe('storm-123');
   });
 
-  it('forwards a null stormEventId when none was provided on clock-in', async () => {
-    const insertRemoteEntry = vi.fn().mockResolvedValue(buildTimeEntry());
+  it('refuses clock-in without a storm instead of queuing an invalid shift', async () => {
+    const service = createTimeEntryService();
+    await expect(service.clockIn({ contractorId: 'sub-1', workType: 'STANDARD_ASSESSMENT', workTypeRate: 100,
+      breakMinutes: 0, location: { latitude: 27.95, longitude: -82.46, accuracy: 20 } })).rejects.toThrow('assigned ticket');
+  });
 
-    const service = createTimeEntryService({
-      isOnline: () => true,
-      now: () => new Date('2026-02-12T12:00:00.000Z'),
-      fetchRemoteActiveEntry: vi.fn(),
-      insertRemoteEntry,
-      updateRemoteEntry: vi.fn(),
-      getLocalActiveEntry: vi.fn().mockResolvedValue(null),
-      queueLocalEntry: vi.fn(),
-    });
+  it('records a full 16-hour day without clipping or queuing', async () => {
+    const updateRemoteEntry = vi.fn().mockResolvedValue(buildTimeEntry({ total_minutes: 960, payroll_amount: 1600 }));
+    const queueLocalEntry = vi.fn();
+    const service = createTimeEntryService({ now: () => new Date('2026-02-13T04:00:00Z'), isOnline: () => true, updateRemoteEntry, queueLocalEntry });
+    const result = await service.clockOut({ entry: buildTimeEntry(), breakMinutes: 0,
+      location: { latitude: 27.95, longitude: -82.46, accuracy: 20 } });
+    expect(result.total_minutes).toBe(960);
+    expect(result.payroll_amount).toBe(1600);
+    expect(queueLocalEntry).not.toHaveBeenCalled();
+  });
 
-    await service.clockIn({
-      contractorId: 'sub-1',
-      workType: 'STANDARD_ASSESSMENT',
-      workTypeRate: 100,
-      breakMinutes: 0,
-      location: {
-        latitude: 27.95,
-        longitude: -82.46,
-      },
-    });
-
-    const [insertPayload] = insertRemoteEntry.mock.calls[0];
-    expect(insertPayload.storm_event_id).toBeNull();
+  it('does not disguise a backend validation rejection as an offline success', async () => {
+    const queueLocalEntry = vi.fn();
+    const service = createTimeEntryService({ isOnline: () => true, insertRemoteEntry: vi.fn().mockRejectedValue({ code: '23514', message: 'Invalid ticket' }), queueLocalEntry });
+    await expect(service.clockIn({ contractorId: 'sub-1', stormEventId: 'storm-1', workType: 'STANDARD_ASSESSMENT', workTypeRate: 100,
+      breakMinutes: 0, location: { latitude: 27.95, longitude: -82.46, accuracy: 20 } })).rejects.toMatchObject({ code: '23514' });
+    expect(queueLocalEntry).not.toHaveBeenCalled();
   });
 
   it('returns local active entry before remote lookup', async () => {

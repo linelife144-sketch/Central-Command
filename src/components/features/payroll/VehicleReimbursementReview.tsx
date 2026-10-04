@@ -47,7 +47,7 @@ export function VehicleReimbursementReview({ reviewerId, canEdit = false, onRevi
   }, []);
 
   useEffect(() => {
-    void loadClaims();
+    void Promise.resolve().then(loadClaims);
   }, [loadClaims]);
 
   const handleApprove = async (claim: VehicleClaim) => {

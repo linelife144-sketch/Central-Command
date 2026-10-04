@@ -1137,8 +1137,6 @@
 .cc-breadcrumb strong { font-weight: 700; color: var(--grid-navy); }
 .cc-search-trigger { color: #60718a; font-size: 11px; gap: 10px; height: 38px; padding: 0 10px; }
 .cc-search-trigger kbd { margin-left: 10px; padding: 4px 6px; border: 1px solid #dbe4f0; border-radius: 5px; color: #8291a7; font-family: inherit; font-size: 9px; }
-.cc-connection { align-items: center; gap: 6px; color: #536880; font-size: 10px; font-weight: 600; }
-.cc-connection svg { color: #297b66; }
 .cc-user-trigger { height: auto; padding: 4px 6px; gap: 9px; border-left: 1px solid #dbe4f0; border-radius: 0; }
 .cc-user-avatar { background: linear-gradient(145deg, #002168, #1b4c9a); color: white; font-size: 11px; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 5px #00216815; }
 .cc-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #697d9a; }
@@ -1175,7 +1173,8 @@
 .cc-status-stat > p:first-child::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #2ea3f2; }
 .cc-status-stat:nth-child(2) > p:first-child::before { background: #00d084; }
 .cc-status-stat:nth-child(3) > p:first-child::before { background: #ffc038; }
-.cc-status-stat:nth-child(4) > p:first-child::before { background: #98a7bc; }
+.cc-status-stat:nth-child(4) > p:first-child::before { background: #0a6b45; }
+.cc-status-stat:nth-child(5) > p:first-child::before { background: #98a7bc; }
 .cc-status-stat > p + p { margin-top: 5px; font-size: 23px; font-family: var(--font-barlow), sans-serif; color: var(--grid-navy); }
 .cc-action-link { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e8edf4; color: var(--grid-navy); }
 .cc-action-link > svg { color: #8597b0; transition: transform 180ms, color 180ms; }
@@ -1259,8 +1258,8 @@
   .cc-metric { gap: 8px; }
   .cc-metric-value { font-size: 38px; }
   .cc-status-stat { padding: 16px 18px; border-bottom: 1px solid #e0e7f0; }
-  .cc-status-stat:nth-child(2) { border-right: 0; }
-  .cc-status-stat:nth-child(n + 3) { border-bottom: 0; }
+  .cc-status-stat:nth-child(2n) { border-right: 0; }
+  .cc-status-stat:last-child { border-bottom: 0; }
   .cc-auth-story { min-height: 166px; padding: 28px; }
   .cc-auth-copy h1 { font-size: 36px; }
   .cc-auth-main { padding: 36px 26px; }

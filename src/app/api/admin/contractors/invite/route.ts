@@ -6,7 +6,7 @@ import { inviteContractor } from '@/lib/services/contractorInviteService';
 export async function GET() {
   try {
     const { client } = await requirePermission('admin.contractors.view');
-    const { data, error } = await client.from('contractor_invitations' as never).select('profile_id,email,first_name,last_name,sent_at,last_result,send_count').order('sent_at', { ascending: false }).limit(100);
+    const { data, error } = await client.from('contractor_invitations').select('profile_id,email,first_name,last_name,sent_at,last_result,send_count').order('sent_at', { ascending: false }).limit(100);
     if (error) throw new Error(error.message);
     return NextResponse.json({ invitations: data }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {

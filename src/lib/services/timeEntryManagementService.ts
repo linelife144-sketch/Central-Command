@@ -1,8 +1,8 @@
+import { TIME_ENTRY_WAGE_COLUMNS, type WageTimeEntryRow } from '../compensation/timeEntryProjection';
 import { db, type LocalTimeEntry } from '../db/dexie';
 import type { TimeEntry, TimeEntryStatus } from '../../types';
-import type { Database } from '../../types/database';
 
-type RemoteTimeEntryRow = Database['public']['Tables']['time_entries']['Row'];
+type RemoteTimeEntryRow = WageTimeEntryRow;
 
 type TimeEntryReviewDecision = Extract<TimeEntryStatus, 'APPROVED' | 'REJECTED'>;
 
@@ -47,6 +47,7 @@ interface TimeEntryManagementDependencies {
   isOnline: () => boolean;
   fetchRemoteEntries: (filters: TimeEntryListFilters) => Promise<TimeEntryListItem[]>;
   getLocalEntries: (contractorId: string) => Promise<LocalTimeEntry[]>;
+  cacheRemoteEntries: (contractorId: string, entries: TimeEntryListItem[]) => Promise<void>;
   reviewRemoteEntry: (input: ReviewTimeEntryInput) => Promise<TimeEntry>;
 }
 
@@ -76,21 +77,32 @@ export function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     clock_in_at: row.clock_in_at,
     clock_in_latitude: row.clock_in_latitude ?? undefined,
     clock_in_longitude: row.clock_in_longitude ?? undefined,
+    clock_in_accuracy: row.clock_in_accuracy ?? undefined,
     clock_out_at: row.clock_out_at ?? undefined,
     clock_out_latitude: row.clock_out_latitude ?? undefined,
     clock_out_longitude: row.clock_out_longitude ?? undefined,
+    clock_out_accuracy: row.clock_out_accuracy ?? undefined,
     work_type: row.work_type as TimeEntry['work_type'],
     work_type_rate: row.work_type_rate,
-    total_minutes: row.total_minutes ?? undefined,
+    total_minutes: row.calculation_version === 'AGREEMENT' && row.clock_out_at ? (Date.parse(row.clock_out_at) - Date.parse(row.clock_in_at)) / 60000 : row.total_minutes ?? undefined,
     break_minutes: row.break_minutes ?? 0,
-    billable_minutes: row.billable_minutes ?? undefined,
+    billable_minutes: row.paid_minutes_exact ?? row.billable_minutes ?? undefined,
     billable_amount: row.billable_amount ?? undefined,
     storm_event_id: row.storm_event_id ?? undefined,
     contractor_role: row.contractor_role ?? undefined,
     pay_rate_applied: row.pay_rate_applied ?? undefined,
     payroll_amount: row.payroll_amount ?? undefined,
-    utility_bill_rate_applied: row.utility_bill_rate_applied ?? undefined,
-    utility_bill_amount: row.utility_bill_amount ?? undefined,
+    activity_intervals: (row.activity_intervals ?? []) as unknown as TimeEntry['activity_intervals'],
+    pay_segments: (row.pay_segments ?? []) as unknown as TimeEntry['pay_segments'],
+    paid_minutes_exact: row.paid_minutes_exact ?? undefined,
+    vehicle_minutes: row.vehicle_minutes ?? undefined,
+    vehicle_allowance_amount: row.vehicle_allowance_amount ?? undefined,
+    calculation_version: row.calculation_version,
+    regular_minutes: row.regular_minutes ?? undefined,
+    overtime_minutes: row.overtime_minutes ?? undefined,
+    regular_pay_amount: row.regular_pay_amount ?? undefined,
+    overtime_pay_amount: row.overtime_pay_amount ?? undefined,
+    overtime_rate_applied: row.overtime_rate_applied ?? undefined,
     status: toTimeEntryStatus(row.status ?? 'PENDING'),
     reviewed_by: row.reviewed_by ?? undefined,
     reviewed_at: row.reviewed_at ?? undefined,
@@ -113,10 +125,12 @@ function mapLocalEntryToListItem(entry: LocalTimeEntry): TimeEntryListItem {
     clock_in_at: entry.clock_in_at,
     clock_in_latitude: entry.clock_in_latitude,
     clock_in_longitude: entry.clock_in_longitude,
+    clock_in_accuracy: entry.clock_in_accuracy,
     clock_in_photo_url: entry.clock_in_photo_url,
     clock_out_at: entry.clock_out_at,
     clock_out_latitude: entry.clock_out_latitude,
     clock_out_longitude: entry.clock_out_longitude,
+    clock_out_accuracy: entry.clock_out_accuracy,
     clock_out_photo_url: entry.clock_out_photo_url,
     work_type: entry.work_type as TimeEntry['work_type'],
     work_type_rate: entry.work_type_rate,
@@ -125,8 +139,24 @@ function mapLocalEntryToListItem(entry: LocalTimeEntry): TimeEntryListItem {
     contractor_role: entry.contractor_role,
     pay_rate_applied: entry.pay_rate_applied,
     payroll_amount: entry.payroll_amount,
-    utility_bill_rate_applied: entry.utility_bill_rate_applied,
-    utility_bill_amount: entry.utility_bill_amount,
+    activity_intervals: entry.activity_intervals,
+    pay_segments: entry.pay_segments,
+    paid_minutes_exact: entry.paid_minutes_exact,
+    vehicle_minutes: entry.vehicle_minutes,
+    vehicle_allowance_amount: entry.vehicle_allowance_amount,
+    calculation_version: entry.calculation_version,
+    overtime_rate_applied: entry.overtime_rate_applied,
+    overtime_pay_amount: entry.overtime_pay_amount,
+    regular_pay_amount: entry.regular_pay_amount,
+    overtime_minutes: entry.overtime_minutes,
+    regular_minutes: entry.regular_minutes,
+    total_minutes: entry.total_minutes,
+    billable_minutes: entry.billable_minutes,
+    billable_amount: entry.billable_amount,
+    ticket_number: entry.ticket_number,
+    contractor_name: entry.contractor_name,
+    vehicle_reimbursement_amount: entry.vehicle_reimbursement_amount,
+    vehicle_claim_status: entry.vehicle_claim_status,
     status: toTimeEntryStatus(entry.status),
     sync_status: entry.sync_status === 'synced' ? 'SYNCED' : entry.sync_status === 'failed' ? 'FAILED' : 'PENDING',
     created_at: createdAt,
@@ -242,7 +272,7 @@ async function fetchRemoteEntries(filters: TimeEntryListFilters): Promise<TimeEn
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from('time_entries') as any)
-    .select('*')
+    .select(TIME_ENTRY_WAGE_COLUMNS)
     .order('clock_in_at', { ascending: false });
 
   if (filters.contractorId) {
@@ -305,6 +335,23 @@ async function getLocalEntries(contractorId: string): Promise<LocalTimeEntry[]> 
   return localEntries.sort((left, right) => parseTimestamp(right.clock_in_at) - parseTimestamp(left.clock_in_at));
 }
 
+async function cacheRemoteEntries(contractorId: string, entries: TimeEntryListItem[]): Promise<void> {
+  const { supabase } = await import('../supabase/client');
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return;
+  const { data: owner } = await supabase.from('contractors').select('id').eq('profile_id', user.id).maybeSingle();
+  if (owner?.id !== contractorId) return;
+  await db.transaction('rw', db.timeEntries, async () => {
+    for (const entry of entries) {
+      if (entry.contractor_id !== contractorId) continue;
+      const existing = await db.timeEntries.get(entry.id);
+      // A fetched open server shift must not overwrite a queued offline clock-out.
+      if (existing && existing.sync_status !== 'synced') continue;
+      await db.timeEntries.put({ ...entry, synced: true, sync_status: 'synced', retry_count: 0 });
+    }
+  });
+}
+
 async function reviewRemoteEntry(input: ReviewTimeEntryInput): Promise<TimeEntry> {
   const { supabase } = await import('../supabase/client');
   const nowIso = new Date().toISOString();
@@ -319,7 +366,7 @@ async function reviewRemoteEntry(input: ReviewTimeEntryInput): Promise<TimeEntry
       updated_at: nowIso,
     })
     .eq('id', input.entryId)
-    .select()
+    .select(TIME_ENTRY_WAGE_COLUMNS)
     .single();
 
   if (error) {
@@ -333,6 +380,7 @@ const defaultDependencies: TimeEntryManagementDependencies = {
   isOnline: defaultIsOnline,
   fetchRemoteEntries,
   getLocalEntries,
+  cacheRemoteEntries,
   reviewRemoteEntry,
 };
 
@@ -358,7 +406,19 @@ export function createTimeEntryManagementService(
       }
 
       try {
-        return await dependencies.fetchRemoteEntries(filters);
+        const remote = await dependencies.fetchRemoteEntries(filters);
+        if (!filters.contractorId) return remote;
+        // Reading payroll remains usable when local storage is full or unavailable.
+        await dependencies.cacheRemoteEntries(filters.contractorId, remote).catch(() => undefined);
+        const local = await dependencies.getLocalEntries(filters.contractorId).catch(() => []);
+        const merged = new Map(remote.map(entry => [entry.id, entry]));
+        for (const entry of local) {
+          if (entry.contractor_id === filters.contractorId && entry.sync_status !== 'synced') {
+            merged.set(entry.id, mapLocalEntryToListItem(entry));
+          }
+        }
+        return [...merged.values()].filter(entry => entryMatchesFilters(entry, filters))
+          .sort((left, right) => parseTimestamp(right.clock_in_at) - parseTimestamp(left.clock_in_at));
       } catch (error) {
         if (!filters.contractorId) {
           throw error;

@@ -39,6 +39,35 @@ function buildTimeEntry(overrides: Partial<TimeEntry> = {}): TimeEntry {
 }
 
 describe('createTimeEntryManagementService', () => {
+  it('caches worker snapshots and keeps a queued clock-out visible over an open server shift', async () => {
+    const cacheRemoteEntries = vi.fn().mockResolvedValue(undefined);
+    const remote = buildTimeEntry({ id: 'queued', clock_out_at: undefined });
+    const local = buildLocalTimeEntry({ id: 'queued', payroll_amount: undefined });
+    const service = createTimeEntryManagementService({
+      isOnline: () => true,
+      fetchRemoteEntries: vi.fn().mockResolvedValue([remote]),
+      cacheRemoteEntries,
+      getLocalEntries: vi.fn().mockResolvedValue([
+        local, buildLocalTimeEntry({ id: 'other-worker', contractor_id: 'other' }),
+      ]),
+    });
+    const result = await service.listEntries({ contractorId: 'sub-1' });
+    expect(cacheRemoteEntries).toHaveBeenCalledWith('sub-1', [remote]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'queued', clock_out_at: local.clock_out_at, sync_status: 'PENDING' });
+  });
+
+  it('keeps a successful remote payroll response when local storage fails', async () => {
+    const remote = buildTimeEntry({ payroll_amount: 123 });
+    const service = createTimeEntryManagementService({
+      isOnline: () => true,
+      fetchRemoteEntries: vi.fn().mockResolvedValue([remote]),
+      cacheRemoteEntries: vi.fn().mockRejectedValue(new Error('Quota exceeded')),
+      getLocalEntries: vi.fn().mockRejectedValue(new Error('Database unavailable')),
+    });
+    expect(await service.listEntries({ contractorId: 'sub-1' })).toEqual([remote]);
+  });
+
   it('loads contractor entries from local cache while offline', async () => {
     const service = createTimeEntryManagementService({
       isOnline: () => false,
@@ -175,11 +204,12 @@ describe('createTimeEntryManagementService', () => {
 
 describe('time-review snapshot mapping', () => {
   it('keeps server costing snapshots, including zero values', () => {
-    const row = { ...buildTimeEntry(), storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50, payroll_amount: 200, utility_bill_rate_applied: 0, utility_bill_amount: 0 } as Database['public']['Tables']['time_entries']['Row'];
-    expect(mapRemoteRowToTimeEntry(row)).toMatchObject({ storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50, payroll_amount: 200, utility_bill_rate_applied: 0, utility_bill_amount: 0 });
+    const row = { ...buildTimeEntry(), storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50, payroll_amount: 200, utility_bill_rate_applied: 0, utility_bill_amount: 0 } as unknown as Database['public']['Tables']['time_entries']['Row'];
+    expect(mapRemoteRowToTimeEntry(row)).toMatchObject({ storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50, payroll_amount: 200 });
+    expect(mapRemoteRowToTimeEntry(row)).not.toHaveProperty('utility_bill_amount');
   });
   it('preserves saved snapshots when using the offline cache', async () => {
-    const service = createTimeEntryManagementService({ isOnline: () => false, fetchRemoteEntries: vi.fn(), reviewRemoteEntry: vi.fn(), getLocalEntries: vi.fn().mockResolvedValue([buildLocalTimeEntry({ payroll_amount: 200, utility_bill_amount: 350, storm_event_id: 'storm-1' })]) });
-    expect((await service.listEntries({ contractorId: 'sub-1' }))[0]).toMatchObject({ payroll_amount: 200, utility_bill_amount: 350, storm_event_id: 'storm-1' });
+    const service = createTimeEntryManagementService({ isOnline: () => false, fetchRemoteEntries: vi.fn(), reviewRemoteEntry: vi.fn(), getLocalEntries: vi.fn().mockResolvedValue([buildLocalTimeEntry({ payroll_amount: 200, storm_event_id: 'storm-1' })]) });
+    expect((await service.listEntries({ contractorId: 'sub-1' }))[0]).toMatchObject({ payroll_amount: 200, storm_event_id: 'storm-1' });
   });
 });

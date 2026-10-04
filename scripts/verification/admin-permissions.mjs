@@ -28,6 +28,8 @@ for (const table of ['contractors', ...tables]) {
  await db.exec(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY ${table}_admin ON ${table} FOR ALL TO authenticated USING(is_admin()) WITH CHECK(is_admin()); CREATE POLICY ${table}_own ON ${table} FOR ALL TO authenticated USING(${table==='contractors' ? 'profile_id':'owner_id'}=auth.uid()) WITH CHECK(${table==='contractors' ? 'profile_id':'owner_id'}=auth.uid());`);
 }
 await db.exec(`GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated,service_role; GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA private TO authenticated,service_role;`);
+// Match the legacy live ACLs rather than assuming the server role has every table grant.
+await db.exec('REVOKE ALL ON contractors,audit_logs FROM service_role');
 await db.exec(await readFile('supabase/admin_user_permissions.sql','utf8'));
 const ids={sa:'00000000-0000-4000-8000-000000000001',sa2:'00000000-0000-4000-8000-000000000002',admin:'00000000-0000-4000-8000-000000000003',contractor:'00000000-0000-4000-8000-000000000004',ceo:'00000000-0000-4000-8000-000000000005'};
 for(const [key,id] of Object.entries(ids)) await db.query(`INSERT INTO profiles(id,email,first_name,last_name,role) VALUES($1,$2,$3,'Test',$4)`,[id,`${key}@example.invalid`,key,key.startsWith('sa')?'SUPER_ADMIN':key.toUpperCase()]);
@@ -38,6 +40,7 @@ let count=0;
 const test=async(name,fn)=>{await fn();count++; console.log('PASS',name);};
 const map=async()=> (await db.query('SELECT get_my_permissions() AS map')).rows[0].map;
 const save=async(id,overrides,version=null)=> (await db.query('SELECT set_user_permissions($1,$2::jsonb,$3::uuid) AS settings',[id,JSON.stringify(overrides),version])).rows[0].settings;
+await test('permission snapshot covers every catalog key, including Payroll',async()=>{const keys=(await db.query('SELECT permission_key FROM private.permission_catalog ORDER BY permission_key')).rows.map(row=>row.permission_key);await as(ids.sa,async()=>{const p=await map();assert.deepEqual(Object.keys(p).sort(),keys);assert.equal(p['admin.payroll.view'],true);assert.equal(p['admin.payroll.edit'],true);});await as(ids.admin,async()=>{const p=await map();assert.equal(p['admin.payroll.view'],true);assert.equal(p['admin.payroll.edit'],false);});});
 await test('default views and protected user administration',()=>as(ids.admin,async()=>{const p=await map();assert.equal(p['admin.time.edit'],true);assert.equal(p['admin.users.edit'],false);assert.equal(p['admin.storms.edit'],false);}));
 let settings;
 await test('atomic override and returned snapshot',()=>as(ids.sa,async()=>{settings=await save(ids.admin,{'admin.tickets.edit':'deny','admin.storms.edit':'allow','admin.time.view':'deny'});assert.equal(settings.permissions['admin.time.edit'],false);assert.equal(settings.permissions['admin.storms.edit'],true);assert.ok(settings.version);}));

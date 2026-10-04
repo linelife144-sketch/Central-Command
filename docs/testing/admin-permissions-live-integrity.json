@@ -1,0 +1,31 @@
+{
+  "checks": [
+    "all 21 keys returned with independent Payroll defaults",
+    "ordinary Admin cannot read access administration",
+    "atomic overrides and revision persist",
+    "Edit follows View and explicit storm grant",
+    "stale revision rejects overwrite",
+    "unknown key rejected without revision change",
+    "user administration cannot be granted to Admin",
+    "self permission changes rejected",
+    "contractor portal permissions remain locked",
+    "save records bound actor and audit without changing role",
+    "denied ticket reads and direct writes blocked by live RLS",
+    "explicit storm edit works through live RLS",
+    "Payroll reads independent of Time and default financial writes blocked",
+    "direct permission table writes forbidden",
+    "profile trigger blocks self role escalation",
+    "ticket and assignment RPC gates enforce module edits",
+    "invitation finalizer unavailable to authenticated clients",
+    "password setup gate denies staff modules",
+    "service finalizer revalidates actor permission",
+    "finalizer creates linked contractor, invitation and password gate atomically",
+    "resend preserves approved contractor and increments audited send count",
+    "existing contractor sees only assigned ticket and no staff permissions",
+    "all identities, rows, grants and audit fixtures rolled back"
+  ],
+  "passed": 23,
+  "email_sent": false,
+  "proof_scope": "live database and RLS with simulated identities; not email delivery or second staff browser acceptance",
+  "fixtures_rolled_back": true
+}

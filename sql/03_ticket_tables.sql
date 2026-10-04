@@ -7,7 +7,7 @@ CREATE TABLE tickets (
   
   -- Status
   status ticket_status NOT NULL DEFAULT 'DRAFT',
-  priority priority_level NOT NULL DEFAULT 'C',
+  is_important boolean NOT NULL DEFAULT false,
   
   -- Location
   address TEXT NOT NULL,
@@ -65,7 +65,7 @@ ALTER TABLE tickets ENABLE ROW LEVEL SECURITY;
 -- Indexes
 CREATE INDEX idx_tickets_status ON tickets(status);
 CREATE INDEX idx_tickets_assigned ON tickets(assigned_to);
-CREATE INDEX idx_tickets_priority ON tickets(priority);
+CREATE INDEX idx_tickets_is_important ON tickets(is_important);
 CREATE INDEX idx_tickets_client ON tickets(utility_client);
 CREATE INDEX idx_tickets_scheduled ON tickets(scheduled_date);
 CREATE INDEX idx_tickets_coordinates ON tickets USING GIST (

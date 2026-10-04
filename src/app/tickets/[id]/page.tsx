@@ -8,7 +8,7 @@ import { ticketService } from '@/lib/services/ticketService';
 import { stormRosterService } from '@/lib/services/stormRosterService';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
-import { TicketPriorityBadge } from '@/components/features/tickets/TicketPriorityBadge';
+import { TicketImportanceBadge } from '@/components/features/tickets/TicketImportanceBadge';
 import { formatDate, formatAddress } from '@/lib/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,7 +83,7 @@ export default function TicketDetailPage() {
             >
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
                     <div className="flex gap-2">
-                        <TicketPriorityBadge priority={ticket.priority} />
+                        <TicketImportanceBadge isImportant={ticket.is_important} />
                         <StatusBadge status={ticket.status} />
                     </div>
                     {user && (

@@ -90,12 +90,12 @@ export function formatPercent(num: number | null, decimals: number = 1): string 
 export function formatDuration(minutes: number | null): string {
   if (minutes === null || minutes === undefined) return '-';
   
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
+  const totalSeconds = Math.max(0, Math.round(minutes * 60));
+  const hours = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (!hours && !mins && !seconds) return '0m';
+  return [hours ? `${hours}h` : '', mins ? `${mins}m` : '', seconds ? `${seconds}s` : ''].filter(Boolean).join(' ');
 }
 
 export function formatDurationDecimal(minutes: number | null): string {
@@ -190,25 +190,3 @@ export function getStatusColor(status: string): string {
   return colors[status] || 'gray';
 }
 
-// Priority badge helpers
-export function getPriorityColor(priority: string): string {
-  const colors: Record<string, string> = {
-    A: 'red',    // Critical
-    B: 'orange', // Urgent
-    C: 'blue',   // Standard
-    X: 'gray',   // Hold
-  };
-  
-  return colors[priority] || 'gray';
-}
-
-export function getPriorityLabel(priority: string): string {
-  const labels: Record<string, string> = {
-    A: 'Critical',
-    B: 'Urgent',
-    C: 'Standard',
-    X: 'Hold',
-  };
-  
-  return labels[priority] || priority;
-}

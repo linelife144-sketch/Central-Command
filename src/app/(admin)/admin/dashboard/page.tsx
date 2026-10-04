@@ -43,7 +43,7 @@ export default function AdminDashboardPage() {
             <span className="cc-action-icon"><action.icon className="size-[18px]" /></span>
             <span className="min-w-0 flex-1"><strong>{action.label}</strong><small>{action.description}</small></span><ArrowRight className="size-4 shrink-0" />
           </Link>)}
-          {can('admin.tickets.edit') && <Link href="/tickets/create?priority=A" className="cc-dispatch-link"><Zap className="size-4" />Emergency dispatch<ArrowUpRight className="ml-auto size-4" /></Link>}
+          {can('admin.tickets.edit') && <Link href="/tickets/create?important=true" className="cc-dispatch-link"><Zap className="size-4" />Emergency dispatch<ArrowUpRight className="ml-auto size-4" /></Link>}
         </CardContent>
       </Card>
     </div>

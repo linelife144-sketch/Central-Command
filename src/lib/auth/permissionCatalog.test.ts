@@ -6,7 +6,7 @@ import { permissionUpdateSchema, validatePermissionOverrides } from './permissio
 describe('individual staff access', () => {
   it('preserves role defaults and does not add contractor access', () => {
     expect(resolvePermissions('SUPER_ADMIN')['admin.users.edit']).toBe(true);
-    expect(resolvePermissions('ADMIN')['admin.time.edit']).toBe(true);
+    expect(resolvePermissions('ADMIN')['admin.time.edit']).toBe(false);
     expect(resolvePermissions('ADMIN')['admin.storms.edit']).toBe(false);
     expect(Object.values(resolvePermissions('CONTRACTOR')).every(value => !value)).toBe(true);
     expect(Object.values(resolvePermissions('ADMIN', {}, false)).every(value => !value)).toBe(true);
@@ -14,8 +14,8 @@ describe('individual staff access', () => {
   it('keeps modules independent and makes a view deny disable editing', () => {
     const permissions = resolvePermissions('ADMIN', {'admin.dashboard.view':'deny', 'admin.time.view':'deny', 'admin.storms.edit':'allow'});
     expect(permissions['admin.time.edit']).toBe(false);
-    expect(permissions['admin.expenses.edit']).toBe(true);
-    expect(permissions['admin.storms.edit']).toBe(true);
+    expect(permissions['admin.expenses.edit']).toBe(false);
+    expect(permissions['admin.storms.edit']).toBe(false);
     expect(permissionLanding(permissions)).toBe('/admin/storms');
     expect(mayOpenPath('/admin/time-review', permissions)).toBe(false);
     expect(mayOpenPath('/admin/account', permissions)).toBe(true);

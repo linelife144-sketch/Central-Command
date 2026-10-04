@@ -1,4 +1,5 @@
 'use client';
+import { PhotoCapture } from '@/components/common/forms/PhotoCapture';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, MapPin, TimerReset } from 'lucide-react';
@@ -12,14 +13,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { APP_CONFIG, WORK_TYPES } from '@/lib/config/appConfig';
 import { useGPSValidation } from '@/hooks/useGPSValidation';
 import { useContractorId } from '@/hooks/useContractorId';
-import { useActiveStormEventId } from '@/hooks/useActiveStormEventId';
+import { ticketService } from '@/lib/services/ticketService';
 import { payrollService, type ContractorRateProfile } from '@/lib/services/payrollService';
-import { timeEntryService } from '@/lib/services/timeEntryService';
-import { formatDateTime } from '@/lib/utils/formatters';
-import type { TimeEntry, WorkType } from '@/types';
+import { timeEntryService, getLastCompletedEntry } from '@/lib/services/timeEntryService';
+import { formatDateTime, formatDuration } from '@/lib/utils/formatters';
+import type { Ticket, TimeEntry, WorkType } from '@/types';
 
 function isGpsReadyForClockAction(
   latitude: number | null,
@@ -35,14 +37,33 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
     contractorId: resolvedContractorId,
     isLoading: isResolvingContractorId,
   } = useContractorId(profile?.id);
-  const contractorId = resolvedContractorId ?? profile?.id;
-  const { stormEventId } = useActiveStormEventId(contractorId);
+  const contractorId = resolvedContractorId ?? undefined;
+  const [assignedTickets, setAssignedTickets] = useState<Ticket[]>([]);
+  const [ticketId, setTicketId] = useState('');
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const selectedTicket = assignedTickets.find(ticket => ticket.id === ticketId);
+  const stormEventId = selectedTicket?.storm_event_id ?? undefined;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [lastEntry, setLastEntry] = useState<TimeEntry | null>(null);
   const [workType, setWorkType] = useState<WorkType>(WORK_TYPES.STANDARD_ASSESSMENT);
+  const [clockPhoto, setClockPhoto] = useState<File | null>(null);
   const [breakMinutes, setBreakMinutes] = useState<number>(0);
   const [rateProfile, setRateProfile] = useState<ContractorRateProfile | null>(null);
+
+  useEffect(() => {
+    if (!contractorId) return;
+    let mounted = true;
+    // Loading begins in the asynchronous request to keep effects passive.
+    void ticketService.getTicketsByAssignee(contractorId).then(tickets => {
+      if (!mounted) return;
+      const available = tickets.filter(ticket => ticket.storm_event_id && !['CLOSED', 'ARCHIVED', 'EXPIRED', 'REJECTED'].includes(ticket.status));
+      setAssignedTickets(available);
+      setTicketId(current => available.some(ticket => ticket.id === current) ? current : available[0]?.id ?? '');
+    }).catch(() => { if (mounted) setAssignedTickets([]); })
+      .finally(() => { if (mounted) setTicketsLoading(false); });
+    return () => { mounted = false; };
+  }, [contractorId]);
 
   const gpsValidation = useGPSValidation({
     minAccuracyMeters: APP_CONFIG.MIN_GPS_ACCURACY_METERS,
@@ -55,12 +76,11 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
   // editable field here was misleading, not just insecure.
   useEffect(() => {
     if (!contractorId) {
-      setRateProfile(null);
       return;
     }
 
     let active = true;
-    void payrollService
+    const refreshRates = () => payrollService
       .getContractorRateProfile(contractorId)
       .then((profileResult) => {
         if (active) {
@@ -69,17 +89,25 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
       })
       .catch(() => {
         if (active) {
-          setRateProfile(null);
+          setRateProfile(current => current);
         }
       });
 
+    void refreshRates();
+    const timer = window.setInterval(() => { void refreshRates(); }, 30000);
+    window.addEventListener('online', refreshRates);
     return () => {
       active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('online', refreshRates);
     };
   }, [contractorId]);
 
-  const workTypeRate = rateProfile?.workTypeRates[workType];
-  const isDriver = rateProfile?.role === 'DRIVER';
+  const workTypeRate = activeEntry?.pay_rate_applied ?? rateProfile?.workTypeRates[workType];
+  const isDriver = rateProfile?.driverEligible === true;
+  const canUseVehicle = isDriver && rateProfile?.vehicleAllowanceEnabled === true;
+  const onBreak = activeEntry?.activity_intervals?.some(interval => interval.kind === 'BREAK' && !interval.end_at) ?? false;
+  const usingVehicle = activeEntry?.activity_intervals?.some(interval => interval.kind === 'VEHICLE_USE' && !interval.end_at) ?? false;
 
   const loadActiveEntry = useCallback(async () => {
     if (!contractorId) {
@@ -89,20 +117,28 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
 
     const entry = await timeEntryService.getActiveEntry(contractorId);
     setActiveEntry(entry);
+    if (!entry) setLastEntry(await getLastCompletedEntry(contractorId));
 
     if (entry) {
+      setTicketId(entry.ticket_id ?? '');
       setWorkType(entry.work_type);
       setBreakMinutes(entry.break_minutes ?? 0);
     }
   }, [contractorId]);
 
   useEffect(() => {
-    void loadActiveEntry();
+    void Promise.resolve().then(loadActiveEntry).catch(() => undefined);
   }, [loadActiveEntry]);
 
+  useEffect(() => {
+    const handleSync = () => { void loadActiveEntry().catch(() => undefined); onEntriesChanged?.(); };
+    window.addEventListener('time-entries-synced', handleSync);
+    return () => window.removeEventListener('time-entries-synced', handleSync);
+  }, [loadActiveEntry, onEntriesChanged]);
+
   const canClockIn = useMemo(
-    () => !activeEntry && !isResolvingContractorId && Boolean(contractorId) && typeof workTypeRate === 'number',
-    [activeEntry, isResolvingContractorId, contractorId, workTypeRate],
+    () => !activeEntry && !ticketsLoading && !isResolvingContractorId && Boolean(contractorId) && Boolean(stormEventId) && typeof workTypeRate === 'number',
+    [activeEntry, ticketsLoading, isResolvingContractorId, contractorId, stormEventId, workTypeRate],
   );
   const canClockOut = useMemo(() => Boolean(activeEntry), [activeEntry]);
 
@@ -136,7 +172,9 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
         contractorId,
         workType,
         workTypeRate,
-        breakMinutes,
+        breakMinutes: 0,
+        photoFile: clockPhoto ?? undefined,
+        ticketId,
         stormEventId,
         location: {
           latitude: gpsSnapshot.reading.latitude as number,
@@ -146,7 +184,9 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
       });
 
       setActiveEntry(entry);
+      setClockPhoto(null);
       setLastEntry(null);
+      onEntriesChanged?.();
       toast.success(
         entry.sync_status === 'PENDING'
           ? 'Clocked in offline. Entry queued for sync.'
@@ -178,6 +218,7 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
       const entry = await timeEntryService.clockOut({
         entry: activeEntry,
         breakMinutes,
+        photoFile: clockPhoto ?? undefined,
         location: {
           latitude: gpsSnapshot.reading.latitude as number,
           longitude: gpsSnapshot.reading.longitude as number,
@@ -187,6 +228,7 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
 
       setActiveEntry(null);
       setLastEntry(entry);
+      setClockPhoto(null);
       onEntriesChanged?.();
       toast.success(
         entry.sync_status === 'PENDING'
@@ -200,6 +242,14 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
     }
   };
 
+  const recordActivity = async (kind: 'BREAK' | 'VEHICLE_USE', action: 'START' | 'STOP') => {
+    if (!activeEntry) return;
+    setIsSubmitting(true);
+    try { setActiveEntry(await timeEntryService.recordActivity(activeEntry, kind, action)); }
+    catch (failure) { toast.error(failure instanceof Error ? failure.message : 'Unable to record activity.'); }
+    finally { setIsSubmitting(false); }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -208,6 +258,13 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="clock-ticket">Assigned Ticket</Label>
+              <Select value={ticketId} disabled={Boolean(activeEntry) || ticketsLoading} onValueChange={setTicketId}>
+                <SelectTrigger id="clock-ticket"><SelectValue placeholder={ticketsLoading ? 'Loading assigned tickets…' : 'No assigned tickets — contact admin'} /></SelectTrigger>
+                <SelectContent>{assignedTickets.map(ticket => <SelectItem key={ticket.id} value={ticket.id}>{ticket.ticket_number} — {ticket.address}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="work-type">Work Type</Label>
               <WorkTypeSelector
@@ -232,19 +289,10 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="break-minutes">Break Minutes</Label>
-              <Input
-                id="break-minutes"
-                type="number"
-                min={0}
-                max={120}
-                step={5}
-                value={breakMinutes}
-                onChange={(event) => setBreakMinutes(Number(event.target.value))}
-              />
-            </div>
           </div>
+          <PhotoCapture label={activeEntry ? 'Clock-out photo' : 'Clock-in photo'} value={clockPhoto} onChange={setClockPhoto} disabled={isSubmitting} helpMessage="A photo and valid GPS are required for this clock action." />
+          {rateProfile?.payPolicy && <p className="text-xs text-grid-body">{rateProfile.payPolicy.mode === 'FLAT' ? `${rateProfile.payPolicy.multiplier}× for all paid hours` : rateProfile.payPolicy.tiers.map(tier => `${tier.after_hours}+ weekly hours: ${tier.multiplier}×`).join(' · ')}. Pay changes are applied at their effective time.</p>}
+          {activeEntry?.calculation_version === 'LEGACY' && <p className="text-xs text-grid-warning-ink">This existing shift uses its original payroll rules. New shifts use timed activities.</p>}
 
           <div className="rounded-md border border-dashed border-grid-blue/40 bg-slate-50 p-3 text-xs text-slate-700">
             <p className="font-medium text-grid-navy">GPS Verification</p>
@@ -263,20 +311,25 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
 
           <div className="flex flex-wrap gap-3">
             <Button
-              disabled={!canClockIn || isSubmitting}
+              disabled={!canClockIn || isSubmitting || !clockPhoto}
               onClick={handleClockIn}
             >
               {isSubmitting && !activeEntry ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Clock In
             </Button>
             <Button
-              disabled={!canClockOut || isSubmitting}
+              disabled={!canClockOut || isSubmitting || !clockPhoto}
               variant="outline"
               onClick={handleClockOut}
             >
               {isSubmitting && activeEntry ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Clock Out
             </Button>
+            {activeEntry?.calculation_version === 'AGREEMENT' && <>
+              <Button variant="outline" disabled={isSubmitting} onClick={() => void recordActivity('BREAK', onBreak ? 'STOP' : 'START')}>{onBreak ? 'End break' : 'Start break'}</Button>
+              {(canUseVehicle || usingVehicle) && <Button variant="outline" disabled={isSubmitting || onBreak} onClick={() => void recordActivity('VEHICLE_USE', usingVehicle ? 'STOP' : 'START')}>{usingVehicle ? 'Stop vehicle use' : 'Start vehicle use'}</Button>}
+              <span role="status" className="self-center text-sm font-medium text-grid-navy">{onBreak ? 'On unpaid break' : usingVehicle ? 'Working · vehicle in use' : 'Working'}</span>
+            </>}
             <Button
               disabled={isSubmitting}
               variant="ghost"
@@ -318,6 +371,7 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
             <CardTitle className="text-base">Last Completed Entry</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
+            {lastEntry.pay_segments?.map((segment, index) => <p key={index}>{(segment.paid_minutes / 60).toFixed(2)} h × ${segment.base_rate} × {segment.multiplier} = ${segment.wage_amount.toFixed(2)}</p>)}
             <p>
               <span className="font-medium">Clock In:</span> {formatDateTime(lastEntry.clock_in_at)}
             </p>
@@ -325,22 +379,24 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
               <span className="font-medium">Clock Out:</span> {formatDateTime(lastEntry.clock_out_at ?? null)}
             </p>
             <p>
-              <span className="font-medium">Duration:</span> {lastEntry.total_minutes ?? 0} minutes
+              <span className="font-medium">Duration:</span> {formatDuration(lastEntry.total_minutes ?? 0)}
             </p>
             <p>
-              <span className="font-medium">Billable:</span> {lastEntry.billable_minutes ?? 0} minutes
+              <span className="font-medium">Billable:</span> {formatDuration(lastEntry.billable_minutes ?? 0)}
             </p>
-            {typeof lastEntry.payroll_amount === 'number' ? (
+            {lastEntry.sync_status === 'SYNCED' && typeof lastEntry.payroll_amount === 'number' ? (
               <p>
                 <span className="font-medium">Estimated Pay:</span> ${lastEntry.payroll_amount.toFixed(2)}
               </p>
             ) : null}
+            {lastEntry.sync_status === 'SYNCED' && lastEntry.regular_minutes !== undefined ? <p>Regular: {(lastEntry.regular_minutes / 60).toFixed(2)} h · ${lastEntry.regular_pay_amount?.toFixed(2)}</p> : null}
+            {lastEntry.sync_status === 'SYNCED' && lastEntry.overtime_minutes !== undefined ? <p>Overtime: {(lastEntry.overtime_minutes / 60).toFixed(2)} h · ${lastEntry.overtime_pay_amount?.toFixed(2)}</p> : null}
           </CardContent>
         </Card>
       ) : null}
 
-      {!activeEntry && lastEntry && isDriver && contractorId ? (
-        <VehicleReimbursementCapture entry={lastEntry} contractorId={contractorId} onSubmitted={() => { setLastEntry(null); onEntriesChanged?.(); }} />
+      {!activeEntry && lastEntry && (lastEntry.calculation_version === 'LEGACY' ? lastEntry.contractor_role === 'DRIVER' : (lastEntry.vehicle_minutes ?? 0) > 0) && contractorId ? (
+        <VehicleReimbursementCapture key={`${lastEntry.id}:${lastEntry.sync_status}`} entry={lastEntry} contractorId={contractorId} onSubmitted={() => { setLastEntry(null); onEntriesChanged?.(); }} />
       ) : null}
     </div>
   );

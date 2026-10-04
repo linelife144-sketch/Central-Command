@@ -30,7 +30,7 @@ afterEach(cleanup);
 
 describe('ContractorPayrollTable', () => {
   it('renders a dash for a contractor with no entries rather than $0.00', () => {
-    render(<ContractorPayrollTable rows={[buildRow({ entryCount: 0, taxablePayroll: 0, totalPayout: 0 })]} />);
+    render(<ContractorPayrollTable includeFinancial rows={[buildRow({ entryCount: 0, taxablePayroll: 0, totalPayout: 0 })]} />);
 
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThan(0);
@@ -38,7 +38,7 @@ describe('ContractorPayrollTable', () => {
   });
 
   it('renders formatted amounts for a contractor with activity', () => {
-    render(<ContractorPayrollTable rows={[buildRow()]} />);
+    render(<ContractorPayrollTable includeFinancial rows={[buildRow()]} />);
 
     expect(screen.getByText('Jane Doe')).not.toBeNull();
     expect(screen.getByText('Driver')).not.toBeNull();
@@ -47,7 +47,7 @@ describe('ContractorPayrollTable', () => {
   });
 
   it('shows the empty-state message when there are no rows', () => {
-    render(<ContractorPayrollTable rows={[]} />);
+    render(<ContractorPayrollTable includeFinancial rows={[]} />);
 
     expect(screen.getByText(/no payroll activity/i)).not.toBeNull();
   });

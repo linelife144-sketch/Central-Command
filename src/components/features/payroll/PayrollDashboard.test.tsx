@@ -79,7 +79,7 @@ describe('PayrollDashboard', () => {
       },
     });
 
-    render(<PayrollDashboard reviewerId="admin-1" />);
+    render(<PayrollDashboard includeFinancial reviewerId="admin-1" />);
 
     await waitFor(() => expect(mocks.getPayrollSummary).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getByText('Jane Doe')).not.toBeNull());
@@ -96,7 +96,7 @@ describe('PayrollDashboard', () => {
     mocks.listVehicleClaims.mockResolvedValue([]);
     mocks.getPayrollSummary.mockRejectedValue(new Error('Unable to load payroll time entries.'));
 
-    render(<PayrollDashboard reviewerId="admin-1" />);
+    render(<PayrollDashboard includeFinancial reviewerId="admin-1" />);
 
     await waitFor(() => expect(screen.getByText('Unable to load payroll time entries.')).not.toBeNull());
   });

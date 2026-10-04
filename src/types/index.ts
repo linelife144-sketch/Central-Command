@@ -1,3 +1,4 @@
+import type { TimeInterval, PaySegment } from '@/lib/compensation/validation';
 // Central Command - Type Definitions
 
 // User & Authentication Types
@@ -96,7 +97,7 @@ export interface Ticket {
   storm_event_id?: string | null;
   ticket_number: string;
   status: TicketStatus;
-  priority: PriorityLevel;
+  is_important: boolean;
   address: string;
   address_line2?: string;
   city?: string;
@@ -166,6 +167,8 @@ export interface TimeEntry {
   clock_in_longitude?: number;
   clock_in_accuracy?: number;
   clock_in_photo_url?: string;
+  clock_in_photo_file?: Blob;
+  clock_out_photo_file?: Blob;
   clock_out_at?: string;
   clock_out_latitude?: number;
   clock_out_longitude?: number;
@@ -191,8 +194,17 @@ export interface TimeEntry {
   contractor_role?: ContractorRole;
   pay_rate_applied?: number;
   payroll_amount?: number;
-  utility_bill_rate_applied?: number;
-  utility_bill_amount?: number;
+  regular_minutes?: number;
+  overtime_minutes?: number;
+  regular_pay_amount?: number;
+  overtime_pay_amount?: number;
+  overtime_rate_applied?: number;
+  activity_intervals?: TimeInterval[];
+  pay_segments?: PaySegment[];
+  paid_minutes_exact?: number;
+  vehicle_minutes?: number;
+  vehicle_allowance_amount?: number;
+  calculation_version?: string;
 }
 
 export type WorkType =
@@ -499,9 +511,12 @@ export interface ContractorPayrollRow {
   taxablePayroll: number;
   reimbursementTotal: number;
   totalPayout: number;
-  utilityBillAmount: number;
-  marginAmount: number;
-  marginPercent: number;
+  utilityBillAmount?: number;
+  marginAmount?: number;
+  marginPercent?: number;
+  submittedWages?: number;
+  approvedWages?: number;
+  approvedPayout?: number;
   pendingEntries: number;
   approvedEntries: number;
   pendingVehicleClaims: number;
@@ -515,12 +530,16 @@ export interface PayrollTotals {
   taxablePayroll: number;
   reimbursementTotal: number;
   totalPayout: number;
-  utilityBillAmount: number;
-  marginAmount: number;
-  marginPercent: number;
+  utilityBillAmount?: number;
+  marginAmount?: number;
+  marginPercent?: number;
+  submittedWages?: number;
+  approvedWages?: number;
+  approvedPayout?: number;
 }
 
 export interface PayrollSummary {
+  includeFinancial?: boolean;
   periodStart: string;
   periodEnd: string;
   stormEventId?: string;
@@ -542,3 +561,8 @@ export interface UtilityBillingRate {
   hourlyRate: number;
   currency: string;
 }
+
+export interface PrivilegedTimeEntryFinancials { id: string; utility_bill_rate_applied: number | null; utility_bill_amount: number | null }
+
+export type WagePayrollRow = Omit<ContractorPayrollRow, "utilityBillAmount" | "marginAmount" | "marginPercent">;
+export interface PrivilegedPayrollRow extends WagePayrollRow { utilityBillAmount: number; marginAmount: number; marginPercent: number }

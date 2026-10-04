@@ -2,7 +2,7 @@ import { Ticket } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { CalendarDays, MapPin, User } from "lucide-react";
 import { formatDate } from "@/lib/utils/formatters";
-import { TicketPriorityBadge } from "./TicketPriorityBadge";
+import { TicketImportanceBadge } from "./TicketImportanceBadge";
 import { StatusBadge } from "@/components/common/data-display/StatusBadge";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ export function TicketCard({ ticket, onClick, className, assigneeName }: TicketC
                             {ticket.utility_client}
                         </div>
                     </div>
-                    <TicketPriorityBadge priority={ticket.priority} />
+                    <TicketImportanceBadge isImportant={ticket.is_important} />
                 </div>
             </CardHeader>
             <CardContent className="p-4 py-2 space-y-2">

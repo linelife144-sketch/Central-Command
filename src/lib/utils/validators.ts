@@ -1,6 +1,7 @@
 // Central Command - Validation Utilities
 
 import { z } from 'zod';
+import { APP_CONFIG } from '../config/appConfig';
 
 // Phone validation
 export const phoneSchema = z.string()
@@ -51,7 +52,7 @@ export const ticketSchema = z.object({
   state: z.string().length(2, 'State must be 2 characters'),
   zip_code: zipSchema,
   utility_client: z.string().min(2, 'Utility client is required'),
-  priority: z.enum(['A', 'B', 'C', 'X']),
+  is_important: z.boolean(),
   work_description: z.string().optional(),
   scheduled_date: z.string().optional(),
   due_date: z.string().optional(),
@@ -60,7 +61,7 @@ export const ticketSchema = z.object({
 // Time entry validation
 export const timeEntrySchema = z.object({
   work_type: z.enum(['STANDARD_ASSESSMENT', 'EMERGENCY_RESPONSE', 'TRAVEL', 'STANDBY', 'ADMIN', 'TRAINING']),
-  break_minutes: z.number().min(0).default(0),
+  break_minutes: z.number().int().min(0).max(120).multipleOf(5).default(0),
 });
 
 // Expense item validation
@@ -110,11 +111,11 @@ export function validateGPS(
   accuracy: number | null,
   minAccuracy: number = 100
 ): GPSValidationResult {
-  if (latitude === null || longitude === null) {
+  if (latitude === null || longitude === null || !Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
     return { valid: false, error: 'GPS coordinates are required' };
   }
   
-  if (accuracy === null || accuracy > minAccuracy) {
+  if (accuracy === null || !Number.isFinite(accuracy) || accuracy < 0 || accuracy > minAccuracy) {
     return {
       valid: false,
       error: `GPS accuracy too low (${accuracy?.toFixed(0) ?? 'unknown'}m). Must be within ${minAccuracy}m.`,
@@ -185,11 +186,13 @@ export function validatePhotoFile(
 export function validateTimeEntryDuration(
   clockIn: Date,
   clockOut: Date,
-  maxHours: number = 12
+  maxHours: number = APP_CONFIG.MAX_TIME_ENTRY_HOURS
 ): { valid: boolean; error?: string; durationMinutes: number } {
   const durationMs = clockOut.getTime() - clockIn.getTime();
+  if (!Number.isFinite(durationMs)) {
+    return { valid: false, error: 'Clock timestamps must be valid dates', durationMinutes: 0 };
+  }
   const durationMinutes = Math.floor(durationMs / (1000 * 60));
-  const durationHours = durationMinutes / 60;
   
   if (durationMinutes < 0) {
     return {
@@ -199,7 +202,7 @@ export function validateTimeEntryDuration(
     };
   }
   
-  if (durationHours > maxHours) {
+  if (durationMs > maxHours * 3600000) {
     return {
       valid: false,
       error: `Time entry exceeds maximum ${maxHours} hours`,

@@ -102,7 +102,7 @@ export async function POST(request: Request) {
 
   const role = await resolveUserRole(user.id);
   const admin = createAdminClient();
-  const { data: overrides, error: permissionsError } = await admin.from('user_permissions' as never).select('permission_key,effect').eq('profile_id', user.id);
+  const { data: overrides, error: permissionsError } = await admin.from('user_permissions').select('permission_key,effect').eq('profile_id', user.id);
   const map = Object.fromEntries((overrides ?? []).map((row: { permission_key: string; effect: string }) => [row.permission_key, row.effect])) as PermissionOverrides;
   const { data: actorProfile } = await admin.from('profiles').select('is_active,must_reset_password').eq('id', user.id).single();
   const pendingMigration = permissionsError?.code === 'PGRST205' && permissionsError.message.includes('user_permissions');

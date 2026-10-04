@@ -29,15 +29,15 @@ export function isPermissionKey(key: string): key is PermissionKey {
 }
 export function roleDefault(role: string | null | undefined, key: PermissionKey): boolean {
   if (!isAdminClassRole(role)) return false;
-  if (key.startsWith('admin.users.')) return role === 'SUPER_ADMIN';
+  if (key.startsWith('admin.users.')) return isSuperAdminClassRole(role);
   if (isSuperAdminClassRole(role)) return true;
   if (key.endsWith('.view')) return true;
-  return !['admin.storms.edit', 'admin.tickets.edit', 'admin.assignments.edit', 'admin.payroll.edit'].includes(key);
+  return false;
 }
 export function resolvePermissions(role: string | null | undefined, overrides: PermissionOverrides = {}, active = true): PermissionMap {
   const result: PermissionMap = {};
   for (const key of PERMISSION_KEYS) {
-    result[key] = active && isAdminClassRole(role) && (key.startsWith('admin.users.') ? role === 'SUPER_ADMIN' : true)
+    result[key] = active && isAdminClassRole(role) && (key.startsWith('admin.users.') ? isSuperAdminClassRole(role) : true) && (!key.endsWith('.edit') || isSuperAdminClassRole(role))
       && (overrides[key] ? overrides[key] === 'allow' : roleDefault(role, key));
   }
   for (const key of PERMISSION_KEYS.filter(key => key.endsWith('.edit'))) {

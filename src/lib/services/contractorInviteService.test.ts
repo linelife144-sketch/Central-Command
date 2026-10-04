@@ -1,14 +1,15 @@
+import { testCompensation } from '../compensation/testFixtures';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { inviteContractor } from './contractorInviteService';
-const remote = vi.hoisted(() => ({ lookup:vi.fn(), invite:vi.fn(), getUser:vi.fn(), update:vi.fn(), rpc:vi.fn(), audit:vi.fn() }));
+const remote = vi.hoisted(() => ({ lookup:vi.fn(), invite:vi.fn(), getUser:vi.fn(), update:vi.fn(), rpc:vi.fn(), audit:vi.fn(), setupLookup:vi.fn(), setupInsert:vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/auth/serverPermissions', () => ({AccessError:class extends Error { constructor(message:string, public status:number) {super(message);} }}));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient:() => ({
-  from:(table:string) => table === 'audit_logs' ? {insert:remote.audit} : table === 'contractor_invitations' ? {upsert:remote.audit} : {select:()=>({eq:()=>({maybeSingle:remote.lookup})})},
+  from:(table:string) => table === 'audit_logs' ? {insert:remote.audit} : table === 'contractor_invitations' ? {upsert:remote.audit} : table === 'contractor_invitation_pay_setups' ? {insert:remote.setupInsert,select:()=>({eq:()=>({maybeSingle:remote.setupLookup})})} : {select:()=>({eq:()=>({maybeSingle:remote.lookup})})},
   auth:{admin:{inviteUserByEmail:remote.invite,getUserById:remote.getUser,updateUserById:remote.update}},rpc:remote.rpc,
 }) }));
-const person={first_name:'Alex',last_name:'Rivera',email:'alex@example.com'};
-beforeEach(()=>{vi.clearAllMocks();process.env.NEXT_PUBLIC_APP_URL='http://192.168.1.72:3000';remote.lookup.mockResolvedValue({data:null,error:null});remote.audit.mockResolvedValue({error:null});remote.invite.mockResolvedValue({data:{user:{id:'contractor',app_metadata:{}}},error:null});remote.update.mockResolvedValue({error:null});remote.rpc.mockResolvedValue({data:{profile_id:'contractor'},error:null});});
+const person={first_name:'Alex',last_name:'Rivera',email:'alex@example.com',compensation:testCompensation};
+beforeEach(()=>{vi.clearAllMocks();process.env.NEXT_PUBLIC_APP_URL='http://192.168.1.72:3000';remote.setupLookup.mockResolvedValue({data:null,error:null});remote.setupInsert.mockResolvedValue({error:null});remote.lookup.mockResolvedValue({data:null,error:null});remote.audit.mockResolvedValue({error:null});remote.invite.mockResolvedValue({data:{user:{id:'contractor',app_metadata:{}}},error:null});remote.update.mockResolvedValue({error:null});remote.rpc.mockResolvedValue({data:{profile_id:'contractor'},error:null});});
 describe('server contractor invitation',()=>{
   it('invites one person, writes a trusted contractor role, and finalizes the business record',async()=>{
     await inviteContractor('actor',person);
@@ -16,6 +17,21 @@ describe('server contractor invitation',()=>{
     expect(remote.invite).toHaveBeenCalledWith(person.email,expect.objectContaining({redirectTo:'http://192.168.1.72:3000/auth/confirm'}));
     expect(remote.update).toHaveBeenCalledWith('contractor',{app_metadata:{role:'CONTRACTOR'}});
     expect(remote.rpc).toHaveBeenCalledWith('finalize_contractor_invite',expect.objectContaining({p_actor_id:'actor',p_profile_id:'contractor',p_resend:false}));
+  });
+  it('saves compensation before email and fails closed if saving fails',async()=>{
+    remote.setupInsert.mockResolvedValueOnce({error:new Error('database unavailable')});
+    await expect(inviteContractor('actor',person)).rejects.toThrow('database unavailable');expect(remote.invite).not.toHaveBeenCalled();
+    await inviteContractor('actor',person);
+    expect(remote.setupInsert.mock.invocationCallOrder[1]).toBeLessThan(remote.invite.mock.invocationCallOrder[0]);
+  });
+  it('reuses saved setup when repairing an interrupted invitation',async()=>{
+    remote.rpc.mockResolvedValueOnce({data:{},error:null}).mockResolvedValueOnce({error:new Error('interrupted')});
+    await expect(inviteContractor('actor',person)).rejects.toThrow('compensation setup needs repair');
+    remote.setupLookup.mockResolvedValue({data:{email:person.email},error:null});
+    remote.lookup.mockResolvedValue({data:{id:'contractor',role:'CONTRACTOR'},error:null});remote.getUser.mockResolvedValue({data:{user:{email_confirmed_at:null,app_metadata:{role:'CONTRACTOR'}}},error:null});
+    await inviteContractor('actor',{first_name:person.first_name,last_name:person.last_name,email:person.email,resend:true});
+    expect(remote.setupInsert).toHaveBeenCalledTimes(1);
+    expect(remote.rpc).toHaveBeenLastCalledWith('complete_invitation_pay_setup',expect.objectContaining({p_profile:'contractor'}));
   });
   it('rejects active or staff duplicates without sending another invite',async()=>{
     remote.lookup.mockResolvedValue({data:{id:'existing',role:'SUPER_ADMIN'},error:null});remote.getUser.mockResolvedValue({data:{user:{email_confirmed_at:'now'}},error:null});

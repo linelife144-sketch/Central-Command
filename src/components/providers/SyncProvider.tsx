@@ -15,6 +15,8 @@ import {
   type SyncQueueItem,
 } from '@/lib/db/dexie';
 import { photoUploadQueue } from '@/lib/sync/photoUploadQueue';
+import { timeEntryUploadQueue } from '@/lib/sync/timeEntryUploadQueue';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 type SyncState = 'idle' | 'syncing';
 
@@ -56,6 +58,7 @@ function readOnlineStatus(): boolean {
 }
 
 export function SyncProvider({ children }: { children: ReactNode }) {
+  const { profile } = useAuth();
   const [isOnline, setIsOnline] = useState<boolean>(readOnlineStatus);
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [queueItems, setQueueItems] = useState<SyncQueueItem[]>([]);
@@ -90,9 +93,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     try {
       const result = await photoUploadQueue.process();
+      const timeResult = await timeEntryUploadQueue.process();
 
-      if (result.failed > 0) {
-        setLastError(`${result.failed} photo upload(s) failed. Review queue items for retry.`);
+      if (result.failed > 0 || timeResult.failed > 0) {
+        setLastError(`${result.failed} photo upload(s) and ${timeResult.failed} time entry sync(s) failed. Review queue items for retry.`);
       } else {
         setLastSyncedAt(new Date().toISOString());
       }
@@ -104,6 +108,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setSyncState('idle');
     }
   }, [refresh]);
+
+  useEffect(() => {
+    if (isOnline && profile?.id) void Promise.resolve().then(syncNow);
+  }, [isOnline, profile?.id, syncNow]);
 
   const retryItem = useCallback(
     async (id: string) => {
@@ -134,7 +142,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    void refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   useEffect(() => {
@@ -152,7 +160,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      void refresh();
+      void Promise.resolve().then(refresh);
     }, 15000);
 
     return () => {
@@ -170,7 +178,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      void refresh();
+      void Promise.resolve().then(refresh);
       if (readOnlineStatus()) {
         void syncNow();
       }

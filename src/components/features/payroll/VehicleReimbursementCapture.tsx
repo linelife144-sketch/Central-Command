@@ -11,9 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { VEHICLE_TYPE_LABELS, APP_CONFIG } from '@/lib/config/appConfig';
+import { VEHICLE_TYPE_LABELS } from '@/lib/config/appConfig';
 import { payrollService } from '@/lib/services/payrollService';
-import { resolveVehicleClaimAmount } from '@/lib/utils/payroll';
+
 import type { TimeEntry, VehicleType } from '@/types';
 
 export interface VehicleReimbursementCaptureProps {
@@ -32,7 +32,7 @@ export interface VehicleReimbursementCaptureProps {
  */
 export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted }: VehicleReimbursementCaptureProps) {
   const [vehicleType, setVehicleType] = useState<VehicleType>('PERSONAL');
-  const [declaredHours, setDeclaredHours] = useState<string>('');
+  const [declaredHours, setDeclaredHours] = useState<string>(entry.vehicle_minutes === undefined ? '' : String(Number((entry.vehicle_minutes / 60).toFixed(4))));
   const [notes, setNotes] = useState('');
   const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null);
   const [licensePlatePhoto, setLicensePlatePhoto] = useState<File | null>(null);
@@ -48,12 +48,8 @@ export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted }
       return null;
     }
 
-    return resolveVehicleClaimAmount({
-      declaredHours: parsedHours,
-      billableMinutes,
-      hourlyRate: APP_CONFIG.VEHICLE_REIMBURSEMENT_HOURLY_RATE,
-    });
-  }, [declaredHours, billableMinutes]);
+    return entry.vehicle_allowance_amount === undefined ? null : { amount: entry.vehicle_allowance_amount, capped: false };
+  }, [declaredHours, entry.vehicle_allowance_amount]);
 
   const canSubmit =
     Boolean(declaredHours) &&
@@ -112,10 +108,7 @@ export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted }
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          If you used a personal or rental vehicle on this shift, claim $
-          {APP_CONFIG.VEHICLE_REIMBURSEMENT_HOURLY_RATE.toFixed(2)}/hour for the hours you actually used it. Enter
-          only the hours the vehicle was used — if you worked {shiftHours.toFixed(1)} hours but drove for less,
-          enter the lower number. This reimbursement is separate from your hourly pay and is not taxable.
+          Vehicle allowance uses recorded vehicle-use intervals and your saved agreement. Attach the existing evidence to submit the calculated allowance for review.
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -148,7 +141,8 @@ export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted }
               max={shiftHours || undefined}
               step={0.25}
               value={declaredHours}
-              disabled={isSubmitting}
+              disabled={isSubmitting || entry.calculation_version === 'AGREEMENT'}
+              readOnly={entry.calculation_version === 'AGREEMENT'}
               onChange={(event) => setDeclaredHours(event.target.value)}
               placeholder={`Shift was ${shiftHours.toFixed(1)}h`}
             />

@@ -68,7 +68,7 @@ CREATE POLICY versions_read ON public.user_permission_versions FOR SELECT TO aut
  USING(profile_id=(select auth.uid()) OR private.has_permission((select auth.uid()),'admin.users.view'));
 
 CREATE FUNCTION public.get_my_permissions() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
- SELECT jsonb_object_agg(k.key,private.has_permission(auth.uid(),k.key)) FROM unnest(ARRAY['admin.dashboard.view','admin.storms.view','admin.storms.edit','admin.tickets.view','admin.tickets.edit','admin.contractors.view','admin.contractors.edit','admin.assignments.view','admin.assignments.edit','admin.map.view','admin.time.view','admin.time.edit','admin.expenses.view','admin.expenses.edit','admin.assessments.view','admin.assessments.edit','admin.reports.view','admin.users.view','admin.users.edit']::text[]) k(key);
+ SELECT jsonb_object_agg(k.key,private.has_permission(auth.uid(),k.key)) FROM unnest(ARRAY['admin.dashboard.view','admin.storms.view','admin.storms.edit','admin.tickets.view','admin.tickets.edit','admin.contractors.view','admin.contractors.edit','admin.assignments.view','admin.assignments.edit','admin.map.view','admin.time.view','admin.time.edit','admin.expenses.view','admin.expenses.edit','admin.assessments.view','admin.assessments.edit','admin.payroll.view','admin.payroll.edit','admin.reports.view','admin.users.view','admin.users.edit']::text[]) k(key);
 $$;
 REVOKE ALL ON FUNCTION public.get_my_permissions() FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_my_permissions() TO authenticated;
@@ -155,14 +155,14 @@ DO $policies$ DECLARE item record; mod text; stmt text; BEGIN
  IF mod IS NULL THEN CONTINUE; END IF;
  EXECUTE format('DROP POLICY %I ON public.%I',item.policyname,item.tablename);
  IF item.cmd='ALL' THEN
-  EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING(private.has_permission(auth.uid(),%L))',item.policyname||'_view',item.tablename,'admin.'||mod||'.view');
-  EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated WITH CHECK(private.has_permission(auth.uid(),%L))',item.policyname||'_insert',item.tablename,'admin.'||mod||'.edit');
-  EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated USING(private.has_permission(auth.uid(),%L)) WITH CHECK(private.has_permission(auth.uid(),%L))',item.policyname||'_update',item.tablename,'admin.'||mod||'.edit','admin.'||mod||'.edit');
-  EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated USING(private.has_permission(auth.uid(),%L))',item.policyname||'_delete',item.tablename,'admin.'||mod||'.edit');
+  EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING(private.has_permission((select auth.uid()),%L))',item.policyname||'_view',item.tablename,'admin.'||mod||'.view');
+  EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated WITH CHECK(private.has_permission((select auth.uid()),%L))',item.policyname||'_insert',item.tablename,'admin.'||mod||'.edit');
+  EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated USING(private.has_permission((select auth.uid()),%L)) WITH CHECK(private.has_permission((select auth.uid()),%L))',item.policyname||'_update',item.tablename,'admin.'||mod||'.edit','admin.'||mod||'.edit');
+  EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated USING(private.has_permission((select auth.uid()),%L))',item.policyname||'_delete',item.tablename,'admin.'||mod||'.edit');
  ELSE
   stmt:=format('CREATE POLICY %I ON public.%I FOR %s TO authenticated',item.policyname,item.tablename,item.cmd);
-  IF item.cmd<>'INSERT' THEN stmt:=stmt||format(' USING(private.has_permission(auth.uid(),%L))','admin.'||mod||CASE WHEN item.cmd='SELECT' THEN '.view' ELSE '.edit' END); END IF;
-  IF item.cmd IN ('INSERT','UPDATE') THEN stmt:=stmt||format(' WITH CHECK(private.has_permission(auth.uid(),%L))','admin.'||mod||'.edit'); END IF;
+  IF item.cmd<>'INSERT' THEN stmt:=stmt||format(' USING(private.has_permission((select auth.uid()),%L))','admin.'||mod||CASE WHEN item.cmd='SELECT' THEN '.view' ELSE '.edit' END); END IF;
+  IF item.cmd IN ('INSERT','UPDATE') THEN stmt:=stmt||format(' WITH CHECK(private.has_permission((select auth.uid()),%L))','admin.'||mod||'.edit'); END IF;
   EXECUTE stmt;
  END IF;
  END LOOP;
@@ -318,7 +318,7 @@ CREATE TRIGGER protect_profile_deletion BEFORE DELETE ON public.profiles FOR EAC
 DO $$ DECLARE item record; definition text; key text; BEGIN
  FOR item IN SELECT p.oid,p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('create_storm_ticket','assign_contractor_to_storm') LOOP
   key:=CASE item.proname WHEN 'create_storm_ticket' THEN 'admin.tickets.edit' ELSE 'admin.assignments.edit' END;
-  definition:=replace(pg_get_functiondef(item.oid),'NOT EXISTS(SELECT 1 FROM public.profiles WHERE id=auth.uid() AND role::text IN (''CEO'',''SUPER_ADMIN''))',format('NOT private.has_permission(auth.uid(),%L)',key));
+  definition:=replace(pg_get_functiondef(item.oid),'NOT EXISTS(SELECT 1 FROM public.profiles WHERE id=auth.uid() AND role::text IN (''CEO'',''SUPER_ADMIN''))',format('NOT private.has_permission((select auth.uid()),%L)',key));
   EXECUTE definition;
  END LOOP;
 END $$;
@@ -358,6 +358,10 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.finalize_contractor_invite(uuid,uuid,text,text,text,text,boolean) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.finalize_contractor_invite(uuid,uuid,text,text,text,text,boolean) TO service_role;
+
+-- Required by the invoker finalizer; these legacy tables lacked server-role grants.
+GRANT SELECT, INSERT ON public.contractors TO service_role;
+GRANT INSERT ON public.audit_logs TO service_role;
 
 NOTIFY pgrst,'reload schema';
 COMMIT;

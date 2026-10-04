@@ -173,7 +173,7 @@ export const localTestStore = {
       address: input.address!.trim(),
       utility_client: data.stormEvents.find((event) => event.id === input.storm_event_id)!.utilityClient,
       status: input.status ?? 'DRAFT',
-      priority: input.priority ?? 'C',
+      is_important: input.is_important ?? false,
       geofence_radius_meters: input.geofence_radius_meters ?? 500,
       created_by: SUPER_ADMIN_TEST_PROFILE.id,
       created_at: now,

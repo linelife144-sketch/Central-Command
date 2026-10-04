@@ -69,7 +69,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const { data: overrides, error: permissionError } = await admin.from('user_permissions' as never).select('permission_key,effect').eq('profile_id', user.id);
+    const { data: overrides, error: permissionError } = await admin.from('user_permissions').select('permission_key,effect').eq('profile_id', user.id);
     const pendingMigration = permissionError?.code === 'PGRST205' && permissionError.message.includes('user_permissions');
     if (permissionError && !pendingMigration) return NextResponse.json({ error: 'Unable to resolve permissions.' }, { status: 503 });
     const map = Object.fromEntries((overrides ?? []).map((row: { permission_key: string; effect: string }) => [row.permission_key, row.effect])) as PermissionOverrides;

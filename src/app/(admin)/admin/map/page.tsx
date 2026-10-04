@@ -20,7 +20,7 @@ function toMapTicket(ticket: Ticket): MapTicketMarker {
     latitude: ticket.latitude,
     longitude: ticket.longitude,
     status: ticket.status,
-    priority: ticket.priority,
+    isImportant: ticket.is_important,
     geofenceRadiusMeters: ticket.geofence_radius_meters,
   };
 }
@@ -176,7 +176,7 @@ export default function AdminMapPage() {
             <>
               <p className="font-medium">{selectedTicket.ticketNumber}</p>
               <p>Status: {selectedTicket.status ?? 'UNKNOWN'}</p>
-              <p>Priority: {selectedTicket.priority ?? 'UNKNOWN'}</p>
+              <p>Important: {selectedTicket.isImportant ? 'Yes' : 'No'}</p>
               <p>Radius: {selectedTicket.geofenceRadiusMeters ?? 500}m</p>
               <p>Last Updated: {formatDate(tickets.find((ticket) => ticket.id === selectedTicket.id)?.updated_at ?? null)}</p>
             </>

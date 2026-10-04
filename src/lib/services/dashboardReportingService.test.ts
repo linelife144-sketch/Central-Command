@@ -40,19 +40,27 @@ describe('dashboardReportingService', () => {
           created_at: '2026-02-13T10:00:00.000Z',
           is_deleted: false,
         },
+        {
+          id: 'ticket-5',
+          status: 'COMPLETE',
+          assigned_to: 'sub-4',
+          created_at: '2026-02-12T10:00:00.000Z',
+          is_deleted: false,
+        },
       ],
       pendingTimeEntries: 4,
       pendingExpenseReports: 3,
       pendingAssessments: 2,
     });
 
-    expect(metrics.active_tickets).toBe(3);
-    expect(metrics.field_crews).toBe(2);
+    expect(metrics.active_tickets).toBe(4);
+    expect(metrics.field_crews).toBe(3);
     expect(metrics.on_site_crews).toBe(1);
     expect(metrics.pending_reviews_total).toBe(10); // 1 ticket + 4 time + 3 expense + 2 assessments
     expect(metrics.status_breakdown.in_route).toBe(1);
     expect(metrics.status_breakdown.on_site).toBe(1);
     expect(metrics.status_breakdown.pending_review).toBe(1);
+    expect(metrics.status_breakdown.completed).toBe(1);
     expect(metrics.status_breakdown.unassigned).toBe(1);
   });
 
@@ -97,14 +105,14 @@ describe('dashboardReportingService', () => {
           id: 'time-1',
           contractor_id: 'sub-1',
           status: 'APPROVED',
-          billable_amount: 200,
+          payroll_amount: 200,
           clock_in_at: '2026-02-02T08:00:00.000Z',
         },
         {
           id: 'time-2',
           contractor_id: 'sub-1',
           status: 'PENDING',
-          billable_amount: 120,
+          payroll_amount: 120,
           clock_in_at: '2026-02-03T09:00:00.000Z',
         },
       ],

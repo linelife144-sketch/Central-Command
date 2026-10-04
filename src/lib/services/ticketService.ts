@@ -13,6 +13,25 @@ export const ticketService = {
         if (error) throw error;
         return data ? (data as { payload: Record<string, unknown> }).payload : null;
     },
+
+    /**
+     * Batched lookup of utility payloads, keyed by ticket id. Used by list
+     * views (e.g. the ticket queue) that need a payload-derived field, such
+     * as the feeder/circuit number, without issuing one request per row.
+     */
+    async getUtilityPayloadsByTicketIds(ids: string[]): Promise<Record<string, Record<string, unknown>>> {
+        if (ids.length === 0) return {};
+        if (isSuperAdminTestingEnabled()) {
+            return Object.fromEntries(
+                ids.map((id) => [id, localTestStore.getPayload(id)]).filter(([, payload]) => payload !== null) as [string, Record<string, unknown>][]
+            );
+        }
+        const { data, error } = await supabase.from('ticket_payloads').select('ticket_id, payload').in('ticket_id', ids);
+        if (error) throw error;
+        return Object.fromEntries(
+            (data as { ticket_id: string; payload: Record<string, unknown> }[]).map((row) => [row.ticket_id, row.payload])
+        );
+    },
     async getTickets() {
         if (isSuperAdminTestingEnabled()) return localTestStore.getTickets();
         const { data, error } = await supabase

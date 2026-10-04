@@ -1,0 +1,151 @@
+{
+  "migration": {
+    "version": "20261004010249",
+    "name": "individual_admin_permissions_and_contractor_invitations"
+  },
+  "catalog": [
+    "admin.assessments.edit",
+    "admin.assessments.view",
+    "admin.assignments.edit",
+    "admin.assignments.view",
+    "admin.contractors.edit",
+    "admin.contractors.view",
+    "admin.dashboard.view",
+    "admin.expenses.edit",
+    "admin.expenses.view",
+    "admin.map.view",
+    "admin.payroll.edit",
+    "admin.payroll.view",
+    "admin.reports.view",
+    "admin.storms.edit",
+    "admin.storms.view",
+    "admin.tickets.edit",
+    "admin.tickets.view",
+    "admin.time.edit",
+    "admin.time.view",
+    "admin.users.edit",
+    "admin.users.view"
+  ],
+  "staff": [
+    {
+      "id": "924f0983-cb9b-48ae-9688-4bf31cc94e73",
+      "role": "SUPER_ADMIN",
+      "active": true,
+      "password_gate": false,
+      "permissions": {
+        "admin.map.view": true,
+        "admin.time.edit": true,
+        "admin.time.view": true,
+        "admin.users.edit": true,
+        "admin.users.view": true,
+        "admin.storms.edit": true,
+        "admin.storms.view": true,
+        "admin.payroll.edit": true,
+        "admin.payroll.view": true,
+        "admin.reports.view": true,
+        "admin.tickets.edit": true,
+        "admin.tickets.view": true,
+        "admin.expenses.edit": true,
+        "admin.expenses.view": true,
+        "admin.dashboard.view": true,
+        "admin.assessments.edit": true,
+        "admin.assessments.view": true,
+        "admin.assignments.edit": true,
+        "admin.assignments.view": true,
+        "admin.contractors.edit": true,
+        "admin.contractors.view": true
+      }
+    },
+    {
+      "id": "4bd03b59-3a04-4c8a-aa09-d7fe1f0a6512",
+      "role": "SUPER_ADMIN",
+      "active": true,
+      "password_gate": false,
+      "permissions": {
+        "admin.map.view": true,
+        "admin.time.edit": true,
+        "admin.time.view": true,
+        "admin.users.edit": true,
+        "admin.users.view": true,
+        "admin.storms.edit": true,
+        "admin.storms.view": true,
+        "admin.payroll.edit": true,
+        "admin.payroll.view": true,
+        "admin.reports.view": true,
+        "admin.tickets.edit": true,
+        "admin.tickets.view": true,
+        "admin.expenses.edit": true,
+        "admin.expenses.view": true,
+        "admin.dashboard.view": true,
+        "admin.assessments.edit": true,
+        "admin.assessments.view": true,
+        "admin.assignments.edit": true,
+        "admin.assignments.view": true,
+        "admin.contractors.edit": true,
+        "admin.contractors.view": true
+      }
+    }
+  ],
+  "tables": [
+    {
+      "name": "contractor_invitations",
+      "rls": true
+    },
+    {
+      "name": "user_permission_versions",
+      "rls": true
+    },
+    {
+      "name": "user_permissions",
+      "rls": true
+    }
+  ],
+  "functions": [
+    {
+      "name": "assign_contractor_to_storm",
+      "definition": "CREATE OR REPLACE FUNCTION public.assign_contractor_to_storm(p_storm_id uuid, p_contractor_id uuid)\n RETURNS void\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nDECLARE revision uuid;\nBEGIN\n  IF NOT private.has_permission(auth.uid(),'admin.assignments.edit') THEN RAISE EXCEPTION 'Only authorized users can assign contractors'; END IF;\n  PERFORM 1 FROM public.storm_events WHERE id=p_storm_id AND NOT is_deleted FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'Create a storm first'; END IF;\n  IF NOT EXISTS(SELECT 1 FROM public.contractors WHERE id=p_contractor_id AND onboarding_status::text='APPROVED' AND is_eligible_for_assignment) THEN RAISE EXCEPTION 'Select an approved, eligible contractor'; END IF;\n  SELECT id INTO revision FROM public.storm_event_roster_revisions WHERE storm_event_id=p_storm_id AND NOT is_locked ORDER BY revision_number DESC LIMIT 1;\n  IF revision IS NULL THEN\n    IF EXISTS(SELECT 1 FROM public.storm_event_roster_revisions WHERE storm_event_id=p_storm_id) THEN RAISE EXCEPTION 'The storm roster is locked. Create an unlocked roster revision first'; END IF;\n    INSERT INTO public.storm_event_roster_revisions(storm_event_id,revision_number,revision_label,created_by) VALUES(p_storm_id,0,'Initial roster',auth.uid()) RETURNING id INTO revision;\n  END IF;\n  IF EXISTS(SELECT 1 FROM public.storm_event_roster_members WHERE roster_revision_id=revision AND contractor_id=p_contractor_id AND member_status<>'REMOVED') THEN RETURN; END IF;\n  INSERT INTO public.storm_event_roster_members(roster_revision_id,contractor_id,member_status,created_by) VALUES(revision,p_contractor_id,'CONFIRMED',auth.uid());\nEND $function$\n",
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ]
+    },
+    {
+      "name": "create_storm_ticket",
+      "definition": "CREATE OR REPLACE FUNCTION public.create_storm_ticket(p_storm_id uuid, p_common jsonb, p_payload jsonb, p_confidence jsonb DEFAULT '{}'::jsonb, p_warnings text[] DEFAULT '{}'::text[])\n RETURNS uuid\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nDECLARE storm public.storm_events%ROWTYPE; ticket_id uuid; number text;\nBEGIN\n  IF NOT private.has_permission(auth.uid(),'admin.tickets.edit') THEN RAISE EXCEPTION 'Only authorized users can create tickets'; END IF;\n  SELECT * INTO storm FROM public.storm_events WHERE id=p_storm_id AND NOT is_deleted FOR SHARE;\n  IF NOT FOUND THEN RAISE EXCEPTION 'Create or select a storm first'; END IF;\n  PERFORM public.validate_storm_ticket_payload(p_storm_id,p_payload);\n  number:=CASE WHEN storm.utility_client='ENTERGY' THEN p_payload->>'incident_number' ELSE p_payload->>'external_ticket_id' END;\n  IF coalesce(btrim(number),'')='' THEN RAISE EXCEPTION 'Utility ticket number is required'; END IF;\n  INSERT INTO public.tickets(storm_event_id,ticket_number,utility_client,template_key,status,priority,source_type,address,work_description,created_by)\n    VALUES(storm.id,number,storm.utility_client,storm.ticket_template_key,\n      coalesce(p_common->>'status','DRAFT')::public.ticket_status,coalesce(p_common->>'priority','C')::public.priority_level,\n      coalesce(p_common->>'source_type','MANUAL')::public.ticket_source_type,p_payload->>'address_line',storm.name||' - '||number,auth.uid()) RETURNING id INTO ticket_id;\n  INSERT INTO public.ticket_payloads(ticket_id,payload,payload_version,extraction_confidence,extraction_warnings)\n    VALUES(ticket_id,p_payload,coalesce((storm.config_snapshot->>'payload_version')::integer,1),p_confidence,p_warnings);\n  RETURN ticket_id;\nEND $function$\n",
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ]
+    },
+    {
+      "name": "finalize_contractor_invite",
+      "definition": "CREATE OR REPLACE FUNCTION public.finalize_contractor_invite(p_actor_id uuid, p_profile_id uuid, p_first_name text, p_last_name text, p_email text, p_phone text, p_resend boolean)\n RETURNS jsonb\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nDECLARE contractor_id uuid;\nBEGIN\n IF NOT private.has_permission(p_actor_id,'admin.users.edit') THEN RAISE EXCEPTION 'Invitation permission required'; END IF;\n PERFORM 1 FROM public.profiles WHERE id=p_profile_id AND role::text='CONTRACTOR' FOR UPDATE;\n IF NOT FOUND THEN RAISE EXCEPTION 'Contractor profile required'; END IF;\n UPDATE public.profiles SET first_name=p_first_name,last_name=p_last_name,phone=p_phone,must_reset_password=true WHERE id=p_profile_id;\n SELECT id INTO contractor_id FROM public.contractors WHERE profile_id=p_profile_id;\n IF contractor_id IS NULL THEN\n  INSERT INTO public.contractors(profile_id,business_name,business_email,business_phone,onboarding_status,is_eligible_for_assignment)\n  VALUES(p_profile_id,p_first_name||' '||p_last_name,p_email,p_phone,'PENDING',false) RETURNING id INTO contractor_id;\n END IF;\n INSERT INTO public.contractor_invitations(profile_id,email,first_name,last_name,invited_by,last_result)\n VALUES(p_profile_id,p_email,p_first_name,p_last_name,p_actor_id,'sent') ON CONFLICT(profile_id) DO UPDATE SET first_name=p_first_name,last_name=p_last_name,sent_at=clock_timestamp(),last_result='sent',invited_by=p_actor_id,send_count=public.contractor_invitations.send_count+1;\n INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,new_values,change_summary)\n VALUES(CASE WHEN p_resend THEN 'INVITE_RESENT' ELSE 'INVITE_SENT' END,'contractor_invitation',p_profile_id,p_actor_id,'SUPER_ADMIN',jsonb_build_object('email',p_email,'contractor_id',contractor_id,'result','sent'),'Contractor invitation sent');\n RETURN jsonb_build_object('profile_id',p_profile_id,'contractor_id',contractor_id,'email',p_email,'state','invited');\nEND $function$\n",
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "get_my_permissions",
+      "definition": "CREATE OR REPLACE FUNCTION public.get_my_permissions()\n RETURNS jsonb\n LANGUAGE sql\n STABLE\n SET search_path TO ''\nAS $function$\n SELECT jsonb_object_agg(k.key,private.has_permission(auth.uid(),k.key)) FROM unnest(ARRAY['admin.dashboard.view','admin.storms.view','admin.storms.edit','admin.tickets.view','admin.tickets.edit','admin.contractors.view','admin.contractors.edit','admin.assignments.view','admin.assignments.edit','admin.map.view','admin.time.view','admin.time.edit','admin.expenses.view','admin.expenses.edit','admin.assessments.view','admin.assessments.edit','admin.payroll.view','admin.payroll.edit','admin.reports.view','admin.users.view','admin.users.edit']::text[]) k(key);\n$function$\n",
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ]
+    }
+  ],
+  "contractors": [
+    {
+      "id": "adc6d309-e84e-4b97-81cb-b6ac168dea02",
+      "profile_id": "69e8696f-9dc9-4f37-8bcd-75868d219635",
+      "approved": "APPROVED",
+      "eligible": true
+    },
+    {
+      "id": "9ec4249c-a9a8-44b0-a231-f79ac7997886",
+      "profile_id": "033a451f-c47c-4984-b058-b15bad822352",
+      "approved": "APPROVED",
+      "eligible": true
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "columns": [
+    "id",
+    "contractor_id",
+    "ticket_id",
+    "clock_in_at",
+    "clock_in_latitude",
+    "clock_in_longitude",
+    "clock_in_accuracy",
+    "clock_in_photo_url",
+    "clock_in_ip",
+    "clock_in_user_agent",
+    "clock_out_at",
+    "clock_out_latitude",
+    "clock_out_longitude",
+    "clock_out_accuracy",
+    "clock_out_photo_url",
+    "clock_out_ip",
+    "work_type",
+    "work_type_rate",
+    "total_minutes",
+    "break_minutes",
+    "billable_minutes",
+    "billable_amount",
+    "status",
+    "reviewed_by",
+    "reviewed_at",
+    "rejection_reason",
+    "invoice_id",
+    "sync_status",
+    "sync_error",
+    "created_at",
+    "updated_at",
+    "created_by",
+    "updated_by",
+    "is_deleted",
+    "storm_event_id",
+    "contractor_role",
+    "pay_rate_applied",
+    "payroll_amount",
+    "utility_bill_rate_applied",
+    "utility_bill_amount"
+  ],
+  "triggers": [
+    {
+      "name": "tr_apply_time_entry_costing",
+      "table": "time_entries",
+      "definition": "CREATE TRIGGER tr_apply_time_entry_costing BEFORE INSERT OR UPDATE ON public.time_entries FOR EACH ROW EXECUTE FUNCTION private.apply_time_entry_costing()"
+    },
+    {
+      "name": "tr_enforce_time_entry_storm_scope",
+      "table": "time_entries",
+      "definition": "CREATE TRIGGER tr_enforce_time_entry_storm_scope BEFORE INSERT OR UPDATE OF storm_event_id, ticket_id, invoice_id ON public.time_entries FOR EACH ROW EXECUTE FUNCTION enforce_time_entry_storm_scope()"
+    },
+    {
+      "name": "update_time_entries_updated_at",
+      "table": "time_entries",
+      "definition": "CREATE TRIGGER update_time_entries_updated_at BEFORE UPDATE ON public.time_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "name": "tr_compute_vehicle_claim_amount",
+      "table": "time_entry_vehicle_claims",
+      "definition": "CREATE TRIGGER tr_compute_vehicle_claim_amount BEFORE INSERT OR UPDATE ON public.time_entry_vehicle_claims FOR EACH ROW EXECUTE FUNCTION private.compute_vehicle_claim_amount()"
+    },
+    {
+      "name": "tr_vehicle_claim_updated_at",
+      "table": "time_entry_vehicle_claims",
+      "definition": "CREATE TRIGGER tr_vehicle_claim_updated_at BEFORE UPDATE ON public.time_entry_vehicle_claims FOR EACH ROW EXECUTE FUNCTION private.set_vehicle_claim_updated_at()"
+    }
+  ],
+  "open_count": 0,
+  "closed_hash": "8c7e714444f142249140599b274c1592",
+  "closed_count": 6
+}

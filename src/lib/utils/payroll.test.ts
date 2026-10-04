@@ -137,21 +137,21 @@ describe('calculateEntryBilling', () => {
 
 describe('resolveVehicleClaimAmount', () => {
   it('pays declared hours in full when under the shift length (6h shift, 5 declared)', () => {
-    const result = resolveVehicleClaimAmount({ declaredHours: 5, billableMinutes: 360 });
+    const result = resolveVehicleClaimAmount({ hourlyRate: 5, declaredHours: 5, billableMinutes: 360 });
     expect(result.amount).toBe(25);
     expect(result.capped).toBe(false);
     expect(result.cappedHours).toBe(5);
   });
 
   it('caps over-declared hours at the actual shift length (6h shift, 8 declared)', () => {
-    const result = resolveVehicleClaimAmount({ declaredHours: 8, billableMinutes: 360 });
+    const result = resolveVehicleClaimAmount({ hourlyRate: 5, declaredHours: 8, billableMinutes: 360 });
     expect(result.amount).toBe(30);
     expect(result.capped).toBe(true);
     expect(result.cappedHours).toBe(6);
   });
 
   it('applies a flat $5/hr with no overtime multiplier on a 14-hour entry', () => {
-    const result = resolveVehicleClaimAmount({ declaredHours: 14, billableMinutes: 14 * 60 });
+    const result = resolveVehicleClaimAmount({ hourlyRate: 5, declaredHours: 14, billableMinutes: 14 * 60 });
     expect(result.amount).toBe(70);
     expect(result.capped).toBe(false);
   });

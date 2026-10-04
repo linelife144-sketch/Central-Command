@@ -152,6 +152,93 @@ export type Database = {
           },
         ]
       }
+      contractor_invitation_pay_setups: {
+        Row: {
+          actor_id: string
+          contractor_id: string | null
+          created_at: string
+          email: string
+          terms: Json
+        }
+        Insert: {
+          actor_id: string
+          contractor_id?: string | null
+          created_at?: string
+          email: string
+          terms: Json
+        }
+        Update: {
+          actor_id?: string
+          contractor_id?: string | null
+          created_at?: string
+          email?: string
+          terms?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_invitation_pay_setups_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_invitation_pay_setups_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_invitations: {
+        Row: {
+          email: string
+          first_name: string
+          invited_by: string
+          last_name: string
+          last_result: string
+          profile_id: string
+          send_count: number
+          sent_at: string
+        }
+        Insert: {
+          email: string
+          first_name?: string
+          invited_by: string
+          last_name?: string
+          last_result: string
+          profile_id: string
+          send_count?: number
+          sent_at?: string
+        }
+        Update: {
+          email?: string
+          first_name?: string
+          invited_by?: string
+          last_name?: string
+          last_result?: string
+          profile_id?: string
+          send_count?: number
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_invitations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractor_invoices: {
         Row: {
           approved_at: string | null
@@ -266,6 +353,48 @@ export type Database = {
           },
         ]
       }
+      contractor_pay_agreements: {
+        Row: {
+          contractor_id: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          id: string
+          terms: Json
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_from: string
+          id?: string
+          terms: Json
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          id?: string
+          terms?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_pay_agreements_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_pay_agreements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractor_rates: {
         Row: {
           contractor_id: string
@@ -313,165 +442,6 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      role_rate_defaults: {
-        Row: {
-          currency: string
-          hourly_rate: number
-          role: Database["public"]["Enums"]["contractor_role"]
-          updated_at: string
-          updated_by: string | null
-          work_type: Database["public"]["Enums"]["work_type"]
-        }
-        Insert: {
-          currency?: string
-          hourly_rate: number
-          role: Database["public"]["Enums"]["contractor_role"]
-          updated_at?: string
-          updated_by?: string | null
-          work_type: Database["public"]["Enums"]["work_type"]
-        }
-        Update: {
-          currency?: string
-          hourly_rate?: number
-          role?: Database["public"]["Enums"]["contractor_role"]
-          updated_at?: string
-          updated_by?: string | null
-          work_type?: Database["public"]["Enums"]["work_type"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "role_rate_defaults_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      utility_billing_rates: {
-        Row: {
-          currency: string
-          hourly_rate: number
-          id: string
-          storm_event_id: string | null
-          updated_at: string
-          updated_by: string | null
-          work_type: Database["public"]["Enums"]["work_type"]
-        }
-        Insert: {
-          currency?: string
-          hourly_rate: number
-          id?: string
-          storm_event_id?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          work_type: Database["public"]["Enums"]["work_type"]
-        }
-        Update: {
-          currency?: string
-          hourly_rate?: number
-          id?: string
-          storm_event_id?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          work_type?: Database["public"]["Enums"]["work_type"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "utility_billing_rates_storm_event_id_fkey"
-            columns: ["storm_event_id"]
-            isOneToOne: false
-            referencedRelation: "storm_events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "utility_billing_rates_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      time_entry_vehicle_claims: {
-        Row: {
-          amount: number
-          capped: boolean
-          contractor_id: string
-          created_at: string
-          declared_hours: number
-          id: string
-          license_plate_photo_url: string
-          notes: string
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          time_entry_id: string
-          updated_at: string
-          vehicle_photo_url: string
-          vehicle_type: string
-        }
-        Insert: {
-          amount?: number
-          capped?: boolean
-          contractor_id: string
-          created_at?: string
-          declared_hours: number
-          id?: string
-          license_plate_photo_url: string
-          notes: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          time_entry_id: string
-          updated_at?: string
-          vehicle_photo_url: string
-          vehicle_type: string
-        }
-        Update: {
-          amount?: number
-          capped?: boolean
-          contractor_id?: string
-          created_at?: string
-          declared_hours?: number
-          id?: string
-          license_plate_photo_url?: string
-          notes?: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          time_entry_id?: string
-          updated_at?: string
-          vehicle_photo_url?: string
-          vehicle_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "time_entry_vehicle_claims_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "contractors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "time_entry_vehicle_claims_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "time_entry_vehicle_claims_time_entry_id_fkey"
-            columns: ["time_entry_id"]
-            isOneToOne: true
-            referencedRelation: "time_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -1402,6 +1372,33 @@ export type Database = {
           },
         ]
       }
+      payroll_configuration: {
+        Row: {
+          flat_multiplier: number
+          id: boolean
+          legacy_vehicle_hourly_rate: number
+          multiplier_options: Json
+          timezone: string
+          week_start_day: number
+        }
+        Insert: {
+          flat_multiplier: number
+          id?: boolean
+          legacy_vehicle_hourly_rate: number
+          multiplier_options: Json
+          timezone: string
+          week_start_day: number
+        }
+        Update: {
+          flat_multiplier?: number
+          id?: boolean
+          legacy_vehicle_hourly_rate?: number
+          multiplier_options?: Json
+          timezone?: string
+          week_start_day?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -1467,6 +1464,41 @@ export type Database = {
           },
           {
             foreignKeyName: "profiles_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_rate_defaults: {
+        Row: {
+          currency: string
+          hourly_rate: number
+          role: Database["public"]["Enums"]["contractor_role"]
+          updated_at: string
+          updated_by: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Insert: {
+          currency?: string
+          hourly_rate: number
+          role: Database["public"]["Enums"]["contractor_role"]
+          updated_at?: string
+          updated_by?: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Update: {
+          currency?: string
+          hourly_rate?: number
+          role?: Database["public"]["Enums"]["contractor_role"]
+          updated_at?: string
+          updated_by?: string | null
+          work_type?: Database["public"]["Enums"]["work_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_rate_defaults_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -2546,9 +2578,9 @@ export type Database = {
           geofence_radius_meters: number | null
           id: string
           is_deleted: boolean | null
+          is_important: boolean
           latitude: number | null
           longitude: number | null
-          priority: Database["public"]["Enums"]["priority_level"]
           raw_ocr_text: string | null
           route_batch_id: string | null
           route_order: number | null
@@ -2590,9 +2622,9 @@ export type Database = {
           geofence_radius_meters?: number | null
           id?: string
           is_deleted?: boolean | null
+          is_important?: boolean
           latitude?: number | null
           longitude?: number | null
-          priority?: Database["public"]["Enums"]["priority_level"]
           raw_ocr_text?: string | null
           route_batch_id?: string | null
           route_order?: number | null
@@ -2634,9 +2666,9 @@ export type Database = {
           geofence_radius_meters?: number | null
           id?: string
           is_deleted?: boolean | null
+          is_important?: boolean
           latitude?: number | null
           longitude?: number | null
-          priority?: Database["public"]["Enums"]["priority_level"]
           raw_ocr_text?: string | null
           route_batch_id?: string | null
           route_order?: number | null
@@ -2712,9 +2744,11 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          activity_intervals: Json
           billable_amount: number | null
           billable_minutes: number | null
           break_minutes: number | null
+          calculation_version: string
           clock_in_accuracy: number | null
           clock_in_at: string
           clock_in_ip: unknown
@@ -2735,8 +2769,16 @@ export type Database = {
           id: string
           invoice_id: string | null
           is_deleted: boolean | null
+          legacy_vehicle_rate_applied: number | null
+          overtime_minutes: number | null
+          overtime_pay_amount: number | null
+          overtime_rate_applied: number | null
+          paid_minutes_exact: number | null
           pay_rate_applied: number | null
+          pay_segments: Json
           payroll_amount: number | null
+          regular_minutes: number | null
+          regular_pay_amount: number | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -2750,13 +2792,18 @@ export type Database = {
           updated_by: string | null
           utility_bill_amount: number | null
           utility_bill_rate_applied: number | null
+          vehicle_allowance_amount: number | null
+          vehicle_minutes: number | null
+          weekly_allocations: Json
           work_type: Database["public"]["Enums"]["work_type"]
           work_type_rate: number
         }
         Insert: {
+          activity_intervals?: Json
           billable_amount?: number | null
           billable_minutes?: number | null
           break_minutes?: number | null
+          calculation_version?: string
           clock_in_accuracy?: number | null
           clock_in_at: string
           clock_in_ip?: unknown
@@ -2771,14 +2818,24 @@ export type Database = {
           clock_out_longitude?: number | null
           clock_out_photo_url?: string | null
           contractor_id: string
-          contractor_role?: Database["public"]["Enums"]["contractor_role"] | null
+          contractor_role?:
+            | Database["public"]["Enums"]["contractor_role"]
+            | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           invoice_id?: string | null
           is_deleted?: boolean | null
+          legacy_vehicle_rate_applied?: number | null
+          overtime_minutes?: number | null
+          overtime_pay_amount?: number | null
+          overtime_rate_applied?: number | null
+          paid_minutes_exact?: number | null
           pay_rate_applied?: number | null
+          pay_segments?: Json
           payroll_amount?: number | null
+          regular_minutes?: number | null
+          regular_pay_amount?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -2792,13 +2849,18 @@ export type Database = {
           updated_by?: string | null
           utility_bill_amount?: number | null
           utility_bill_rate_applied?: number | null
+          vehicle_allowance_amount?: number | null
+          vehicle_minutes?: number | null
+          weekly_allocations?: Json
           work_type: Database["public"]["Enums"]["work_type"]
           work_type_rate: number
         }
         Update: {
+          activity_intervals?: Json
           billable_amount?: number | null
           billable_minutes?: number | null
           break_minutes?: number | null
+          calculation_version?: string
           clock_in_accuracy?: number | null
           clock_in_at?: string
           clock_in_ip?: unknown
@@ -2813,14 +2875,24 @@ export type Database = {
           clock_out_longitude?: number | null
           clock_out_photo_url?: string | null
           contractor_id?: string
-          contractor_role?: Database["public"]["Enums"]["contractor_role"] | null
+          contractor_role?:
+            | Database["public"]["Enums"]["contractor_role"]
+            | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           invoice_id?: string | null
           is_deleted?: boolean | null
+          legacy_vehicle_rate_applied?: number | null
+          overtime_minutes?: number | null
+          overtime_pay_amount?: number | null
+          overtime_rate_applied?: number | null
+          paid_minutes_exact?: number | null
           pay_rate_applied?: number | null
+          pay_segments?: Json
           payroll_amount?: number | null
+          regular_minutes?: number | null
+          regular_pay_amount?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -2834,6 +2906,9 @@ export type Database = {
           updated_by?: string | null
           utility_bill_amount?: number | null
           utility_bill_rate_applied?: number | null
+          vehicle_allowance_amount?: number | null
+          vehicle_minutes?: number | null
+          weekly_allocations?: Json
           work_type?: Database["public"]["Enums"]["work_type"]
           work_type_rate?: number
         }
@@ -2882,6 +2957,147 @@ export type Database = {
           },
         ]
       }
+      time_entry_vehicle_claims: {
+        Row: {
+          amount: number
+          capped: boolean
+          contractor_id: string
+          created_at: string
+          declared_hours: number
+          id: string
+          license_plate_photo_url: string
+          notes: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          time_entry_id: string
+          updated_at: string
+          vehicle_photo_url: string
+          vehicle_type: string
+        }
+        Insert: {
+          amount?: number
+          capped?: boolean
+          contractor_id: string
+          created_at?: string
+          declared_hours: number
+          id?: string
+          license_plate_photo_url: string
+          notes: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          time_entry_id: string
+          updated_at?: string
+          vehicle_photo_url: string
+          vehicle_type: string
+        }
+        Update: {
+          amount?: number
+          capped?: boolean
+          contractor_id?: string
+          created_at?: string
+          declared_hours?: number
+          id?: string
+          license_plate_photo_url?: string
+          notes?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          time_entry_id?: string
+          updated_at?: string
+          vehicle_photo_url?: string
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entry_vehicle_claims_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entry_vehicle_claims_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entry_vehicle_claims_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: true
+            referencedRelation: "time_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permission_versions: {
+        Row: {
+          profile_id: string
+          version: string
+        }
+        Insert: {
+          profile_id: string
+          version?: string
+        }
+        Update: {
+          profile_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permission_versions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permissions: {
+        Row: {
+          effect: string
+          permission_key: string
+          profile_id: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          effect: string
+          permission_key: string
+          profile_id: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          effect?: string
+          permission_key?: string
+          profile_id?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       utilities: {
         Row: {
           created_at: string
@@ -2917,6 +3133,51 @@ export type Database = {
           {
             foreignKeyName: "utilities_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      utility_billing_rates: {
+        Row: {
+          currency: string
+          hourly_rate: number
+          id: string
+          storm_event_id: string | null
+          updated_at: string
+          updated_by: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Insert: {
+          currency?: string
+          hourly_rate: number
+          id?: string
+          storm_event_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Update: {
+          currency?: string
+          hourly_rate?: number
+          id?: string
+          storm_event_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          work_type?: Database["public"]["Enums"]["work_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utility_billing_rates_storm_event_id_fkey"
+            columns: ["storm_event_id"]
+            isOneToOne: false
+            referencedRelation: "storm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utility_billing_rates_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2962,6 +3223,10 @@ export type Database = {
         Args: { p_contractor_id: string; p_storm_id: string }
         Returns: undefined
       }
+      complete_invitation_pay_setup: {
+        Args: { p_actor: string; p_email: string; p_profile: string }
+        Returns: string
+      }
       create_storm_ticket: {
         Args: {
           p_common: Json
@@ -2973,13 +3238,47 @@ export type Database = {
         Returns: string
       }
       current_user_role: { Args: never; Returns: string }
+      finalize_contractor_invite: {
+        Args: {
+          p_actor_id: string
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+          p_profile_id: string
+          p_resend: boolean
+        }
+        Returns: Json
+      }
       get_assigned_storm_ticket_context: {
         Args: { p_storm_id: string }
         Returns: Json
       }
+      get_my_permissions: { Args: never; Returns: Json }
+      get_privileged_payroll_entries: {
+        Args: {
+          p_contractor?: string
+          p_from?: string
+          p_storm?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
+      get_user_permission_settings: {
+        Args: { p_profile_id: string }
+        Returns: Json
+      }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      list_assignable_storm_contractors: {
+        Args: { p_storm_id: string }
+        Returns: Json
+      }
       list_storm_contractors: { Args: { p_storm_id: string }; Returns: Json }
+      set_user_permissions: {
+        Args: { p_overrides: Json; p_profile_id: string; p_version?: string }
+        Returns: Json
+      }
       validate_storm_ticket_payload: {
         Args: { p_payload: Json; p_storm_id: string }
         Returns: undefined
@@ -3268,3 +3567,4 @@ export const Constants = {
     },
   },
 } as const
+

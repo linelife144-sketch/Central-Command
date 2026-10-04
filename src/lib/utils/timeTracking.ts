@@ -1,4 +1,5 @@
 import { APP_CONFIG } from '../config/appConfig';
+import { timeEntryMoney } from './payroll';
 
 export interface DurationState {
   elapsedMinutes: number;
@@ -15,6 +16,8 @@ export interface TimeEntrySummaryItem {
   break_minutes?: number;
   billable_minutes?: number;
   billable_amount?: number;
+  payroll_amount?: number;
+  sync_status?: string;
   work_type_rate: number;
   status: string;
 }
@@ -23,7 +26,7 @@ export interface TimeEntrySummary {
   entryCount: number;
   totalMinutes: number;
   billableMinutes: number;
-  totalAmount: number;
+  totalAmount?: number;
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
@@ -84,9 +87,7 @@ export function calculateTimeEntrySummary(
     (summary, entry) => {
       const totalMinutes = resolveTotalMinutesForEntry(entry, now);
       const billableMinutes = resolveBillableMinutesForEntry(entry, now);
-      const amount = typeof entry.billable_amount === 'number'
-        ? Math.max(0, entry.billable_amount)
-        : calculateBillableAmount(billableMinutes, entry.work_type_rate);
+      const amount = timeEntryMoney(entry).wage;
 
       const normalizedStatus = entry.status.toUpperCase();
 
@@ -94,7 +95,8 @@ export function calculateTimeEntrySummary(
         entryCount: summary.entryCount + 1,
         totalMinutes: summary.totalMinutes + totalMinutes,
         billableMinutes: summary.billableMinutes + billableMinutes,
-        totalAmount: Number((summary.totalAmount + amount).toFixed(2)),
+        totalAmount: summary.totalAmount === undefined || amount === undefined
+          ? undefined : Number((summary.totalAmount + amount).toFixed(2)),
         pendingCount: summary.pendingCount + (normalizedStatus === 'PENDING' ? 1 : 0),
         approvedCount: summary.approvedCount + (normalizedStatus === 'APPROVED' ? 1 : 0),
         rejectedCount: summary.rejectedCount + (normalizedStatus === 'REJECTED' ? 1 : 0),

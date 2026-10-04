@@ -9,7 +9,7 @@ export interface MapTicketMarker {
   latitude?: number | null;
   longitude?: number | null;
   status?: string;
-  priority?: string;
+  isImportant?: boolean;
   geofenceRadiusMeters?: number;
 }
 
@@ -35,7 +35,7 @@ interface TicketFeatureCollection {
       id: string;
       ticketNumber: string;
       status: string;
-      priority: string;
+      isImportant: boolean;
     };
   }>;
 }
@@ -68,7 +68,7 @@ export function buildTicketFeatureCollection(tickets: MapTicketMarker[]): Ticket
         id: ticket.id,
         ticketNumber: ticket.ticketNumber,
         status: ticket.status ?? 'UNKNOWN',
-        priority: ticket.priority ?? 'UNKNOWN',
+        isImportant: ticket.isImportant === true,
       },
     })),
   };
@@ -152,7 +152,7 @@ export function TicketMarkers({
         source: sourceId,
         paint: {
           'circle-radius': 8,
-          'circle-color': '#2563EB',
+          'circle-color': ['case', ['boolean', ['get', 'isImportant'], false], '#DC2626', '#2563EB'],
           'circle-stroke-width': 2,
           'circle-stroke-color': '#FFFFFF',
         },

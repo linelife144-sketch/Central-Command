@@ -7,8 +7,8 @@ import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
 import { DataTable, Column } from '@/components/common/data-display/DataTable';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
-import { TicketPriorityBadge } from './TicketPriorityBadge';
-import { formatDate } from '@/lib/utils/formatters';
+import { TicketImportanceBadge } from './TicketImportanceBadge';
+import { formatAddress, formatDateTime } from '@/lib/utils/formatters';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Plus, UserPlus } from 'lucide-react';
@@ -19,6 +19,7 @@ import { TicketAssign } from './TicketAssign';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
 import { contractorService } from '@/lib/services/contractorService';
+import { getFeederFromPayload } from '@/lib/tickets/templates';
 
 interface TicketListProps {
     userRole: 'admin' | 'contractor';
@@ -30,11 +31,12 @@ export function TicketList({ userRole, userId }: TicketListProps) {
     const canEdit = userRole === 'admin' && can('admin.tickets.edit');
     const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<Ticket[]>([]);
+    const [feedersByTicketId, setFeedersByTicketId] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [filters, setFilters] = useState<TicketFiltersState>({
         search: "",
         status: "ALL",
-        priority: "ALL",
+        importance: "ALL",
     });
     const [assignRequest, setAssignRequest] = useState<{ ticketId: string, ticketNumber: string, currentAssigneeId?: string, stormEventId?: string } | null>(null);
     const router = useRouter();
@@ -56,6 +58,16 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                         setAssigneeNames(Object.fromEntries(contractors.map(c => [c.id, c.fullName])));
                     } catch { toast.error('Unable to load contractor names'); }
                 }
+                try {
+                    const payloads = await ticketService.getUtilityPayloadsByTicketIds(data.map(ticket => ticket.id));
+                    setFeedersByTicketId(
+                        Object.fromEntries(
+                            Object.entries(payloads)
+                                .map(([ticketId, payload]) => [ticketId, getFeederFromPayload(payload)])
+                                .filter(([, feeder]) => feeder !== null) as [string, string][]
+                        )
+                    );
+                } catch { /* Feeder number is a non-critical enhancement to the list view. */ }
             } catch (error) {
                 console.error('Failed to load tickets:', error);
                 setTickets([]);
@@ -81,9 +93,9 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             ].filter(Boolean).join(' ').toLowerCase().includes(search);
 
             const matchesStatus = filters.status === "ALL" || ticket.status === filters.status;
-            const matchesPriority = filters.priority === "ALL" || ticket.priority === filters.priority;
+            const matchesImportance = filters.importance === "ALL" || (filters.importance === "IMPORTANT" ? ticket.is_important : !ticket.is_important);
 
-            return matchesSearch && matchesStatus && matchesPriority;
+            return matchesSearch && matchesStatus && matchesImportance;
         });
     }, [tickets, filters, assigneeNames]);
 
@@ -103,21 +115,30 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             ),
         },
         {
+            key: 'assigned_to',
+            header: 'Assigned To',
+            cell: ticket => ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : 'Contractor assigned') : 'Unassigned',
+        },
+        {
             key: 'title',
-            header: 'Client / Description',
+            header: 'Utility / Feeder',
             cell: (ticket) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{ticket.utility_client}</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                        {ticket.work_description || 'No description'}
-                    </span>
+                    {feedersByTicketId[ticket.id] ? (
+                        <span className="text-xs font-semibold text-grid-blue">Feeder {feedersByTicketId[ticket.id]}</span>
+                    ) : (
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {ticket.work_description || 'No description'}
+                        </span>
+                    )}
                 </div>
             ),
         },
         {
-            key: 'priority',
-            header: 'Priority',
-            cell: (ticket) => <TicketPriorityBadge priority={ticket.priority} />,
+            key: 'importance',
+            header: 'Importance',
+            cell: (ticket) => <TicketImportanceBadge isImportant={ticket.is_important} />,
         },
         {
             key: 'status',
@@ -125,23 +146,18 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             cell: (ticket) => <StatusBadge status={ticket.status} />,
         },
         {
-            key: 'assigned_to',
-            header: 'Assigned To',
-            cell: ticket => ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : 'Contractor assigned') : 'Unassigned',
-        },
-        {
             key: 'location',
-            header: 'Location',
+            header: 'Outage Location',
             cell: (ticket) => (
                 <div className="text-sm">
-                    {[ticket.address, ticket.city, ticket.state].filter(Boolean).join(', ') || 'Not provided'}
+                    {formatAddress(ticket.address, ticket.city ?? null, ticket.state ?? null, ticket.zip_code ?? null)}
                 </div>
             )
         },
         {
             key: 'created_at',
             header: 'Created',
-            cell: (ticket) => formatDate(ticket.created_at),
+            cell: (ticket) => formatDateTime(ticket.created_at),
         },
         {
             key: 'actions',

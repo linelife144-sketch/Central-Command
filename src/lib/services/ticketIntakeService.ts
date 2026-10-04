@@ -5,7 +5,7 @@ import { commonTicketCreateSchema, getTicketTemplateByUtilityClient, getTicketTe
 import { supabase } from '@/lib/supabase/client';
 import { canPerformManagementAction, type ManagementAction } from '@/lib/auth/authorization';
 import type { UserRole } from '@/types';
-import { resolvePermissions } from '@/lib/auth/permissionCatalog';
+import { resolvePermissions, type PermissionMap } from '@/lib/auth/permissionCatalog';
 import type { UtilityClient, TicketTemplateDefinition } from '@/lib/tickets/templates';
 import type { CommonTicketCreateInput } from '@/lib/tickets/templates';
 import { normalizeUtilityClient } from '@/lib/tickets/templates';
@@ -30,9 +30,9 @@ async function getCurrentProfileRole(): Promise<UserRole | null> {
 
 async function assertAllowed(action: ManagementAction): Promise<void> {
   const role = isSuperAdminTestingEnabled() ? SUPER_ADMIN_TEST_PROFILE.role : await getCurrentProfileRole();
-  const { data: permissions, error } = isSuperAdminTestingEnabled() ? { data: resolvePermissions(role), error: null } : await supabase.rpc('get_my_permissions' as never);
+  const { data: permissions, error } = isSuperAdminTestingEnabled() ? { data: resolvePermissions(role), error: null } : await supabase.rpc('get_my_permissions');
   const pendingMigration = error?.code === 'PGRST202' && error.message.includes('get_my_permissions');
-  if (!canPerformManagementAction(role, action, pendingMigration ? resolvePermissions(role) : permissions ?? {})) {
+  if (!canPerformManagementAction(role, action, pendingMigration ? resolvePermissions(role) : (permissions as PermissionMap | null) ?? {})) {
     throw new Error('You do not have permission to create tickets.');
   }
 }
@@ -66,7 +66,7 @@ export const ticketIntakeService = {
     if (isSuperAdminTestingEnabled()) {
       const ticket = localTestStore.createTicket({
         storm_event_id: storm.id, ticket_number: ticketNumber, utility_client: storm.utilityClient,
-        status: common.status, priority: common.priority, address: String(validatedPayload.address_line),
+        status: common.status, is_important: common.is_important, address: String(validatedPayload.address_line),
         work_description: `${input.template.displayName} - ${ticketNumber}`,
       }, validatedPayload);
       return { id: ticket.id };

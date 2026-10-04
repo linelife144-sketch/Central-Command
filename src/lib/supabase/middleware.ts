@@ -134,7 +134,7 @@ export async function updateSession(request: NextRequest) {
   const isContractorRole = role === 'CONTRACTOR';
   let permissions: PermissionMap = {};
   if (isAdminRole) {
-    const { data, error: permissionError } = await supabase.rpc('get_my_permissions' as never);
+    const { data, error: permissionError } = await supabase.rpc('get_my_permissions');
     if (!permissionError && data) permissions = data as PermissionMap;
     else if (permissionError?.code === 'PGRST202' && permissionError.message.includes('get_my_permissions')) permissions = resolvePermissions(role);
   }

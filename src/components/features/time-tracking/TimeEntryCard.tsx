@@ -40,7 +40,6 @@ export function TimeEntryCard({
   selected = false,
   showSelection = false,
   showReviewActions = false,
-  showPayrollDetails = false,
   reviewBusy = false,
   onSelectChange,
   onApprove,
@@ -92,6 +91,8 @@ export function TimeEntryCard({
           </p>
           <p><span className="font-medium">Billable:</span> {formatDuration(billableMinutes)}</p>
           <p><span className="font-medium">Wages:</span> {moneyLabel(money.wage)}</p>
+          {entry.regular_minutes !== undefined ? <p><span className="font-medium">Regular:</span> {(entry.regular_minutes / 60).toFixed(2)} h · {moneyLabel(entry.regular_pay_amount)}</p> : null}
+          {entry.overtime_minutes !== undefined ? <p><span className="font-medium">Overtime:</span> {(entry.overtime_minutes / 60).toFixed(2)} h · {moneyLabel(entry.overtime_pay_amount)}</p> : null}
           <p className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />
             <span className="font-medium">Sync:</span> {entry.sync_status}
@@ -99,10 +100,6 @@ export function TimeEntryCard({
           <p><span className="font-medium">Approved reimbursement:</span> {moneyLabel(money.reimbursement)}</p>
           <p><span className="font-medium">Total payout:</span> {moneyLabel(money.payout)}</p>
           {entry.vehicle_claim_status === 'PENDING' && <p className="text-grid-warning-ink">Vehicle claim awaiting review</p>}
-          {showPayrollDetails && <p><span className="font-medium">Margin:</span> {moneyLabel(money.margin)}</p>}
-          {showPayrollDetails && typeof entry.utility_bill_amount === 'number' ? (
-            <p><span className="font-medium">Utility Bill:</span> {formatCurrency(entry.utility_bill_amount)}</p>
-          ) : null}
         </div>
 
         {entry.rejection_reason ? (

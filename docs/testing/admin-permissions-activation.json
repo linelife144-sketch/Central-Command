@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-03",
+  "project": "xcvacmreerrypygpritq",
+  "migrations": [
+    {
+      "version": "20261004010249",
+      "name": "individual_admin_permissions_and_contractor_invitations"
+    },
+    {
+      "version": "20261004010952",
+      "name": "grant_invitation_finalizer_contractor_access"
+    },
+    {
+      "version": "20261004011222",
+      "name": "cache_identity_in_admin_permission_policies"
+    }
+  ],
+  "database": {
+    "checks": [
+      "all 21 keys returned with independent Payroll defaults",
+      "ordinary Admin cannot read access administration",
+      "atomic overrides and revision persist",
+      "Edit follows View and explicit storm grant",
+      "stale revision rejects overwrite",
+      "unknown key rejected without revision change",
+      "user administration cannot be granted to Admin",
+      "self permission changes rejected",
+      "contractor portal permissions remain locked",
+      "save records bound actor and audit without changing role",
+      "denied ticket reads and direct writes blocked by live RLS",
+      "explicit storm edit works through live RLS",
+      "Payroll reads independent of Time and default financial writes blocked",
+      "direct permission table writes forbidden",
+      "profile trigger blocks self role escalation",
+      "ticket and assignment RPC gates enforce module edits",
+      "invitation finalizer unavailable to authenticated clients",
+      "password setup gate denies staff modules",
+      "service finalizer revalidates actor permission",
+      "finalizer creates linked contractor, invitation and password gate atomically",
+      "resend preserves approved contractor and increments audited send count",
+      "existing contractor sees only assigned ticket and no staff permissions",
+      "all identities, rows, grants and audit fixtures rolled back"
+    ],
+    "passed": 23,
+    "email_sent": false,
+    "proof_scope": "live database and RLS with simulated identities; not email delivery or second staff browser acceptance",
+    "fixtures_rolled_back": true
+  },
+  "post_apply_state": {
+    "preserved_policy_count": 72,
+    "changed_preserved_policies": [],
+    "staff": [
+      {
+        "role": "SUPER_ADMIN",
+        "all_enabled": true
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "all_enabled": true
+      }
+    ],
+    "overrides": 0,
+    "invitations": 0
+  },
+  "browser": {
+    "staff": "Real David session: People & access loads both staff accounts and all 12 modules. An explicit Reports allow equivalent to Jeanie's existing default was saved, persisted after reload, then reset to role defaults and saved. Both Super Admins retain all access. Two audit records retained.",
+    "invitation": "Live form enabled; empty submission blocked by required First name. No email sent.",
+    "second_staff_session": "Not tested; no second staff credential or session was used.",
+    "contractor": "Existing QA Alex signed in at the LAN URL after migration. Time page displays configured $85/h rate; My Tickets shows only assigned ticket 2026100101 (f5a687a5-719f-4f84-ae41-66e827c22b60). Direct /admin/users redirects to /forbidden. Session signed out afterward."
+  },
+  "local_checks": {
+    "application_tests": 441,
+    "test_files": 85,
+    "pglite_permissions_checks": 19,
+    "typescript": "passed",
+    "eslint": "no errors; two pre-existing unused declarations in ticketIntakeService.ts",
+    "isolated_webpack_build": "passed, 41 routes"
+  },
+  "remaining_acceptance": [
+    "Two independent real staff sessions with a changed module and direct route denial",
+    "SMTP/template/redirect verification and approved recipient invitation delivery/activation",
+    "Separate-computer password setup and accepted invitation status"
+  ],
+  "graphify": {
+    "nodes": 2555,
+    "edges": 7152,
+    "communities": 166,
+    "refresh": "AST-only update"
+  }
+}

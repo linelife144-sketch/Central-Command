@@ -25,7 +25,7 @@ function buildLocalTicket(overrides: Partial<LocalTicket> = {}): LocalTicket {
     id: 'ticket-1',
     ticket_number: 'T-0001',
     status: 'ASSIGNED',
-    priority: 'A',
+    is_important: true,
     address: '100 Main St',
     utility_client: 'Grid Electric',
     synced: false,

@@ -34,7 +34,7 @@ async function createStorm() {
 }
 
 function ticketInput(stormId: string): Partial<Ticket> {
-  return { storm_event_id: stormId, ticket_number: 'LOCAL-TICKET-001', address: '100 Test Street', utility_client: 'Entergy', priority: 'A' };
+  return { storm_event_id: stormId, ticket_number: 'LOCAL-TICKET-001', address: '100 Test Street', utility_client: 'Entergy', is_important: true };
 }
 
 describe('local Super Admin testing boundaries', () => {
@@ -54,7 +54,7 @@ describe('local Super Admin testing boundaries', () => {
     const ticket = await ticketService.createTicket(ticketInput(storm.id));
 
     expect(ticket.created_by).toBe(SUPER_ADMIN_TEST_PROFILE.id);
-    expect(ticket.priority).toBe('A');
+    expect(ticket.is_important).toBe(true);
     expect(await ticketService.getTickets()).toEqual([ticket]);
     expect(await stormEventService.getStormEventById(storm.id)).toMatchObject({ id: storm.id, activeTickets: 1 });
     expect(remote.from).not.toHaveBeenCalled();

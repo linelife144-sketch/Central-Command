@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-10-04T19:00:24.589Z",
+  "environment": "isolated PGlite; not live or physical device evidence",
+  "tests": [
+    "migration preserves legacy snapshots and seeds saved override values",
+    "all five pay roles and all six work types use saved wages",
+    "16 hours at saved flat 1x",
+    "16 hours at saved flat 1.5x",
+    "16 hours at saved flat 2x",
+    "weekly tiers, optional double time, work types, and reset",
+    "effective mid-shift wage change",
+    "actual break spanning a rate change",
+    "vehicle allowance is segmented and separate from multipliers",
+    "custom thresholds and policy changes retain cross-storm weekly hours",
+    "vehicle eligibility changes stop allowance at their effective time",
+    "workweek boundary splits elapsed paid time around breaks",
+    "invalid compensation, tiers, workweek edits and backdating",
+    "scheduled workweek transitions remain valid and current operational role updates",
+    "interval overlap, duplicates, GPS, photo and shift validation",
+    "closed money snapshots and inputs stay immutable",
+    "DST elapsed time and exact sub-minute breaks",
+    "Admin edit overrides never grant writes or confidential reads",
+    "contractor ownership survives broad permissive policies",
+    "CEO and Super Admin can access guarded billing and review",
+    "invitation setup binds once and retries preserve agreement history"
+  ],
+  "passed": 21
+}

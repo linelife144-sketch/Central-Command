@@ -8,6 +8,7 @@ import type { ContractorPayrollRow } from '@/types';
 export interface ContractorPayrollTableProps {
   rows: ContractorPayrollRow[];
   isLoading?: boolean;
+  includeFinancial?: boolean;
 }
 
 /**
@@ -15,7 +16,7 @@ export interface ContractorPayrollTableProps {
  * dashboard. A contractor with zero entries renders "—" rather than
  * "$0.00" so an unworked period is never confused with a $0 wage.
  */
-export function ContractorPayrollTable({ rows, isLoading = false }: ContractorPayrollTableProps) {
+export function ContractorPayrollTable({ rows, isLoading = false, includeFinancial = false }: ContractorPayrollTableProps) {
   const columns: Column<ContractorPayrollRow>[] = [
     { key: 'contractorName', header: 'Contractor', cell: (row) => row.contractorName },
     { key: 'role', header: 'Role', cell: (row) => ROLE_LABELS[row.role] },
@@ -42,7 +43,7 @@ export function ContractorPayrollTable({ rows, isLoading = false }: ContractorPa
     {
       key: 'utilityBillAmount',
       header: 'Utility Bill',
-      cell: (row) => (row.entryCount === 0 ? '—' : formatCurrency(row.utilityBillAmount)),
+      cell: (row) => (row.entryCount === 0 ? '—' : formatCurrency(row.utilityBillAmount ?? 0)),
     },
     {
       key: 'marginAmount',
@@ -51,8 +52,8 @@ export function ContractorPayrollTable({ rows, isLoading = false }: ContractorPa
         row.entryCount === 0 ? (
           '—'
         ) : (
-          <span className={row.marginAmount < 0 ? 'text-grid-danger-ink' : 'text-grid-success-ink'}>
-            {formatCurrency(row.marginAmount)}
+          <span className={(row.marginAmount ?? 0) < 0 ? 'text-grid-danger-ink' : 'text-grid-success-ink'}>
+            {formatCurrency(row.marginAmount ?? 0)}
           </span>
         ),
     },
@@ -65,7 +66,7 @@ export function ContractorPayrollTable({ rows, isLoading = false }: ContractorPa
 
   return (
     <DataTable
-      columns={columns}
+      columns={columns.filter(column => includeFinancial || !['utilityBillAmount','marginAmount'].includes(String(column.key)))}
       data={rows}
       keyExtractor={(row) => row.contractorId}
       isLoading={isLoading}

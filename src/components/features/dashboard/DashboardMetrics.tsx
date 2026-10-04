@@ -86,7 +86,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
     let channel: ReturnType<typeof supabase.channel> | undefined;
     if (!isSuperAdminTestingEnabled()) {
       channel = supabase.channel('dashboard-live-metrics');
-      for (const table of ['tickets', 'time_entries', 'expense_reports', 'damage_assessments', 'contractors']) {
+      for (const table of ['tickets', 'expense_reports', 'damage_assessments', 'contractors']) {
         channel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleRefresh);
       }
       channel.subscribe();
@@ -166,7 +166,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
       </div>
 
       {can('admin.tickets.view') && <Card className="cc-status-strip gap-0 py-0">
-        <CardContent className="grid grid-cols-2 gap-0 px-0 text-sm md:grid-cols-4">
+        <CardContent className="grid grid-cols-2 gap-0 px-0 text-sm md:grid-cols-5">
           <div className="cc-status-stat">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">In Route</p>
             <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.in_route ?? (isLoading ? '...' : 'Unavailable')}</p>
@@ -180,6 +180,10 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
             <p className="text-lg font-bold text-[#0a1733]">
               {metrics?.status_breakdown.pending_review ?? (isLoading ? '...' : 'Unavailable')}
             </p>
+          </div>
+          <div className="cc-status-stat">
+            <p className="text-xs font-semibold tracking-wide text-[#14213d]">Completed</p>
+            <p className="text-lg font-bold text-[#0a1733]">{metrics?.status_breakdown.completed ?? (isLoading ? '...' : 'Unavailable')}</p>
           </div>
           <div className="cc-status-stat">
             <p className="text-xs font-semibold tracking-wide text-[#14213d]">Unassigned</p>

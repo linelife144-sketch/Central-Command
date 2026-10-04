@@ -51,8 +51,14 @@ export function ContractorTimeSummary({ contractorId, refreshKey = 0 }: Contract
   }, [contractorId]);
 
   useEffect(() => {
-    void loadEntries();
+    void Promise.resolve().then(loadEntries);
   }, [loadEntries, refreshKey]);
+
+  useEffect(() => {
+    const handleSync = () => { void loadEntries(); };
+    window.addEventListener('time-entries-synced', handleSync);
+    return () => window.removeEventListener('time-entries-synced', handleSync);
+  }, [loadEntries]);
 
   const submitted = useMemo(() => entries.filter(entry => entry.clock_out_at && entry.status !== 'REJECTED'), [entries]);
   const summary = useMemo(() => {
@@ -68,7 +74,7 @@ export function ContractorTimeSummary({ contractorId, refreshKey = 0 }: Contract
     () =>
       submitted
         .filter((entry) => entry.status.toUpperCase() === 'APPROVED')
-        .reduce((sum, entry) => sum + (entry.billable_minutes ?? 0), 0),
+        .reduce((sum, entry) => sum + resolveBillableMinutesForEntry(entry), 0),
     [submitted],
   );
 
@@ -76,7 +82,7 @@ export function ContractorTimeSummary({ contractorId, refreshKey = 0 }: Contract
     () =>
       submitted
         .filter((entry) => entry.status.toUpperCase() === 'PENDING')
-        .reduce((sum, entry) => sum + (entry.billable_minutes ?? 0), 0),
+        .reduce((sum, entry) => sum + resolveBillableMinutesForEntry(entry), 0),
     [submitted],
   );
 

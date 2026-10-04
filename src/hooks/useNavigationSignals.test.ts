@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// These pure helper tests do not mount auth or sync providers.
+vi.mock('@/components/providers/SyncProvider', () => ({ useSync: vi.fn() }));
 
 import type { DashboardMetricsData } from '@/lib/services/dashboardReportingService';
 import type { Ticket } from '@/types';
@@ -26,6 +29,7 @@ describe('useNavigationSignals helpers', () => {
         in_route: 3,
         on_site: 2,
         pending_review: 4,
+        completed: 1,
         unassigned: 1,
       },
     } satisfies DashboardMetricsData);

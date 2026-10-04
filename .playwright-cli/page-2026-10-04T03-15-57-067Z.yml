@@ -1,0 +1,185 @@
+- generic [active] [ref=f5e1]:
+  - generic [ref=f5e2]:
+    - link "Skip to content" [ref=f5e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=f5e4]:
+      - generic [ref=f5e6]:
+        - generic [ref=f5e7]: Field workspace
+        - strong [ref=f5e10]: Time Tracking
+      - generic [ref=f5e11]:
+        - button "Search navigation" [ref=f5e12]
+        - generic "Your device is online" [ref=f5e13]: Online
+        - button "Open account menu for QA Casey Storm Manager" [ref=f5e18]:
+          - generic [ref=f5e19]: QC
+          - generic [ref=f5e21]:
+            - paragraph [ref=f5e22]: QA Casey Storm Manager
+            - paragraph [ref=f5e23]: contractor
+    - generic [ref=f5e24]:
+      - complementary [ref=f5e25]:
+        - generic [ref=f5e26]:
+          - link [ref=f5e27] [cursor=pointer]:
+            - /url: /tickets
+            - generic [ref=f5e28]:
+              - img "Grid Electric storm mark" [ref=f5e30]
+              - generic [ref=f5e31]:
+                - paragraph [ref=f5e32]: Grid Electric Corp
+                - paragraph [ref=f5e33]: Contractor Portal
+          - generic [ref=f5e34]:
+            - generic [ref=f5e35]: Your workspace
+            - paragraph [ref=f5e36]: Central Command
+          - navigation "Main navigation" [ref=f5e41]:
+            - generic [ref=f5e42]:
+              - paragraph [ref=f5e43]: Field operations
+              - generic [ref=f5e44]:
+                - link "My Tickets" [ref=f5e45] [cursor=pointer]:
+                  - /url: /tickets
+                - link "Map" [ref=f5e49] [cursor=pointer]:
+                  - /url: /contractor/map
+                - link "Time Tracking" [ref=f5e53] [cursor=pointer]:
+                  - /url: /contractor/time
+                - link "Expenses" [ref=f5e59] [cursor=pointer]:
+                  - /url: /contractor/expenses
+                - link "Assessments" [ref=f5e64] [cursor=pointer]:
+                  - /url: /contractor/assessments/create
+            - generic [ref=f5e69]:
+              - paragraph [ref=f5e70]: Workspace
+              - link "Account" [ref=f5e72] [cursor=pointer]:
+                - /url: /contractor/account
+          - generic [ref=f5e77]:
+            - link "Ready for the field Your next assignment starts here" [ref=f5e78] [cursor=pointer]:
+              - /url: /tickets
+              - generic [ref=f5e82]:
+                - strong [ref=f5e83]: Ready for the field
+                - generic [ref=f5e84]: Your next assignment starts here
+            - paragraph [ref=f5e88]:
+              - text: GRID ELECTRIC
+              - generic [ref=f5e89]: COMMAND / 01
+      - main [ref=f5e91]:
+        - generic [ref=f5e93]:
+          - generic [ref=f5e96]:
+            - generic [ref=f5e97]: Central Command
+            - heading "Time Tracking" [level=1] [ref=f5e99]
+            - paragraph [ref=f5e100]: Clock in and clock out with GPS verification for compliant field time entries.
+          - generic [ref=f5e102]:
+            - generic [ref=f5e104]:
+              - generic [ref=f5e105]: My Submitted Time
+              - button "Refresh totals" [ref=f5e106]
+            - generic [ref=f5e107]:
+              - generic [ref=f5e108]:
+                - generic [ref=f5e109]:
+                  - paragraph [ref=f5e110]: Total Submitted
+                  - paragraph [ref=f5e111]: 0m
+                - generic [ref=f5e112]:
+                  - paragraph [ref=f5e113]: Approved Hours
+                  - paragraph [ref=f5e114]: 0m
+                - generic [ref=f5e115]:
+                  - paragraph [ref=f5e116]: Pending Hours
+                  - paragraph [ref=f5e117]: 0m
+                - generic [ref=f5e118]:
+                  - paragraph [ref=f5e119]: Submitted Wages
+                  - paragraph [ref=f5e120]: $0.00
+                - generic [ref=f5e121]:
+                  - paragraph [ref=f5e122]: Approved Reimbursement
+                  - paragraph [ref=f5e123]: $0.00
+              - paragraph [ref=f5e124]: Completed shifts awaiting review are included in submitted wages. Rejected shifts are excluded. Vehicle reimbursement is shown separately after approval.
+              - paragraph [ref=f5e125]: No time entries submitted yet.
+          - generic [ref=f5e127]:
+            - generic [ref=f5e128]:
+              - generic [ref=f5e129]: Time Clock
+              - generic [ref=f5e131]:
+                - generic [ref=f5e132]:
+                  - generic [ref=f5e133]:
+                    - generic [ref=f5e134]: Assigned Ticket
+                    - combobox "Assigned Ticket" [disabled] [ref=f5e135]:
+                      - generic: QA-PAY-MANAGER-20261003 — QA STORM_MANAGER Test Site
+                  - generic [ref=f5e136]:
+                    - generic [ref=f5e137]: Work Type
+                    - combobox [disabled] [ref=f5e138]:
+                      - generic: Standard Assessment
+                  - generic [ref=f5e139]:
+                    - generic [ref=f5e140]: Hourly Rate ($)
+                    - textbox "Hourly Rate ($)" [disabled]: "115.00"
+                  - generic [ref=f5e141]:
+                    - generic [ref=f5e142]: Break Minutes
+                    - combobox "Break Minutes" [ref=f5e143]:
+                      - generic: 0 minutes
+                - paragraph [ref=f5e144]: "Overtime: 1.5× after 40 hours per Monday–Sunday week (America/Chicago). All worked hours are recorded."
+                - generic [ref=f5e145]:
+                  - paragraph [ref=f5e146]: GPS Verification
+                  - paragraph [ref=f5e147]: "Latest status: ready. Accuracy 10m."
+                  - paragraph [ref=f5e148]: GPS accuracy must be within 100m.
+                - generic [ref=f5e152]:
+                  - button "Clock In" [disabled]
+                  - button "Clock Out" [ref=f5e221]
+                  - button "Refresh GPS" [ref=f5e154]
+            - generic [ref=f5e223]:
+              - generic [ref=f5e224]:
+                - generic [ref=f5e225]: Active Timer
+                - generic [ref=f5e230]: Normal
+              - generic [ref=f5e231]: 00:00:00
+              - paragraph [ref=f5e232]: "Elapsed: 0m | Warning at 8h | Max 24h"
+            - generic [ref=f5e233]:
+              - generic [ref=f5e234]: Active Entry
+              - generic [ref=f5e236]:
+                - paragraph [ref=f5e237]: "Clock In: Sep 21, 2026 6:00 AM"
+                - paragraph [ref=f5e238]: "Work Type: STANDARD ASSESSMENT"
+                - paragraph [ref=f5e239]: "Sync: SYNCED"
+          - generic [ref=f5e156]:
+            - generic [ref=f5e158]:
+              - generic [ref=f5e159]:
+                - generic [ref=f5e160]:
+                  - generic [ref=f5e161]: Search the queue
+                  - textbox "Search the queue" [ref=f5e162]:
+                    - /placeholder: Contractor, ticket, or work type
+                - generic [ref=f5e163]:
+                  - generic [ref=f5e164]: Status
+                  - combobox "Filter time entries by status" [ref=f5e165]:
+                    - generic: All statuses
+                - generic [ref=f5e166]:
+                  - generic [ref=f5e167]:
+                    - generic [ref=f5e168]: From
+                    - textbox "From" [ref=f5e169]
+                  - generic [ref=f5e170]:
+                    - generic [ref=f5e171]: To
+                    - textbox "To" [ref=f5e172]
+                - button "Refresh" [ref=f5e174]
+              - generic [ref=f5e175]:
+                - generic [ref=f5e177]:
+                  - paragraph [ref=f5e178]: Entries
+                  - paragraph [ref=f5e179]: "0"
+                - generic [ref=f5e181]:
+                  - paragraph [ref=f5e182]: Total Time
+                  - paragraph [ref=f5e183]: 0m
+                - generic [ref=f5e185]:
+                  - paragraph [ref=f5e186]: Billable Time
+                  - paragraph [ref=f5e187]: 0m
+                - generic [ref=f5e189]:
+                  - paragraph [ref=f5e190]: Billable Amount
+                  - paragraph [ref=f5e191]: $0.00
+                - generic [ref=f5e193]:
+                  - paragraph [ref=f5e194]: Pending Review
+                  - paragraph [ref=f5e195]: "0"
+            - status [ref=f5e198]:
+              - paragraph [ref=f5e203]: No time entries found for the selected filters.
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f5e240]:
+        - generic [ref=f5e245]: Clocked in successfully.
+  - button "Open Next.js Dev Tools" [ref=f5e209] [cursor=pointer]
+  - alert [ref=f5e213]
+  - generic [ref=f5e215] [cursor=pointer]:
+    - group [aria-hidden]:
+      - generic:
+        - button
+      - generic:
+        - button
+      - generic:
+        - button [disabled]
+      - generic:
+        - button [disabled]
+      - button [disabled] [aria-hidden]
+      - generic:
+        - button [disabled]
+      - generic:
+        - button
+    - button "Start feedback mode" [ref=f5e217]

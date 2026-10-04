@@ -41,7 +41,7 @@ export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
   const [stormTemplateKey, setStormTemplateKey] = useState<TicketTemplateKey | null>(null);
   const [stormState, setStormState] = useState('Unknown');
   const [ready, setReady] = useState(false);
-  const [initialValues, setInitialValues] = useState<Record<string, unknown>>({ priority: ['A', 'B', 'C', 'X'].includes(searchParams.get('priority') ?? '') ? searchParams.get('priority') : 'C' });
+  const [initialValues, setInitialValues] = useState<Record<string, unknown>>({ is_important: searchParams.get('important') === 'true' });
   const [confidenceByField, setConfidenceByField] = useState<Record<string, number>>({});
   const [extractionWarnings, setExtractionWarnings] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -179,7 +179,7 @@ export function TicketNewClientPage({ stormId }: TicketNewClientPageProps) {
                 template,
                 common: {
                   status: (typeof values.status === 'string' ? values.status : 'DRAFT') as 'DRAFT' | 'ASSIGNED' | 'IN_PROGRESS' | 'PENDING_REVIEW' | 'APPROVED' | 'CLOSED',
-                  priority: (typeof values.priority === 'string' ? values.priority : 'C') as 'A' | 'B' | 'C' | 'X',
+                  is_important: values.is_important === true,
                   source_type: (typeof values.source_type === 'string' ? values.source_type : 'MANUAL') as 'MANUAL' | 'OCR_SCAN' | 'PDF_IMPORT' | 'CSV_IMPORT' | 'API',
                   raw_ocr_text: rawOcrText,
                   source_file_id: sourceFileId,

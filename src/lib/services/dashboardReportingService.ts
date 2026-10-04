@@ -30,7 +30,7 @@ interface DashboardTimeEntryRow {
   id: string;
   contractor_id: string;
   status: string;
-  billable_amount: number | null;
+  payroll_amount: number | null;
   clock_in_at: string;
 }
 
@@ -78,6 +78,7 @@ export interface DashboardMetricsData {
     in_route: number;
     on_site: number;
     pending_review: number;
+    completed: number;
     unassigned: number;
   };
 }
@@ -246,6 +247,7 @@ export function buildDashboardMetrics(input: DashboardMetricsBuildInput): Dashbo
     in_route: activeTickets.filter((ticket) => ticket.status.toUpperCase() === 'IN_ROUTE').length,
     on_site: activeTickets.filter((ticket) => ticket.status.toUpperCase() === 'ON_SITE').length,
     pending_review: activeTickets.filter((ticket) => ticket.status.toUpperCase() === 'PENDING_REVIEW').length,
+    completed: activeTickets.filter((ticket) => ticket.status.toUpperCase() === 'COMPLETE').length,
     unassigned: activeTickets.filter((ticket) => !ticket.assigned_to).length,
   };
 
@@ -344,7 +346,7 @@ export function buildDashboardReport(input: DashboardReportBuildInput): Dashboar
       continue;
     }
 
-    const amount = normalizeNumber(timeEntry.billable_amount);
+    const amount = normalizeNumber(timeEntry.payroll_amount);
     approvedTimeAmount += amount;
 
     const bucketKey = toDateOnly(getBucketStart(eventDate, input.groupBy));
@@ -770,7 +772,7 @@ async function fetchReportTimeEntries(
 ): Promise<DashboardTimeEntryRow[]> {
   const timeEntriesTable = client.from('time_entries') as unknown as SelectDateRangeClient<DashboardTimeEntryRow>;
   const { data, error } = await timeEntriesTable
-    .select('id, contractor_id, status, billable_amount, clock_in_at')
+    .select('id, contractor_id, status, payroll_amount, clock_in_at')
     .gte('clock_in_at', startIso)
     .lte('clock_in_at', endIso);
 
@@ -871,21 +873,19 @@ export function createDashboardReportingService(
       const now = resolvedDependencies.now();
       if (isSuperAdminTestingEnabled()) {
         const tickets = localTestStore.getTickets();
-        const active = tickets.filter(ticket => !['CLOSED', 'ARCHIVED', 'EXPIRED'].includes(ticket.status));
-        const crews = new Set(active.map(ticket => ticket.assigned_to).filter((id): id is string => Boolean(id)));
-        return {
-          generated_at: now.toISOString(), active_tickets: active.length, field_crews: crews.size,
-          on_site_crews: new Set(active.filter(ticket => ticket.status === 'ON_SITE').map(ticket => ticket.assigned_to).filter((id): id is string => Boolean(id))).size,
-          pending_reviews_total: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
-          pending_tickets: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
-          pending_time_entries: 0, pending_expense_reports: 0, pending_assessments: 0,
-          status_breakdown: {
-            in_route: active.filter(ticket => ticket.status === 'IN_ROUTE').length,
-            on_site: active.filter(ticket => ticket.status === 'ON_SITE').length,
-            pending_review: active.filter(ticket => ticket.status === 'PENDING_REVIEW').length,
-            unassigned: active.filter(ticket => !ticket.assigned_to).length,
-          },
-        };
+        return buildDashboardMetrics({
+          now,
+          tickets: tickets.map(ticket => ({
+            id: ticket.id,
+            status: ticket.status,
+            assigned_to: ticket.assigned_to ?? null,
+            created_at: ticket.created_at,
+            is_deleted: false,
+          })),
+          pendingTimeEntries: 0,
+          pendingExpenseReports: 0,
+          pendingAssessments: 0,
+        });
       }
 
       const [ticketResult, timeResult, expenseResult, assessmentResult] =

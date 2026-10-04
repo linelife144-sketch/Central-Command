@@ -60,12 +60,11 @@ export interface TicketTemplateDefinition {
 }
 
 export const COMMON_TICKET_STATUS = ['DRAFT', 'ASSIGNED', 'IN_PROGRESS', 'PENDING_REVIEW', 'APPROVED', 'CLOSED'] as const;
-export const COMMON_TICKET_PRIORITY = ['A', 'B', 'C', 'X'] as const;
 export const COMMON_SOURCE_TYPE = ['MANUAL', 'OCR_SCAN', 'PDF_IMPORT', 'CSV_IMPORT', 'API'] as const;
 
 export const commonTicketCreateSchema = z.object({
   status: z.enum(COMMON_TICKET_STATUS),
-  priority: z.enum(COMMON_TICKET_PRIORITY),
+  is_important: z.boolean(),
   source_type: z.enum(COMMON_SOURCE_TYPE),
   source_file_id: z.string().uuid().optional(),
   raw_ocr_text: z.string().optional(),

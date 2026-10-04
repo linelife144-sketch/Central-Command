@@ -31,7 +31,7 @@ describe('storm utility ticket workflow', () => {
     fireEvent.change(screen.getByLabelText(/^Address/), { target: { value: '100 Test Street' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Ticket' }));
     await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
-    expect(submit.mock.calls[0]?.[0]).toMatchObject({ incident_number: '1234567890', priority: 'C', status: 'DRAFT' });
+    expect(submit.mock.calls[0]?.[0]).toMatchObject({ incident_number: '1234567890', is_important: false, status: 'DRAFT' });
   });
 
   it('keeps typed fields when equivalent template props are recreated', () => {
@@ -47,7 +47,7 @@ describe('storm utility ticket workflow', () => {
 
   it('saves utility payloads locally and rejects templates from another utility', async () => {
     const storm = await stormEventService.createStormEvent({ name: 'Entergy storm', utilityClient: 'Entergy' });
-    const common = { status: 'DRAFT', priority: 'A', source_type: 'MANUAL' } as const;
+    const common = { status: 'DRAFT', is_important: true, source_type: 'MANUAL' } as const;
     const payload = { incident_number: '1234567890', incident_type: 'XFMR', address_line: '100 Test Street' };
     const created = await ticketIntakeService.createUtilityTicket({ stormEventId: storm.id, stormUtilityClient: 'Entergy', template: getTicketTemplateByUtilityClient('ENTERGY'), common, payload });
     expect(localTestStore.getPayload(created.id)).toMatchObject(payload);

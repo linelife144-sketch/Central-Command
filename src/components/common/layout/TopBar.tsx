@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, LogOut, Settings, Wifi, WifiOff } from 'lucide-react';
+import { ChevronDown, ChevronRight, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,19 +19,10 @@ interface TopBarProps {
 
 export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal }: TopBarProps) {
   const pathname = usePathname();
-  const [online, setOnline] = useState(true);
   const items = portal === 'admin' ? adminNavItems : contractorNavItems;
   const page = items.find(item => pathname === item.href || pathname?.startsWith(`${item.href}/`));
   const accountHref = portal === 'admin' ? '/admin/account' : '/contractor/account';
   const initials = userName.split(' ').filter(Boolean).map(name => name[0]).join('').toUpperCase().slice(0, 2);
-
-  useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
-    update();
-    window.addEventListener('online', update);
-    window.addEventListener('offline', update);
-    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
-  }, []);
 
   return <header className="cc-topbar">
     <div className="flex min-w-0 items-center gap-3">
@@ -45,9 +35,6 @@ export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal }: T
     </div>
     <div className="flex shrink-0 items-center gap-2 sm:gap-4">
       <NavigationSearch portal={portal} />
-      <span className="cc-connection hidden md:inline-flex" title={online ? 'Your device is online' : 'Your device is offline'}>
-        {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}{online ? 'Online' : 'Offline'}
-      </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="cc-user-trigger" aria-label={`Open account menu for ${userName}`}>

@@ -33,7 +33,7 @@ interface RemoteTicketRow {
   id: string;
   ticket_number: string;
   status: string;
-  priority: string;
+  is_important: boolean;
   utility_client: string;
   updated_at: string;
   assigned_to: string | null;
@@ -96,7 +96,7 @@ export interface ContractorDetail {
     id: string;
     ticketNumber: string;
     status: string;
-    priority: string;
+    isImportant: boolean;
     utilityClient: string;
     updatedAt: string;
   }>;
@@ -167,7 +167,7 @@ async function fetchTicketRows(contractorIds: string[]): Promise<RemoteTicketRow
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from('tickets') as any)
-    .select('id, ticket_number, status, priority, utility_client, updated_at, assigned_to')
+    .select('id, ticket_number, status, is_important, utility_client, updated_at, assigned_to')
     .in('assigned_to', contractorIds)
     .eq('is_deleted', false);
 
@@ -409,7 +409,7 @@ export const contractorService = {
         id: ticket.id,
         ticketNumber: ticket.ticket_number,
         status: ticket.status,
-        priority: ticket.priority,
+        isImportant: ticket.is_important,
         utilityClient: ticket.utility_client,
         updatedAt: ticket.updated_at,
       }));

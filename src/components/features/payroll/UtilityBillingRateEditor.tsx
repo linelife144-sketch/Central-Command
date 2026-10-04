@@ -74,7 +74,7 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
   }, [stormEventId]);
 
   useEffect(() => {
-    void loadRates();
+    void Promise.resolve().then(loadRates);
   }, [loadRates]);
 
   const handleSave = async (workType: WorkType) => {
