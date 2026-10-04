@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     const map = Object.fromEntries((overrides ?? []).map((row: { permission_key: string; effect: string }) => [row.permission_key, row.effect])) as PermissionOverrides;
     return NextResponse.json({
       profile: normalizeProfile(data as ProfileRow),
-      permissions: resolvePermissions(data.role, map, data.is_active),
+      permissions: resolvePermissions(data.role, map, data.is_active && !data.must_reset_password),
     }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown profile fetch error.';

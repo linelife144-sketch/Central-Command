@@ -10,6 +10,7 @@ export const PERMISSION_MODULES = [
   { id: 'time', label: 'Time review', description: 'View timesheets; approve or reject submitted time.', group: 'Review & reporting', path: '/admin/time-review', editable: true },
   { id: 'expenses', label: 'Expenses', description: 'View expense reports; approve or reject expenses.', group: 'Review & reporting', path: '/admin/expense-review', editable: true },
   { id: 'assessments', label: 'Assessments', description: 'View damage assessments; approve or request rework.', group: 'Review & reporting', path: '/admin/assessment-review', editable: true },
+  { id: 'payroll', label: 'Payroll & profit', description: 'View payroll, vehicle reimbursements, billing, and margins; manage rates and review claims.', group: 'Review & reporting', path: '/admin/payroll', editable: true },
   { id: 'reports', label: 'Reports', description: 'Open reports. Results include only modules this person can view.', group: 'Review & reporting', path: '/admin/reports', editable: false },
   { id: 'users', label: 'User administration', description: 'View staff access; change permissions and send contractor invitations. Super Admin only.', group: 'Administration', path: '/admin/users', editable: true },
 ] as const;
@@ -31,7 +32,7 @@ export function roleDefault(role: string | null | undefined, key: PermissionKey)
   if (key.startsWith('admin.users.')) return role === 'SUPER_ADMIN';
   if (isSuperAdminClassRole(role)) return true;
   if (key.endsWith('.view')) return true;
-  return !['admin.storms.edit', 'admin.tickets.edit', 'admin.assignments.edit'].includes(key);
+  return !['admin.storms.edit', 'admin.tickets.edit', 'admin.assignments.edit', 'admin.payroll.edit'].includes(key);
 }
 export function resolvePermissions(role: string | null | undefined, overrides: PermissionOverrides = {}, active = true): PermissionMap {
   const result: PermissionMap = {};

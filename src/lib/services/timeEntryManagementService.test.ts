@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTimeEntryManagementService } from './timeEntryManagementService';
+import { createTimeEntryManagementService, mapRemoteRowToTimeEntry } from './timeEntryManagementService';
 import type { LocalTimeEntry } from '../db/dexie';
+import type { Database } from '../../types/database';
 import type { TimeEntry } from '../../types';
 
 function buildLocalTimeEntry(overrides: Partial<LocalTimeEntry> = {}): LocalTimeEntry {
@@ -168,5 +169,17 @@ describe('createTimeEntryManagementService', () => {
       decision: 'APPROVED',
     });
     expect(reviewedEntry.status).toBe('APPROVED');
+  });
+});
+
+
+describe('time-review snapshot mapping', () => {
+  it('keeps server costing snapshots, including zero values', () => {
+    const row = { ...buildTimeEntry(), storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50, payroll_amount: 200, utility_bill_rate_applied: 0, utility_bill_amount: 0 } as Database['public']['Tables']['time_entries']['Row'];
+    expect(mapRemoteRowToTimeEntry(row)).toMatchObject({ storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50, payroll_amount: 200, utility_bill_rate_applied: 0, utility_bill_amount: 0 });
+  });
+  it('preserves saved snapshots when using the offline cache', async () => {
+    const service = createTimeEntryManagementService({ isOnline: () => false, fetchRemoteEntries: vi.fn(), reviewRemoteEntry: vi.fn(), getLocalEntries: vi.fn().mockResolvedValue([buildLocalTimeEntry({ payroll_amount: 200, utility_bill_amount: 350, storm_event_id: 'storm-1' })]) });
+    expect((await service.listEntries({ contractorId: 'sub-1' }))[0]).toMatchObject({ payroll_amount: 200, utility_bill_amount: 350, storm_event_id: 'storm-1' });
   });
 });

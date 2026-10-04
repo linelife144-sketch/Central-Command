@@ -28,7 +28,7 @@ const columns: Column<ContractorListItem>[] = [
 export default function ContractorsListPage() {
   const { profile, can } = useAuth();
   const [search, setSearch] = useState('');
-  const [invitations, setInvitations] = useState<Array<{profile_id:string;email:string;sent_at:string;last_result:string;send_count:number}>>([]);
+  const [invitations, setInvitations] = useState<Array<{profile_id:string;email:string;first_name:string;last_name:string;sent_at:string;last_result:string;send_count:number}>>([]);
   const [inviteError, setInviteError] = useState('');
   const loadInvitations = async () => {
     try { const response = await fetch('/api/admin/contractors/invite',{cache:'no-store'}); const data = await response.json(); if (!response.ok) throw new Error(data.error); setInvitations(data.invitations); } catch(error) {setInviteError(error instanceof Error ? error.message : 'Unable to load invitations.');}
@@ -36,9 +36,12 @@ export default function ContractorsListPage() {
   useEffect(() => { void loadInvitations(); }, []);
   const resend = async (email:string) => {
     const person = contractors.find(person=>person.email.toLowerCase()===email.toLowerCase());
-    if (!person) return;
-    const [first_name,...last] = person.fullName.split(' ');
-    try { const response=await fetch('/api/admin/contractors/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,first_name,last_name:last.join(' '),resend:true})});const result=await response.json();if(!response.ok)throw new Error(result.error);await loadInvitations(); }catch(error){setInviteError(error instanceof Error ? error.message : 'Unable to resend.');}
+    const invitation = invitations.find(invite=>invite.email.toLowerCase()===email.toLowerCase());
+    const [fallbackFirst,...last] = (person?.fullName ?? '').split(' ');
+    const first_name = invitation?.first_name || fallbackFirst;
+    const last_name = invitation?.last_name || last.join(' ');
+    if (!first_name || !last_name) {setInviteError('Open Invite Contractor and re-enter the name to repair this account.');return;}
+    try { const response=await fetch('/api/admin/contractors/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,first_name,last_name,resend:true})});const result=await response.json();if(!response.ok)throw new Error(result.error);await loadInvitations(); }catch(error){setInviteError(error instanceof Error ? error.message : 'Unable to resend.');}
   };
   const [status, setStatus] = useState('all');
   const query = useQuery({ queryKey: ['contractors', profile?.id], queryFn: () => contractorService.listContractors(), enabled: Boolean(profile), refetchInterval: 15000, refetchOnWindowFocus: true });

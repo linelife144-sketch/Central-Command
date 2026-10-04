@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  backfillTimeEntryPayrollFields,
   cacheTickets,
   createSyncConflict,
   createSyncConflictFromQueueItem,
@@ -311,5 +312,40 @@ describe('dexie conflict workflows', () => {
         payload: conflict.local_payload,
       }),
     );
+  });
+});
+
+describe('dexie version(4) time entry payroll backfill', () => {
+  it('seeds pay_rate_applied from work_type_rate on a pre-v4 row', () => {
+    const preV4Entry = buildLocalTimeEntry({ work_type_rate: 95 });
+    // Simulate a record stored before v4: payroll fields never existed.
+    delete (preV4Entry as Partial<LocalTimeEntry>).pay_rate_applied;
+
+    const backfilled = backfillTimeEntryPayrollFields(preV4Entry);
+
+    expect(backfilled.pay_rate_applied).toBe(95);
+  });
+
+  it('leaves an already-synced pay_rate_applied untouched', () => {
+    const syncedEntry = buildLocalTimeEntry({ work_type_rate: 95, pay_rate_applied: 110 });
+
+    const backfilled = backfillTimeEntryPayrollFields(syncedEntry);
+
+    expect(backfilled.pay_rate_applied).toBe(110);
+  });
+
+  it('does not mutate rows that already have payroll fields populated', () => {
+    const syncedEntry = buildLocalTimeEntry({
+      work_type_rate: 95,
+      pay_rate_applied: 110,
+      payroll_amount: 220,
+      contractor_role: 'TEAM_LEAD',
+    });
+
+    const backfilled = backfillTimeEntryPayrollFields(syncedEntry);
+
+    expect(backfilled).toBe(syncedEntry);
+    expect(backfilled.payroll_amount).toBe(220);
+    expect(backfilled.contractor_role).toBe('TEAM_LEAD');
   });
 });

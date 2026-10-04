@@ -60,6 +60,7 @@ describe('real Supabase session routing', () => {
   it('uses the first permitted module when the dashboard is hidden', async () => {
     mocks.rpc.mockResolvedValue({data:{'admin.dashboard.view':false,'admin.time.view':true},error:null});
     expect((await updateSession(new NextRequest('http://localhost:3000/login'))).headers.get('location')).toBe('http://localhost:3000/admin/time-review');
+    expect((await updateSession(new NextRequest('http://localhost:3000/admin/dashboard'))).headers.get('location')).toBe('http://localhost:3000/admin/time-review');
   });
   it('fails closed on permission errors and retains defaults only before the migration exists', async () => {
     mocks.rpc.mockResolvedValue({data:null,error:{code:'42501',message:'denied'}});

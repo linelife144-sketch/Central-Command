@@ -1066,38 +1066,471 @@ exists; `Sidebar.tsx`/`BottomNav.tsx` duplicate `navigationConfig.ts` arrays.
 
 ## Implementation Order
 
-1. **Migration 1** (`role_rates_and_payroll_costing`) — apply via
-   `apply_migration`, run both advisors, regenerate `src/types/database.ts`.
-2. **Migration 2** (`vehicle_reimbursement_claims`) — same gate.
-3. **`src/types/index.ts`** — `ContractorRole`, `VehicleType`,
-   `VehicleClaimStatus`, `VehicleClaim`, `Contractor.role`, `TimeEntry` money
-   fields, payroll type block.
-4. **`src/lib/utils/payroll.ts` + `payroll.test.ts`** — pure math, fully
-   green standalone, before any UI depends on it.
-5. **`timeEntryService.ts` clockIn/clockOut fix** + updated
-   `timeEntryService.test.ts` — removes the live generated-column write bug.
-6. **`src/lib/db/dexie.ts` version(4)** + `dexie.test.ts`.
-7. **`src/lib/config/appConfig.ts`** — reimbursement rate, period default, role labels.
-8. **`payrollService.ts` + test**, then `contractorService.ts` role passthrough.
-9. **Extract `PhotoCapture`** from `ReceiptCapture.tsx`; widen
-   `photoStorageService` `entity_type`/bucket; verify `ReceiptCapture` tests
-   still pass unchanged.
-10. **`VehicleReimbursementCapture`** + `TimeClock.tsx` rate-input removal and
-    driver-only mount + clock-in gate. Verify clock-in → clock-out → claim →
-    totals end to end against a real storm event.
-11. **Admin rate/role editors** — `RoleRateEditor`, `UtilityBillingRateEditor`,
-    `ContractorPayrollEditor`; wire into `/admin/contractors/[id]`. Confirm
-    the DB guard blocks a non-admin role change.
-12. **`VehicleReimbursementReview`** admin card; confirm approve/reject flow
-    and the `rejectionReason` requirement.
-13. **Admin payroll dashboard** — `PayrollDashboard`, `ContractorPayrollTable`,
-    `PayrollSummaryCards`, `/admin/payroll/page.tsx`, nav entry,
-    `navigationContracts.test.ts` update.
-14. **Contractor-side `ContractorTimeSummary`** mounted on `/contractor/time`;
-    `TimeEntryList`/`TimeEntryCard` money columns both modes.
-15. **Full validation gate** — typecheck, lint, full vitest, build, advisors.
-16. **Seed real rates** for the 5 roles × 6 work types and the utility bill
-    rates for the active storm event, replacing the migration placeholders.
+1. ✅ **Migration 1** (`role_rates_and_payroll_costing`) — applied via
+   `apply_migration`. Added `contractor_role` enum, `contractors.role`,
+   `role_rate_defaults`, `utility_billing_rates` (with global-fallback unique
+   indexes + seeded placeholder rates), 5 money-snapshot columns on
+   `time_entries`, the `private.apply_time_entry_costing()` BEFORE trigger,
+   and extended `private.guard_contractor_eligibility()` to protect `role`.
+   RLS + grants applied. *(0 pre-existing `time_entries` rows — no backfill
+   risk.)*
+2. ✅ **Migration 2** (`vehicle_reimbursement_claims`) — applied via
+   `apply_migration`. Added `time_entry_vehicle_claims` table,
+   `private.compute_vehicle_claim_amount()` trigger (caps over-declared
+   hours, resolves amount only once `clock_out_at` is set),
+   `private.set_vehicle_claim_updated_at()` trigger, RLS (contractor
+   read/insert-own, admin full), grants, and the `time-entry-photos` storage
+   bucket (private).
+   - Ran `supabase__get_advisors` (security + performance) after both
+     migrations; applied a follow-up `payroll_advisor_cleanup` migration to
+     fix the one new finding (`search_path`-mutable on
+     `set_vehicle_claim_updated_at`) and index 4 new FK columns
+     (`role_rate_defaults.updated_by`, `utility_billing_rates.updated_by`,
+     `utility_billing_rates.storm_event_id`,
+     `time_entry_vehicle_claims.reviewed_by`). All other advisor findings are
+     pre-existing and out of scope.
+   - Regenerated types via `supabase__generate_typescript_types` and hand-
+     merged the diff into `src/types/database.ts` (full-file overwrite was
+     unsafe due to MCP response truncation): added `contractor_role` to
+     `Enums` + `Constants.public.Enums`, `role` on `contractors`
+     Row/Insert/Update, 5 new columns on `time_entries`
+     Row/Insert/Update, and full `role_rate_defaults`,
+     `utility_billing_rates`, `time_entry_vehicle_claims` table definitions.
+     Verified with `npx tsc --noEmit` — clean.
+3. ✅ **`src/types/index.ts`** — added `ContractorRole`, `VehicleType`,
+   `VehicleClaimStatus`; `Contractor.role`; `TimeEntry` gained
+   `storm_event_id`, `contractor_role`, `pay_rate_applied`,
+   `payroll_amount`, `utility_bill_rate_applied`, `utility_bill_amount` (all
+   optional); new `VehicleClaim`, `ContractorPayrollRow`, `PayrollTotals`,
+   `PayrollSummary`, `RoleRateDefault`, `UtilityBillingRate` interfaces.
+   Verified with `npx tsc --noEmit` — clean. No existing call site
+   constructs a bare `Contractor` object literal, so the new required
+   `role` field did not break anything (confirmed via codebase search).
+4. ✅ **`src/lib/utils/payroll.ts` + `payroll.test.ts`** — implemented all
+   planned pure functions: `round2`, `resolveContractorHourlyRate`,
+   `resolveUtilityBillRate`, `calculateEntryPayroll`, `calculateEntryBilling`,
+   `resolveVehicleClaimAmount`, `calculateMargin`, `buildContractorPayrollRow`,
+   `summarizePayroll`, `buildPayrollCsv` (reuses the exact CSV-injection
+   escaping already in `contractors/page.tsx:52`). 21 tests written
+   (exceeds the 16 originally scoped — added a custom-rate-override case
+   for `resolveVehicleClaimAmount` and a full-aggregation case for
+   `buildContractorPayrollRow`). All passing; one test assertion was fixed
+   after a first run surfaced that the CSV escape replaces a leading `=`
+   with `'` rather than stripping it (matches the existing pattern exactly
+   — the test, not the implementation, was wrong).
+   - `npx vitest run src/lib/utils/payroll.test.ts` → 21/21 pass.
+   - `npx tsc --noEmit` → clean.
+   - Full suite regression check: `npx vitest run` → **376/376 pass, 74
+     files** (no existing test broken by the new types/columns).
+5. ✅ **`timeEntryService.ts` clockIn/clockOut fix** + updated
+   `timeEntryService.test.ts`. `clockOut()`'s `updateRemoteEntry` payload no
+   longer writes `total_minutes`/`billable_minutes`/`billable_amount`
+   (Postgres `GENERATED ALWAYS` columns); added the previously-missing
+   `clock_out_accuracy` to the same payload (it was already set locally but
+   never sent remotely — a small pre-existing gap fixed in the same edit).
+   `ClockInRequest` gained `stormEventId?: string`, threaded through
+   `buildClockInEntry` (offline path) and the remote `insertRemoteEntry`
+   call. `mapRemoteRowToTimeEntry` now also surfaces `storm_event_id` and
+   the 5 trigger-written payroll/billing fields for display.
+   - 3 new tests added (7 total, up from 4): asserts the `clockOut` payload
+     excludes all 5 generated/trigger-owned columns; asserts `clockIn`
+     forwards a provided `stormEventId`; asserts it forwards `null` when
+     none is provided. `npx vitest run src/lib/services/timeEntryService.test.ts`
+     → 7/7 pass.
+   - **Live end-to-end verification against `xcvacmreerrypygpritq`:**
+     inserted a real row with a deliberately wrong client-submitted
+     `work_type_rate: 999`, confirmed the trigger overwrote it with the
+     correct role-default rate (`85.00`) — proving contractors cannot set
+     their own pay. Then ran the exact clock-out payload the fixed service
+     now sends (no generated columns) and confirmed it succeeds (the
+     original bug would have rejected this write) and that
+     `payroll_amount` (`637.71`) exactly matches Postgres's own
+     `billable_amount` (`637.71`) — the trigger's inline recomputation
+     agrees with the `GENERATED ALWAYS` expression bit-for-bit. Test row
+     deleted after verification.
+   - **Finding, not yet fixed — flagged for Step 10:** `time_entries` has a
+     pre-existing (unrelated to this phase) `NOT VALID` CHECK constraint
+     `time_entries_storm_event_required` forcing `storm_event_id IS NOT
+     NULL` on every row, added by
+     `supabase/migrations/20260218103000_add_storm_scope_to_financial_ops.sql`
+     as part of the storm-first workflow. `TimeClock.tsx` has never passed
+     a storm event to `clockIn()`, and there is no existing "current storm"
+     hook/context for the contractor portal (`stormEventService` is
+     admin/ticket-oriented only). This means **online clock-in has likely
+     been completely broken in production already**, independent of
+     anything in this phase — confirmed indirectly by the 0 pre-existing
+     `time_entries` rows found in Step 1. Resolving how `TimeClock` sources
+     a storm event is now part of Step 10's scope.
+   - Full suite regression check: `npx vitest run` → **379/379 pass, 74
+     files**.
+6. ✅ **`src/lib/db/dexie.ts` version(4)** + `dexie.test.ts`. `LocalTimeEntry`
+   gained `storm_event_id` plus the 5 payroll/billing snapshot fields
+   (`contractor_role`, `pay_rate_applied`, `payroll_amount`,
+   `utility_bill_rate_applied`, `utility_bill_amount`). Added a
+   `this.version(4).stores({...}).upgrade(...)` block — the index-string
+   schema is unchanged (none of the new fields are indexed) but Dexie
+   still requires a version bump whenever the stored object shape changes,
+   so a version bump + backfill pass was added regardless.
+   - Deviation from the plan as written: this project's test environment
+     has no real IndexedDB (jsdom provides none, and there is no
+     `fake-indexeddb` dependency) — confirmed by checking
+     `node_modules/fake-indexeddb` (absent) and `dom.window.indexedDB`
+     (`undefined`) directly. Every existing `dexie.test.ts` case mocks
+     Dexie table methods directly and never exercises Dexie's real
+     version-upgrade engine. Rather than write an untestable
+     `.upgrade()` callback, the backfill logic was extracted into a new
+     exported pure function `backfillTimeEntryPayrollFields(entry)` in
+     `dexie.ts`, and the `version(4)` upgrade callback calls it — so the
+     exact logic that runs during a real upgrade is unit-tested directly.
+   - 3 new tests: backfills `pay_rate_applied` from `work_type_rate` on a
+     pre-v4 row missing the field; leaves an already-populated
+     `pay_rate_applied` untouched; confirms a fully-populated row is
+     returned unchanged (referential equality) rather than needlessly
+     cloned.
+   - `npx tsc --noEmit` → clean. `npx vitest run src/lib/db/dexie.test.ts`
+     → 14/14 pass (11 original + 3 new).
+   - Full suite regression check: `npx vitest run` → **382/382 pass, 74
+     files**.
+7. ✅ **`src/lib/config/appConfig.ts`** — added
+   `VEHICLE_REIMBURSEMENT_HOURLY_RATE: 5` and
+   `PAYROLL_PERIOD_DEFAULT_DAYS: 14` to `APP_CONFIG`; added new
+   `CONTRACTOR_ROLES` + `ROLE_LABELS` constant maps (mirroring the existing
+   `WORK_TYPES`/`USER_ROLES` pattern in this file) and, ahead of schedule,
+   `VEHICLE_TYPES` + `VEHICLE_TYPE_LABELS` since they belong in the same
+   file and will be consumed by `VehicleReimbursementCapture` in Step 10.
+   `WORK_TYPES` itself untouched, as planned.
+   - No pre-existing `appConfig.test.ts` exists for this file (consistent
+     with its other constant maps, e.g. `WORK_TYPES`/`USER_ROLES`, which
+     also have no dedicated tests) — no test debt introduced.
+   - `npx tsc --noEmit` → clean.
+   - Full suite regression check: `npx vitest run` → **382/382 pass, 74
+     files** (unchanged from Step 6 — this step added no new test files).
+8. ✅ **`payrollService.ts` + test**, then `contractorService.ts` role
+   passthrough.
+   - `contractorService.ts`: added `role` to `RemoteContractorRow`,
+     `ContractorListItem`, `ContractorDetail`; added `'role'` to both
+     column-select lists (`listContractors`/`getContractorById`) and both
+     mapped object constructions. Existing 4 tests pass unchanged (mock
+     fixtures didn't need `role` — `satisfies ContractorListItem` on an
+     object spread still type-checks because the test builds raw row
+     fixtures, not the mapped output type).
+   - `payrollService.ts` (new, 832 lines): implements the full
+     `PayrollService` interface — `getRoleRateDefaults`/
+     `updateRoleRateDefault`, `getUtilityBillingRates`/
+     `updateUtilityBillingRate`, `getContractorRateProfile`,
+     `updateContractorRole`, `updateContractorWorkTypeRate`,
+     `getPayrollSummary`, `listVehicleClaims`, `submitVehicleClaim`,
+     `reviewVehicleClaim`, `createPayrollCsvExport`. Mirrors
+     `createTimeEntryManagementService`'s DI pattern exactly — every
+     dependency is an injected async function with a Supabase-backed
+     default, so the whole service is testable with zero network calls.
+     `getPayrollSummary` reads only the stored `payroll_amount` /
+     `utility_bill_amount` columns and delegates all aggregation to
+     `payroll.ts`'s `buildContractorPayrollRow`/`summarizePayroll` — it
+     never recomputes a wage.
+   - 13 tests in `payrollService.test.ts` (exceeds the 9 originally
+     scoped): summary grouping/summing, filter passthrough, inverted-range
+     rejection, stored-value-wins regression guard (deliberately
+     inconsistent fixture), approved-only vehicle-claim inclusion, role
+     update passthrough + guard-rejection surfacing, `submitVehicleClaim`
+     validation (missing photo / zero hours) and happy path,
+     `reviewVehicleClaim` rejection-reason requirement and approval path,
+     and CSV export artifact shape.
+   - **Bug found and fixed during testing:** `reviewVehicleClaim` was
+     declared as a synchronous function returning a `Promise`, so its
+     validation `throw` executed *before* the Promise existed —
+     `expect(...).rejects.toThrow()` could not catch it (the test failed
+     with an uncaught synchronous error instead of the expected rejection).
+     Fixed by marking the method `async`, matching the existing
+     `timeEntryManagementService.reviewEntry` pattern, which is also
+     `async` for the same reason.
+   - `npx tsc --noEmit` → clean. `npx eslint payrollService.ts payroll.ts
+     contractorService.ts` → 0 problems.
+   - `npx vitest run src/lib/services/payrollService.test.ts` → 13/13 pass.
+   - Full suite regression check: `npx vitest run` → **395/395 pass, 75
+     files**.
+9. ✅ **Extract `PhotoCapture`** from `ReceiptCapture.tsx`.
+   - New `src/components/common/forms/PhotoCapture.tsx`: generalized the
+     capture/upload/remove/preview UI and `validatePhotoFile` logic behind
+     a `label` prop (`Capture {label}` / `Upload {label}`) plus optional
+     `storedMessage`/`helpMessage` overrides, so it serves both receipts
+     and vehicle-claim photos without forking logic. Exports
+     `DEFAULT_PHOTO_CAPTURE_TYPES`.
+   - `ReceiptCapture.tsx` rewritten to a thin wrapper: keeps its own `Card`
+     chrome and exact original prop interface (`value`, `onChange`,
+     `disabled`, `existingReceiptUrl`) so no call site changed; delegates
+     all capture/validation/preview logic to `PhotoCapture`.
+   - 6 new tests in `PhotoCapture.test.tsx` (no prior test existed for
+     `ReceiptCapture` either, so this is net-new coverage, not a
+     preserved-behavior check): button labeling, help-message display,
+     stored-message display, valid file selection calls `onChange`,
+     oversized file is rejected without calling `onChange`, and the
+     Remove button only renders when a file is attached and clears it.
+   - **Deviation from the plan as written — `photoStorageService.ts` was
+     NOT widened.** Investigation showed `defaultUploadVehicleClaimPhoto`
+     in `payrollService.ts` (built in Step 8) uploads directly to the
+     `time-entry-photos` bucket and writes the resulting path straight
+     onto `time_entry_vehicle_claims.vehicle_photo_url`/
+     `license_plate_photo_url` — there are dedicated columns for exactly
+     these two photos. Routing through `photoStorageService`'s
+     `media_assets` pipeline (designed for open-ended ticket photo
+     galleries) would add an unconsulted, redundant bookkeeping table for
+     no benefit. `photoStorageService.ts` is unmodified.
+   - **Security finding and fix, not in the original plan:** live-database
+     inspection showed the `time-entry-photos` bucket created in Step 2 is
+     **private** (`public: false`), but RLS is enabled on
+     `storage.objects` with **zero policies** — meaning default-deny for
+     all access, so neither contractor upload nor admin review could have
+     worked at all. (Investigating further, this is not unique to the new
+     bucket: there are **no storage policies anywhere in the project** for
+     any bucket, including the existing `assessment-photos` bucket used by
+     `photoStorageService.ts` — that ticket-photo pipeline is *also*
+     already broken in production. Out of scope to fix here, but flagged.)
+     Applied `time_entry_photos_storage_policies` migration: contractors
+     may `INSERT`/`SELECT` only objects under their own
+     `{contractorId}/...` path prefix (enforced via
+     `storage.foldername(name)`); admins get full access via `is_admin()`.
+     `supabase__get_advisors` (security) run after — only the pre-existing,
+     unrelated "leaked password protection disabled" warning remains.
+   - **Second fix following from the first:** since the bucket is private,
+     `getPublicUrl()` (the original implementation) returns a URL that
+     cannot actually serve the file. Reworked
+     `defaultUploadVehicleClaimPhoto` to return the **storage path**
+     instead of a URL; added `signVehicleClaimPhotoUrl`/
+     `signVehicleClaimPhotoUrls` using `createSignedUrl` (1-hour TTL,
+     falls back to the raw path on signing failure rather than throwing).
+     `listVehicleClaims`'s `defaultFetchVehicleClaims` now signs both
+     photo URLs at read time, since that's the path that feeds the admin
+     review UI where photos are actually displayed.
+     `fetchVehicleClaimsForEntries` (used only by `getPayrollSummary` for
+     amount/status math) deliberately does **not** sign — no image is ever
+     rendered from that call, so signing would be wasted work. Stored
+     columns (`vehicle_photo_url`/`license_plate_photo_url` on
+     `time_entry_vehicle_claims`) hold the stable storage path, not a
+     signed URL, so a URL never goes stale in the database.
+   - A `bg-slate-100`/`text-emerald-700`/`text-slate-500` set in the first
+     draft of `PhotoCapture.tsx` tripped the Phase 2
+     `legacy-color-guard.test.ts` (which scans all of
+     `src/components/common/**`). Retokened to
+     `bg-surface-sunken`/`text-grid-success-ink`/`text-muted-foreground`
+     (matching the patterns already established in `badge.tsx` and
+     `DataTable.tsx`).
+   - `npx tsc --noEmit` → clean. `npx eslint` on the new/changed files →
+     0 problems. `npx vitest run src/components/common/forms/
+     PhotoCapture.test.tsx` → 6/6 pass.
+   - Full suite regression check: `npx vitest run` → **401/401 pass, 76
+     files**.
+10. ✅ **`VehicleReimbursementCapture`** + `TimeClock.tsx` rate-input removal
+    + storm-event resolution.
+    - **New `src/hooks/useActiveStormEventId.ts`**: resolves the storm
+      event a contractor should clock against from their most recently
+      updated, non-closed assigned ticket (`ticketService
+      .getTicketsByAssignee`, already RLS-safe for a contractor to read
+      their own tickets). This closes the gap flagged in Step 5:
+      `time_entries` has a pre-existing `NOT VALID` CHECK constraint
+      requiring `storm_event_id IS NOT NULL`
+      (`20260218103000_add_storm_scope_to_financial_ops.sql`, unrelated to
+      this phase), and `TimeClock` never supplied one. 5 tests in
+      `useActiveStormEventId.test.ts`: no-contractorId no-op, picks the
+      most-recently-updated open ticket, excludes
+      CLOSED/ARCHIVED/EXPIRED, returns `undefined` with no open tickets,
+      and falls back to `undefined` (not a thrown error) on fetch failure.
+    - **Live verification against `xcvacmreerrypygpritq`:** confirmed
+      contractor `adc6d309-…` has exactly one assigned, non-closed ticket
+      carrying a real `storm_event_id` (`418bd00d-…`) — the hook's data
+      path is exercised by real production data, not just mocks.
+    - **Deviation from the plan as written — `VehicleReimbursementCapture`
+      does NOT gate clock-in.** Investigation of the Step 2 trigger
+      (`private.compute_vehicle_claim_amount`) showed it `RAISE
+      EXCEPTION`s unless `time_entries.clock_out_at IS NOT NULL` — a claim
+      cannot be finalized until the shift is closed, and practically a
+      driver only knows actual vehicle-use hours once the shift is over.
+      Implemented as a **post-clock-out** card instead: new
+      `src/components/features/payroll/VehicleReimbursementCapture.tsx`
+      renders directly under "Last Completed Entry" when the signed-in
+      contractor's resolved role is `DRIVER`, with vehicle type, declared
+      hours (capped visually at the shift length with a live
+      `resolveVehicleClaimAmount` preview, including the `capped` badge),
+      notes, and two required `PhotoCapture` photos; submits via
+      `payrollService.submitVehicleClaim`. On success it clears
+      `lastEntry` so the card does not reappear for an already-claimed
+      entry in the same session.
+    - `TimeClock.tsx`: removed `WORK_TYPE_DEFAULT_RATES` and the editable
+      "Hourly Rate ($)" `<Input>` entirely — replaced with a read-only
+      field sourced from a new `payrollService.getContractorRateProfile()`
+      effect, keyed on `workType`. `canClockIn` now additionally requires
+      `typeof workTypeRate === 'number'`; clicking Clock In with no
+      configured rate surfaces "No wage is configured for this role and
+      work type yet. Contact an admin before clocking in." instead of
+      silently sending a bad value. `workTypeRate` is still sent on
+      `clockIn()` for schema-shape compatibility, but is documented inline
+      as diagnostic-only — `private.apply_time_entry_costing()` always
+      overwrites it server-side. `stormEventId` from the new hook is
+      threaded into `clockIn()`. "Last Completed Entry" now shows
+      `payroll_amount` when present.
+    - `npx tsc --noEmit` → clean. `npx eslint` on all 3 changed/new files
+      → 0 problems. `npx vitest run src/hooks/useActiveStormEventId.test.ts`
+      → 5/5 pass. No pre-existing `TimeClock.test.tsx` exists, so nothing
+      to break there.
+    - Full suite regression check: `npx vitest run` → **406/406 pass, 77
+      files**.
+11. ✅ **Admin rate/role editors** — `RoleRateEditor`,
+    `UtilityBillingRateEditor`, `ContractorPayrollEditor`; wired into
+    `/admin/contractors/[id]`.
+    - `RoleRateEditor.tsx`: 5-role × 6-work-type grid against
+      `role_rate_defaults`, one Save button per cell, `payrollService
+      .getRoleRateDefaults()`/`updateRoleRateDefault()`.
+    - `UtilityBillingRateEditor.tsx`: takes an optional `stormEventId` prop
+      so the same component edits either a storm-scoped rate card or the
+      global fallback (`stormEventId` omitted) — matches
+      `resolveUtilityBillRate`'s precedence from `payroll.ts` exactly.
+    - `ContractorPayrollEditor.tsx`: per-contractor role `Select` +
+      per-work-type rate override inputs, sourced from
+      `payrollService.getContractorRateProfile()`; missing rates are
+      flagged inline ("No rate configured") rather than shown as `$0`.
+      Wired into `/admin/contractors/[id]/page.tsx` directly below the
+      existing "Contractor account" card, with `onRoleChanged` triggering
+      the page's existing `query.refetch()`.
+    - New barrel `src/components/features/payroll/index.ts` exporting all
+      4 payroll components built so far.
+    - 4 component tests across `RoleRateEditor.test.tsx` (renders all 5
+      roles; Save calls `updateRoleRateDefault` with the edited cell) and
+      `ContractorPayrollEditor.test.tsx` (missing-rate rows render "No
+      rate configured" instead of `$0`; a role change that the database
+      guard rejects surfaces **the guard's own live error message** via
+      `toast.error` — verified character-for-character against
+      `private.guard_contractor_eligibility()`'s current body, re-fetched
+      live from `xcvacmreerrypygpritq` in this step). Used the
+      established `vi.mock('@/components/ui/select', ...)` pattern from
+      `TicketAssign.test.tsx` for the role-change interaction test, with
+      typed mock-prop interfaces (not `any`) to stay lint-clean.
+    - **Lint findings fixed during this step:** an unused `rates` Map
+      state in `RoleRateEditor` (dead — only the string-keyed `inputs` map
+      was ever read) was removed rather than suppressed; 4
+      `no-explicit-any` violations in the first draft of the Select mock
+      were replaced with two small local prop interfaces.
+    - `npx tsc --noEmit` → clean. `npx eslint` on all new/changed files →
+      0 problems. Component test files → 4/4 pass.
+    - Full suite regression check: `npx vitest run` → **410/410 pass, 79
+      files**.
+12. ✅ **`VehicleReimbursementReview`** admin card.
+    - New `src/components/features/payroll/VehicleReimbursementReview.tsx`:
+      lists `PENDING` vehicle claims (card-per-claim, matching
+      `TimeEntryCard`'s visual style), showing declared hours, the
+      server-resolved amount, a `Capped` badge when the trigger clipped an
+      over-declaration, both required photos side by side via
+      `next/image`, and an inline rejection-reason `Input`. Approve/Reject
+      buttons mirror the existing icon+label pattern from
+      `TimeEntryCard.tsx`'s review footer. On a successful decision the
+      claim is optimistically removed from the local list rather than
+      re-fetching the whole queue.
+    - Added to the payroll barrel export
+      (`src/components/features/payroll/index.ts`); will be mounted on
+      `/admin/payroll` in Step 13.
+    - 6 tests in `VehicleReimbursementReview.test.tsx`: empty state;
+      `Capped` badge renders/doesn't render correctly; approve removes the
+      claim from the list and calls `reviewVehicleClaim` with
+      `{ decision: 'APPROVED' }`; clicking Reject with no reason entered
+      does **not** call the service at all (not just that it rejects);
+      entering a reason and rejecting calls `reviewVehicleClaim` with the
+      exact `rejectionReason` and removes the claim.
+    - **Also added** (ahead of the explicit Step 13 scope, since it's the
+      natural pairing): 3 tests for `VehicleReimbursementCapture.tsx`
+      covering the plan's original test item 29 (now a post-clock-out
+      submit gate rather than a clock-in gate, per Step 10's correction) —
+      Submit stays disabled until vehicle type, hours, notes, and both
+      photos are all present; the capped-preview banner renders when
+      declared hours exceed the 2.0h shift length in the fixture; and a
+      fully valid submission calls `submitVehicleClaim` with the exact
+      entered values.
+    - **Lint findings fixed during this step:** the `next/image` test
+      mock's `<img>` tripped `@next/next/no-img-element` (a real rule,
+      correctly firing on a literal `<img>` even though the file under
+      test never renders one) — suppressed with an inline comment
+      explaining it's a test stub, not a production `<img>`; removed an
+      eslint-disable comment left over from an earlier draft that had
+      become unused once the mock didn't need `any`.
+    - `npx tsc --noEmit` → clean. `npx eslint
+      src/components/features/payroll/` → 0 problems.
+    - Full suite regression check: `npx vitest run` → **419/419 pass, 81
+      files**.
+13. ✅ **Admin payroll dashboard** — `PayrollDashboard`,
+    `ContractorPayrollTable`, `PayrollSummaryCards`,
+    `/admin/payroll/page.tsx`, nav entry, `navigationContracts.test.ts`
+    update.
+    - `PayrollSummaryCards.tsx`: 8-card totals row (billable hours,
+      taxable payroll, vehicle reimbursement, total payout, utility
+      billing, margin $, margin %, contractor count) — mirrors
+      `ReportsDashboard`'s metric-card row exactly; negative margin
+      renders in `text-grid-danger-ink`, positive in
+      `text-grid-success-ink`.
+    - `ContractorPayrollTable.tsx`: wraps the existing `DataTable`
+      primitive; every money column renders `—` instead of `$0.00` when
+      `entryCount === 0` (a contractor with no activity this period is
+      not the same as a contractor who earned $0).
+    - `PayrollDashboard.tsx`: period (`from`/`to`) + storm-event filter
+      (sourced from `stormEventService.listStormEvents()`, with an "All
+      Storms" option mapping to `undefined` in the service call),
+      Refresh, CSV export (reused the exact `downloadArtifact` Blob/`
+      Uint8Array` copy-and-slice pattern from `ReportsDashboard.tsx:61-69`
+      — needed because a direct `new Blob([content])` with a raw
+      `Uint8Array` fails `tsc` under the project's current DOM lib types:
+      `Uint8Array<ArrayBufferLike>` is not assignable to `BlobPart`
+      without copying into a fresh `ArrayBuffer`-backed instance first),
+      the summary cards, the contractor table, the
+      `VehicleReimbursementReview` queue, and both `RoleRateEditor` +
+      `UtilityBillingRateEditor` (storm-scoped when a specific storm is
+      selected, global otherwise) below it.
+    - `src/app/(admin)/admin/payroll/page.tsx`: new route, thin wrapper
+      mounting `PayrollDashboard` with the signed-in admin's
+      `reviewerId`.
+    - `navigationConfig.ts`: added `{ href: '/admin/payroll', label:
+      'Payroll', signalKey: 'reviews', badgeStyle: 'count' }` to
+      `ADMIN_SIDEBAR_NAV_ITEMS`. `navigationContracts.test.ts` updated to
+      assert it's present.
+    - Barrel export updated with `ContractorPayrollTable`,
+      `PayrollDashboard`, `PayrollSummaryCards`.
+    - 9 new tests: `PayrollSummaryCards.test.tsx` (4 — loading placeholder,
+      no-data placeholder, formatted values, negative-margin color class)
+      and `ContractorPayrollTable.test.tsx` (3 — dash for zero-activity
+      row, formatted values for an active row, empty-state message), plus
+      `PayrollDashboard.test.tsx` (2 — full composition renders the
+      summary/table/sub-editors together with all dependencies mocked;
+      a load error surfaces via the `Alert` without crashing the page).
+    - `npx tsc --noEmit` → clean. `npx eslint` on all new/changed files →
+      0 problems.
+    - Full suite regression check: `npx vitest run` → **428/428 pass, 84
+      files**.
+    - **Production build verification:** `npm run build` (Turbopack,
+      the project default) fails with `Symlink [project]/node_modules is
+      invalid, it points out of the filesystem root` — an environment/
+      sandbox limitation (this workspace's `node_modules` is a symlink to
+      a path outside the build root) unrelated to any code in this phase;
+      the project's own `dev` script already works around the identical
+      issue with `next dev --webpack`. Ran `npx next build --webpack`
+      instead: **compiled successfully, TypeScript passed, and all 41
+      routes — including the new `/admin/payroll` — generated/
+      prerendered without error**, confirmed in the build's route table
+      (`○ /admin/payroll` alongside `○ /contractor/time`).
+14. ✅ **Contractor-side summary and time-entry money displays** — completed locally by Codex /root (2026-10-03).
+    - Preserve stored costing snapshots through remote review mapping and offline queue/cache mapping, including storm scope. Unsynced wages show as awaiting sync rather than using an open-shift zero or recalculating from an editable rate.
+    - Separate submitted wages, approved vehicle reimbursement, and payout in contractor and admin displays. Utility billing and margin remain on admin displays. Exclude rejected shifts from payroll totals; only completed shifts enter the online payroll report.
+    - Refresh contractor totals/history after clock-out or claim submission and refresh admin totals after a claim review.
+    - Connect Payroll to the actual Sidebar and navigation search. Add independent Payroll View/Edit permissions; ordinary Admin edits require an explicit grant. Rate/review controls are read-only without edit permission, and role changes retain the existing Super Admin/CEO boundary.
+    - Extend the unapplied access-control draft for payroll tables, underlying payroll reads, and staff access to vehicle photos. This draft is still awaiting live deployment approval.
+    - Verify the real staff Payroll page and time-review route. Desktop, tablet (820×1180), and phone (390×844) visual checks pass; wide rate tables scroll internally. Contractor display checks use labeled sample shifts, not a live contractor workflow.
+15. **Full validation gate — local and live database checks complete; device workflow acceptance remains open.**
+    - 441 tests pass across 85 files; TypeScript and scoped ESLint pass. Isolated webpack production build succeeds with 41 routes.
+    - 18 isolated PGlite access-control checks and 16 payroll-integrity checks pass. The integrity fixture now uses the exact original live trigger attachments, including their column-limited UPDATE behavior.
+    - Live security/performance advisors inspected: leaked-password protection remains disabled; performance findings include two claim-policy auth-initplan warnings, overlapping claim policies, and unused new indexes. No unrelated advisor changes applied.
+    - **Repair deployed with explicit user approval (2026-10-03):** `preserve_payroll_snapshots_and_guard_vehicle_claims`, live version `20261004002801`. Both function bodies match the approved repair; both trigger attachments now run on every INSERT/UPDATE. Original live definitions are preserved in `supabase/payroll_integrity_baseline.json`. The earlier isolated test missed the real UPDATE OF attachment restriction: status-only review previously skipped the functions, snapshot-only edits could bypass them, and resending costing inputs could recalculate a closed shift. The revised tests reproduce those actual conditions.
+    - **20 live database/RLS checks pass**, using simulated request identities inside a rollback subtransaction: ownership isolation, closed-shift immutability, same-driver claim linkage, photo-path linkage, capped reimbursement, status-only review authorization, server-bound reviewer, and linked payout. A four-hour driver fixture retained $180 wage / $400 utility billing and $20 approved reimbursement after rate edits. All fixtures and temporary rate/role changes rolled back; live counts remain zero shifts / zero claims. Evidence: `docs/testing/payroll-live-integrity.json` and `scripts/verification/payroll-live-rollback.sql`. This proves live database behavior, not physical GPS/photo capture or browser claim submission.
+    - **Real contractor browser checks pass:** existing QA Alex account signs in at the Wi-Fi URL, receives the configured $85/h rate, refreshes submitted totals, retains identity after reload, and is redirected to `/forbidden` when requesting `/admin/payroll`. GPS refresh returns an error; clock-in correctly refuses to create a shift. Full device clock-in/out, photo upload, claim submission/review, and displayed linked totals remain pending. A trusted HTTPS address is needed for the iPad geolocation test; the HTTP LAN pilot only proves browsing/sign-in.
+    - Reconcile all five Phase 3 payroll migration files locally: generate them with the CLI, match their filenames to confirmed live history versions, and verify the four earlier files against the exact recorded migration SQL. The current repair file also matches the applied SQL. No migrations were reapplied during reconciliation and no migration version was invented. The separate per-user permissions/invitation draft remains unapplied.
+16. ✅ **Dummy pilot rates configured**, per the user's instruction (2026-10-03).
+    - Keep the existing 30 placeholder wage rates (5 roles × 6 work types).
+    - Add six global utility-billing fallback rates: standard assessment $175/h, emergency response $250/h, travel $100/h, standby $85/h, admin $125/h, training $90/h. Read back all six live; no existing rate was overwritten.
+    - Storm-specific rates can override the fallback through the existing editor. Replace pilot values with the correct rates when supplied; no actual-payroll accuracy claim is made for these dummy numbers.
 
 Steps 9-10 and 11-12 are each an independent pair that could run in parallel;
 everything else is strictly sequential because each step's type surface is

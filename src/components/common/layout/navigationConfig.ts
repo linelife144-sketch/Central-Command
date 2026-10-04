@@ -34,6 +34,7 @@ export const ADMIN_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
   { href: '/admin/time-review', label: 'Time Review', signalKey: 'reviews', badgeStyle: 'count' },
   { href: '/admin/expense-review', label: 'Expenses', signalKey: 'reviews', badgeStyle: 'count' },
   { href: '/admin/assessment-review', label: 'Assessments', signalKey: 'reviews', badgeStyle: 'count' },
+  { href: '/admin/payroll', label: 'Payroll', signalKey: 'reviews', badgeStyle: 'count' },
   { href: '/admin/reports', label: 'Reports' },
   {
     href: '/admin/account',

@@ -27,6 +27,7 @@ export interface ClockInRequest {
   workTypeRate: number;
   breakMinutes: number;
   ticketId?: string;
+  stormEventId?: string;
   location: ClockLocation;
 }
 
@@ -75,6 +76,7 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     id: row.id,
     contractor_id: row.contractor_id,
     ticket_id: row.ticket_id ?? undefined,
+    storm_event_id: row.storm_event_id ?? undefined,
     clock_in_at: row.clock_in_at,
     clock_in_latitude: row.clock_in_latitude ?? undefined,
     clock_in_longitude: row.clock_in_longitude ?? undefined,
@@ -95,6 +97,13 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     sync_status: (row.sync_status as SyncStatus) ?? 'SYNCED',
     created_at: row.created_at ?? row.clock_in_at,
     updated_at: row.updated_at ?? row.created_at ?? row.clock_in_at,
+    // Payroll/billing snapshot — written by the private.apply_time_entry_costing()
+    // trigger. Surfaced for display only; never recomputed client-side.
+    contractor_role: row.contractor_role ?? undefined,
+    pay_rate_applied: row.pay_rate_applied ?? undefined,
+    payroll_amount: row.payroll_amount ?? undefined,
+    utility_bill_rate_applied: row.utility_bill_rate_applied ?? undefined,
+    utility_bill_amount: row.utility_bill_amount ?? undefined,
   };
 }
 
@@ -117,6 +126,12 @@ function mapLocalEntryToTimeEntry(entry: LocalTimeEntry): TimeEntry {
     work_type: entry.work_type as WorkType,
     work_type_rate: entry.work_type_rate,
     break_minutes: entry.break_minutes,
+    storm_event_id: entry.storm_event_id,
+    contractor_role: entry.contractor_role,
+    pay_rate_applied: entry.pay_rate_applied,
+    payroll_amount: entry.payroll_amount,
+    utility_bill_rate_applied: entry.utility_bill_rate_applied,
+    utility_bill_amount: entry.utility_bill_amount,
     status: entry.status as TimeEntryStatus,
     sync_status: toSyncStatus(entry.sync_status),
     created_at: createdAt,
@@ -140,6 +155,12 @@ function mapTimeEntryToLocalEntry(entry: TimeEntry): LocalTimeEntry {
     work_type: entry.work_type,
     work_type_rate: entry.work_type_rate,
     break_minutes: entry.break_minutes,
+    storm_event_id: entry.storm_event_id,
+    contractor_role: entry.contractor_role,
+    pay_rate_applied: entry.pay_rate_applied,
+    payroll_amount: entry.payroll_amount,
+    utility_bill_rate_applied: entry.utility_bill_rate_applied,
+    utility_bill_amount: entry.utility_bill_amount,
     status: entry.status,
     synced: entry.sync_status === 'SYNCED',
     sync_status: toLocalSyncStatus(entry.sync_status),
@@ -161,6 +182,7 @@ function buildClockInEntry(request: ClockInRequest, nowIso: string): TimeEntry {
     id: createEntryId(),
     contractor_id: request.contractorId,
     ticket_id: request.ticketId,
+    storm_event_id: request.stormEventId,
     clock_in_at: nowIso,
     clock_in_latitude: request.location.latitude,
     clock_in_longitude: request.location.longitude,
@@ -296,6 +318,7 @@ export function createTimeEntryService(
           return await dependencies.insertRemoteEntry({
             contractor_id: request.contractorId,
             ticket_id: request.ticketId ?? null,
+            storm_event_id: request.stormEventId ?? null,
             clock_in_at: nowIso,
             clock_in_latitude: request.location.latitude,
             clock_in_longitude: request.location.longitude,
@@ -366,14 +389,19 @@ export function createTimeEntryService(
       }
 
       try {
+        // total_minutes, billable_minutes, and billable_amount are GENERATED
+        // ALWAYS columns in Postgres — they cannot be written directly.
+        // payroll_amount, utility_bill_amount, and the rate snapshots are
+        // computed server-side by the private.apply_time_entry_costing()
+        // BEFORE trigger from clock_out_at/break_minutes. Only writable
+        // columns are sent here; the server is the source of truth for
+        // every money figure.
         return await dependencies.updateRemoteEntry(request.entry.id, {
           clock_out_at: nowIso,
           clock_out_latitude: request.location.latitude,
           clock_out_longitude: request.location.longitude,
+          clock_out_accuracy: request.location.accuracy,
           break_minutes: breakMinutes,
-          total_minutes: durationValidation.durationMinutes,
-          billable_minutes: billableMinutes,
-          billable_amount: Number(billableAmount.toFixed(2)),
           updated_at: nowIso,
           sync_status: 'SYNCED',
         });

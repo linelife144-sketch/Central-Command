@@ -45,7 +45,7 @@
     "Detection of an incomplete schema migration"
   ],
   "backup": "Original files stored outside the app in the current task workspace",
-  "progress_tracker_note": "MASTER_BUILD_INSTRUCTIONS.md is missing; ADR 0003 and this report record authorized work.",
+  "progress_tracker_note": "ADR 0003 and this report record authorized work.",
   "remaining_advisor": {
     "name": "Leaked Password Protection Disabled",
     "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"

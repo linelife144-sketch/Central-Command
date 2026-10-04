@@ -45,6 +45,7 @@ export interface Contractor {
   approved_at?: string;
   is_eligible_for_assignment: boolean;
   eligibility_reason?: string;
+  role: ContractorRole;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +56,19 @@ export type OnboardingStatus =
   | 'COMPLETE'
   | 'APPROVED'
   | 'SUSPENDED';
+
+// Payroll role model — one role per contractor, separate from profiles.role
+// (the CEO/SUPER_ADMIN/ADMIN/CONTRACTOR authorization enum).
+export type ContractorRole =
+  | 'STORM_MANAGER'
+  | 'TEAM_LEAD'
+  | 'SR_DAMAGE_ASSESSER'
+  | 'DAMAGE_ASSESSER'
+  | 'DRIVER';
+
+export type VehicleType = 'PERSONAL' | 'RENTAL';
+
+export type VehicleClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface ContractorCredential {
   id: string;
@@ -171,6 +185,14 @@ export interface TimeEntry {
   sync_status: SyncStatus;
   created_at: string;
   updated_at: string;
+  storm_event_id?: string;
+  // Payroll/billing snapshot — written server-side by a database trigger at
+  // clock-out, never recomputed client-side and never asserted by the client.
+  contractor_role?: ContractorRole;
+  pay_rate_applied?: number;
+  payroll_amount?: number;
+  utility_bill_rate_applied?: number;
+  utility_bill_amount?: number;
 }
 
 export type WorkType =
@@ -438,4 +460,85 @@ export interface CapturedAssessmentPhoto {
   isDuplicate: boolean;
   duplicateOfPhotoId?: string;
   validationWarnings?: string[];
+}
+
+// Vehicle Reimbursement Types
+// Flat $5.00/declared-hour, non-taxable, doc-backed, admin-approved
+// reimbursement for DRIVER-role contractors using a personal/rental vehicle.
+// The amount is resolved server-side by a trigger once the time entry closes
+// — never trusted from the client.
+export interface VehicleClaim {
+  id: string;
+  time_entry_id: string;
+  contractor_id: string;
+  vehicle_type: VehicleType;
+  declared_hours: number;
+  notes: string;
+  vehicle_photo_url: string;
+  license_plate_photo_url: string;
+  amount: number;
+  capped: boolean;
+  status: VehicleClaimStatus;
+  is_taxable: false;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  rejection_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Payroll & Utility Billing Rollup Types
+
+export interface ContractorPayrollRow {
+  contractorId: string;
+  contractorName: string;
+  role: ContractorRole;
+  entryCount: number;
+  totalMinutes: number;
+  billableMinutes: number;
+  taxablePayroll: number;
+  reimbursementTotal: number;
+  totalPayout: number;
+  utilityBillAmount: number;
+  marginAmount: number;
+  marginPercent: number;
+  pendingEntries: number;
+  approvedEntries: number;
+  pendingVehicleClaims: number;
+}
+
+export interface PayrollTotals {
+  contractorCount: number;
+  entryCount: number;
+  totalMinutes: number;
+  billableMinutes: number;
+  taxablePayroll: number;
+  reimbursementTotal: number;
+  totalPayout: number;
+  utilityBillAmount: number;
+  marginAmount: number;
+  marginPercent: number;
+}
+
+export interface PayrollSummary {
+  periodStart: string;
+  periodEnd: string;
+  stormEventId?: string;
+  generatedAt: string;
+  rows: ContractorPayrollRow[];
+  totals: PayrollTotals;
+}
+
+export interface RoleRateDefault {
+  role: ContractorRole;
+  workType: WorkType;
+  hourlyRate: number;
+  currency: string;
+}
+
+export interface UtilityBillingRate {
+  stormEventId: string | null;
+  workType: WorkType;
+  hourlyRate: number;
+  currency: string;
 }

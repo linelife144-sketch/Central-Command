@@ -1,6 +1,7 @@
 // Central Command - Dexie.js IndexedDB Configuration
 
 import Dexie, { Table } from 'dexie';
+import type { ContractorRole } from '@/types';
 
 export type LocalSyncStatus = 'pending' | 'synced' | 'failed';
 export type SyncQueueOperation = 'CREATE' | 'UPDATE' | 'DELETE';
@@ -29,6 +30,7 @@ export interface LocalTimeEntry {
   id: string;
   contractor_id: string;
   ticket_id?: string;
+  storm_event_id?: string;
   clock_in_at: string;
   clock_in_latitude?: number;
   clock_in_longitude?: number;
@@ -47,6 +49,14 @@ export interface LocalTimeEntry {
   last_error?: string;
   created_at?: string;
   updated_at?: string;
+  // Payroll/billing snapshot — mirrors the server-side trigger-written
+  // columns. Populated on sync; absent/undefined for entries still queued
+  // offline that haven't been written to the server yet.
+  contractor_role?: ContractorRole;
+  pay_rate_applied?: number;
+  payroll_amount?: number;
+  utility_bill_rate_applied?: number;
+  utility_bill_amount?: number;
 }
 
 export interface LocalExpenseReport {
@@ -241,6 +251,23 @@ function sortByUpdatedAtDescending<T extends { updated_at?: string }>(items: T[]
   });
 }
 
+/**
+ * Backfills payroll fields on a pre-v4 LocalTimeEntry. Exported so the
+ * Dexie version(4) upgrade logic can be unit tested directly without
+ * requiring a real IndexedDB implementation (none is available in this
+ * project's jsdom-based test environment).
+ */
+export function backfillTimeEntryPayrollFields(entry: LocalTimeEntry): LocalTimeEntry {
+  if (entry.pay_rate_applied !== undefined) {
+    return entry;
+  }
+
+  return {
+    ...entry,
+    pay_rate_applied: entry.work_type_rate,
+  };
+}
+
 function toIsoTimestamp(value: unknown, fallback: string): string {
   if (typeof value === 'string') {
     return value;
@@ -347,6 +374,40 @@ export class GridElectricDatabase extends Dexie {
         '&id, entity_type, entity_id, resolved, detected_at, sync_queue_item_id, [entity_type+entity_id]',
       gpsLocations: '&id, ticket_id, timestamp, synced',
     });
+
+    // v4: time entries gain storm_event_id plus the server-trigger-written
+    // payroll/billing snapshot fields (contractor_role, pay_rate_applied,
+    // payroll_amount, utility_bill_rate_applied, utility_bill_amount). The
+    // schema string is unchanged — none of the new fields are indexed —
+    // but Dexie requires a version bump whenever stored object shape
+    // changes so existing offline rows are visited and backfilled.
+    this.version(4)
+      .stores({
+        tickets:
+          '&id, ticket_number, status, assigned_to, synced, sync_status, updated_at, [assigned_to+status]',
+        timeEntries:
+          '&id, contractor_id, ticket_id, status, synced, sync_status, updated_at, [contractor_id+sync_status]',
+        expenseReports: '&id, contractor_id, status, synced',
+        expenseItems: '&id, expense_report_id, synced',
+        assessments: '&id, ticket_id, contractor_id, synced, sync_status',
+        photos:
+          '&id, entity_type, entity_id, uploaded, upload_status, retry_count, updated_at, [entity_type+entity_id]',
+        syncQueue:
+          '&id, entity_type, entity_id, operation, status, retry_count, created_at, [entity_type+entity_id]',
+        conflicts:
+          '&id, entity_type, entity_id, resolved, detected_at, sync_queue_item_id, [entity_type+entity_id]',
+        gpsLocations: '&id, ticket_id, timestamp, synced',
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table('timeEntries').toCollection().modify((timeEntry: LocalTimeEntry) => {
+          // Pre-v4 rows never had a wage trigger run against them locally.
+          // Seed pay_rate_applied from the existing work_type_rate so older
+          // queued/offline entries still show a sensible wage until they
+          // sync and the server snapshot takes over.
+          const backfilled = backfillTimeEntryPayrollFields(timeEntry);
+          timeEntry.pay_rate_applied = backfilled.pay_rate_applied;
+        });
+      });
   }
 }
 

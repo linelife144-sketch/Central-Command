@@ -6,8 +6,8 @@
 
 **BEFORE TAKING ANY ACTION ON THIS PROJECT, YOU MUST:**
 
-1. **READ `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md`** — This is the source of truth for all tasks
-2. **Check Section 2 (Progress Tracker)** — Verify what has already been completed
+1. **Read `implementation_plan.md`** — Review the current implementation plan for the requested task
+2. **Check `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md`** — Verify what has already been completed
 3. **Follow the phase order** — Do not skip phases or jump ahead
 4. **Update the Progress Tracker** — Mark tasks complete and add your agent identifier after finishing ANY work
 
@@ -164,7 +164,6 @@ Grid2/
 ├── public/                       # Static assets
 │
 └── grid-electric-docs/           # 📚 TECHNICAL DOCUMENTATION
-    ├── MASTER_BUILD_INSTRUCTIONS.md  ⭐ START HERE FOR TASKS
     ├── README.md                     Documentation index
     ├── 01-TECHNICAL-PRD.md           Product requirements
     ├── 02-DATABASE-SCHEMA.md         Database schema
@@ -184,10 +183,9 @@ Grid2/
 
 ### Before Any Work, Read These Files in Order
 
-1. **`grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md`** ⭐ **MUST READ FIRST**
-   - Section 2: Progress Tracker (check what's done)
-   - Your specific task section
-   - File references for implementation
+1. **`implementation_plan.md` and `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md`**
+   - Review the requested task and implementation references
+   - Check recorded progress before starting work
 
 2. **Technical Specifications (as needed):**
 
@@ -352,7 +350,7 @@ NEXT_PUBLIC_MIN_PHOTOS_REQUIRED=4
 
 ### ✅ DO
 
-- Read `MASTER_BUILD_INSTRUCTIONS.md` first
+- Review the implementation plan and existing checklist before work
 - Check what's already completed in Section 2
 - Follow the phase order (1 → 2 → 3 → 4)
 - Update progress tracker after each task
@@ -364,7 +362,7 @@ NEXT_PUBLIC_MIN_PHOTOS_REQUIRED=4
 
 ### ❌ DON'T
 
-- Skip reading the master instructions
+- Skip reviewing task scope and recorded progress
 - Duplicate work already completed
 - Skip phases or jump ahead
 - Forget to update progress tracker
@@ -500,7 +498,7 @@ All actions logged with:
 
 ---
 
-*Remember: **ALWAYS** read `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md` before starting any work.*
+*Review the implementation plan and update the existing checklist after completing work.*
 
 <!-- BEGIN:nextjs-agent-rules -->
 

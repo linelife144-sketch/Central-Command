@@ -28,6 +28,7 @@ const PUBLIC_ROUTES = [
   '/reset-password',
   '/set-password',
   '/magic-link',
+  '/auth/confirm',
   '/forbidden',
   '/logout',
 ];
@@ -73,7 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         setProfile(null);
-        console.error('Error fetching profile:', error);
+        setPermissions({});
+        // Supabase returns a `PostgrestError` (a class extending Error). The
+        // Next.js dev overlay cannot serialize it and shows `{}`, so log the
+        // enumerable fields explicitly to keep the real cause visible.
+        console.error('Error fetching profile:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
         if (DEV_BYPASS_AUTH) {
           setProfile(DEV_MOCK_PROFILE);
         }
@@ -86,10 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { data: map, error: permissionsError } = await supabase.rpc('get_my_permissions' as never);
           if (currentUserId.current !== userId) return;
           const pendingMigration = permissionsError?.code === 'PGRST202' && permissionsError.message.includes('get_my_permissions');
-          setPermissions(data.is_active ? pendingMigration ? resolvePermissions(data.role) : !permissionsError ? map as PermissionMap : {} : {});
+          setPermissions(data.is_active ? pendingMigration ? resolvePermissions(data.role) : !permissionsError && map ? map as PermissionMap : {} : {});
         } else setPermissions({});
       }
     } catch (error) {
+      if (currentUserId.current === userId) { setProfile(null); setPermissions({}); }
       console.error('Error in fetchProfile:', error);
       if (DEV_BYPASS_AUTH) {
         setProfile(DEV_MOCK_PROFILE);
@@ -173,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         currentUserId.current = session?.user.id ?? null;
         setUser(session?.user ?? null);
         setProfile(null);
+        setPermissions({});
 
         if (session?.user) {
           setIsLoading(true);

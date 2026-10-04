@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { ActiveTimer } from '@/components/features/time-tracking/ActiveTimer';
 import { WorkTypeSelector } from '@/components/features/time-tracking/WorkTypeSelector';
+import { VehicleReimbursementCapture } from '@/components/features/payroll/VehicleReimbursementCapture';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,18 +15,11 @@ import { Label } from '@/components/ui/label';
 import { APP_CONFIG, WORK_TYPES } from '@/lib/config/appConfig';
 import { useGPSValidation } from '@/hooks/useGPSValidation';
 import { useContractorId } from '@/hooks/useContractorId';
+import { useActiveStormEventId } from '@/hooks/useActiveStormEventId';
+import { payrollService, type ContractorRateProfile } from '@/lib/services/payrollService';
 import { timeEntryService } from '@/lib/services/timeEntryService';
 import { formatDateTime } from '@/lib/utils/formatters';
 import type { TimeEntry, WorkType } from '@/types';
-
-const WORK_TYPE_DEFAULT_RATES: Record<WorkType, number> = {
-  [WORK_TYPES.STANDARD_ASSESSMENT]: 95,
-  [WORK_TYPES.EMERGENCY_RESPONSE]: 135,
-  [WORK_TYPES.TRAVEL]: 55,
-  [WORK_TYPES.STANDBY]: 45,
-  [WORK_TYPES.ADMIN]: 65,
-  [WORK_TYPES.TRAINING]: 40,
-};
 
 function isGpsReadyForClockAction(
   latitude: number | null,
@@ -35,23 +29,57 @@ function isGpsReadyForClockAction(
   return latitude !== null && longitude !== null && gpsValid;
 }
 
-export function TimeClock() {
+export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void } = {}) {
   const { profile } = useAuth();
   const {
     contractorId: resolvedContractorId,
     isLoading: isResolvingContractorId,
   } = useContractorId(profile?.id);
   const contractorId = resolvedContractorId ?? profile?.id;
+  const { stormEventId } = useActiveStormEventId(contractorId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [lastEntry, setLastEntry] = useState<TimeEntry | null>(null);
   const [workType, setWorkType] = useState<WorkType>(WORK_TYPES.STANDARD_ASSESSMENT);
-  const [workTypeRate, setWorkTypeRate] = useState<number>(WORK_TYPE_DEFAULT_RATES[WORK_TYPES.STANDARD_ASSESSMENT]);
   const [breakMinutes, setBreakMinutes] = useState<number>(0);
+  const [rateProfile, setRateProfile] = useState<ContractorRateProfile | null>(null);
 
   const gpsValidation = useGPSValidation({
     minAccuracyMeters: APP_CONFIG.MIN_GPS_ACCURACY_METERS,
   });
+
+  // Hourly wage is resolved server-side (role default, overridden by any
+  // effective-dated contractor_rates row) and displayed read-only here.
+  // Contractors can no longer type their own rate — the clock-out trigger
+  // (private.apply_time_entry_costing) would overwrite it anyway, so an
+  // editable field here was misleading, not just insecure.
+  useEffect(() => {
+    if (!contractorId) {
+      setRateProfile(null);
+      return;
+    }
+
+    let active = true;
+    void payrollService
+      .getContractorRateProfile(contractorId)
+      .then((profileResult) => {
+        if (active) {
+          setRateProfile(profileResult);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setRateProfile(null);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [contractorId]);
+
+  const workTypeRate = rateProfile?.workTypeRates[workType];
+  const isDriver = rateProfile?.role === 'DRIVER';
 
   const loadActiveEntry = useCallback(async () => {
     if (!contractorId) {
@@ -64,7 +92,6 @@ export function TimeClock() {
 
     if (entry) {
       setWorkType(entry.work_type);
-      setWorkTypeRate(entry.work_type_rate);
       setBreakMinutes(entry.break_minutes ?? 0);
     }
   }, [contractorId]);
@@ -73,20 +100,20 @@ export function TimeClock() {
     void loadActiveEntry();
   }, [loadActiveEntry]);
 
-  const handleWorkTypeChange = (nextWorkType: WorkType) => {
-    setWorkType(nextWorkType);
-    setWorkTypeRate(WORK_TYPE_DEFAULT_RATES[nextWorkType]);
-  };
-
   const canClockIn = useMemo(
-    () => !activeEntry && !isResolvingContractorId && Boolean(contractorId),
-    [activeEntry, isResolvingContractorId, contractorId],
+    () => !activeEntry && !isResolvingContractorId && Boolean(contractorId) && typeof workTypeRate === 'number',
+    [activeEntry, isResolvingContractorId, contractorId, workTypeRate],
   );
   const canClockOut = useMemo(() => Boolean(activeEntry), [activeEntry]);
 
   const handleClockIn = async () => {
     if (!contractorId) {
       toast.error('Unable to clock in without an authenticated profile.');
+      return;
+    }
+
+    if (typeof workTypeRate !== 'number') {
+      toast.error('No wage is configured for this role and work type yet. Contact an admin before clocking in.');
       return;
     }
 
@@ -101,11 +128,16 @@ export function TimeClock() {
         throw new Error(gpsSnapshot.validation.gpsError ?? 'Valid GPS is required to clock in.');
       }
 
+      // workTypeRate is sent for backward-compatible schema shape only —
+      // private.apply_time_entry_costing() always overwrites it server-side
+      // from role_rate_defaults/contractor_rates, so a stale or manipulated
+      // client value here can never affect payroll.
       const entry = await timeEntryService.clockIn({
         contractorId,
         workType,
         workTypeRate,
         breakMinutes,
+        stormEventId,
         location: {
           latitude: gpsSnapshot.reading.latitude as number,
           longitude: gpsSnapshot.reading.longitude as number,
@@ -155,6 +187,7 @@ export function TimeClock() {
 
       setActiveEntry(null);
       setLastEntry(entry);
+      onEntriesChanged?.();
       toast.success(
         entry.sync_status === 'PENDING'
           ? 'Clocked out offline. Update queued for sync.'
@@ -180,7 +213,7 @@ export function TimeClock() {
               <WorkTypeSelector
                 value={workType}
                 disabled={Boolean(activeEntry)}
-                onValueChange={handleWorkTypeChange}
+                onValueChange={setWorkType}
               />
             </div>
 
@@ -188,12 +221,14 @@ export function TimeClock() {
               <Label htmlFor="work-type-rate">Hourly Rate ($)</Label>
               <Input
                 id="work-type-rate"
-                type="number"
-                min={0}
-                step={0.01}
-                disabled={Boolean(activeEntry)}
-                value={workTypeRate}
-                onChange={(event) => setWorkTypeRate(Number(event.target.value))}
+                type="text"
+                readOnly
+                disabled
+                value={
+                  typeof workTypeRate === 'number'
+                    ? workTypeRate.toFixed(2)
+                    : 'No rate configured — contact admin'
+                }
               />
             </div>
 
@@ -295,8 +330,17 @@ export function TimeClock() {
             <p>
               <span className="font-medium">Billable:</span> {lastEntry.billable_minutes ?? 0} minutes
             </p>
+            {typeof lastEntry.payroll_amount === 'number' ? (
+              <p>
+                <span className="font-medium">Estimated Pay:</span> ${lastEntry.payroll_amount.toFixed(2)}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
+      ) : null}
+
+      {!activeEntry && lastEntry && isDriver && contractorId ? (
+        <VehicleReimbursementCapture entry={lastEntry} contractorId={contractorId} onSubmitted={() => { setLastEntry(null); onEntriesChanged?.(); }} />
       ) : null}
     </div>
   );

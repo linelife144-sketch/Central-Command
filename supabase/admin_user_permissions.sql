@@ -22,6 +22,8 @@ INSERT INTO private.permission_catalog VALUES
 ('admin.expenses.edit',true,false),
 ('admin.assessments.view',true,false),
 ('admin.assessments.edit',true,false),
+('admin.payroll.view',true,false),
+('admin.payroll.edit',false,false),
 ('admin.reports.view',true,false),
 ('admin.users.view',false,true),
 ('admin.users.edit',false,true);
@@ -47,7 +49,7 @@ CREATE FUNCTION private.has_permission(p_profile_id uuid,p_key text) RETURNS boo
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE r text; active boolean; def boolean; privileged boolean; effect text; permitted boolean;
 BEGIN
- SELECT role::text,is_active INTO r,active FROM public.profiles WHERE id=p_profile_id;
+ SELECT role::text,(is_active AND NOT must_reset_password) INTO r,active FROM public.profiles WHERE id=p_profile_id;
  IF NOT coalesce(active,false) OR r NOT IN ('CEO','SUPER_ADMIN','ADMIN') THEN RETURN false; END IF;
  SELECT admin_default,c.privileged INTO def,privileged FROM private.permission_catalog c WHERE permission_key=p_key;
  IF NOT FOUND OR (privileged AND r<>'SUPER_ADMIN') THEN RETURN false; END IF;
@@ -95,6 +97,7 @@ BEGIN
  IF actor=p_profile_id THEN RAISE EXCEPTION 'You cannot change your own permissions' USING ERRCODE='42501'; END IF;
  -- Serialize permission and account edits, including concurrent last-admin changes.
  PERFORM pg_advisory_xact_lock(734918206);
+ IF NOT private.has_permission(actor,'admin.users.edit') THEN RAISE EXCEPTION 'Super Admin permission required' USING ERRCODE='42501'; END IF;
  SELECT role::text INTO target_role FROM public.profiles WHERE id=p_profile_id FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'User not found' USING ERRCODE='P0002'; END IF;
  IF target_role NOT IN ('ADMIN','SUPER_ADMIN') THEN RAISE EXCEPTION 'Contractor and executive permissions are locked' USING ERRCODE='42501'; END IF;
@@ -132,7 +135,10 @@ DO $policies$ DECLARE item record; mod text; stmt text; BEGIN
  WHEN 'ticket_extraction_sessions' THEN 'tickets'
  WHEN 'ticket_routes' THEN 'tickets'
  WHEN 'contractors' THEN 'contractors'
- WHEN 'contractor_rates' THEN 'contractors'
+ WHEN 'contractor_rates' THEN 'payroll'
+ WHEN 'role_rate_defaults' THEN 'payroll'
+ WHEN 'utility_billing_rates' THEN 'payroll'
+ WHEN 'time_entry_vehicle_claims' THEN 'payroll'
  WHEN 'contractor_banking' THEN 'contractors'
  WHEN 'time_entries' THEN 'time'
  WHEN 'expense_reports' THEN 'expenses'
@@ -189,19 +195,19 @@ CREATE POLICY module_view_select ON public.ticket_routes AS RESTRICTIVE FOR SELE
 CREATE POLICY module_edit_insert ON public.ticket_routes AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.tickets.edit')));
 CREATE POLICY module_edit_update ON public.ticket_routes AS RESTRICTIVE FOR UPDATE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.tickets.edit'))) WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.tickets.edit')));
 CREATE POLICY module_edit_delete ON public.ticket_routes AS RESTRICTIVE FOR DELETE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.tickets.edit')));
-CREATE POLICY module_view_select ON public.contractors AS RESTRICTIVE FOR SELECT TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.view')));
+CREATE POLICY module_view_select ON public.contractors AS RESTRICTIVE FOR SELECT TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.view') OR private.has_permission((select auth.uid()),'admin.payroll.view')));
 CREATE POLICY module_edit_insert ON public.contractors AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
 CREATE POLICY module_edit_update ON public.contractors AS RESTRICTIVE FOR UPDATE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit'))) WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
 CREATE POLICY module_edit_delete ON public.contractors AS RESTRICTIVE FOR DELETE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
-CREATE POLICY module_view_select ON public.contractor_rates AS RESTRICTIVE FOR SELECT TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.view')));
-CREATE POLICY module_edit_insert ON public.contractor_rates AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
-CREATE POLICY module_edit_update ON public.contractor_rates AS RESTRICTIVE FOR UPDATE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit'))) WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
-CREATE POLICY module_edit_delete ON public.contractor_rates AS RESTRICTIVE FOR DELETE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
+CREATE POLICY module_view_select ON public.contractor_rates AS RESTRICTIVE FOR SELECT TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.view') OR private.has_permission((select auth.uid()),'admin.payroll.view')));
+CREATE POLICY module_edit_insert ON public.contractor_rates AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.edit')));
+CREATE POLICY module_edit_update ON public.contractor_rates AS RESTRICTIVE FOR UPDATE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.edit'))) WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.edit')));
+CREATE POLICY module_edit_delete ON public.contractor_rates AS RESTRICTIVE FOR DELETE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.edit')));
 CREATE POLICY module_view_select ON public.contractor_banking AS RESTRICTIVE FOR SELECT TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.view')));
 CREATE POLICY module_edit_insert ON public.contractor_banking AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
 CREATE POLICY module_edit_update ON public.contractor_banking AS RESTRICTIVE FOR UPDATE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit'))) WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
 CREATE POLICY module_edit_delete ON public.contractor_banking AS RESTRICTIVE FOR DELETE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.contractors.edit')));
-CREATE POLICY module_view_select ON public.time_entries AS RESTRICTIVE FOR SELECT TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.time.view')));
+CREATE POLICY module_view_select ON public.time_entries AS RESTRICTIVE FOR SELECT TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.time.view') OR private.has_permission((select auth.uid()),'admin.payroll.view')));
 CREATE POLICY module_edit_insert ON public.time_entries AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.time.edit')));
 CREATE POLICY module_edit_update ON public.time_entries AS RESTRICTIVE FOR UPDATE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.time.edit'))) WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.time.edit')));
 CREATE POLICY module_edit_delete ON public.time_entries AS RESTRICTIVE FOR DELETE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.time.edit')));
@@ -246,8 +252,38 @@ CREATE POLICY module_edit_insert ON public.storm_event_logistics_entries AS REST
 CREATE POLICY module_edit_update ON public.storm_event_logistics_entries AS RESTRICTIVE FOR UPDATE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.storms.edit'))) WITH CHECK((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.storms.edit')));
 CREATE POLICY module_edit_delete ON public.storm_event_logistics_entries AS RESTRICTIVE FOR DELETE TO authenticated USING((private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.storms.edit')));
 
+
+-- Payroll owns financial edits; time reviewers may still read claim amounts.
+CREATE POLICY payroll_time_read ON public.time_entries FOR SELECT TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.view'));
+CREATE POLICY payroll_contractor_read ON public.contractors FOR SELECT TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.view'));
+CREATE POLICY payroll_view_select ON public.role_rate_defaults AS RESTRICTIVE FOR SELECT TO authenticated USING(private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.view'));
+CREATE POLICY payroll_edit_insert ON public.role_rate_defaults AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_edit_update ON public.role_rate_defaults AS RESTRICTIVE FOR UPDATE TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.edit')) WITH CHECK(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_edit_delete ON public.role_rate_defaults AS RESTRICTIVE FOR DELETE TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_view_select ON public.utility_billing_rates AS RESTRICTIVE FOR SELECT TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.view'));
+CREATE POLICY payroll_edit_insert ON public.utility_billing_rates AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_edit_update ON public.utility_billing_rates AS RESTRICTIVE FOR UPDATE TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.edit')) WITH CHECK(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_edit_delete ON public.utility_billing_rates AS RESTRICTIVE FOR DELETE TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_view_select ON public.time_entry_vehicle_claims AS RESTRICTIVE FOR SELECT TO authenticated USING(private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.view') OR private.has_permission((select auth.uid()),'admin.time.view'));
+CREATE POLICY time_claim_read ON public.time_entry_vehicle_claims FOR SELECT TO authenticated USING(private.has_permission((select auth.uid()),'admin.time.view'));
+CREATE POLICY payroll_edit_insert ON public.time_entry_vehicle_claims AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_edit_update ON public.time_entry_vehicle_claims AS RESTRICTIVE FOR UPDATE TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.edit')) WITH CHECK(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_edit_delete ON public.time_entry_vehicle_claims AS RESTRICTIVE FOR DELETE TO authenticated USING(private.has_permission((select auth.uid()),'admin.payroll.edit'));
+
+
+-- Restrict staff photo access for this bucket only; existing ownership policies still apply.
+CREATE POLICY payroll_photo_select ON storage.objects AS RESTRICTIVE FOR SELECT TO authenticated
+ USING(bucket_id<>'time-entry-photos' OR private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.view'));
+CREATE POLICY payroll_photo_insert ON storage.objects AS RESTRICTIVE FOR INSERT TO authenticated
+ WITH CHECK(bucket_id<>'time-entry-photos' OR private.active_profile_role()='CONTRACTOR' OR private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_photo_update ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated
+ USING(bucket_id<>'time-entry-photos' OR private.has_permission((select auth.uid()),'admin.payroll.edit'))
+ WITH CHECK(bucket_id<>'time-entry-photos' OR private.has_permission((select auth.uid()),'admin.payroll.edit'));
+CREATE POLICY payroll_photo_delete ON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated
+ USING(bucket_id<>'time-entry-photos' OR private.has_permission((select auth.uid()),'admin.payroll.edit'));
+
 CREATE POLICY profile_directory_permission ON public.profiles AS RESTRICTIVE FOR SELECT TO authenticated
- USING(id=(select auth.uid()) OR private.has_permission((select auth.uid()),'admin.users.view') OR private.has_permission((select auth.uid()),'admin.contractors.view') OR (private.active_profile_role()='CONTRACTOR'));
+ USING(id=(select auth.uid()) OR private.has_permission((select auth.uid()),'admin.users.view') OR private.has_permission((select auth.uid()),'admin.contractors.view') OR private.has_permission((select auth.uid()),'admin.payroll.view') OR (private.active_profile_role()='CONTRACTOR'));
 CREATE POLICY profile_creation_permission ON public.profiles AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(private.has_permission((select auth.uid()),'admin.users.edit'));
 CREATE POLICY profile_deletion_permission ON public.profiles AS RESTRICTIVE FOR DELETE TO authenticated USING(private.has_permission((select auth.uid()),'admin.users.edit') AND id<>(select auth.uid()));
 CREATE OR REPLACE FUNCTION private.guard_profile_authorization() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
@@ -290,6 +326,7 @@ END $$;
 CREATE TABLE public.contractor_invitations (
  profile_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
  email text NOT NULL, invited_by uuid NOT NULL REFERENCES public.profiles(id),
+ first_name text NOT NULL DEFAULT '',last_name text NOT NULL DEFAULT '',
  sent_at timestamptz NOT NULL DEFAULT clock_timestamp(), last_result text NOT NULL CHECK(last_result IN ('sent','failed')),
  send_count integer NOT NULL DEFAULT 1
 );
@@ -313,8 +350,8 @@ BEGIN
   INSERT INTO public.contractors(profile_id,business_name,business_email,business_phone,onboarding_status,is_eligible_for_assignment)
   VALUES(p_profile_id,p_first_name||' '||p_last_name,p_email,p_phone,'PENDING',false) RETURNING id INTO contractor_id;
  END IF;
- INSERT INTO public.contractor_invitations(profile_id,email,invited_by,last_result)
- VALUES(p_profile_id,p_email,p_actor_id,'sent') ON CONFLICT(profile_id) DO UPDATE SET sent_at=clock_timestamp(),last_result='sent',invited_by=p_actor_id,send_count=public.contractor_invitations.send_count+1;
+ INSERT INTO public.contractor_invitations(profile_id,email,first_name,last_name,invited_by,last_result)
+ VALUES(p_profile_id,p_email,p_first_name,p_last_name,p_actor_id,'sent') ON CONFLICT(profile_id) DO UPDATE SET first_name=p_first_name,last_name=p_last_name,sent_at=clock_timestamp(),last_result='sent',invited_by=p_actor_id,send_count=public.contractor_invitations.send_count+1;
  INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,new_values,change_summary)
  VALUES(CASE WHEN p_resend THEN 'INVITE_RESENT' ELSE 'INVITE_SENT' END,'contractor_invitation',p_profile_id,p_actor_id,'SUPER_ADMIN',jsonb_build_object('email',p_email,'contractor_id',contractor_id,'result','sent'),'Contractor invitation sent');
  RETURN jsonb_build_object('profile_id',p_profile_id,'contractor_id',contractor_id,'email',p_email,'state','invited');

@@ -71,7 +71,7 @@
     "Complete production formats and procedures for FPL and other utilities require approved specifications",
     "Local billing has no approved time or expense entries and never queries live finances"
   ],
-  "progress_tracker_note": "MASTER_BUILD_INSTRUCTIONS.md referenced by AGENTS.md is missing; ADR 0002 and this report record the work.",
+  "progress_tracker_note": "ADR 0002 and this report record the work.",
   "rollback": "The earlier illustrative terminology changes were rolled back before this deployment. Deployed templates preserve the restored fields and labels.",
   "live_supabase": {
     "modified": true,

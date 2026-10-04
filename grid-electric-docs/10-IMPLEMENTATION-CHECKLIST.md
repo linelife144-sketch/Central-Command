@@ -668,10 +668,10 @@ interface SyncManager {
 - [x] TypeScript check and 29 targeted tests passed across eight suites.
 - [ ] Complete contractor status progression after approval of scoped Supabase status permissions.
 - [ ] Restore assessment reads after approval of the scoped SELECT grant with existing RLS.
-- [ ] Finish staff contractor provisioning: invitation UI currently references missing scripts; QA fixtures do not prove that workflow.
+- [ ] Finish staff contractor provisioning: one-person invitation implementation is locally complete as recorded below; live migration and actual invitation acceptance remain pending.
 - GPS/location testing is deferred by the user for a later build.
 
-`MASTER_BUILD_INSTRUCTIONS.md` is absent from this checkout. This checklist records the testing progress in its place. Source changes are local; no deployment or Git operation performed.
+This checklist records the testing progress. Source changes are local; no deployment or Git operation performed.
 
 ---
 
@@ -679,7 +679,7 @@ interface SyncManager {
 
 ## Phase 4 UI/UX refresh — 2026-10-03 (Codex /root)
 
-The guide's `MASTER_BUILD_INSTRUCTIONS.md` is absent from this checkout. This entry records the authorized polish work in the existing implementation checklist.
+This entry records the authorized polish work in the existing implementation checklist.
 
 - [x] Retain Grid Electric blue/navy as the primary palette and gold as the accent; add refined gradients, elevation, and reduced-motion-aware transitions. — Codex /root
 - [x] Host Manrope body and Barlow Condensed display fonts locally, with the original font licenses. — Codex /root
@@ -714,3 +714,45 @@ Visual QA images: `output/playwright/`.
 - [x] Remove the legacy dark-panel class from password setup; use the refreshed auth typography, navy headings/labels, dark instructions, readable error colors, and blue primary action. — Codex /root
 - [x] Add field descriptions, validation alert semantics, and new-password autocomplete; retain password requirements and submission behavior. — Codex /root
 - [x] Verify desktop and phone rendering in an isolated preview without changing account credentials; TypeScript, scoped ESLint, and 26 relevant tests pass. — Codex /root
+
+### Individual staff permissions and contractor invitations — 2026-10-03 (Codex /root)
+
+This tracker records the user's authorized Phase 4 feature work. Implementation details and activation gates are in `docs/adr/0006-individual-admin-permissions.md`.
+
+- [x] Build People & access directory and per-person View/Edit controls for 11 modules and 19 permission keys, using the blue/navy/gold theme. — Codex /root
+- [x] Apply permission-aware navigation, protected direct routes, screen mounting, and staff mutation controls; retain contractor portal behavior. — Codex /root
+- [x] Prepare atomic audited database permission saves, restrictive RLS, revision conflict detection, and self/executive/last-administrator protections in the unapplied SQL draft. — Codex /root
+- [x] Build one-person contractor invitation, duplicate/resend handling, trusted role binding, linked business-record finalization, password setup, status, and audit handling. — Codex /root
+- [x] Support token-hash and standard invitation callbacks, preserve the public callback route, and clear permission snapshots when session identity changes. — Codex /root
+- [x] Pass all 355 application tests, TypeScript, scoped ESLint, isolated production build, and 17 isolated PGlite database checks. Verify sample-account previews at desktop/phone widths. — Codex /root
+- [x] Capture the current live policy/function baseline for review and rollback preparation. No access-control migration or email sends occurred. — Codex /root
+- [x] Verify the existing real David McCarty staff session still loads its dashboard and the new People & access page reports the migration-pending guard; verify typing in the LAN login email field without submitting credentials. — Codex /root
+- [ ] Obtain explicit approval and apply the prepared change to live Supabase project `xcvacmreerrypygpritq`; automatic review rejected the broad persistent deployment without specific authorization. — Codex /root
+- [ ] Generate the tracked migration with Supabase CLI after its workspace-credit approval-review failure is resolved; regenerate database types after application. — Codex /root
+- [ ] Verify saved permissions in real staff sessions, direct live RLS denial, current security advisors, and unchanged contractor isolation. — Codex /root
+- [ ] Verify SMTP/redirect configuration and actual invitation delivery, separate-computer activation, password setup, linked identity, duplicate rejection, and resend with an approved recipient. — Codex /root
+
+### Implementation-plan state review — 2026-10-03 (Codex /root)
+
+- [x] Review `implementation_plan.md`, current Git status/diffs/history, and Graphify queries against the existing 2,394-node graph. Review only; no application code or live database changes. — Codex /root
+- [x] Verify current local baseline: 431 tests pass across 85 files; TypeScript passes with build metadata written outside the live runtime. — Codex /root
+- [x] Complete Phase 3 Step 14 locally: preserve costing snapshots, display wages/reimbursement/payout, add admin billing/margin, refresh totals, and preserve offline storm/costing fields. — Codex /root
+- [x] Reconcile Payroll navigation and local authorization: actual Sidebar/search includes Payroll, independent View/Edit keys are in the catalog, and controls respect edit access. Live module-policy deployment remains pending. — Codex /root
+- [ ] Finish Step 15 device acceptance using trusted HTTPS. The approved payroll repair, live database checks, and Phase 3 migration-file reconciliation are complete; Step 16 uses authorized dummy pilot rates. See the Phase 3 completion entry below. — Codex /root
+
+### Project guidance cleanup — 2026-10-03 (Codex /root)
+
+- [x] Remove the obsolete build-guide prerequisite and references from project instructions, README, scratchpad, testing reports, and progress notes. Use the implementation plan and this checklist for task scope and progress. — Codex /root
+
+### Phase 3 payroll completion — 2026-10-03 (Codex /root)
+
+- [x] Complete Step 14 implementation and verify 441 tests / 85 files, TypeScript, scoped ESLint, isolated webpack production build (41 routes), 18 access-control checks, and 14 payroll-integrity checks. Database checks are isolated PGlite evidence. — Codex /root
+- [x] Verify existing live payroll migrations and configure/read back six dummy utility-billing fallback rates authorized by the user; keep 30 existing dummy wage rates. — Codex /root
+- [x] Verify real David staff Payroll page, refresh, time-review navigation, phone/tablet containment, and keyboard mobile Payroll navigation. Verify contractor wage/reimbursement displays using labeled sample shifts. — Codex /root
+- [x] Inspect live security/performance advisors and preserve current costing/claim function definitions for the focused repair. — Codex /root
+- [x] Obtain explicit user approval and deploy `preserve_payroll_snapshots_and_guard_vehicle_claims` (`20261004002801`). Verify both live function bodies and all-update trigger attachments; retain original definitions. Correct the earlier isolated fixture's column-limited-trigger mismatch and pass 16 integrity checks. — Codex /root
+- [x] Pass 20 live database/RLS rollback checks, including rate-change immutability and linked payout ($180 wages + $20 reimbursement). Restore temporary QA role/rate edits and verify zero retained shifts/claims. — Codex /root
+- [x] Verify real QA contractor Wi-Fi sign-in, configured rate, totals refresh, identity after reload, and staff Payroll route denial. GPS failure correctly blocks clock-in. — Codex /root
+- [ ] Complete actual device shift/photo/claim/review workflow and displayed linked totals using a trusted HTTPS address. Current HTTP LAN browser testing cannot supply the required GPS reading. — Codex /root
+- [x] Restore all five applied Phase 3 payroll migrations via CLI-created files, use confirmed live versions, and compare recovered SQL against recorded live history. — Codex /root
+- [ ] Apply the separately prepared per-user permission/invitation migration after its existing approval gate. — Codex /root

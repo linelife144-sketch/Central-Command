@@ -8,7 +8,7 @@
   "disable": "Set NEXT_PUBLIC_ENABLE_SUPER_ADMIN_TESTING=false and reload the development server",
   "production": "Local testing is always disabled when NODE_ENV=production",
   "scope": "Storm events, ticket CRUD, and ticket status history. This mode does not create real Supabase accounts or business records.",
-  "progress_tracker_note": "The MASTER_BUILD_INSTRUCTIONS.md progress tracker referenced by AGENTS.md is missing. This file records the authorized task and verification status instead.",
+  "progress_tracker_note": "This file records the authorized task and verification status.",
   "verification": {
     "typecheck": "Passed full TypeScript check after changes",
     "service_checks": "8 direct checks passed against installed service code with isolated storage and a remote adapter",

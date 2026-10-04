@@ -10,12 +10,12 @@ This README serves as the primary entry point and operational guide for **AI Cod
 
 Before taking any action or writing any code in this directory, you **MUST** follow this protocol:
 
-1. **Read the Master Build Instructions**: Refer to [grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md](file:///Users/davidmccarty/Desktop/Grid2/grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md) first. It is the single source of truth for features, development phases, and roadmap.
-2. **Check the Progress Tracker**: Review Section 2 of the [MASTER_BUILD_INSTRUCTIONS.md](file:///Users/davidmccarty/Desktop/Grid2/grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md) to see what tasks are already complete or in progress. Do not skip phases or duplicate work.
+1. **Review the Implementation Plan**: Read [implementation_plan.md](implementation_plan.md) for the current task scope and implementation order.
+2. **Check Progress**: Review [the implementation checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md) to see what is complete or in progress.
 3. **Review the Agent Guidelines**: Read the rules defined in [AGENTS.md](file:///Users/davidmccarty/Desktop/Grid2/AGENTS.md). It outlines code style, security requirements, and offline-first/GPS validation rules.
 4. **Document Your Work**: 
    - Use the [scratchpad.md](file:///Users/davidmccarty/Desktop/Grid2/scratchpad.md) file in this directory to track your current context, notes, and checklist during your session.
-   - Update the Progress Tracker in [MASTER_BUILD_INSTRUCTIONS.md](file:///Users/davidmccarty/Desktop/Grid2/grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md) when finishing a task.
+   - Update [the implementation checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md) when finishing a task.
 
 ---
 

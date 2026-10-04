@@ -182,7 +182,10 @@ export async function updateSession(request: NextRequest) {
 
   if (isAdminRole && !mayOpenPath(pathname, permissions)) {
     const forbiddenUrl = request.nextUrl.clone();
-    forbiddenUrl.pathname = '/forbidden';
+    // Sign-in and password forms use the dashboard as the staff home. A hidden
+    // dashboard should lead to the person's first allowed module after sign-in.
+    forbiddenUrl.pathname = pathname === '/admin/dashboard' && Object.keys(permissions).length > 0
+      ? permissionLanding(permissions) : '/forbidden';
     forbiddenUrl.search = '';
     return redirectWithSession(forbiddenUrl);
   }

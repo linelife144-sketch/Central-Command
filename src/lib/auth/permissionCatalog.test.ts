@@ -37,3 +37,11 @@ describe('individual staff access', () => {
     expect(sqlKeys).toEqual(PERMISSION_KEYS);
   });
 });
+
+
+it('gates Payroll independently of time review and makes admin wage edits opt-in', () => {
+  const permissions = resolvePermissions('ADMIN', { 'admin.time.view': 'deny' });
+  expect(mayOpenPath('/admin/payroll', permissions)).toBe(true);
+  expect(permissions['admin.payroll.edit']).toBe(false);
+  expect(mayOpenPath('/admin/payroll', resolvePermissions('ADMIN', { 'admin.payroll.view': 'deny' }))).toBe(false);
+});

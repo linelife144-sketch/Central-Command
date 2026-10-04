@@ -8,10 +8,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDate, formatDateTime, formatDuration } from '@/lib/utils/formatters';
 import {
-  calculateBillableAmount,
   resolveBillableMinutesForEntry,
   resolveTotalMinutesForEntry,
 } from '@/lib/utils/timeTracking';
+import { timeEntryMoney } from '@/lib/utils/payroll';
 import type { TimeEntryListItem } from '@/lib/services/timeEntryManagementService';
 
 export interface TimeEntryCardProps {
@@ -19,6 +19,8 @@ export interface TimeEntryCardProps {
   selected?: boolean;
   showSelection?: boolean;
   showReviewActions?: boolean;
+  /** Admin-only payroll/utility-bill rows, sourced from the server-trigger-written snapshot fields. */
+  showPayrollDetails?: boolean;
   reviewBusy?: boolean;
   onSelectChange?: (selected: boolean) => void;
   onApprove?: (entry: TimeEntryListItem) => void;
@@ -38,6 +40,7 @@ export function TimeEntryCard({
   selected = false,
   showSelection = false,
   showReviewActions = false,
+  showPayrollDetails = false,
   reviewBusy = false,
   onSelectChange,
   onApprove,
@@ -45,7 +48,8 @@ export function TimeEntryCard({
 }: TimeEntryCardProps) {
   const totalMinutes = resolveTotalMinutesForEntry(entry);
   const billableMinutes = resolveBillableMinutesForEntry(entry);
-  const billableAmount = entry.billable_amount ?? calculateBillableAmount(billableMinutes, entry.work_type_rate);
+  const money = timeEntryMoney(entry);
+  const moneyLabel = (amount?: number) => amount === undefined ? '—' : formatCurrency(amount);
 
   return (
     <Card>
@@ -55,7 +59,7 @@ export function TimeEntryCard({
             <CardTitle className="text-base">
               {entry.contractor_name ?? 'Contractor'}
             </CardTitle>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               {entry.ticket_number ? `Ticket ${entry.ticket_number}` : entry.ticket_id ?? 'No ticket linked'}
             </p>
           </div>
@@ -87,15 +91,22 @@ export function TimeEntryCard({
             <span className="font-medium">Duration:</span> {formatDuration(totalMinutes)}
           </p>
           <p><span className="font-medium">Billable:</span> {formatDuration(billableMinutes)}</p>
-          <p><span className="font-medium">Amount:</span> {formatCurrency(billableAmount)}</p>
+          <p><span className="font-medium">Wages:</span> {moneyLabel(money.wage)}</p>
           <p className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />
             <span className="font-medium">Sync:</span> {entry.sync_status}
           </p>
+          <p><span className="font-medium">Approved reimbursement:</span> {moneyLabel(money.reimbursement)}</p>
+          <p><span className="font-medium">Total payout:</span> {moneyLabel(money.payout)}</p>
+          {entry.vehicle_claim_status === 'PENDING' && <p className="text-grid-warning-ink">Vehicle claim awaiting review</p>}
+          {showPayrollDetails && <p><span className="font-medium">Margin:</span> {moneyLabel(money.margin)}</p>}
+          {showPayrollDetails && typeof entry.utility_bill_amount === 'number' ? (
+            <p><span className="font-medium">Utility Bill:</span> {formatCurrency(entry.utility_bill_amount)}</p>
+          ) : null}
         </div>
 
         {entry.rejection_reason ? (
-          <div className="rounded-md border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">
+          <div className="rounded-md border border-grid-danger/25 bg-grid-danger-soft p-2 text-xs text-grid-danger-ink">
             <span className="font-medium">Rejection reason:</span> {entry.rejection_reason}
           </div>
         ) : null}

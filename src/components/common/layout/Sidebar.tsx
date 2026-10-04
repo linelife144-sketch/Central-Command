@@ -26,6 +26,7 @@ export const adminNavItems = [
   { href: '/admin/time-review', label: 'Time Review', icon: Clock, group: 'Review & reporting' },
   { href: '/admin/expense-review', label: 'Expenses', icon: Receipt, group: 'Review & reporting' },
   { href: '/admin/assessment-review', label: 'Assessments', icon: FileText, group: 'Review & reporting' },
+  { href: '/admin/payroll', label: 'Payroll', icon: ChartNoAxesCombined, group: 'Review & reporting' },
   { href: '/admin/reports', label: 'Reports', icon: ChartNoAxesCombined, group: 'Review & reporting' },
   { href: '/admin/account', label: 'Account', icon: Settings, group: 'Workspace' },
   { href: '/admin/users', label: 'People & access', icon: Users, group: 'Workspace' },

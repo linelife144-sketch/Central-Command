@@ -9,14 +9,18 @@ export async function inviteContractor(actorId: string, input: unknown) {
   const audit = async (action: string, result: string, targetId?: string) => {
     const { error } = await admin.from('audit_logs').insert({ action, entity_type: 'contractor_invitation', entity_id: targetId ?? null, user_id: actorId, user_role: 'SUPER_ADMIN', new_values: { email: payload.email, result } });
     if (error) throw new Error('Invitation audit could not be saved.');
+    if (action === 'INVITE_FAILED' && targetId) {
+      const { error: statusError } = await admin.from('contractor_invitations' as never).upsert({ profile_id: targetId, email: payload.email, first_name: payload.first_name, last_name: payload.last_name, invited_by: actorId, last_result: 'failed' } as never, { onConflict: 'profile_id' });
+      if (statusError) throw new Error('The failed invitation was audited, but its status could not be saved.');
+    }
   };
-  const { data: existing, error: lookupError } = await admin.from('profiles').select('id,role').ilike('email', payload.email).maybeSingle();
+  const { data: existing, error: lookupError } = await admin.from('profiles').select('id,role').eq('email', payload.email).maybeSingle();
   if (lookupError) throw new Error('Unable to check the existing account.');
   let existingId: string | undefined;
   if (existing) {
     const { data, error } = await admin.auth.admin.getUserById(existing.id);
     if (error || !data.user) throw new Error('Unable to verify the existing account.');
-    if (existing.role !== 'CONTRACTOR' || data.user.email_confirmed_at) {
+    if (existing.role !== 'CONTRACTOR' || (data.user.app_metadata?.role && data.user.app_metadata.role !== 'CONTRACTOR') || data.user.email_confirmed_at) {
       await audit('INVITE_DUPLICATE_REJECTED', 'Account already active or has a staff role', existing.id);
       throw new AccessError('This email already has an active account. No new account was created.', 409);
     }

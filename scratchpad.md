@@ -74,7 +74,7 @@ Make two admin capabilities actually work end to end:
 ### 3. Close the loop
 
 - [ ] **3.1 Regenerate Supabase TypeScript types** after both migrations and update `src/types/database.ts` from the generated output. Do not hand-edit the generated table types.
-- [ ] **3.2 Update the implementation checklist** at `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md` after the work is real. The current note says staff provisioning is unfinished and `MASTER_BUILD_INSTRUCTIONS.md` is absent, so do not invent a progress-tracker edit.
+- [ ] **3.2 Update the implementation checklist** at `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md` after the work is real. Record verified completion only; staff provisioning still needs operational acceptance.
 - [ ] **3.3 Run `graphify update .`** after the code changes so the new invite route, permission catalog, and user screen are in the graph.
 
 ---
@@ -159,7 +159,7 @@ Account pages are not permission-gated. A user can always open their own account
   - `supabase/migrations/20261001033742_storm_contractor_auth_alignment.sql`
   - `package.json`
   - `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md`
-- **Known absence:** `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md` is not in this checkout. The implementation checklist is the local progress record.
+- **Progress record:** The implementation checklist is the local progress record.
 - **Next immediate action:** Start at task 1.1 (confirm Supabase invite email configuration). Do not start the permissions screen until the catalog and database helper exist; UI-only hiding would look done and still be bypassable.
 
 ---

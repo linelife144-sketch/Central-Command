@@ -4,8 +4,10 @@ import { pathToFileURL } from 'node:url';
 const runtime = process.env.CC_PGLITE_PATH || '/Users/davidmccarty/.codex/.chatgpt-projects/g-p-698e4e3dea2c819193d268ef77b9572e/workspace/e2e-20261001/policy-runtime/node_modules/@electric-sql/pglite/dist/index.js';
 const { PGlite } = await import(pathToFileURL(runtime).href);
 const db = new PGlite();
-const tables = ['storm_events','tickets','ticket_payloads','ticket_status_history','ticket_attachments','ticket_extraction_sessions','ticket_routes','contractor_rates','contractor_banking','time_entries','expense_reports','expense_items','damage_assessments','equipment_assessments','storm_event_roster_members','storm_event_roster_revisions','storm_event_authorization_logs','storm_event_phase_steps','storm_event_documents','storm_event_logistics_entries'];
-await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS; CREATE SCHEMA auth; CREATE SCHEMA private;
+const tables = ['role_rate_defaults','utility_billing_rates','time_entry_vehicle_claims','storm_events','tickets','ticket_payloads','ticket_status_history','ticket_attachments','ticket_extraction_sessions','ticket_routes','contractor_rates','contractor_banking','time_entries','expense_reports','expense_items','damage_assessments','equipment_assessments','storm_event_roster_members','storm_event_roster_revisions','storm_event_authorization_logs','storm_event_phase_steps','storm_event_documents','storm_event_logistics_entries'];
+await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS; CREATE SCHEMA auth; CREATE SCHEMA private; CREATE SCHEMA storage;
+CREATE TABLE storage.objects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),bucket_id text);
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 GRANT USAGE ON SCHEMA public,auth,private TO authenticated,service_role;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 CREATE TABLE profiles(id uuid PRIMARY KEY,email text,first_name text,last_name text,phone text,role text,is_active boolean DEFAULT true,must_reset_password boolean DEFAULT false,is_email_verified boolean,mfa_enabled boolean,mfa_secret_encrypted text);
@@ -16,14 +18,18 @@ CREATE TABLE contractors(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),profile_i
 CREATE TABLE audit_logs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),action text,entity_type text,entity_id uuid,user_id uuid,user_role text,old_values jsonb,new_values jsonb,change_summary text);
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY; CREATE POLICY profile_read ON profiles FOR SELECT TO authenticated USING(id=auth.uid() OR is_admin());
 CREATE POLICY profile_write ON profiles FOR UPDATE TO authenticated USING(id=auth.uid() OR is_super_admin()) WITH CHECK(id=auth.uid() OR is_super_admin());
+CREATE POLICY profile_delete ON profiles FOR DELETE TO authenticated USING(is_super_admin());
+CREATE FUNCTION private.guard_profile_authorization() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;
+CREATE TRIGGER protect_profile_authorization BEFORE INSERT OR UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION private.guard_profile_authorization();
 `);
+await db.exec('GRANT USAGE ON SCHEMA storage TO authenticated; GRANT ALL ON storage.objects TO authenticated; CREATE POLICY photo_admin ON storage.objects FOR ALL TO authenticated USING(is_admin()) WITH CHECK(is_admin());');
 for (const table of ['contractors', ...tables]) {
  if(table !== 'contractors') await db.exec(`CREATE TABLE ${table}(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid, value text)`);
  await db.exec(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY ${table}_admin ON ${table} FOR ALL TO authenticated USING(is_admin()) WITH CHECK(is_admin()); CREATE POLICY ${table}_own ON ${table} FOR ALL TO authenticated USING(${table==='contractors' ? 'profile_id':'owner_id'}=auth.uid()) WITH CHECK(${table==='contractors' ? 'profile_id':'owner_id'}=auth.uid());`);
 }
 await db.exec(`GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated,service_role; GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA private TO authenticated,service_role;`);
 await db.exec(await readFile('supabase/admin_user_permissions.sql','utf8'));
-const ids={sa:'00000000-0000-4000-8000-000000000001',sa2:'00000000-0000-4000-8000-000000000002',admin:'00000000-0000-4000-8000-000000000003',contractor:'00000000-0000-4000-8000-000000000004'};
+const ids={sa:'00000000-0000-4000-8000-000000000001',sa2:'00000000-0000-4000-8000-000000000002',admin:'00000000-0000-4000-8000-000000000003',contractor:'00000000-0000-4000-8000-000000000004',ceo:'00000000-0000-4000-8000-000000000005'};
 for(const [key,id] of Object.entries(ids)) await db.query(`INSERT INTO profiles(id,email,first_name,last_name,role) VALUES($1,$2,$3,'Test',$4)`,[id,`${key}@example.invalid`,key,key.startsWith('sa')?'SUPER_ADMIN':key.toUpperCase()]);
 await db.query(`INSERT INTO tickets(owner_id,value) VALUES($1,'original'),($2,'contractor-ticket')`,[ids.admin,ids.contractor]);
 await db.query(`INSERT INTO storm_events(value) VALUES('original')`);
@@ -41,8 +47,22 @@ await test('unknown key rolls back and preserves version',()=>as(ids.sa,async()=
 await test('stale save rejects instead of overwriting',()=>as(ids.sa,async()=>{await assert.rejects(()=>save(ids.admin,{},null),/Reload before saving/);}));
 await test('self edit is denied',()=>as(ids.sa,async()=>{await assert.rejects(()=>save(ids.sa,{}),/own permissions/);}));
 await test('Admin cannot save permissions or grant itself powers',()=>as(ids.admin,async()=>{await assert.rejects(()=>save(ids.sa,{}),/Super Admin permission/);await assert.rejects(()=>db.query('INSERT INTO user_permissions(profile_id,permission_key,effect,updated_by) VALUES($1,$2,$3,$1)',[ids.admin,'admin.users.edit','allow']),/permission denied/);}));
-await test('contractor and executive access cannot be customized',()=>as(ids.sa,async()=>{await assert.rejects(()=>save(ids.contractor,{'admin.time.view':'allow'}),/locked/);}));
+await test('contractor and executive access cannot be customized',()=>as(ids.sa,async()=>{await assert.rejects(()=>save(ids.contractor,{'admin.time.view':'allow'}),/locked/);await assert.rejects(()=>save(ids.ceo,{}),/locked/);}));
 await test('contractor policy remains restricted to owned rows',()=>as(ids.contractor,async()=>{assert.equal((await db.query('SELECT * FROM tickets')).rows.length,1);assert.equal((await db.query("UPDATE tickets SET value='own-change' RETURNING id")).rows.length,1);assert.ok(Object.values(await map()).every(value=>!value));}));
 await test('last access administrator stays protected',async()=>{await as(ids.sa,()=>save(ids.sa2,{'admin.users.view':'deny'}));await as(ids.sa2,async()=>{await assert.rejects(()=>save(ids.sa,{'admin.users.edit':'deny'}),/Super Admin permission/);});assert.equal((await db.query("SELECT private.has_permission($1,'admin.users.edit') AS allowed",[ids.sa])).rows[0].allowed,true);});
 await test('permission changes are audited and direct writes remain unavailable',async()=>{assert.equal((await db.query("SELECT * FROM audit_logs WHERE action='PERMISSIONS_UPDATED'")).rows.length,2);});
+await test('password setup gate prevents direct staff permission access',async()=>{await db.query('UPDATE profiles SET must_reset_password=true WHERE id=$1',[ids.sa]);await as(ids.sa,async()=>{assert.ok(Object.values(await map()).every(value=>!value));await assert.rejects(()=>save(ids.admin,{},settings.version),/Super Admin permission/);});await db.query('UPDATE profiles SET must_reset_password=false WHERE id=$1',[ids.sa]);});
+await test('profile guards protect self escalation and executive authorization fields',async()=>{await as(ids.admin,async()=>{await assert.rejects(()=>db.query("UPDATE profiles SET role='SUPER_ADMIN' WHERE id=auth.uid()"),/protected/);});await as(ids.sa,async()=>{await assert.rejects(()=>db.query('UPDATE profiles SET is_active=false WHERE id=$1',[ids.ceo]),/protected/);await assert.rejects(()=>db.query('DELETE FROM profiles WHERE id=$1',[ids.ceo]),/Protected/);});});
+const finalize=()=>db.query('SELECT finalize_contractor_invite($1,$2,$3,$4,$5,$6,$7) AS result',[ids.sa,ids.contractor,'Alex','Rivera','contractor@example.invalid',null,false]);
+await test('invitation finalization is service-role only',()=>as(ids.sa,async()=>{await assert.rejects(finalize,/permission denied/);}));
+await test('invitation finalization atomically creates linked records and a password gate',async()=>{await db.exec('SET ROLE service_role');try{await finalize();}finally{await db.exec('RESET ROLE');}const person=(await db.query('SELECT * FROM profiles WHERE id=$1',[ids.contractor])).rows[0];assert.equal(person.must_reset_password,true);assert.equal((await db.query('SELECT * FROM contractors WHERE profile_id=$1',[ids.contractor])).rows.length,1);assert.equal((await db.query('SELECT * FROM contractor_invitations WHERE profile_id=$1',[ids.contractor])).rows[0].first_name,'Alex');assert.equal((await db.query("SELECT * FROM audit_logs WHERE action='INVITE_SENT'")).rows.length,1);});
+await test('resend preserves approved contractor records and increments invitation count',async()=>{await db.query("UPDATE contractors SET onboarding_status='APPROVED',is_eligible_for_assignment=true WHERE profile_id=$1",[ids.contractor]);await db.exec('SET ROLE service_role');try{await finalize();}finally{await db.exec('RESET ROLE');}assert.equal((await db.query('SELECT * FROM contractors WHERE profile_id=$1',[ids.contractor])).rows[0].is_eligible_for_assignment,true);assert.equal((await db.query('SELECT * FROM contractor_invitations WHERE profile_id=$1',[ids.contractor])).rows[0].send_count,2);});
+await db.query(`INSERT INTO time_entries(owner_id,value) VALUES($1,'one'),($2,'two')`,[ids.admin,ids.contractor]);
+await db.query(`INSERT INTO role_rate_defaults(owner_id,value) VALUES($1,'one'),($2,'two')`,[ids.admin,ids.contractor]);
+await test('Payroll view remains independent of hidden time review and financial edits are opt-in', async()=>{
+ await as(ids.sa,async()=>{const current=(await db.query('SELECT get_user_permission_settings($1) AS settings',[ids.admin])).rows[0].settings;await save(ids.admin,{'admin.time.view':'deny','admin.payroll.view':'allow'},current.version);});
+ await as(ids.admin,async()=>{assert.equal((await map())['admin.time.view'],false);assert.equal((await db.query('SELECT * FROM time_entries')).rows.length,2);assert.equal((await db.query("UPDATE role_rate_defaults SET value='blocked' RETURNING id")).rows.length,0);});
+ await as(ids.sa,async()=>{const current=(await db.query('SELECT get_user_permission_settings($1) AS settings',[ids.admin])).rows[0].settings;await save(ids.admin,{'admin.payroll.edit':'allow'},current.version);});
+ await as(ids.admin,async()=>{assert.equal((await db.query("UPDATE role_rate_defaults SET value='allowed' RETURNING id")).rows.length,2);});
+});
 await db.close();console.log(`${count} database checks passed (isolated PGlite; not live Supabase proof).`);

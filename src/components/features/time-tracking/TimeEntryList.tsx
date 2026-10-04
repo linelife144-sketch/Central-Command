@@ -25,11 +25,11 @@ import {
 } from '@/lib/services/timeEntryManagementService';
 import { formatCurrency, formatDate, formatDuration } from '@/lib/utils/formatters';
 import {
-  calculateBillableAmount,
   calculateTimeEntrySummary,
   resolveBillableMinutesForEntry,
   resolveTotalMinutesForEntry,
 } from '@/lib/utils/timeTracking';
+import { timeEntryMoney } from '@/lib/utils/payroll';
 import type { TimeEntryStatus } from '@/types';
 
 import { TimeEntryCard } from './TimeEntryCard';
@@ -48,6 +48,7 @@ export function getTimeReviewLayoutMode() {
 export interface TimeEntryListProps {
   mode: 'contractor' | 'admin';
   canEdit?: boolean;
+  refreshKey?: number;
   contractorId?: string;
   reviewerId?: string;
 }
@@ -94,7 +95,7 @@ function toWorkTypeLabel(workType: string): string {
     .join(' ');
 }
 
-export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true }: TimeEntryListProps) {
+export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true, refreshKey = 0 }: TimeEntryListProps) {
   const [entries, setEntries] = useState<TimeEntryListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -140,7 +141,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true }
 
   useEffect(() => {
     void loadEntries();
-  }, [loadEntries]);
+  }, [loadEntries, refreshKey]);
 
   useEffect(() => {
     setSelectedEntryIds((previous) => previous.filter((id) => entries.some((entry) => entry.id === id)));
@@ -339,13 +340,17 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true }
         cell: (entry) => formatDuration(resolveBillableMinutesForEntry(entry)),
       },
       {
-        key: 'amount',
-        header: 'Amount',
-        cell: (entry) => {
-          const billableMinutes = resolveBillableMinutesForEntry(entry);
-          const amount = entry.billable_amount ?? calculateBillableAmount(billableMinutes, entry.work_type_rate);
-          return formatCurrency(amount);
-        },
+        key: 'wages',
+        header: 'Wages',
+        cell: entry => timeEntryMoney(entry).wage === undefined ? '—' : formatCurrency(timeEntryMoney(entry).wage!),
+      },
+      {
+        key: 'reimbursement', header: 'Approved Reimbursement',
+        cell: entry => timeEntryMoney(entry).reimbursement === undefined ? '—' : formatCurrency(timeEntryMoney(entry).reimbursement!),
+      },
+      {
+        key: 'payout', header: 'Total Payout',
+        cell: entry => timeEntryMoney(entry).payout === undefined ? '—' : formatCurrency(timeEntryMoney(entry).payout!),
       },
       {
         key: 'status',
@@ -359,6 +364,21 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true }
         ),
       },
     );
+
+    if (mode === 'admin') {
+      baseColumns.push(
+        {
+          key: 'utility_bill_amount',
+          header: 'Utility Bill',
+          cell: (entry) =>
+            typeof entry.utility_bill_amount === 'number' ? formatCurrency(entry.utility_bill_amount) : '—',
+        },
+        {
+          key: 'margin', header: 'Margin',
+          cell: entry => timeEntryMoney(entry).margin === undefined ? '—' : formatCurrency(timeEntryMoney(entry).margin!),
+        },
+      );
+    }
 
     if (mode === 'admin') {
       baseColumns.push({
@@ -522,6 +542,7 @@ export function TimeEntryList({ mode, contractorId, reviewerId, canEdit = true }
               selected={selectedEntryIds.includes(entry.id)}
               showSelection={mode === 'admin'}
               showReviewActions={mode === 'admin' && canEdit}
+              showPayrollDetails={mode === 'admin'}
               reviewBusy={isSubmitting}
               onSelectChange={(selected) => updateSelected(entry.id, selected)}
               onApprove={(selectedEntry) => {

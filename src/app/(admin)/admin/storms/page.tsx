@@ -65,7 +65,7 @@ export default function StormEventsPage() {
             </Link>
           </Button>
         ) : (
-          <Button disabled title="Only Super Admin can create storm events" variant="storm">
+          <Button disabled title="Storm edit permission is required" variant="storm">
             <Plus className="h-4 w-4 mr-2" />
             Create Storm Event
           </Button>
@@ -74,7 +74,7 @@ export default function StormEventsPage() {
 
       {!canManageStormEvents && (
         <div className="rounded-xl border border-grid-warning bg-grid-warning-soft p-3 text-sm text-grid-navy">
-          Admin users can view storm events, but create/edit actions are restricted to Super Admin.
+          You have view access to storm events. A Super Admin can enable Edit in your permissions.
         </div>
       )}
 
@@ -113,7 +113,7 @@ export default function StormEventsPage() {
                     variant="outline"
                     size="sm"
                     disabled
-                    title="Only Super Admin can create ticket entries"
+                    title="Ticket edit permission is required"
                   >
                     <TicketIcon className="h-4 w-4 mr-2" />
                     Create Ticket Entry

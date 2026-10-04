@@ -32,6 +32,8 @@ export interface TimeEntryListFilters {
 export interface TimeEntryListItem extends TimeEntry {
   ticket_number?: string;
   contractor_name?: string;
+  vehicle_reimbursement_amount?: number;
+  vehicle_claim_status?: string;
 }
 
 export interface ReviewTimeEntryInput {
@@ -66,7 +68,7 @@ function toTimeEntryStatus(status: string): TimeEntryStatus {
   return 'PENDING';
 }
 
-function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
+export function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
   return {
     id: row.id,
     contractor_id: row.contractor_id,
@@ -83,6 +85,12 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     break_minutes: row.break_minutes ?? 0,
     billable_minutes: row.billable_minutes ?? undefined,
     billable_amount: row.billable_amount ?? undefined,
+    storm_event_id: row.storm_event_id ?? undefined,
+    contractor_role: row.contractor_role ?? undefined,
+    pay_rate_applied: row.pay_rate_applied ?? undefined,
+    payroll_amount: row.payroll_amount ?? undefined,
+    utility_bill_rate_applied: row.utility_bill_rate_applied ?? undefined,
+    utility_bill_amount: row.utility_bill_amount ?? undefined,
     status: toTimeEntryStatus(row.status ?? 'PENDING'),
     reviewed_by: row.reviewed_by ?? undefined,
     reviewed_at: row.reviewed_at ?? undefined,
@@ -113,6 +121,12 @@ function mapLocalEntryToListItem(entry: LocalTimeEntry): TimeEntryListItem {
     work_type: entry.work_type as TimeEntry['work_type'],
     work_type_rate: entry.work_type_rate,
     break_minutes: entry.break_minutes,
+    storm_event_id: entry.storm_event_id,
+    contractor_role: entry.contractor_role,
+    pay_rate_applied: entry.pay_rate_applied,
+    payroll_amount: entry.payroll_amount,
+    utility_bill_rate_applied: entry.utility_bill_rate_applied,
+    utility_bill_amount: entry.utility_bill_amount,
     status: toTimeEntryStatus(entry.status),
     sync_status: entry.sync_status === 'synced' ? 'SYNCED' : entry.sync_status === 'failed' ? 'FAILED' : 'PENDING',
     created_at: createdAt,
@@ -265,8 +279,21 @@ async function fetchRemoteEntries(filters: TimeEntryListFilters): Promise<TimeEn
     fetchContractorNames(supabase, contractorIds),
   ]);
 
+  const claimByEntry = new Map<string, { amount: number; status: string }>();
+  if (entries.length) {
+    const { data: claims, error: claimError } = await supabase
+      .from('time_entry_vehicle_claims')
+      .select('time_entry_id, amount, status')
+      .in('time_entry_id', entries.map(entry => entry.id));
+    if (claimError) throw claimError;
+    for (const claim of claims ?? []) claimByEntry.set(claim.time_entry_id, claim);
+  }
+
   return entries.map((entry) => ({
     ...entry,
+    vehicle_reimbursement_amount: claimByEntry.get(entry.id)?.status === 'APPROVED'
+      ? claimByEntry.get(entry.id)!.amount : 0,
+    vehicle_claim_status: claimByEntry.get(entry.id)?.status,
     ticket_number: entry.ticket_id ? ticketNumberById.get(entry.ticket_id) : undefined,
     contractor_name: contractorNameById.get(entry.contractor_id),
   }));

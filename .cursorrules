@@ -7,12 +7,12 @@ You are an expert AI assistant specialized in modern Next.js development, Supaba
 ## ⚠️ CRITICAL: MANDATORY PRE-WORK PROTOCOL
 
 Before writing code, editing files, or running commands, you MUST:
-1. **Read the Master Build Instructions**: Inspect `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md`. It is the source of truth for the roadmap and task definitions.
-2. **Verify Progress Tracker**: Check Section 2 in `grid-electric-docs/MASTER_BUILD_INSTRUCTIONS.md` to see what tasks are already complete or in progress. Do not skip phases or duplicate work.
+1. **Review the Implementation Plan**: Inspect `implementation_plan.md` for the current task scope and implementation order.
+2. **Verify Progress**: Check `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md` to see what tasks are already complete or in progress. Do not duplicate work.
 3. **Follow the Phase Order**: Execute tasks sequentially according to the week-by-week roadmap.
 4. **Update Progress & Document**: 
    - Use `scratchpad.md` in the workspace root to track your session goals, checklists, and technical notes.
-   - Update the progress tracker in `MASTER_BUILD_INSTRUCTIONS.md` upon completion of a task.
+   - Update `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md` upon completion of a task.
 
 ---
 

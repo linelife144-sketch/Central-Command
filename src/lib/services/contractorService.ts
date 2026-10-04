@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { isAuthOrPermissionError } from '@/lib/utils/errorHandling';
+import type { ContractorRole } from '@/types';
 
 interface RemoteContractorRow {
   id: string;
@@ -13,6 +14,7 @@ interface RemoteContractorRow {
   eligibility_reason: string | null;
   business_email: string | null;
   business_phone: string | null;
+  role: ContractorRole;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +56,7 @@ export interface ContractorListItem {
   activeTicketCount: number;
   alerts: string[];
   emailVerified?: boolean;
+  role: ContractorRole;
 }
 
 export interface ContractorListFilters {
@@ -84,6 +87,7 @@ export interface ContractorDetail {
   onboardingStatus: string;
   eligibleForAssignment: boolean;
   eligibilityReason: string | null;
+  role: ContractorRole;
   activeTicketCount: number;
   totalTicketCount: number;
   createdAt: string;
@@ -257,6 +261,7 @@ export const contractorService = {
       'eligibility_reason',
       'business_email',
       'business_phone',
+      'role',
       'created_at',
       'updated_at',
     ].join(',');
@@ -313,6 +318,7 @@ export const contractorService = {
         phone: profile?.phone ?? row.business_phone,
         activeTicketCount: activeTicketCountByContractor.get(row.id) ?? 0,
         alerts: buildAlerts(row),
+        role: row.role,
       } satisfies ContractorListItem;
     });
 
@@ -360,6 +366,7 @@ export const contractorService = {
       'eligibility_reason',
       'business_email',
       'business_phone',
+      'role',
       'created_at',
       'updated_at',
     ].join(',');
@@ -424,6 +431,7 @@ export const contractorService = {
       onboardingStatus: row.onboarding_status,
       eligibleForAssignment: row.is_eligible_for_assignment,
       eligibilityReason: row.eligibility_reason,
+      role: row.role,
       activeTicketCount: activeTicketCountByContractor.get(row.id) ?? 0,
       totalTicketCount: totalTicketCountByContractor.get(row.id) ?? 0,
       createdAt: row.created_at,

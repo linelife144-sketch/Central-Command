@@ -8,13 +8,14 @@ import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ContractorPayrollEditor } from '@/components/features/payroll';
 import { contractorService } from '@/lib/services/contractorService';
 import { formatDate } from '@/lib/utils/formatters';
 import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function ContractorDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { profile } = useAuth();
+  const { profile, can } = useAuth();
   const query = useQuery({ queryKey: ['contractor', id, profile?.id], queryFn: () => contractorService.getContractorById(id), enabled: Boolean(id && profile), refetchInterval: 15000 });
   if (query.isPending) return <p>Loading contractor…</p>;
   if (query.error) return <div role="alert">Unable to load contractor. <Button onClick={() => query.refetch()}>Retry</Button></div>;
@@ -29,6 +30,7 @@ export default function ContractorDetailPage() {
       <p>Business type: {c.businessType || 'Not provided'}</p><p>Onboarding: {c.onboardingStatus}</p><p>Joined: {formatDate(c.createdAt)}</p>
       {!c.eligibleForAssignment && <p>Assignment eligibility: {c.eligibilityReason || 'Not eligible'}</p>}
     </CardContent></Card>
+    {can('admin.payroll.view') && <ContractorPayrollEditor contractorId={c.id} currentRole={c.role} canEdit={can('admin.payroll.edit')} canChangeRole={profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO'} onRoleChanged={() => query.refetch()} />}
     <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><StatusBadge status={ticket.status} /><span>{ticket.utilityClient} · Priority {ticket.priority}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>
   </div>;
 }

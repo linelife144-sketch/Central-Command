@@ -52,6 +52,7 @@ describe('createTimeEntryService', () => {
 
     const entry = await service.clockIn({
       contractorId: 'sub-1',
+      stormEventId: 'storm-1',
       workType: 'STANDARD_ASSESSMENT',
       workTypeRate: 100,
       breakMinutes: 15,
@@ -64,6 +65,7 @@ describe('createTimeEntryService', () => {
 
     expect(entry.sync_status).toBe('PENDING');
     expect(queueLocalEntry).toHaveBeenCalledTimes(1);
+    expect(queueLocalEntry).toHaveBeenCalledWith(expect.objectContaining({ storm_event_id: 'storm-1' }), 'CREATE');
   });
 
   it('uses remote clock-in when online', async () => {
@@ -110,7 +112,7 @@ describe('createTimeEntryService', () => {
     });
 
     const updated = await service.clockOut({
-      entry: buildTimeEntry({ sync_status: 'PENDING' }),
+      entry: buildTimeEntry({ sync_status: 'PENDING', storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50 }),
       breakMinutes: 10,
       location: {
         latitude: 27.95,
@@ -121,8 +123,118 @@ describe('createTimeEntryService', () => {
     expect(updated.sync_status).toBe('PENDING');
     expect(updated.total_minutes).toBe(60);
     expect(updated.billable_minutes).toBe(50);
+    expect(queueLocalEntry).toHaveBeenCalledWith(expect.objectContaining({ storm_event_id: 'storm-1', contractor_role: 'DRIVER', pay_rate_applied: 50 }), 'UPDATE');
     expect(updateRemoteEntry).not.toHaveBeenCalled();
     expect(queueLocalEntry).toHaveBeenCalledTimes(1);
+  });
+
+  it('clocks out online without writing to GENERATED ALWAYS columns', async () => {
+    const updateRemoteEntry = vi.fn().mockResolvedValue(
+      buildTimeEntry({
+        clock_out_at: '2026-02-12T13:00:00.000Z',
+        sync_status: 'SYNCED',
+      }),
+    );
+
+    const service = createTimeEntryService({
+      isOnline: () => true,
+      now: () => new Date('2026-02-12T13:00:00.000Z'),
+      fetchRemoteActiveEntry: vi.fn(),
+      insertRemoteEntry: vi.fn(),
+      updateRemoteEntry,
+      getLocalActiveEntry: vi.fn().mockResolvedValue(null),
+      queueLocalEntry: vi.fn(),
+    });
+
+    await service.clockOut({
+      entry: buildTimeEntry({ sync_status: 'SYNCED' }),
+      breakMinutes: 10,
+      location: {
+        latitude: 27.95,
+        longitude: -82.46,
+      },
+    });
+
+    expect(updateRemoteEntry).toHaveBeenCalledTimes(1);
+    const [, updatePayload] = updateRemoteEntry.mock.calls[0];
+
+    // total_minutes, billable_minutes, and billable_amount are Postgres
+    // GENERATED ALWAYS columns — writing to them causes the update to be
+    // rejected by the database. payroll_amount/utility_bill_amount are
+    // computed server-side by a trigger and must not be asserted here.
+    expect(updatePayload).not.toHaveProperty('total_minutes');
+    expect(updatePayload).not.toHaveProperty('billable_minutes');
+    expect(updatePayload).not.toHaveProperty('billable_amount');
+    expect(updatePayload).not.toHaveProperty('payroll_amount');
+    expect(updatePayload).not.toHaveProperty('utility_bill_amount');
+    expect(updatePayload).not.toHaveProperty('work_type_rate');
+    expect(updatePayload).not.toHaveProperty('contractor_role');
+
+    expect(updatePayload).toMatchObject({
+      clock_out_at: '2026-02-12T13:00:00.000Z',
+      clock_out_latitude: 27.95,
+      clock_out_longitude: -82.46,
+      break_minutes: 10,
+      sync_status: 'SYNCED',
+    });
+  });
+
+  it('forwards stormEventId to the remote insert on clock-in', async () => {
+    const insertRemoteEntry = vi.fn().mockResolvedValue(buildTimeEntry());
+
+    const service = createTimeEntryService({
+      isOnline: () => true,
+      now: () => new Date('2026-02-12T12:00:00.000Z'),
+      fetchRemoteActiveEntry: vi.fn(),
+      insertRemoteEntry,
+      updateRemoteEntry: vi.fn(),
+      getLocalActiveEntry: vi.fn().mockResolvedValue(null),
+      queueLocalEntry: vi.fn(),
+    });
+
+    await service.clockIn({
+      contractorId: 'sub-1',
+      workType: 'STANDARD_ASSESSMENT',
+      workTypeRate: 100,
+      breakMinutes: 0,
+      stormEventId: 'storm-123',
+      location: {
+        latitude: 27.95,
+        longitude: -82.46,
+      },
+    });
+
+    expect(insertRemoteEntry).toHaveBeenCalledTimes(1);
+    const [insertPayload] = insertRemoteEntry.mock.calls[0];
+    expect(insertPayload.storm_event_id).toBe('storm-123');
+  });
+
+  it('forwards a null stormEventId when none was provided on clock-in', async () => {
+    const insertRemoteEntry = vi.fn().mockResolvedValue(buildTimeEntry());
+
+    const service = createTimeEntryService({
+      isOnline: () => true,
+      now: () => new Date('2026-02-12T12:00:00.000Z'),
+      fetchRemoteActiveEntry: vi.fn(),
+      insertRemoteEntry,
+      updateRemoteEntry: vi.fn(),
+      getLocalActiveEntry: vi.fn().mockResolvedValue(null),
+      queueLocalEntry: vi.fn(),
+    });
+
+    await service.clockIn({
+      contractorId: 'sub-1',
+      workType: 'STANDARD_ASSESSMENT',
+      workTypeRate: 100,
+      breakMinutes: 0,
+      location: {
+        latitude: 27.95,
+        longitude: -82.46,
+      },
+    });
+
+    const [insertPayload] = insertRemoteEntry.mock.calls[0];
+    expect(insertPayload.storm_event_id).toBeNull();
   });
 
   it('returns local active entry before remote lookup', async () => {

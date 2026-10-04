@@ -38,6 +38,10 @@ export const APP_CONFIG = {
   // Offline
   MAX_SYNC_RETRY_ATTEMPTS: 5,
   SYNC_RETRY_DELAY_MS: 5000,
+
+  // Payroll & utility billing
+  VEHICLE_REIMBURSEMENT_HOURLY_RATE: 5,
+  PAYROLL_PERIOD_DEFAULT_DAYS: 14,
 } as const;
 
 // Role definitions
@@ -83,6 +87,35 @@ export const WORK_TYPES = {
   ADMIN: 'ADMIN',
   TRAINING: 'TRAINING',
 } as const;
+
+// Contractor payroll roles — one per contractor, separate from
+// profiles.role (the CEO/SUPER_ADMIN/ADMIN/CONTRACTOR authorization enum).
+export const CONTRACTOR_ROLES = {
+  STORM_MANAGER: 'STORM_MANAGER',
+  TEAM_LEAD: 'TEAM_LEAD',
+  SR_DAMAGE_ASSESSER: 'SR_DAMAGE_ASSESSER',
+  DAMAGE_ASSESSER: 'DAMAGE_ASSESSER',
+  DRIVER: 'DRIVER',
+} as const;
+
+export const ROLE_LABELS: Record<keyof typeof CONTRACTOR_ROLES, string> = {
+  STORM_MANAGER: 'Storm Manager',
+  TEAM_LEAD: 'Team Lead',
+  SR_DAMAGE_ASSESSER: 'Sr. Damage Assessor',
+  DAMAGE_ASSESSER: 'Damage Assessor',
+  DRIVER: 'Driver',
+};
+
+// Vehicle reimbursement claim types
+export const VEHICLE_TYPES = {
+  PERSONAL: 'PERSONAL',
+  RENTAL: 'RENTAL',
+} as const;
+
+export const VEHICLE_TYPE_LABELS: Record<keyof typeof VEHICLE_TYPES, string> = {
+  PERSONAL: 'Personal Vehicle',
+  RENTAL: 'Rental Vehicle',
+};
 
 // Expense categories
 export const EXPENSE_CATEGORIES = {

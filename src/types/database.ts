@@ -317,6 +317,165 @@ export type Database = {
           },
         ]
       }
+      role_rate_defaults: {
+        Row: {
+          currency: string
+          hourly_rate: number
+          role: Database["public"]["Enums"]["contractor_role"]
+          updated_at: string
+          updated_by: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Insert: {
+          currency?: string
+          hourly_rate: number
+          role: Database["public"]["Enums"]["contractor_role"]
+          updated_at?: string
+          updated_by?: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Update: {
+          currency?: string
+          hourly_rate?: number
+          role?: Database["public"]["Enums"]["contractor_role"]
+          updated_at?: string
+          updated_by?: string | null
+          work_type?: Database["public"]["Enums"]["work_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_rate_defaults_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      utility_billing_rates: {
+        Row: {
+          currency: string
+          hourly_rate: number
+          id: string
+          storm_event_id: string | null
+          updated_at: string
+          updated_by: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Insert: {
+          currency?: string
+          hourly_rate: number
+          id?: string
+          storm_event_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          work_type: Database["public"]["Enums"]["work_type"]
+        }
+        Update: {
+          currency?: string
+          hourly_rate?: number
+          id?: string
+          storm_event_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          work_type?: Database["public"]["Enums"]["work_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utility_billing_rates_storm_event_id_fkey"
+            columns: ["storm_event_id"]
+            isOneToOne: false
+            referencedRelation: "storm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utility_billing_rates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_entry_vehicle_claims: {
+        Row: {
+          amount: number
+          capped: boolean
+          contractor_id: string
+          created_at: string
+          declared_hours: number
+          id: string
+          license_plate_photo_url: string
+          notes: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          time_entry_id: string
+          updated_at: string
+          vehicle_photo_url: string
+          vehicle_type: string
+        }
+        Insert: {
+          amount?: number
+          capped?: boolean
+          contractor_id: string
+          created_at?: string
+          declared_hours: number
+          id?: string
+          license_plate_photo_url: string
+          notes: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          time_entry_id: string
+          updated_at?: string
+          vehicle_photo_url: string
+          vehicle_type: string
+        }
+        Update: {
+          amount?: number
+          capped?: boolean
+          contractor_id?: string
+          created_at?: string
+          declared_hours?: number
+          id?: string
+          license_plate_photo_url?: string
+          notes?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          time_entry_id?: string
+          updated_at?: string
+          vehicle_photo_url?: string
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entry_vehicle_claims_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entry_vehicle_claims_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entry_vehicle_claims_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: true
+            referencedRelation: "time_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractors: {
         Row: {
           address_line1: string | null
@@ -339,6 +498,7 @@ export type Database = {
           onboarding_completed_at: string | null
           onboarding_status: string | null
           profile_id: string | null
+          role: Database["public"]["Enums"]["contractor_role"]
           state: string | null
           tax_id: string | null
           tax_id_encrypted: string | null
@@ -367,6 +527,7 @@ export type Database = {
           onboarding_completed_at?: string | null
           onboarding_status?: string | null
           profile_id?: string | null
+          role?: Database["public"]["Enums"]["contractor_role"]
           state?: string | null
           tax_id?: string | null
           tax_id_encrypted?: string | null
@@ -395,6 +556,7 @@ export type Database = {
           onboarding_completed_at?: string | null
           onboarding_status?: string | null
           profile_id?: string | null
+          role?: Database["public"]["Enums"]["contractor_role"]
           state?: string | null
           tax_id?: string | null
           tax_id_encrypted?: string | null
@@ -2567,11 +2729,14 @@ export type Database = {
           clock_out_longitude: number | null
           clock_out_photo_url: string | null
           contractor_id: string
+          contractor_role: Database["public"]["Enums"]["contractor_role"] | null
           created_at: string | null
           created_by: string | null
           id: string
           invoice_id: string | null
           is_deleted: boolean | null
+          pay_rate_applied: number | null
+          payroll_amount: number | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -2583,6 +2748,8 @@ export type Database = {
           total_minutes: number | null
           updated_at: string | null
           updated_by: string | null
+          utility_bill_amount: number | null
+          utility_bill_rate_applied: number | null
           work_type: Database["public"]["Enums"]["work_type"]
           work_type_rate: number
         }
@@ -2604,11 +2771,14 @@ export type Database = {
           clock_out_longitude?: number | null
           clock_out_photo_url?: string | null
           contractor_id: string
+          contractor_role?: Database["public"]["Enums"]["contractor_role"] | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           invoice_id?: string | null
           is_deleted?: boolean | null
+          pay_rate_applied?: number | null
+          payroll_amount?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -2620,6 +2790,8 @@ export type Database = {
           total_minutes?: number | null
           updated_at?: string | null
           updated_by?: string | null
+          utility_bill_amount?: number | null
+          utility_bill_rate_applied?: number | null
           work_type: Database["public"]["Enums"]["work_type"]
           work_type_rate: number
         }
@@ -2641,11 +2813,14 @@ export type Database = {
           clock_out_longitude?: number | null
           clock_out_photo_url?: string | null
           contractor_id?: string
+          contractor_role?: Database["public"]["Enums"]["contractor_role"] | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           invoice_id?: string | null
           is_deleted?: boolean | null
+          pay_rate_applied?: number | null
+          payroll_amount?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -2657,6 +2832,8 @@ export type Database = {
           total_minutes?: number | null
           updated_at?: string | null
           updated_by?: string | null
+          utility_bill_amount?: number | null
+          utility_bill_rate_applied?: number | null
           work_type?: Database["public"]["Enums"]["work_type"]
           work_type_rate?: number
         }
@@ -2809,6 +2986,12 @@ export type Database = {
       }
     }
     Enums: {
+      contractor_role:
+        | "STORM_MANAGER"
+        | "TEAM_LEAD"
+        | "SR_DAMAGE_ASSESSER"
+        | "DAMAGE_ASSESSER"
+        | "DRIVER"
       equipment_condition: "GOOD" | "FAIR" | "DAMAGED" | "DESTROYED"
       expense_category:
         | "MILEAGE"
@@ -3002,6 +3185,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      contractor_role: [
+        "STORM_MANAGER",
+        "TEAM_LEAD",
+        "SR_DAMAGE_ASSESSER",
+        "DAMAGE_ASSESSER",
+        "DRIVER",
+      ],
       equipment_condition: ["GOOD", "FAIR", "DAMAGED", "DESTROYED"],
       expense_category: [
         "MILEAGE",

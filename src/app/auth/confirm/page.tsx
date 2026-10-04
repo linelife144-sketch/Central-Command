@@ -1,11 +1,12 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { getLandingPathForRole } from '@/lib/auth/roleLanding';
 import { recordLastLogin } from '@/lib/auth/recordLogin';
+import { confirmEmailLink } from '@/lib/auth/confirmEmailLink';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -35,49 +36,43 @@ function AuthConfirmInner() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const confirmation = useRef<ReturnType<typeof confirmEmailLink> | null>(null);
 
   useEffect(() => {
-    const tokenHash = searchParams.get('token_hash');
-    const type = searchParams.get('type') as 'email' | 'signup' | 'invite' | 'recovery' | null;
-
-    if (!tokenHash || !type) {
-      setErrorMessage('Invalid confirmation link. Please request a new one.');
-      setStatus('error');
-      return;
-    }
-
+    let cancelled = false;
+    let redirectTimer: ReturnType<typeof setTimeout> | undefined;
+    confirmation.current ??= confirmEmailLink(supabase.auth, new URL(window.location.href));
     const confirm = async () => {
-      const { data, error } = await supabase.auth.verifyOtp({
-        token_hash: tokenHash,
-        type,
-      });
-
-      if (error || !data.session) {
+      try {
+        const { session, type } = await confirmation.current!;
+        if (cancelled) return;
+        // Remove one-use tokens from browser history once the session is saved.
+        window.history.replaceState(window.history.state, '', '/auth/confirm');
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role,must_reset_password')
+          .eq('id', session.user.id)
+          .single();
+        if (cancelled) return;
+        setStatus('success');
+        void recordLastLogin(session.access_token);
+        const landingPath = type === 'recovery' ? '/reset-password'
+          : type === 'invite' || profile?.must_reset_password ? '/set-password'
+          : getLandingPathForRole(profile?.role ?? null);
+        redirectTimer = setTimeout(() => router.replace(landingPath), 800);
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Confirmation failed. Please try again.';
         setErrorMessage(
-          error?.message === 'Token has expired or is invalid'
+          message === 'Token has expired or is invalid'
             ? 'This link has expired or already been used. Please request a new one.'
-            : error?.message || 'Confirmation failed. Please try again.'
+            : message
         );
         setStatus('error');
-        return;
       }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.session.user.id)
-        .single();
-
-      setStatus('success');
-      void recordLastLogin(data.session.access_token);
-
-      const landingPath = getLandingPathForRole((profile as any)?.role ?? null);
-      setTimeout(() => {
-        router.replace(landingPath);
-      }, 800);
     };
-
-    confirm();
+    void confirm();
+    return () => { cancelled = true; if (redirectTimer) clearTimeout(redirectTimer); };
   }, [router, searchParams]);
 
   return (

@@ -4,7 +4,7 @@ const remote = vi.hoisted(() => ({ lookup:vi.fn(), invite:vi.fn(), getUser:vi.fn
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/auth/serverPermissions', () => ({AccessError:class extends Error { constructor(message:string, public status:number) {super(message);} }}));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient:() => ({
-  from:(table:string) => table === 'audit_logs' ? {insert:remote.audit} : {select:()=>({ilike:()=>({maybeSingle:remote.lookup})})},
+  from:(table:string) => table === 'audit_logs' ? {insert:remote.audit} : table === 'contractor_invitations' ? {upsert:remote.audit} : {select:()=>({eq:()=>({maybeSingle:remote.lookup})})},
   auth:{admin:{inviteUserByEmail:remote.invite,getUserById:remote.getUser,updateUserById:remote.update}},rpc:remote.rpc,
 }) }));
 const person={first_name:'Alex',last_name:'Rivera',email:'alex@example.com'};

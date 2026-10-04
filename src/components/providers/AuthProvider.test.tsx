@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getSession: vi.fn(), onAuthStateChange: vi.fn(), unsubscribe: vi.fn(),
-  from: vi.fn(), single: vi.fn(), push: vi.fn(), signOut: vi.fn(),
+  from: vi.fn(), single: vi.fn(), push: vi.fn(), signOut: vi.fn(), rpc: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.push }), usePathname: () => '/login' }));
 vi.mock('@/lib/testing/superAdminTesting', () => ({
@@ -13,16 +13,17 @@ vi.mock('@/lib/testing/superAdminTesting', () => ({
 vi.mock('@/lib/supabase/client', () => ({ supabase: {
   auth: { getSession: mocks.getSession, onAuthStateChange: mocks.onAuthStateChange, signOut: mocks.signOut },
   from: mocks.from,
+  rpc: mocks.rpc,
 } }));
 import { AuthProvider, useAuth } from './AuthProvider';
 
 function State() {
   const auth = useAuth();
-  return <div>{auth.isLoading ? 'loading' : `${auth.user?.id ?? 'signed-out'}:${auth.profile?.role ?? 'no-profile'}`}</div>;
+  return <><div>{auth.isLoading ? 'loading' : `${auth.user?.id ?? 'signed-out'}:${auth.profile?.role ?? 'no-profile'}`}</div><span>{auth.can('admin.time.view') ? 'time-visible' : 'time-hidden'}</span></>;
 }
 
 describe('real Supabase auth provider', () => {
-  let onAuth: (event: string, session: any) => unknown;
+  let onAuth: (event: string, session: { user: { id: string } } | null) => unknown;
   let authLocked: boolean;
   beforeEach(() => {
     vi.clearAllMocks(); authLocked = false;
@@ -36,6 +37,7 @@ describe('real Supabase auth provider', () => {
       return { select: () => ({ eq: () => ({ single: mocks.single }) }) };
     });
     mocks.single.mockResolvedValue({ data: { id: 'real-user', role: 'SUPER_ADMIN', is_active: true }, error: null });
+    mocks.rpc.mockResolvedValue({ data: { 'admin.time.view': true }, error: null });
   });
   afterEach(cleanup);
 
@@ -66,5 +68,21 @@ describe('real Supabase auth provider', () => {
     });
     await waitFor(() => expect(screen.getByText('signed-out:no-profile')).toBeTruthy());
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('clears old permissions immediately when the signed-in identity changes', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'real-user' } } }, error: null });
+    render(<AuthProvider><State /></AuthProvider>);
+    await waitFor(() => expect(screen.getByText('time-visible')).toBeTruthy());
+    act(() => onAuth('SIGNED_OUT', null));
+    expect(screen.getByText('time-hidden')).toBeTruthy();
+  });
+
+  it('fails closed when the permissions service returns no snapshot', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'real-user' } } }, error: null });
+    mocks.rpc.mockResolvedValue({ data: null, error: null });
+    render(<AuthProvider><State /></AuthProvider>);
+    await waitFor(() => expect(screen.getByText('real-user:SUPER_ADMIN')).toBeTruthy());
+    expect(screen.getByText('time-hidden')).toBeTruthy();
   });
 });
