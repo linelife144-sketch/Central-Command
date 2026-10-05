@@ -12,8 +12,8 @@ describe('getLandingPathForRole', () => {
     }
   });
 
-  it('routes contractor role to /contractor/time', () => {
-    expect(getLandingPathForRole('CONTRACTOR')).toBe('/contractor/time');
+  it('routes contractor role to /contractor/dashboard', () => {
+    expect(getLandingPathForRole('CONTRACTOR')).toBe('/contractor/dashboard');
   });
 
   it('falls back to /login for unknown roles', () => {

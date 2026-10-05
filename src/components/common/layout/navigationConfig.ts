@@ -45,6 +45,7 @@ export const ADMIN_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
 ];
 
 export const CONTRACTOR_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
+  { href: '/contractor/dashboard', label: 'Dashboard' },
   { href: '/tickets', label: 'My Tickets', signalKey: 'tickets', badgeStyle: 'count' },
   { href: '/contractor/map', label: 'Map' },
   { href: '/contractor/time', label: 'Time Tracking', signalKey: 'sync', badgeStyle: 'dot' },
@@ -72,6 +73,7 @@ export const ADMIN_BOTTOM_NAV_ITEMS: NavLinkItem[] = [
 ];
 
 export const CONTRACTOR_BOTTOM_NAV_ITEMS: NavLinkItem[] = [
+  { href: '/contractor/dashboard', label: 'Home' },
   { href: '/tickets', label: 'Tickets', signalKey: 'tickets', badgeStyle: 'count' },
   { href: '/contractor/map', label: 'Map' },
   { href: '/contractor/time', label: 'Time', signalKey: 'sync', badgeStyle: 'dot' },

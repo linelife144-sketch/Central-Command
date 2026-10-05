@@ -106,7 +106,7 @@ describe('contractor onboarding routing', () => {
     mocks.maybeSingle.mockResolvedValue({ data: { id: 'record', onboarding_completed_at: null }, error: null });
   });
   it('requires onboarding for every operational route and permits the form itself', async () => {
-    for (const path of ['/login','/contractor/time','/tickets','/contractor/expenses']) expect((await updateSession(new NextRequest(`http://localhost:3000${path}`))).headers.get('location')).toBe('http://localhost:3000/contractor/onboarding');
+    for (const path of ['/login','/contractor/dashboard','/contractor/time','/tickets','/contractor/expenses']) expect((await updateSession(new NextRequest(`http://localhost:3000${path}`))).headers.get('location')).toBe('http://localhost:3000/contractor/onboarding');
     expect((await updateSession(new NextRequest('http://localhost:3000/contractor/onboarding'))).headers.get('location')).toBeNull();
   });
   it('password setup precedes onboarding', async () => {
@@ -116,7 +116,7 @@ describe('contractor onboarding routing', () => {
   it('completed onboarding opens portal; missing links or database failures fail closed', async () => {
     mocks.maybeSingle.mockResolvedValue({ data: { id: 'record', onboarding_completed_at: 'now' }, error: null });
     expect((await updateSession(new NextRequest('http://localhost:3000/contractor/time'))).headers.get('location')).toBeNull();
-    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/onboarding'))).headers.get('location')).toBe('http://localhost:3000/contractor/time');
+    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/onboarding'))).headers.get('location')).toBe('http://localhost:3000/contractor/dashboard');
     mocks.maybeSingle.mockResolvedValue({ data: null, error: { message: 'Missing' } });
     expect((await updateSession(new NextRequest('http://localhost:3000/contractor/time'))).headers.get('location')).toBe('http://localhost:3000/forbidden');
   });

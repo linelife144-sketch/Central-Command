@@ -7,7 +7,7 @@ export function getLandingPathForRole(role: UserRole | string | null | undefined
   }
 
   if (role === 'CONTRACTOR') {
-    return '/contractor/time';
+    return '/contractor/dashboard';
   }
 
   if (isAdminClassRole(role)) {

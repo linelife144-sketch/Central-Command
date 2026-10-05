@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-10-05T00:02:36.127Z",
+  "verifiedAt": "2026-10-05T00:13:42.139Z",
   "environment": "isolated PGlite, not live Auth/mail/browser proof",
   "tests": [
     "adding a contractor is DB-only and privileged",

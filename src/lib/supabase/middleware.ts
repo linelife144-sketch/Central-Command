@@ -165,7 +165,7 @@ export async function updateSession(request: NextRequest) {
       return redirectWithSession(target);
     }
     if (contractor.onboarding_completed_at && pathname === '/contractor/onboarding') {
-      const target = request.nextUrl.clone(); target.pathname = '/contractor/time'; target.search = '';
+      const target = request.nextUrl.clone(); target.pathname = '/contractor/dashboard'; target.search = '';
       return redirectWithSession(target);
     }
   }
@@ -176,7 +176,7 @@ export async function updateSession(request: NextRequest) {
     if (isAdminRole) {
       targetUrl.pathname = permissionLanding(permissions);
     } else if (isContractorRole) {
-      targetUrl.pathname = '/contractor/time';
+      targetUrl.pathname = '/contractor/dashboard';
     } else {
       // Unknown/fallback role
       targetUrl.pathname = '/forbidden';

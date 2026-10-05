@@ -857,3 +857,19 @@ Evidence: `docs/testing/contractor-onboarding-verification.json` and the Supabas
 - [ ] Complete real password setup and first-login onboarding acceptance. Tests were not rerun after these flow changes. — Codex /root
 
 See `docs/testing/contractor-onboarding-verification.json` for the observed Auth log times and current acceptance boundary.
+
+
+### Contractor dashboard landing page — 2026-10-04 (Codex /root)
+
+- [x] Add `/contractor/dashboard` with a personal field brief, open assignments, completed hours and stored submitted wages over the last seven days, expense-review totals, storm work tied to assigned tickets, quick actions, and loading/error/new-account empty states. Preserve the established blue/navy/gold design. — Codex /root
+- [x] Use verified active/linked/onboarded identity for the dashboard API, read data with the authenticated RLS session, scope every personal query to that contractor, paginate totals, omit client billing fields, and disable shared caching. — Codex /root
+- [x] Route contractor sign-in and completed onboarding to Dashboard; add desktop Dashboard and mobile Home navigation and update the contractor brand home link. Retain required onboarding and password gates. — Codex /root
+- [x] Pass TypeScript, scoped ESLint, isolated webpack production compilation, and AST-only Graphify refresh. Automated tests were not run at the user's request; no new test files were retained. — Codex /root
+- [ ] Authenticated visual acceptance in the user's Norton Neo browser. The browser-control tool cannot access that session, so the compiler checks do not establish live visual or RLS acceptance. — Codex /root
+
+### Contractor onboarding vehicle registration removal — 2026-10-04 (Antigravity)
+
+- [x] Remove the vehicle registration tag upload section and file handling from `/contractor/onboarding` (`ContractorOnboardingForm.tsx`), keeping only Name and Starting Location. — Antigravity
+- [x] Apply migration `20261004234500_remove_vehicle_registration_from_onboarding_gate.sql` to live database `xcvacmreerrypygpritq`, removing the driver vehicle registration tag photo requirement from the `complete_contractor_onboarding` RPC gate. — Antigravity
+- [x] Update schema validation, server onboarding loader, and unit test suites: 101/101 test files passing (508/508 tests). — Antigravity
+- [x] Update codebase knowledge graph with `graphify update .`. — Antigravity

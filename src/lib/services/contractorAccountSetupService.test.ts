@@ -18,10 +18,10 @@ describe('contractor-requested account setup', () => {
     expect(remote.createUser).not.toHaveBeenCalled(); expect(remote.otp).not.toHaveBeenCalled();
   });
   it('creates an unconfirmed, passwordless account with server-managed linkage then sends verification', async () => {
-    remote.rpc.mockResolvedValue({ data: { id: 'record', email: 'qa@example.test', first_name: 'QA', last_name: 'Added', auth_user_id: null }, error: null });
+    remote.rpc.mockResolvedValue({ data: { id: 'record', email: 'qa@example.test', first_name: 'QA', last_name: 'Added', auth_user_id: null, claim_token: 'token-123' }, error: null });
     expect(await requestContractorAccountSetup({ email: ' QA@EXAMPLE.TEST ' }, 'http://localhost:3001')).toBeUndefined();
     expect(remote.rpc).toHaveBeenCalledWith('claim_contractor_account_setup', { p_email: 'qa@example.test' });
-    expect(remote.createUser).toHaveBeenCalledWith({ email: 'qa@example.test', email_confirm: false, app_metadata: { role: 'CONTRACTOR', contractor_record_id: 'record' }, user_metadata: { first_name: 'QA', last_name: 'Added' } });
+    expect(remote.createUser).toHaveBeenCalledWith({ email: 'qa@example.test', email_confirm: false, app_metadata: { role: 'CONTRACTOR', contractor_record_id: 'record' }, user_metadata: { first_name: 'QA', last_name: 'Added', contractor_record_id: 'record', contractor_setup_claim_token: 'token-123' } });
     expect(remote.createUser.mock.calls[0][0]).not.toHaveProperty('password');
     expect(remote.otp).toHaveBeenCalledWith({ email: 'qa@example.test', options: { shouldCreateUser: false, emailRedirectTo: 'http://localhost:3001/auth/confirm?flow=contractor-setup' } });
   });

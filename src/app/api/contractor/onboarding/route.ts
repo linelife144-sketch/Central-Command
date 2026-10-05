@@ -20,6 +20,6 @@ export async function POST(request: Request) {
     const details = contractorOnboardingSchema.parse(await request.json());
     const { error } = await admin.rpc('complete_contractor_onboarding', { p_profile_id: user.id, p_details: details });
     if (error) throw new AccessError(error.code === '23514' ? error.message : 'Unable to complete onboarding.', error.code === '23514' ? 400 : 403);
-    return NextResponse.json({ next: '/contractor/time' }, { headers: { 'Cache-Control': 'private, no-store' } });
+    return NextResponse.json({ next: '/contractor/dashboard' }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) { return failure(error); }
 }

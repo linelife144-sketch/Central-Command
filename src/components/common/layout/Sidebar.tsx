@@ -33,6 +33,7 @@ export const adminNavItems = [
 ];
 
 export const contractorNavItems = [
+  { href: '/contractor/dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'Field operations' },
   { href: '/tickets', label: 'My Tickets', icon: Ticket, group: 'Field operations' },
   { href: '/contractor/map', label: 'Map', icon: Map, group: 'Field operations' },
   { href: '/contractor/time', label: 'Time Tracking', icon: Clock, group: 'Field operations' },
@@ -45,7 +46,7 @@ export function Sidebar({ isOpen, onClose, userRole, permissions = {} }: Sidebar
   const pathname = usePathname();
   const navItems = userRole === 'admin' ? adminNavItems.filter(item => mayOpenPath(item.href, permissions)) : contractorNavItems;
   const groups = [...new Set(navItems.map(item => item.group))];
-  const home = userRole === 'admin' ? permissionLanding(permissions) : '/tickets';
+  const home = userRole === 'admin' ? permissionLanding(permissions) : '/contractor/dashboard';
 
   const content = () => (
     <div className="cc-sidebar flex h-full flex-col">

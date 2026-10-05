@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { ADMIN_SIDEBAR_NAV_ITEMS, CONTRACTOR_BOTTOM_NAV_ITEMS } from './navigationConfig';
 
 describe('navigation contracts', () => {
-  it('uses exact contractor bottom-nav labels and links', () => {
+  it('includes contractor Home with field-tool links', () => {
     expect(CONTRACTOR_BOTTOM_NAV_ITEMS.map((item) => ({ href: item.href, label: item.label }))).toEqual([
+      { href: '/contractor/dashboard', label: 'Home' },
       { href: '/tickets', label: 'Tickets' },
       { href: '/contractor/map', label: 'Map' },
       { href: '/contractor/time', label: 'Time' },

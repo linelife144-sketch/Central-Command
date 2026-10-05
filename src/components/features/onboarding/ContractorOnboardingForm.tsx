@@ -27,7 +27,7 @@ export function ContractorOnboardingForm() {
         const response = await fetch('/api/contractor/onboarding', { cache: 'no-store' });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Unable to load your contractor details.');
-        if (data.contractor.onboarding_completed_at) { router.replace('/contractor/time'); return; }
+        if (data.contractor.onboarding_completed_at) { router.replace('/contractor/dashboard'); return; }
         if (alive) {
           const loadedState = (data.contractor.state ?? initial.state ?? '').trim().toUpperCase();
           setSetup(data);

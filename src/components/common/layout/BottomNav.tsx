@@ -13,6 +13,7 @@ const adminNavItems = [
   { href: '/admin/map', label: 'Map', icon: Map },
 ];
 const contractorNavItems = [
+  { href: '/contractor/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/tickets', label: 'Tickets', icon: Ticket },
   { href: '/contractor/map', label: 'Map', icon: Map },
   { href: '/contractor/time', label: 'Time', icon: Clock },
