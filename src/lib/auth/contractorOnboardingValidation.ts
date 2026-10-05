@@ -12,7 +12,7 @@ export const contractorOnboardingSchema = z.object({
   city: z.string().trim().min(1, 'City is required').max(100),
   state: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/, 'Use the two-letter state abbreviation'),
   zip_code: z.string().trim().regex(/^[0-9]{5}(-[0-9]{4})?$/, 'Enter a valid ZIP code'),
-  vehicle_registration_photo_path: z.string().max(200).nullable().default(null),
+  vehicle_registration_photo_path: z.string().max(200).nullable().default(null).optional(),
 }).strict();
 export type ContractorOnboardingDetails = z.infer<typeof contractorOnboardingSchema>;
 export const REGISTRATION_BUCKET = 'contractor-registration-tags';

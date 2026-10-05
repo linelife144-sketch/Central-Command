@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-10-05T00:02:36.127Z",
+  "environment": "isolated PGlite, not live Auth/mail/browser proof",
+  "tests": [
+    "adding a contractor is DB-only and privileged",
+    "unknown email gives no claim; added email claims once with cooldown",
+    "direct signup and mismatched account metadata cannot provision a profile",
+    "expired setup claims cannot create an Auth account",
+    "Auth provisioning preserves accountless contractor until mailbox verification",
+    "unverified or passwordless account cannot finish password setup",
+    "verified Auth binds exactly the pre-added record and keeps password gate",
+    "repeated verification cannot duplicate or rebind the account",
+    "password required before clearing gate; established account cannot repeat setup",
+    "incomplete onboarding blocks operational RLS and direct completion bypass",
+    "owned tag uploads succeed, cross-contractor paths and replacement are denied",
+    "driver can complete without tag photo; malformed address and cross-contractor photo rejected",
+    "name/address and completion persist atomically without requiring photo",
+    "non-driver skips photo, and a verified account link cannot be stolen",
+    "owner and CEO/Super Admin can read photo; ordinary Admin and another contractor cannot",
+    "active-only assignment ignores legacy approval and eligibility",
+    "only CEO/Super Admin can deactivate; inactive blocks Auth and every storm picker",
+    "reactivation restores account and roster without modifying historical records",
+    "server-only RPCs work without granting service_role direct Auth table access",
+    "anonymous cannot read registration tags",
+    "anonymous cannot claim or complete account setup RPCs"
+  ],
+  "passed": 21
+}

@@ -20,5 +20,14 @@ export async function requirePermission(key: PermissionKey) {
 }
 export function assertSameOrigin(request: Request) {
   const origin = request.headers.get('origin');
-  if (origin && origin !== new URL(request.url).origin) throw new AccessError('Cross-origin request rejected.', 403);
+  if (!origin) return;
+  // Next dev may canonicalize request.url to localhost even when the browser
+  // connects to 127.0.0.1. The actual HTTP Host identifies the request target.
+  const target = new URL(request.url);
+  const host = request.headers.get('host');
+  if (host) target.host = host;
+  try {
+    if (new URL(origin).origin === target.origin) return;
+  } catch { /* Invalid origins fail closed. */ }
+  throw new AccessError('Cross-origin request rejected.', 403);
 }

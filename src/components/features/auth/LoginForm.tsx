@@ -24,7 +24,14 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
-  useEffect(() => { setIsReady(true); }, []);
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (hash.get('error_code') === 'otp_expired') {
+      setError('That verification link expired or was already used. Start account setup again and use the newest email link.');
+      window.history.replaceState(window.history.state, '', '/login');
+    }
+    setIsReady(true);
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);

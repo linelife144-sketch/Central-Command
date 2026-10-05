@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({
-  create: vi.fn(), getUser: vi.fn(), signOut: vi.fn(), single: vi.fn(),
+  create: vi.fn(), getUser: vi.fn(), signOut: vi.fn(), single: vi.fn(), maybeSingle: vi.fn(),
   select: vi.fn(), eq: vi.fn(), from: vi.fn(), rpc: vi.fn(),
 }));
 vi.mock('@supabase/ssr', () => ({ createServerClient: mocks.create }));
@@ -16,7 +16,8 @@ describe('real Supabase session routing', () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://project.supabase.co');
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_test');
     mocks.select.mockReturnValue({ eq: mocks.eq });
-    mocks.eq.mockReturnValue({ single: mocks.single });
+    mocks.eq.mockReturnValue({ single: mocks.single, eq: mocks.eq, maybeSingle: mocks.maybeSingle });
+    mocks.maybeSingle.mockResolvedValue({ data: { id: 'record', onboarding_completed_at: null }, error: null });
     mocks.from.mockReturnValue({ select: mocks.select });
     mocks.create.mockReturnValue({
       auth: { getUser: mocks.getUser, signOut: mocks.signOut }, from: mocks.from, rpc: mocks.rpc,
@@ -93,4 +94,39 @@ describe('real Supabase session routing', () => {
     const response = await updateSession(new NextRequest('http://localhost:3000/admin/dashboard'));
     expect(response.headers.get('location')).toBe('http://localhost:3000/forbidden');
   });
+});
+
+describe('contractor onboarding routing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks(); mocks.create.mockReturnValue({ auth: { getUser: mocks.getUser, signOut: mocks.signOut }, from: mocks.from, rpc: mocks.rpc });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'contractor-user' } } });
+    mocks.from.mockReturnValue({ select: mocks.select }); mocks.select.mockReturnValue({ eq: mocks.eq });
+    mocks.eq.mockReturnValue({ single: mocks.single, eq: mocks.eq, maybeSingle: mocks.maybeSingle });
+    mocks.single.mockResolvedValue({ data: { role: 'CONTRACTOR', is_active: true, must_reset_password: false }, error: null });
+    mocks.maybeSingle.mockResolvedValue({ data: { id: 'record', onboarding_completed_at: null }, error: null });
+  });
+  it('requires onboarding for every operational route and permits the form itself', async () => {
+    for (const path of ['/login','/contractor/time','/tickets','/contractor/expenses']) expect((await updateSession(new NextRequest(`http://localhost:3000${path}`))).headers.get('location')).toBe('http://localhost:3000/contractor/onboarding');
+    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/onboarding'))).headers.get('location')).toBeNull();
+  });
+  it('password setup precedes onboarding', async () => {
+    mocks.single.mockResolvedValue({ data: { role: 'CONTRACTOR', is_active: true, must_reset_password: true }, error: null });
+    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/onboarding'))).headers.get('location')).toBe('http://localhost:3000/set-password');
+  });
+  it('completed onboarding opens portal; missing links or database failures fail closed', async () => {
+    mocks.maybeSingle.mockResolvedValue({ data: { id: 'record', onboarding_completed_at: 'now' }, error: null });
+    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/time'))).headers.get('location')).toBeNull();
+    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/onboarding'))).headers.get('location')).toBe('http://localhost:3000/contractor/time');
+    mocks.maybeSingle.mockResolvedValue({ data: null, error: { message: 'Missing' } });
+    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/time'))).headers.get('location')).toBe('http://localhost:3000/forbidden');
+  });
+  it('the new setup path is public for signed-out users', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null } });
+    expect((await updateSession(new NextRequest('http://localhost:3000/setup-account'))).headers.get('location')).toBeNull();
+  });
+});
+
+it('lets the confirmation page verify a new link before enforcing password setup', async () => {
+  mocks.single.mockResolvedValue({ data: { role: 'CONTRACTOR', is_active: true, must_reset_password: true }, error: null });
+  expect((await updateSession(new NextRequest('http://localhost:3000/auth/confirm?token_hash=verification&type=email'))).headers.get('location')).toBeNull();
 });

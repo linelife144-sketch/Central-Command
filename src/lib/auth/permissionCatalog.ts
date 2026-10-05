@@ -4,7 +4,7 @@ export const PERMISSION_MODULES = [
   { id: 'dashboard', label: 'Dashboard', description: 'Operations overview and summary cards.', group: 'Operations', path: '/admin/dashboard', editable: false },
   { id: 'storms', label: 'Storm events', description: 'View storm workspaces; create and change storm events.', group: 'Operations', path: '/admin/storms', editable: true },
   { id: 'tickets', label: 'Tickets', description: 'View tickets; create, update, and assign tickets.', group: 'Operations', path: '/tickets', editable: true },
-  { id: 'contractors', label: 'Contractors', description: 'View contractor records; approve onboarding and eligibility.', group: 'Operations', path: '/admin/contractors', editable: true },
+  { id: 'contractors', label: 'Contractors', description: 'View contractor records; add contacts and manage account status.', group: 'Operations', path: '/admin/contractors', editable: true },
   { id: 'assignments', label: 'Crew assignments', description: 'View and change the contractor roster inside a storm.', group: 'Operations', path: '/admin/storms', editable: true },
   { id: 'map', label: 'Map', description: 'Open the field map. Ticket visibility follows ticket access.', group: 'Operations', path: '/admin/map', editable: false },
   { id: 'time', label: 'Time review', description: 'View timesheets; approve or reject submitted time.', group: 'Review & reporting', path: '/admin/time-review', editable: true },
@@ -12,7 +12,7 @@ export const PERMISSION_MODULES = [
   { id: 'assessments', label: 'Assessments', description: 'View damage assessments; approve or request rework.', group: 'Review & reporting', path: '/admin/assessment-review', editable: true },
   { id: 'payroll', label: 'Payroll & profit', description: 'View payroll, vehicle reimbursements, billing, and margins; manage rates and review claims.', group: 'Review & reporting', path: '/admin/payroll', editable: true },
   { id: 'reports', label: 'Reports', description: 'Open reports. Results include only modules this person can view.', group: 'Review & reporting', path: '/admin/reports', editable: false },
-  { id: 'users', label: 'User administration', description: 'View staff access; change permissions and send contractor invitations. Super Admin only.', group: 'Administration', path: '/admin/users', editable: true },
+  { id: 'users', label: 'User administration', description: 'View staff access; change permissions and account access. Super Admin only.', group: 'Administration', path: '/admin/users', editable: true },
 ] as const;
 
 export type PermissionModuleId = typeof PERMISSION_MODULES[number]['id'];

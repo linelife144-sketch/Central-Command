@@ -105,9 +105,9 @@ export function ResetPasswordForm() {
           setError('Invalid or expired reset link. Please request a new password reset.');
           setIsVerifying(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (mounted) {
-          setError(err.message || 'Unable to verify reset link. Please request a new password reset.');
+          setError((err instanceof Error ? err.message : '') || 'Unable to verify reset link. Please request a new password reset.');
           setIsVerifying(false);
         }
       }
@@ -146,32 +146,21 @@ export function ResetPasswordForm() {
     setError(null);
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: data.password,
-      });
-
-      if (updateError) {
-        throw updateError;
+      const profileResponse = await fetch('/api/auth/profile', { cache: 'no-store' });
+      if (!profileResponse.ok) throw new Error('Unable to verify your account. Please try again.');
+      const { profile } = await profileResponse.json();
+      if (!profile?.is_active) throw new Error('This account is inactive. Contact your administrator.');
+      if (profile.must_reset_password) {
+        const response = await fetch('/api/auth/complete-password-setup', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: data.password }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to finish password setup.');
+        router.push(result.next); router.refresh(); return;
       }
-
-      // Update must_reset_password flag on profile if applicable
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          await fetch('/api/auth/profile', {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              must_reset_password: false,
-            }),
-          });
-        }
-      } catch (profileErr) {
-        console.warn('Could not update profile reset status:', profileErr);
-      }
+      const { error: updateError } = await supabase.auth.updateUser({ password: data.password });
+      if (updateError) throw updateError;
 
       setIsSuccess(true);
       
@@ -179,8 +168,8 @@ export function ResetPasswordForm() {
       setTimeout(() => {
         router.push('/login');
       }, 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to reset password. Please try again.');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : '') || 'Failed to reset password. Please try again.');
     } finally {
       setIsLoading(false);
     }

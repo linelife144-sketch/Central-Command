@@ -20,7 +20,8 @@ export function SetupAccountForm() {
     event.preventDefault(); setBusy(true); setError('');
     try {
       const response = await fetch('/api/auth/setup-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim().toLowerCase() }) });
-      if (!response.ok) throw new Error('Unable to request account setup. Please try again.');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to request account setup. Please try again.');
       setSent(true);
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to request account setup.'); }
     finally { setBusy(false); }

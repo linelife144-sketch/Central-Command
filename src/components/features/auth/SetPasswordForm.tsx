@@ -169,7 +169,7 @@ export function SetPasswordForm() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Unable to set password.');
-      router.push(result.next);
+      router.replace(result.next);
       router.refresh();
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Unable to set your password. Please try again.'));

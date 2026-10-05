@@ -88,7 +88,7 @@ export const ticketService = {
         const ticket = await this.getTicketById(id);
         if (!ticket.storm_event_id) throw new Error('This ticket needs a storm event before it can be assigned.');
         const roster = await stormRosterService.listAssignable(ticket.storm_event_id);
-        if (!roster.some(member => member.contractorId === contractorId)) throw new Error('Select an approved contractor from this storm’s roster.');
+        if (!roster.some(member => member.contractorId === contractorId)) throw new Error('Select an active contractor from this storm’s roster.');
         // One UPDATE saves the assignee and status together; the database trigger records history.
         return this.updateTicket(id, {
             assigned_to: contractorId,

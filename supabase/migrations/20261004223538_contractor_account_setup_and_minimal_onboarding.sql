@@ -1,5 +1,5 @@
 -- Contractor-requested email verification, minimal onboarding, and active-only access.
--- LOCAL ONLY: apply separately after review. No mail is sent by this migration.
+-- Apply only after explicit user approval. No mail is sent by this migration.
 BEGIN;
 ALTER TABLE public.contractors
  ADD COLUMN vehicle_registration_photo_path text,
@@ -9,8 +9,11 @@ ALTER TABLE public.contractors
 UPDATE public.contractors c SET onboarding_completed_at=coalesce(c.onboarding_completed_at,clock_timestamp())
 FROM public.profiles p WHERE p.id=c.profile_id AND NOT p.must_reset_password;
 
+-- These server-only RPCs need definer access because service_role cannot read
+-- auth.users. Execution is revoked from public/anon/authenticated and each body
+-- independently checks the service_role request context with a fixed search path.
 CREATE FUNCTION public.claim_contractor_account_setup(p_email text) RETURNS jsonb
-LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE c public.contractors; u auth.users; normalized text:=lower(btrim(p_email));
 BEGIN
  IF current_setting('role',true) IS DISTINCT FROM 'service_role' THEN RAISE EXCEPTION 'Server only' USING ERRCODE='42501'; END IF;
@@ -82,7 +85,7 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.complete_account_password_setup(p_profile_id uuid) RETURNS void
-LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 BEGIN
  IF current_setting('role',true) IS DISTINCT FROM 'service_role' THEN RAISE EXCEPTION 'Server only' USING ERRCODE='42501'; END IF;
  IF NOT EXISTS(SELECT 1 FROM auth.users u JOIN public.profiles p ON p.id=u.id WHERE u.id=p_profile_id AND p.is_active
@@ -95,7 +98,7 @@ REVOKE ALL ON FUNCTION public.complete_account_password_setup(uuid) FROM PUBLIC,
 GRANT EXECUTE ON FUNCTION public.complete_account_password_setup(uuid) TO service_role;
 
 CREATE FUNCTION public.complete_contractor_onboarding(p_profile_id uuid,p_details jsonb) RETURNS void
-LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE c public.contractors; driver boolean; photo text:=nullif(p_details->>'vehicle_registration_photo_path','');
 BEGIN
  IF current_setting('role',true) IS DISTINCT FROM 'service_role' THEN RAISE EXCEPTION 'Server only' USING ERRCODE='42501'; END IF;
@@ -165,14 +168,16 @@ $$;
 REVOKE ALL ON FUNCTION private.owns_registration_tag(text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION private.owns_registration_tag(text) TO authenticated;
 CREATE POLICY registration_tag_read ON storage.objects FOR SELECT TO authenticated
- USING(bucket_id='contractor-registration-tags' AND (private.owns_registration_tag(name) OR private.active_profile_role() IN ('CEO','SUPER_ADMIN')));
+ USING(bucket_id='contractor-registration-tags' AND (private.owns_registration_tag(name) OR (private.active_profile_role() IN ('CEO','SUPER_ADMIN') AND private.has_permission((SELECT auth.uid()),'admin.contractors.view'))));
 CREATE POLICY registration_tag_upload ON storage.objects FOR INSERT TO authenticated
  WITH CHECK(bucket_id='contractor-registration-tags' AND private.owns_registration_tag(name) AND name ~ '^[0-9a-f-]+/[0-9a-f-]+[.](jpg|png|webp)$');
 -- Restrictive policies prevent other permissive bucket policies granting access.
 CREATE POLICY registration_tag_read_boundary ON storage.objects AS RESTRICTIVE FOR SELECT TO authenticated
- USING(bucket_id<>'contractor-registration-tags' OR private.owns_registration_tag(name) OR private.active_profile_role() IN ('CEO','SUPER_ADMIN'));
+ USING(bucket_id<>'contractor-registration-tags' OR private.owns_registration_tag(name) OR (private.active_profile_role() IN ('CEO','SUPER_ADMIN') AND private.has_permission((SELECT auth.uid()),'admin.contractors.view')));
 CREATE POLICY registration_tag_upload_boundary ON storage.objects AS RESTRICTIVE FOR INSERT TO authenticated
  WITH CHECK(bucket_id<>'contractor-registration-tags' OR (private.owns_registration_tag(name) AND name ~ '^[0-9a-f-]+/[0-9a-f-]+[.](jpg|png|webp)$'));
+CREATE POLICY registration_tag_anon_boundary ON storage.objects AS RESTRICTIVE FOR ALL TO anon
+ USING(bucket_id<>'contractor-registration-tags') WITH CHECK(bucket_id<>'contractor-registration-tags');
 CREATE POLICY registration_tag_no_replace ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated
  USING(bucket_id<>'contractor-registration-tags') WITH CHECK(bucket_id<>'contractor-registration-tags');
 CREATE POLICY registration_tag_no_delete ON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated USING(bucket_id<>'contractor-registration-tags');
@@ -291,5 +296,17 @@ BEGIN
  END IF;
  RETURN NEW;
 END $$;
+
+-- Direct roster writes must meet the same active-account rule as the RPC.
+CREATE FUNCTION private.guard_active_roster_member() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
+BEGIN
+ IF NEW.member_status<>'REMOVED' AND (TG_OP='INSERT' OR NEW.contractor_id IS DISTINCT FROM OLD.contractor_id OR NEW.member_status IS DISTINCT FROM OLD.member_status)
+ AND NOT EXISTS(SELECT 1 FROM public.contractors c JOIN public.profiles p ON p.id=c.profile_id WHERE c.id=NEW.contractor_id AND p.is_active AND p.role::text='CONTRACTOR' AND c.is_deleted IS NOT TRUE) THEN
+  RAISE EXCEPTION 'Select an active contractor' USING ERRCODE='23514'; END IF;
+ RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION private.guard_active_roster_member() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER roster_active_member BEFORE INSERT OR UPDATE OF contractor_id,member_status ON public.storm_event_roster_members FOR EACH ROW EXECUTE FUNCTION private.guard_active_roster_member();
+
 NOTIFY pgrst,'reload schema';
 COMMIT;

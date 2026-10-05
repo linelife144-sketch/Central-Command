@@ -815,7 +815,7 @@ This tracker records the user's authorized Phase 4 feature work. Implementation 
 ### Contractor onboarding: add records instead of invitations — 2026-10-04 (Codex /root)
 
 - [x] Replace the invitation page with `/admin/contractors/add`, redirect the old URL, remove invitation/resend controls, and disable the legacy send service and API. — Codex /root
-- [x] Add contractor contact details, pending onboarding status and a linked pay agreement atomically with an audit entry, without creating an Auth account or sending email. Display unlinked records by contact name and keep them out of dispatch until approved with active access. — Codex /root
+- [x] Add contractor contact details, pending onboarding status and a linked pay agreement atomically with an audit entry, without creating an Auth account or sending email. Display unlinked records by contact name and keep them out of dispatch until linked to an active account. Approval and eligibility flags are superseded by the minimal onboarding change below. — Codex /root
 - [x] Format phone numbers as `(318) 555-0123`; display currency with a dollar sign, grouping and two decimals; remove custom multiplier entry and timezone selection, retaining the configured timezone. — Codex /root
 - [x] Apply live migration `20261004202255_add_contractor_records_and_remove_unused_work_types` to Central Command: remove Admin/Training from the enum and rate tables; archive removed rate configuration in the audit trail. Preserve all ten shifts and six immutable pay agreements. — Codex /root
 - [x] Regenerate live database types; pass 462 tests in 92 files, TypeScript, scoped ESLint, isolated webpack production build and eight isolated PGlite suites. Pass live rollback checks for linked save, duplicate/type rejection, staff reads and worker isolation; retain zero fixtures. — Codex /root
@@ -823,3 +823,37 @@ This tracker records the user's authorized Phase 4 feature work. Implementation 
 - [x] Preserve concurrent contractor-list realtime/Assigned Tickets changes and unrelated TopBar changes; refresh the AST-only source graph with generated Next.js caches excluded. — Codex /root
 
 Evidence: `docs/testing/contractor-add-verification.json`, `docs/testing/contractor-add-local.json`, and `scripts/verification/contractor-add-live-rollback.sql`. Remaining onboarding steps and account activation are follow-up work; adding a record does not grant portal access.
+
+
+### Contractor account setup and minimal onboarding — 2026-10-04 (Codex /root)
+
+- [x] Keep privileged contractor creation database-only. Add login account setup restricted to pre-added email, mailbox verification, server-only linking, active CONTRACTOR profile, and required password setup. Return a generic eligibility-neutral response. — Codex /root
+- [x] Require a short onboarding form with editable first/last name, structured starting address, and private registration tag photo only for drivers. Save completion separately from Active/Inactive status. — Codex /root
+- [x] Remove legacy approval/assignment-eligibility behavior from contractor screens and storm assignment checks; retain historical database columns. Limit Active/Inactive changes to CEO/Super Admin, block inactive Auth sign-in and assignments, and preserve reactivation. — Codex /root
+- [x] Following explicit live-deployment authorization, apply migrations `20261004223538_contractor_account_setup_and_minimal_onboarding` and `20261004223756_harden_contractor_roster_trigger_search_path` to `xcvacmreerrypygpritq`. Verify server-only RPC grants, private photo bucket/policy metadata, live-backed generic setup HTTP 200, and unchanged counts (7 contractors, 8 Auth users, 10 shifts, 7 agreements). — Codex /root
+- [x] Fix loopback same-origin validation, preserve the verification redirect hostname, and allow the verification callback before password-reset gating. Preserve ordinary password recovery. — Codex /root
+- [x] Pass 499 application tests across 99 files, 21 isolated database suites, TypeScript, scoped onboarding/auth/contractor ESLint (an unchanged StormWorkspace effect fails its existing rule), isolated production build, and AST-only Graphify refresh (2,860 nodes / 7,770 edges). No real verification email or new Auth user was generated during deployment checks. — Codex /root
+- [ ] Complete user-owned live verification email/password setup, onboarding persistence/photo upload, portal navigation, and identity-based inactive/storage acceptance. The in-app browser preview did not hydrate reliably; API and isolated checks do not substitute for this acceptance. — Codex /root
+
+Evidence: `docs/testing/contractor-onboarding-verification.json`, `docs/testing/contractor-onboarding-local.json`, and `scripts/verification/contractor-onboarding.mjs`. The remaining Supabase security advisor notice is the existing disabled leaked-password protection setting; no new database advisor notices remain.
+
+
+### Contractor setup email incident — 2026-10-04 (Codex /root)
+
+- [x] Diagnose the user's live setup attempt by matching the contractor setup timestamp to Supabase Auth logs: Auth returned 500 during `POST /admin/users`; the database rejected INSERT with `Internally added contractor required` because the trigger checked server app metadata before Auth had persisted it. The API had hidden this failure behind the generic eligibility response. — Codex /root
+- [x] Apply `20261004231500_fix_contractor_account_setup_claim`: authorize Auth INSERT with a private, one-use random claim for the exact internally added email/contractor, expiring after 10 minutes; set protected app metadata after user creation and log safe error codes for future diagnosis. Direct access to the claim table remains revoked. — Codex /root
+- [x] Confirm live claim RPC remains service-role-only, the claim table grants no direct service-role table access, and database counts remain 7 contractors / 8 Auth users / 10 shifts / 7 agreements. Failed attempt did not create an Auth user; no email was sent by the agent. — Codex /root
+- [ ] User retry of verification email and end-to-end account/onboarding acceptance. If the email still does not arrive, inspect Auth mailer configuration; Supabase's built-in SMTP only sends to organization member addresses and is limited to two messages per hour. — Codex /root
+
+Evidence: `docs/testing/contractor-onboarding-verification.json` and the Supabase Auth/Postgres log match at 23:03:45–46 UTC.
+
+
+### Contractor verification callback and initial login — 2026-10-04 (Codex /root)
+
+- [x] Diagnose the user's `/login#error_code=otp_expired` link. Supabase Auth logs show the OTP send returned 200 at 23:11 UTC; `/verify` returned `Email link is invalid or has expired` at 23:12 UTC. The one-use URL can no longer be reused. — Codex /root
+- [x] Update setup emails to request `/auth/confirm?flow=contractor-setup`; valid confirmation routes to `/set-password`, and expired setup links show a route back to `/setup-account`. Retain flow marker while removing token fragments from browser history. — Codex /root
+- [x] After contractor password setup, clear the reset gate, sign out the temporary verification session, and send the user to `/login`; first password sign-in is redirected to required `/contractor/onboarding`. — Codex /root
+- [ ] In Supabase Authentication > URL Configuration, allow `http://localhost:3000/auth/confirm*` (and the deployed app's exact callback origin when applicable). Supabase uses its Site URL when a requested redirect is not allow-listed. The live connector does not expose Auth URL/template settings; no redirect allow-list setting was changed. Send a fresh verification email after the URL is allowed, then click it once. — Codex /root
+- [ ] Complete real password setup and first-login onboarding acceptance. Tests were not rerun after these flow changes. — Codex /root
+
+See `docs/testing/contractor-onboarding-verification.json` for the observed Auth log times and current acceptance boundary.

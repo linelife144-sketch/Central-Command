@@ -45,7 +45,12 @@ describe('canonical contractor queries', () => {
 
 it('displays an added contractor without an account and excludes them from dispatch', async () => {
   remote.from.mockImplementation((table: string) => query({ data: table === 'contractors' ? [{ id: 'record', profile_id: null, first_name: 'QA', last_name: 'Added', business_name: 'QA Added', business_email: 'qa@example.test', business_phone: '(318) 555-0123', onboarding_status: 'PENDING', is_eligible_for_assignment: false }] : [], error: null }));
-  expect((await contractorService.listContractors())[0]).toMatchObject({ profileId: null, fullName: 'QA Added', email: 'qa@example.test', isActive: false, onboardingStatus: 'PENDING' });
+  expect((await contractorService.listContractors())[0]).toMatchObject({ profileId: null, fullName: 'QA Added', email: 'qa@example.test', isActive: true, onboardingCompletedAt: null });
   expect(await contractorService.listAssignableContractors()).toEqual([]);
   expect(remote.from.mock.calls.some(call => call[0] === 'profiles')).toBe(false);
+});
+
+it('assigns active linked contractors independently of historical approval values', async () => {
+  remote.from.mockImplementation((table: string) => query({ data: table === 'contractors' ? [{ id: 'record', profile_id: 'profile', business_name: 'QA', onboarding_status: 'PENDING', is_eligible_for_assignment: false, onboarding_completed_at: null }] : table === 'profiles' ? [{ id: 'profile', first_name: 'QA', last_name: 'Crew', email: 'qa@example.test', is_active: true }] : [], error: null }));
+  expect(await contractorService.listAssignableContractors()).toMatchObject([{ id: 'record' }]);
 });

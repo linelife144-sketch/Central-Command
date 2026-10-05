@@ -11,9 +11,11 @@ interface RemoteContractorRow {
   business_type: string | null;
   city: string | null;
   state: string | null;
-  onboarding_status: string;
-  is_eligible_for_assignment: boolean;
-  eligibility_reason: string | null;
+  onboarding_completed_at: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  zip_code: string | null;
+  vehicle_registration_photo_path: string | null;
   business_email: string | null;
   business_phone: string | null;
   role: ContractorRole;
@@ -50,9 +52,7 @@ export interface ContractorListItem {
   city: string | null;
   state: string | null;
   isActive: boolean;
-  onboardingStatus: string;
-  eligibleForAssignment: boolean;
-  eligibilityReason: string | null;
+  onboardingCompletedAt: string | null;
   email: string;
   phone: string | null;
   assignedTicketCount: number;
@@ -63,8 +63,7 @@ export interface ContractorListItem {
 
 export interface ContractorListFilters {
   search?: string;
-  onboardingStatus?: string;
-  eligibleOnly?: boolean;
+  activeOnly?: boolean;
 }
 
 export interface AssignableContractor {
@@ -73,6 +72,10 @@ export interface AssignableContractor {
 }
 
 export interface ContractorDetail {
+  addressLine1: string | null;
+  addressLine2: string | null;
+  zipCode: string | null;
+  vehicleRegistrationPhotoPath: string | null;
   emailVerified?: boolean;
   id: string;
   profileId: string | null;
@@ -86,9 +89,7 @@ export interface ContractorDetail {
   city: string | null;
   state: string | null;
   isActive: boolean;
-  onboardingStatus: string;
-  eligibleForAssignment: boolean;
-  eligibilityReason: string | null;
+  onboardingCompletedAt: string | null;
   role: ContractorRole;
   assignedTicketCount: number;
   totalTicketCount: number;
@@ -121,13 +122,7 @@ function isOpenTicketStatus(status: string): boolean {
 function buildAlerts(contractor: RemoteContractorRow): string[] {
   const alerts: string[] = [];
 
-  if (contractor.onboarding_status.toUpperCase() !== 'APPROVED') {
-    alerts.push('Onboarding pending');
-  }
-
-  if (!contractor.is_eligible_for_assignment) {
-    alerts.push(contractor.eligibility_reason ?? 'Not eligible for assignment');
-  }
+  if (!contractor.onboarding_completed_at) alerts.push(contractor.profile_id ? 'Onboarding incomplete' : 'Account setup not started');
 
   return alerts;
 }
@@ -232,15 +227,6 @@ function applySearchFilter(items: ContractorListItem[], search?: string): Contra
   });
 }
 
-function applyStatusFilter(items: ContractorListItem[], onboardingStatus?: string): ContractorListItem[] {
-  if (!onboardingStatus || onboardingStatus === 'ALL') {
-    return items;
-  }
-
-  const normalizedStatus = onboardingStatus.toUpperCase();
-  return items.filter((item) => item.onboardingStatus.toUpperCase() === normalizedStatus);
-}
-
 function sortByName(items: ContractorListItem[]): ContractorListItem[] {
   return items.sort((left, right) => left.fullName.localeCompare(right.fullName));
 }
@@ -266,9 +252,11 @@ export const contractorService = {
       'business_type',
       'city',
       'state',
-      'onboarding_status',
-      'is_eligible_for_assignment',
-      'eligibility_reason',
+      'onboarding_completed_at',
+      'address_line1',
+      'address_line2',
+      'zip_code',
+      'vehicle_registration_photo_path',
       'business_email',
       'business_phone',
       'role',
@@ -277,13 +265,10 @@ export const contractorService = {
     ].join(',');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase.from('contractors') as any).select(
+    const query = (supabase.from('contractors') as any).select(
       contractorColumns,
     ).eq('is_deleted', false);
 
-    if (filters.eligibleOnly) {
-      query = query.eq('is_eligible_for_assignment', true);
-    }
 
     const { data, error } = await query;
 
@@ -320,10 +305,8 @@ export const contractorService = {
         city: row.city,
         state: row.state,
         emailVerified: profile?.is_email_verified,
-      isActive: profile?.is_active ?? false,
-      onboardingStatus: row.onboarding_status,
-        eligibleForAssignment: row.is_eligible_for_assignment,
-        eligibilityReason: row.eligibility_reason,
+        isActive: profile?.is_active ?? !row.profile_id,
+        onboardingCompletedAt: row.onboarding_completed_at ?? null,
         email,
         phone: profile?.phone ?? row.business_phone,
         assignedTicketCount: assignedTicketCountByContractor.get(row.id) ?? 0,
@@ -332,22 +315,14 @@ export const contractorService = {
       } satisfies ContractorListItem;
     });
 
-    return sortByName(
-      applyStatusFilter(
-        applySearchFilter(mappedItems, filters.search),
-        filters.onboardingStatus,
-      ),
-    );
+    return sortByName(applySearchFilter(mappedItems, filters.search).filter(c => !filters.activeOnly || c.isActive));
   },
 
   async listAssignableContractors(): Promise<AssignableContractor[]> {
-    const contractors = await this.listContractors({
-      onboardingStatus: 'APPROVED',
-      eligibleOnly: true,
-    });
+    const contractors = await this.listContractors({ activeOnly: true });
 
     return contractors
-      .filter(contractor => contractor.isActive)
+      .filter(contractor => contractor.isActive && contractor.profileId)
       .map((contractor) => ({
         id: contractor.id,
         displayName: `${contractor.fullName} (${contractor.businessName})`,
@@ -373,9 +348,11 @@ export const contractorService = {
       'business_type',
       'city',
       'state',
-      'onboarding_status',
-      'is_eligible_for_assignment',
-      'eligibility_reason',
+      'onboarding_completed_at',
+      'address_line1',
+      'address_line2',
+      'zip_code',
+      'vehicle_registration_photo_path',
       'business_email',
       'business_phone',
       'role',
@@ -434,15 +411,17 @@ export const contractorService = {
       businessType: row.business_type,
       email: profile?.email ?? row.business_email ?? '',
       phone: profile?.phone ?? row.business_phone,
+      addressLine1: row.address_line1,
+      addressLine2: row.address_line2,
+      zipCode: row.zip_code,
+      vehicleRegistrationPhotoPath: row.vehicle_registration_photo_path,
       businessEmail: row.business_email,
       businessPhone: row.business_phone,
       city: row.city,
       state: row.state,
       emailVerified: profile?.is_email_verified,
-      isActive: profile?.is_active ?? false,
-      onboardingStatus: row.onboarding_status,
-      eligibleForAssignment: row.is_eligible_for_assignment,
-      eligibilityReason: row.eligibility_reason,
+      isActive: profile?.is_active ?? !row.profile_id,
+      onboardingCompletedAt: row.onboarding_completed_at ?? null,
       role: row.role,
       assignedTicketCount: assignedTicketCountByContractor.get(row.id) ?? 0,
       totalTicketCount: totalTicketCountByContractor.get(row.id) ?? 0,

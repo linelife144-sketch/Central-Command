@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ContractorPayrollEditor } from '@/components/features/payroll';
 import { contractorService } from '@/lib/services/contractorService';
+import { RegistrationTagLink } from '@/components/features/onboarding/RegistrationTagLink';
 import { formatDate } from '@/lib/utils/formatters';
 import { useAuth } from '@/components/providers/AuthProvider';
 
@@ -25,11 +26,12 @@ export default function ContractorDetailPage() {
     <PageHeader title={c.fullName} description={c.businessName} showBackButton backHref="/admin/contractors"><Button variant="outline" onClick={() => query.refetch()}>Refresh</Button></PageHeader>
     <div className="grid grid-cols-2 gap-4"><MetricCard title="Assigned Tickets" value={c.assignedTicketCount} /><MetricCard title="Total Tickets" value={c.totalTicketCount} /></div>
     <Card><CardHeader><CardTitle>Contractor account</CardTitle></CardHeader><CardContent className="space-y-3">
-      <StatusBadge status={!c.profileId ? 'Pending' : !c.isActive ? 'Inactive' : c.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending'} />
+      <StatusBadge status={c.isActive ? 'Active' : 'Inactive'} />
       {(profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO') && c.profileId && c.profileId !== profile.id && <div><Button variant="outline" onClick={async () => { try { await contractorService.setContractorActive(c.profileId!, !c.isActive); await query.refetch(); } catch (e) { window.alert(e instanceof Error ? e.message : 'Unable to update status.'); } }}>{c.isActive ? 'Mark inactive' : 'Reactivate'}</Button></div>}
-      <p>Email: {c.email}</p><p>Phone: {c.phone || 'Not provided'}</p><p>Location: {[c.city,c.state].filter(Boolean).join(', ') || 'Not provided'}</p>
-      <p>Business type: {c.businessType || 'Not provided'}</p><p>Onboarding: {c.onboardingStatus}</p><p>Joined: {formatDate(c.createdAt)}</p>
-      {!c.eligibleForAssignment && <p>Assignment eligibility: {c.eligibilityReason || 'Not eligible'}</p>}
+      <p>Email: {c.email}</p><p>Phone: {c.phone || 'Not provided'}</p><p>Location: {[c.addressLine1,c.addressLine2,c.city,c.state,c.zipCode].filter(Boolean).join(', ') || 'Not provided'}</p>
+      <p>Business type: {c.businessType || 'Not provided'}</p><p>Onboarding: {c.onboardingCompletedAt ? `Completed ${formatDate(c.onboardingCompletedAt)}` : c.profileId ? 'Incomplete' : 'Account setup not started'}</p><p>Joined: {formatDate(c.createdAt)}</p>
+      {c.vehicleRegistrationPhotoPath && (profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO') && <RegistrationTagLink path={c.vehicleRegistrationPhotoPath} />}
+      {!c.profileId && <p className="text-sm text-muted-foreground">The contractor can set up their account from the login screen using this email. Account access begins after email verification and password setup.</p>}
     </CardContent></Card>
     {can('admin.payroll.view') && <ContractorPayrollEditor contractorId={c.id} currentRole={c.role} canEdit={can('admin.payroll.edit')} canChangeRole={profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO'} onRoleChanged={() => query.refetch()} />}
     <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><StatusBadge status={ticket.status} /><span>{ticket.utilityClient}{ticket.isImportant ? ' · Important' : ''}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>

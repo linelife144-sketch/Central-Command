@@ -15,14 +15,12 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { supabase } from '@/lib/supabase/client';
 
 function statusOf(contractor: ContractorListItem) {
-  if (!contractor.profileId && contractor.onboardingStatus !== 'APPROVED') return 'Pending';
-  if (!contractor.isActive) return 'Inactive';
-  return contractor.onboardingStatus === 'APPROVED' ? 'Active' : 'Pending';
+  return contractor.isActive ? 'Active' : 'Inactive';
 }
 const columns: Column<ContractorListItem>[] = [
   { key: 'fullName', header: 'Name', cell: c => <Link className="font-semibold text-grid-navy underline-offset-4 hover:underline" href={`/admin/contractors/${c.id}`}>{c.fullName}</Link> },
   { key: 'businessName', header: 'Business', cell: c => c.businessName },
-  { key: 'onboardingStatus', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
+  { key: 'isActive', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
   { key: 'assignedTicketCount', header: 'Assigned Tickets', cell: c => c.assignedTicketCount },
   { key: 'alerts', header: 'Alerts', cell: c => c.alerts.join('; ') || '—' },
 ];
@@ -58,11 +56,11 @@ export default function ContractorsListPage() {
     <div className="stagger-children grid grid-cols-2 xl:grid-cols-4 gap-4">
       <MetricCard title="Total" value={query.isPending ? '—' : contractors.length} />
       <MetricCard title="Active" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Active').length} />
-      <MetricCard title="Pending" value={query.isPending ? '—' : contractors.filter(c => statusOf(c) === 'Pending').length} />
+      <MetricCard title="Inactive" value={query.isPending ? '—' : contractors.filter(c => !c.isActive).length} /><MetricCard title="Onboarding incomplete" value={query.isPending ? '—' : contractors.filter(c => !c.onboardingCompletedAt).length} />
     </div>
     <div className="cc-filter-bar flex flex-col sm:flex-row flex-wrap gap-3">
       <Input aria-label="Search contractors" placeholder="Search by name, business, or email..." value={search} onChange={e => setSearch(e.target.value)} className="sm:max-w-xs" />
-      <Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Filter contractors by status" className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select>
+      <Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Filter contractors by status" className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select>
       <Button variant="outline" onClick={() => query.refetch()}>Refresh</Button><Button variant="outline" onClick={exportCsv} disabled={query.isPending || Boolean(query.error)}>Export</Button>
     </div>
     {!query.error && <DataTable columns={columns} data={filtered} keyExtractor={c => c.id} isLoading={query.isPending} emptyMessage="No contractors match your filters." />}

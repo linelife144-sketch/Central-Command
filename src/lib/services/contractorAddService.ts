@@ -17,5 +17,5 @@ export async function addContractor(actorId: string, input: unknown) {
     throw new Error('Unable to save the contractor. Please try again.');
   }
   if (!data) throw new Error('The contractor was not saved. Please try again.');
-  return { contractor: data, message: 'Contractor added. Onboarding is pending.' };
+  return { contractor: data, message: 'Contractor added. They can set up their account from the login screen.' };
 }

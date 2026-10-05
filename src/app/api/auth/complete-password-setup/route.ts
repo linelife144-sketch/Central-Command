@@ -25,7 +25,12 @@ export async function POST(request: Request) {
     if (passwordError) throw new AccessError('Unable to set your password. Please try again.', 400);
     const { error: flagError } = await admin.rpc('complete_account_password_setup', { p_profile_id: user.id });
     if (flagError) throw new AccessError('Password saved; please retry setup to finish your account.', 503);
-    return NextResponse.json({ next: profile.role === 'CONTRACTOR' ? '/contractor/onboarding' : getLandingPathForRole(profile.role) }, { headers: { 'Cache-Control': 'private, no-store' } });
+    if (profile.role === 'CONTRACTOR') {
+      const { error: signOutError } = await client.auth.signOut({ scope: 'local' });
+      if (signOutError) throw new AccessError('Password saved. Sign out, then sign in with your new password.', 503);
+      return NextResponse.json({ next: '/login?setup=complete' }, { headers: { 'Cache-Control': 'private, no-store' } });
+    }
+    return NextResponse.json({ next: getLandingPathForRole(profile.role) }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof ZodError ? 'Use at least 12 characters with uppercase, lowercase, a number, and a special character.' : error instanceof AccessError ? error.message : 'Unable to set password.' }, { status: error instanceof AccessError ? error.status : error instanceof ZodError || error instanceof SyntaxError ? 400 : 500 });
   }

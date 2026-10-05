@@ -139,7 +139,7 @@ export async function updateSession(request: NextRequest) {
     if (!permissionError && data) permissions = data as PermissionMap;
     else if (permissionError?.code === 'PGRST202' && permissionError.message.includes('get_my_permissions')) permissions = resolvePermissions(role);
   }
-  if (pathname === '/forbidden') return supabaseResponse;
+  if (pathname === '/forbidden' || pathname === '/auth/confirm') return supabaseResponse;
 
   // If user must set/reset password, ensure they stay on or get directed to /set-password
   if (shouldEnforcePasswordReset(profile.must_reset_password, pathname)) {

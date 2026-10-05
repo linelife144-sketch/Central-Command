@@ -46,8 +46,12 @@ function AuthConfirmInner() {
       try {
         const { session, type } = await confirmation.current!;
         if (cancelled) return;
-        // Remove one-use tokens from browser history once the session is saved.
-        window.history.replaceState(window.history.state, '', '/auth/confirm');
+        const isContractorSetup = searchParams.get('flow') === 'contractor-setup'
+          || (session.user.app_metadata?.role === 'CONTRACTOR' && Boolean(session.user.app_metadata?.contractor_record_id));
+        // Remove one-use tokens but retain the non-secret flow marker for the
+        // success and expired-link UI.
+        const cleanCallbackUrl = isContractorSetup ? '/auth/confirm?flow=contractor-setup' : '/auth/confirm';
+        window.history.replaceState(window.history.state, '', cleanCallbackUrl);
         const { data: profile } = await supabase
           .from('profiles')
           .select('role,must_reset_password')
@@ -55,9 +59,9 @@ function AuthConfirmInner() {
           .single();
         if (cancelled) return;
         setStatus('success');
-        void recordLastLogin(session.access_token);
+        if (!isContractorSetup) void recordLastLogin(session.access_token);
         const landingPath = type === 'recovery' ? '/reset-password'
-          : type === 'invite' || profile?.must_reset_password ? '/set-password'
+          : isContractorSetup || type === 'invite' || profile?.must_reset_password ? '/set-password'
           : getLandingPathForRole(profile?.role ?? null);
         redirectTimer = setTimeout(() => router.replace(landingPath), 800);
       } catch (error) {
@@ -105,10 +109,10 @@ function AuthConfirmInner() {
             </div>
             <div className="space-y-2">
               <h1 className="text-xl font-semibold text-grid-navy">
-                Signed in successfully
+                {searchParams.get('flow') === 'contractor-setup' ? 'Email verified' : 'Signed in successfully'}
               </h1>
               <p className="text-sm text-grid-muted">
-                Redirecting you now&hellip;
+                {searchParams.get('flow') === 'contractor-setup' ? 'Taking you to password setup&hellip;' : 'Redirecting you now&hellip;'}
               </p>
             </div>
           </>
@@ -130,7 +134,7 @@ function AuthConfirmInner() {
               </p>
             </div>
             <Button asChild className="w-full">
-              <Link href="/magic-link">Request a new link</Link>
+              <Link href={searchParams.get('flow') === 'contractor-setup' ? '/setup-account' : '/magic-link'}>Request a new link</Link>
             </Button>
           </>
         )}

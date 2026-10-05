@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
     const body = await request.json().catch(() => null);
-    await requestContractorAccountSetup(body, new URL(request.url).origin);
+    await requestContractorAccountSetup(body, request.headers.get('origin') ?? new URL(request.url).origin);
     // A minimum response duration reduces fast-path account enumeration.
     await new Promise(resolve => setTimeout(resolve, Math.max(0, 750 - (Date.now() - startedAt))));
     return NextResponse.json({ message: SETUP_ACCOUNT_MESSAGE }, { headers: { 'Cache-Control': 'private, no-store' } });

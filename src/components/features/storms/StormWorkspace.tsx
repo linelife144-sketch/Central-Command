@@ -55,7 +55,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
         event.preventDefault(); setSaving(true);
         try { await stormRosterService.assign(stormId, selected); setSelected(''); await reload(); toast.success('Contractor added to this storm.'); }
         catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to assign contractor.'); } finally { setSaving(false); }
-      }}><div className="min-w-60 flex-1 space-y-2"><Label htmlFor="storm-contractor">Add an approved contractor</Label>
+      }}><div className="min-w-60 flex-1 space-y-2"><Label htmlFor="storm-contractor">Add an active contractor</Label>
         <select id="storm-contractor" className="storm-contrast-field w-full rounded-md border p-2" value={selected} onChange={event => setSelected(event.target.value)} required>
           <option value="">Select contractor</option>{options.filter(option => !roster.some(member => member.contractorId === option.id)).map(option => <option key={option.id} value={option.id}>{option.displayName}</option>)}
         </select></div><Button disabled={!selected || saving} type="submit" variant="storm">{saving ? 'Adding...' : 'Add to Storm'}</Button></form>}
@@ -63,7 +63,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
         event.preventDefault(); setSaving(true);
         try { const contractor = localTestStore.createContractor(name); await stormRosterService.assign(stormId, contractor.id); setName(''); await reload(); }
         catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to create test contractor.'); } finally { setSaving(false); }
-      }}><div className="flex-1 space-y-2"><Label htmlFor="test-contractor-name">Test contractor name</Label><Input id="test-contractor-name" required value={name} onChange={event => setName(event.target.value)} /></div><Button disabled={saving} type="submit" variant="storm">Create Test Contractor</Button></form> : canManage ? <p className="text-sm"><Link className="text-grid-blue underline" href="/admin/contractors/invite">Onboard a new contractor</Link> before assigning them to this storm.</p> : null}
+      }}><div className="flex-1 space-y-2"><Label htmlFor="test-contractor-name">Test contractor name</Label><Input id="test-contractor-name" required value={name} onChange={event => setName(event.target.value)} /></div><Button disabled={saving} type="submit" variant="storm">Create Test Contractor</Button></form> : canManage ? <p className="text-sm"><Link className="text-grid-blue underline" href="/admin/contractors/add">Add a new contractor</Link> before assigning them to this storm.</p> : null}
     </section>}
     <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-tickets"><h2 id="storm-tickets" className="text-xl font-semibold text-white">Tickets · {tickets.length}</h2>
       {tickets.length ? <ul className="divide-y">{tickets.map(ticket => <li key={ticket.id} className="flex justify-between gap-3 py-3"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticket_number}</Link><span>{ticket.status}</span></li>)}</ul> : <p className="text-sm text-grid-muted">Create the first {storm.utilityClient} ticket for this event.</p>}
