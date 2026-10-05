@@ -1,0 +1,156 @@
+-- Live database and RLS checks with simulated request identities.
+-- All fixtures, overrides, revisions and audit entries roll back. No email is sent.
+DO $qa$
+DECLARE
+  administrator uuid := '4bd03b59-3a04-4c8a-aa09-d7fe1f0a6512';
+  contractor_actor uuid := '69e8696f-9dc9-4f37-8bcd-75868d219635';
+  contractor uuid := 'adc6d309-e84e-4b97-81cb-b6ac168dea02';
+  other_contractor uuid := '9ec4249c-a9a8-44b0-a231-f79ac7997886';
+  storm uuid := '418bd00d-4bf0-47af-9429-8f2704b416a5';
+  staff_fixture uuid := gen_random_uuid();
+  invite_fixture uuid := gen_random_uuid();
+  fixture_email text;
+  settings jsonb;
+  permission_map jsonb;
+  saved_version uuid;
+  result jsonb;
+  denied boolean;
+  affected integer;
+  before_profiles bigint;
+  before_overrides bigint;
+  before_invitations bigint;
+  before_audits bigint;
+  checks jsonb := '[]'::jsonb;
+BEGIN
+  SELECT count(*) INTO before_profiles FROM public.profiles;
+  SELECT count(*) INTO before_overrides FROM public.user_permissions;
+  SELECT count(*) INTO before_invitations FROM public.contractor_invitations;
+  SELECT count(*) INTO before_audits FROM public.audit_logs;
+  BEGIN
+    INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+      VALUES(staff_fixture,'qa.permissions.'||staff_fixture||'@example.invalid','{"role":"ADMIN"}', '{"first_name":"Rollback","last_name":"Staff"}');
+    fixture_email:='qa.invite.'||invite_fixture||'@example.invalid';
+    INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+      VALUES(invite_fixture,fixture_email,'{"role":"CONTRACTOR"}', '{"first_name":"Rollback","last_name":"Invite"}');
+
+    PERFORM set_config('request.jwt.claim.sub',staff_fixture::text,true);
+    PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',staff_fixture,'role','authenticated')::text,true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    permission_map:=public.get_my_permissions();
+    IF (SELECT count(*) FROM jsonb_object_keys(permission_map))<>21 OR NOT (permission_map->>'admin.payroll.view')::boolean OR (permission_map->>'admin.payroll.edit')::boolean THEN RAISE EXCEPTION 'Default permission snapshot mismatch'; END IF;
+    checks:=checks||jsonb_build_array('all 21 keys returned with independent Payroll defaults');
+    denied:=false;
+    BEGIN PERFORM public.get_user_permission_settings(administrator); EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Admin read access administration'; END IF;
+    checks:=checks||jsonb_build_array('ordinary Admin cannot read access administration');
+    EXECUTE 'RESET ROLE';
+
+    PERFORM set_config('request.jwt.claim.sub',administrator::text,true);
+    PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',administrator,'role','authenticated')::text,true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    settings:=public.set_user_permissions(staff_fixture,'{"admin.time.view":"deny","admin.tickets.view":"deny","admin.storms.edit":"allow"}',NULL);
+    saved_version:=(settings->>'version')::uuid;
+    IF saved_version IS NULL OR (settings->'permissions'->>'admin.time.edit')::boolean OR NOT (settings->'permissions'->>'admin.storms.edit')::boolean THEN RAISE EXCEPTION 'Saved permission snapshot mismatch'; END IF;
+    IF public.get_user_permission_settings(staff_fixture)->>'version'<>saved_version::text THEN RAISE EXCEPTION 'Revision not persisted'; END IF;
+    checks:=checks||jsonb_build_array('atomic overrides and revision persist','Edit follows View and explicit storm grant');
+    denied:=false;
+    BEGIN PERFORM public.set_user_permissions(staff_fixture,'{}',NULL); EXCEPTION WHEN serialization_failure THEN denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Stale revision accepted'; END IF;
+    checks:=checks||jsonb_build_array('stale revision rejects overwrite');
+    denied:=false;
+    BEGIN PERFORM public.set_user_permissions(staff_fixture,'{"unknown":"allow"}',saved_version); EXCEPTION WHEN invalid_parameter_value THEN denied:=true; END;
+    IF NOT denied OR public.get_user_permission_settings(staff_fixture)->>'version'<>saved_version::text THEN RAISE EXCEPTION 'Invalid save modified settings'; END IF;
+    checks:=checks||jsonb_build_array('unknown key rejected without revision change');
+    denied:=false;
+    BEGIN PERFORM public.set_user_permissions(staff_fixture,'{"admin.users.edit":"allow"}',saved_version); EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Admin granted user administration'; END IF;
+    checks:=checks||jsonb_build_array('user administration cannot be granted to Admin');
+    denied:=false;
+    BEGIN PERFORM public.set_user_permissions(administrator,'{}',NULL); EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Own permissions changed'; END IF;
+    checks:=checks||jsonb_build_array('self permission changes rejected');
+    denied:=false;
+    BEGIN PERFORM public.set_user_permissions(contractor_actor,'{"admin.time.view":"allow"}',NULL); EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Contractor permissions changed'; END IF;
+    checks:=checks||jsonb_build_array('contractor portal permissions remain locked');
+    EXECUTE 'RESET ROLE';
+    IF (SELECT count(*) FROM public.audit_logs WHERE action='PERMISSIONS_UPDATED' AND entity_id=staff_fixture AND user_id=administrator)<>1 THEN RAISE EXCEPTION 'Permission audit mismatch'; END IF;
+    IF (SELECT role::text FROM profiles WHERE id=staff_fixture)<>'ADMIN' THEN RAISE EXCEPTION 'Role changed by permissions'; END IF;
+    checks:=checks||jsonb_build_array('save records bound actor and audit without changing role');
+
+    PERFORM set_config('request.jwt.claim.sub',staff_fixture::text,true);
+    PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',staff_fixture,'role','authenticated')::text,true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    IF (SELECT count(*) FROM tickets)<>0 THEN RAISE EXCEPTION 'Denied tickets visible'; END IF;
+    UPDATE tickets SET updated_at=updated_at;
+    GET DIAGNOSTICS affected=ROW_COUNT;
+    IF affected<>0 THEN RAISE EXCEPTION 'Denied tickets changed'; END IF;
+    checks:=checks||jsonb_build_array('denied ticket reads and direct writes blocked by live RLS');
+    UPDATE storm_events SET updated_at=updated_at WHERE id=storm;
+    GET DIAGNOSTICS affected=ROW_COUNT;
+    IF affected<>1 THEN RAISE EXCEPTION 'Explicit storm edit did not work'; END IF;
+    checks:=checks||jsonb_build_array('explicit storm edit works through live RLS');
+    IF (SELECT count(*) FROM role_rate_defaults)=0 OR (SELECT count(*) FROM utility_billing_rates)=0 OR (public.get_my_permissions()->>'admin.time.view')::boolean THEN RAISE EXCEPTION 'Payroll view tied to Time view'; END IF;
+    UPDATE role_rate_defaults SET hourly_rate=hourly_rate;
+    GET DIAGNOSTICS affected=ROW_COUNT;
+    IF affected<>0 THEN RAISE EXCEPTION 'Payroll edit allowed by default'; END IF;
+    checks:=checks||jsonb_build_array('Payroll reads independent of Time and default financial writes blocked');
+    denied:=false;
+    BEGIN INSERT INTO user_permissions(profile_id,permission_key,effect,updated_by) VALUES(staff_fixture,'admin.users.edit','allow',staff_fixture); EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Direct permission insert allowed'; END IF;
+    checks:=checks||jsonb_build_array('direct permission table writes forbidden');
+    denied:=false;
+    BEGIN UPDATE profiles SET role='SUPER_ADMIN' WHERE id=staff_fixture; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%protected%' THEN RAISE; END IF; denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Self role escalation allowed'; END IF;
+    checks:=checks||jsonb_build_array('profile trigger blocks self role escalation');
+    denied:=false;
+    BEGIN PERFORM create_storm_ticket(storm,'{}','{}'); EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%Only authorized users%' THEN RAISE; END IF; denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Ticket RPC bypassed edit denial'; END IF;
+    denied:=false;
+    BEGIN PERFORM assign_contractor_to_storm(storm,contractor); EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%Only authorized users%' THEN RAISE; END IF; denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Assignment RPC bypassed edit denial'; END IF;
+    checks:=checks||jsonb_build_array('ticket and assignment RPC gates enforce module edits');
+    denied:=false;
+    BEGIN PERFORM finalize_contractor_invite(administrator,invite_fixture,'Rollback','Invite',fixture_email,NULL,false); EXCEPTION WHEN insufficient_privilege THEN denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Authenticated client finalized invitation'; END IF;
+    checks:=checks||jsonb_build_array('invitation finalizer unavailable to authenticated clients');
+    EXECUTE 'RESET ROLE';
+
+    UPDATE profiles SET must_reset_password=true WHERE id=staff_fixture;
+    PERFORM set_config('request.jwt.claim.sub',staff_fixture::text,true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    IF EXISTS(SELECT 1 FROM jsonb_each(public.get_my_permissions()) WHERE value<>'false'::jsonb) THEN RAISE EXCEPTION 'Password gate bypassed'; END IF;
+    checks:=checks||jsonb_build_array('password setup gate denies staff modules');
+    EXECUTE 'RESET ROLE';
+
+    EXECUTE 'SET LOCAL ROLE service_role';
+    denied:=false;
+    BEGIN PERFORM finalize_contractor_invite(staff_fixture,invite_fixture,'Rollback','Invite',fixture_email,NULL,false); EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%Invitation permission required%' THEN RAISE; END IF; denied:=true; END;
+    IF NOT denied THEN RAISE EXCEPTION 'Unqualified actor finalized invite'; END IF;
+    checks:=checks||jsonb_build_array('service finalizer revalidates actor permission');
+    result:=finalize_contractor_invite(administrator,invite_fixture,'Rollback','Invite',fixture_email,NULL,false);
+    EXECUTE 'RESET ROLE';
+    IF (result->>'contractor_id') IS NULL OR (SELECT count(*) FROM contractors WHERE profile_id=invite_fixture)<>1 OR NOT (SELECT must_reset_password FROM profiles WHERE id=invite_fixture) OR (SELECT send_count FROM contractor_invitations WHERE profile_id=invite_fixture)<>1 THEN RAISE EXCEPTION 'Invitation linking failed'; END IF;
+    checks:=checks||jsonb_build_array('finalizer creates linked contractor, invitation and password gate atomically');
+    UPDATE contractors SET onboarding_status='APPROVED',is_eligible_for_assignment=true WHERE profile_id=invite_fixture;
+    EXECUTE 'SET LOCAL ROLE service_role';
+    PERFORM finalize_contractor_invite(administrator,invite_fixture,'Rollback','Invite',fixture_email,NULL,true);
+    EXECUTE 'RESET ROLE';
+    IF NOT (SELECT is_eligible_for_assignment FROM contractors WHERE profile_id=invite_fixture) OR (SELECT count(*) FROM contractors WHERE profile_id=invite_fixture)<>1 OR (SELECT send_count FROM contractor_invitations WHERE profile_id=invite_fixture)<>2 OR (SELECT count(*) FROM audit_logs WHERE entity_id=invite_fixture AND action IN('INVITE_SENT','INVITE_RESENT'))<>2 THEN RAISE EXCEPTION 'Resend damaged linked records'; END IF;
+    checks:=checks||jsonb_build_array('resend preserves approved contractor and increments audited send count');
+    EXECUTE 'RESET ROLE';
+
+    PERFORM set_config('request.jwt.claim.sub',contractor_actor::text,true);
+    PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',contractor_actor,'role','authenticated')::text,true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    IF (SELECT count(*) FROM tickets WHERE assigned_to=contractor)<>1 OR (SELECT count(*) FROM tickets WHERE assigned_to=other_contractor)<>0 THEN RAISE EXCEPTION 'Contractor ticket isolation changed'; END IF;
+    IF EXISTS(SELECT 1 FROM jsonb_each(public.get_my_permissions()) WHERE value<>'false'::jsonb) THEN RAISE EXCEPTION 'Contractor granted admin permissions'; END IF;
+    checks:=checks||jsonb_build_array('existing contractor sees only assigned ticket and no staff permissions');
+    RAISE SQLSTATE 'ZX001' USING MESSAGE='ROLLBACK_QA_FIXTURES';
+  EXCEPTION WHEN SQLSTATE 'ZX001' THEN NULL;
+  END;
+  IF (SELECT count(*) FROM profiles)<>before_profiles OR (SELECT count(*) FROM user_permissions)<>before_overrides OR (SELECT count(*) FROM contractor_invitations)<>before_invitations OR (SELECT count(*) FROM audit_logs)<>before_audits OR EXISTS(SELECT 1 FROM auth.users WHERE id IN(staff_fixture,invite_fixture)) THEN RAISE EXCEPTION 'Fixture rollback failed'; END IF;
+  checks:=checks||jsonb_build_array('all identities, rows, grants and audit fixtures rolled back');
+  PERFORM set_config('cc.permissions_qa_result',jsonb_build_object('checks',checks,'passed',jsonb_array_length(checks),'fixtures_rolled_back',true,'email_sent',false,'proof_scope','live database and RLS with simulated identities; not email delivery or second staff browser acceptance')::text,false);
+END $qa$;
+SELECT current_setting('cc.permissions_qa_result')::jsonb AS permissions_qa;

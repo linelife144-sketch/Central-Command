@@ -1,0 +1,42 @@
+{
+  "accounts": [
+    {
+      "key": "manager",
+      "email": "qa.payroll.manager.20261003@example.com",
+      "profileId": "1ca0d763-45d8-4975-be82-070b2610380c",
+      "payClass": "STORM_MANAGER",
+      "contractorId": "ae3402ef-8bc7-466d-a801-b460281bb890",
+      "ticketId": "f7afbe2a-62f3-44b4-9385-243a1694511c",
+      "ticketNumber": "QA-PAY-MANAGER-20261003"
+    },
+    {
+      "key": "lead",
+      "email": "qa.payroll.lead.20261003@example.com",
+      "profileId": "0d78f3b7-992f-4a82-bc84-79926b65987b",
+      "payClass": "TEAM_LEAD",
+      "contractorId": "e609aea3-af82-4a1d-8b4e-473b022eafc7",
+      "ticketId": "167856f0-e3f0-4364-af0b-713b589da3c0",
+      "ticketNumber": "QA-PAY-LEAD-20261003"
+    },
+    {
+      "key": "senior",
+      "email": "qa.payroll.senior.20261003@example.com",
+      "profileId": "53415331-3365-467d-8be9-aaf54249db4c",
+      "payClass": "SR_DAMAGE_ASSESSER",
+      "contractorId": "27f9f6dc-8845-4642-be8a-c975ed24e1fc",
+      "ticketId": "429d0bcb-9c0c-4ee6-be86-b6701c370981",
+      "ticketNumber": "QA-PAY-SENIOR-20261003"
+    },
+    {
+      "key": "driver",
+      "email": "qa.payroll.driver.20261003@example.com",
+      "profileId": "4bb67281-647e-429a-b733-3e229c192043",
+      "payClass": "DRIVER",
+      "contractorId": "8c58d306-ed3c-4d2a-aa5a-79881ff7abd3",
+      "ticketId": "7df3d94f-0d69-47d3-8b8c-408be00b9285",
+      "ticketNumber": "QA-PAY-DRIVER-20261003"
+    }
+  ],
+  "stormId": "a01b1189-4544-43d7-a4f5-af30f51fb613",
+  "staffId": "4bd03b59-3a04-4c8a-aa09-d7fe1f0a6512"
+}

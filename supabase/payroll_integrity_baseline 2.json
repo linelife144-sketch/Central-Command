@@ -1,0 +1,24 @@
+{
+  "project": "xcvacmreerrypygpritq",
+  "capturedAt": "2026-10-03",
+  "functions": [
+    {
+      "name": "apply_time_entry_costing",
+      "definition": "CREATE OR REPLACE FUNCTION private.apply_time_entry_costing()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE\n  mins numeric;\n  c_role public.contractor_role;\n  bill_rate numeric(10,2);\n  pay_rate numeric(10,2);\nBEGIN\n  SELECT role INTO c_role FROM public.contractors\n    WHERE id = NEW.contractor_id AND is_deleted IS NOT TRUE;\n\n  SELECT r.hourly_rate INTO pay_rate FROM public.contractor_rates r\n   WHERE r.contractor_id = NEW.contractor_id AND r.work_type = NEW.work_type\n     AND r.effective_from <= (NEW.clock_in_at)::date\n     AND (r.effective_to IS NULL OR r.effective_to >= (NEW.clock_in_at)::date)\n   ORDER BY r.effective_from DESC LIMIT 1;\n  IF pay_rate IS NULL THEN\n    SELECT hourly_rate INTO pay_rate FROM public.role_rate_defaults\n     WHERE role = c_role AND work_type = NEW.work_type;\n  END IF;\n  IF pay_rate IS NULL THEN\n    RAISE EXCEPTION 'No wage configured for role % and work type %. Assign a rate before clocking in.', c_role, NEW.work_type;\n  END IF;\n\n  NEW.contractor_role  := c_role;\n  NEW.work_type_rate   := pay_rate;\n  NEW.pay_rate_applied := pay_rate;\n\n  mins := GREATEST(EXTRACT(epoch FROM (COALESCE(NEW.clock_out_at, NEW.clock_in_at) - NEW.clock_in_at))/60.0\n                    - COALESCE(NEW.break_minutes, 0), 0);\n\n  SELECT hourly_rate INTO bill_rate FROM public.utility_billing_rates\n   WHERE work_type = NEW.work_type\n     AND (storm_event_id = NEW.storm_event_id OR storm_event_id IS NULL)\n   ORDER BY (storm_event_id IS NOT NULL) DESC LIMIT 1;\n\n  NEW.payroll_amount            := ROUND((mins/60.0) * pay_rate, 2);\n  NEW.utility_bill_rate_applied := bill_rate;\n  NEW.utility_bill_amount       := CASE WHEN bill_rate IS NULL THEN NULL\n                                        ELSE ROUND((mins/60.0) * bill_rate, 2) END;\n  RETURN NEW;\nEND $function$\n"
+    },
+    {
+      "name": "compute_vehicle_claim_amount",
+      "definition": "CREATE OR REPLACE FUNCTION private.compute_vehicle_claim_amount()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE\n  shift_hours numeric;\n  rate numeric(10,2) := 5.00;\nBEGIN\n  SELECT GREATEST(EXTRACT(epoch FROM (COALESCE(clock_out_at, clock_in_at) - clock_in_at))/3600.0\n                  - COALESCE(break_minutes,0)/60.0, 0)\n    INTO shift_hours FROM public.time_entries\n    WHERE id = NEW.time_entry_id AND clock_out_at IS NOT NULL;\n\n  IF shift_hours IS NULL THEN\n    RAISE EXCEPTION 'Vehicle reimbursement can only be finalized after the time entry is closed.';\n  END IF;\n\n  IF NEW.declared_hours > shift_hours THEN\n    NEW.declared_hours := shift_hours;\n    NEW.capped := true;\n  ELSE\n    NEW.capped := false;\n  END IF;\n\n  NEW.amount := ROUND(NEW.declared_hours * rate, 2);\n  RETURN NEW;\nEND $function$\n"
+    }
+  ],
+  "triggers": [
+    {
+      "table": "time_entries",
+      "definition": "CREATE TRIGGER tr_apply_time_entry_costing BEFORE INSERT OR UPDATE OF clock_in_at, clock_out_at, break_minutes, work_type, contractor_id, storm_event_id ON public.time_entries FOR EACH ROW EXECUTE FUNCTION private.apply_time_entry_costing()"
+    },
+    {
+      "table": "time_entry_vehicle_claims",
+      "definition": "CREATE TRIGGER tr_compute_vehicle_claim_amount BEFORE INSERT OR UPDATE OF declared_hours ON public.time_entry_vehicle_claims FOR EACH ROW EXECUTE FUNCTION private.compute_vehicle_claim_amount()"
+    }
+  ]
+}
