@@ -12,7 +12,9 @@ import { ticketService } from '@/lib/services/ticketService';
 import type { Ticket } from '@/types';
 import type { GeofenceOverlay, LngLatTuple } from '@/components/features/map/types';
 import { toast } from 'sonner';
-import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
+import { getContractorTicketDisplayStatus } from '@/lib/utils/statusUpdateFlow';
+import { supabase } from '@/lib/supabase/client';
+import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
 
 function toMapTicket(ticket: Ticket): MapTicketMarker {
   return {
@@ -20,7 +22,7 @@ function toMapTicket(ticket: Ticket): MapTicketMarker {
     ticketNumber: ticket.ticket_number,
     latitude: ticket.latitude,
     longitude: ticket.longitude,
-    status: getContractorTicketStatus(ticket.status),
+    status: getContractorTicketDisplayStatus(ticket.status),
     isImportant: ticket.is_important,
     geofenceRadiusMeters: ticket.geofence_radius_meters,
   };
@@ -76,10 +78,22 @@ export default function ContractorMapPage() {
       }
     };
 
+    const refresh = () => {
+      if (navigator.onLine) void loadTicketsForMap();
+    };
+
     void Promise.resolve().then(loadTicketsForMap);
+    window.addEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+    window.addEventListener('online', refresh);
+    const channel = supabase.channel(`contractor-map-${contractorId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets' }, refresh)
+      .subscribe();
 
     return () => {
       active = false;
+      window.removeEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+      window.removeEventListener('online', refresh);
+      void supabase.removeChannel(channel);
     };
   }, [fetchAssignedTickets, contractorId]);
 
@@ -122,7 +136,7 @@ export default function ContractorMapPage() {
     <div className="space-y-6">
       <PageHeader
         title="My Map"
-        description="View assigned ticket locations and update field status with GPS validation."
+        description="View assigned ticket locations. Opening the field checklist records arrival."
       >
         <Button
           variant="outline"

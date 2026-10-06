@@ -32,6 +32,7 @@ export function isFieldStatusFlowStep(status: TicketStatus): boolean {
 }
 
 export type ContractorTicketStatus = 'OPEN' | 'CLOSED';
+export type ContractorTicketDisplayStatus = 'ASSIGNED' | 'IN_ROUTE' | 'ON_SITE' | 'OPEN' | 'CLOSED';
 
 /**
  * Contractors only see whether they still have an action to take. Review and
@@ -39,6 +40,15 @@ export type ContractorTicketStatus = 'OPEN' | 'CLOSED';
  */
 export function getContractorTicketStatus(status: string): ContractorTicketStatus {
   return ['PENDING_REVIEW', 'APPROVED', 'CLOSED', 'ARCHIVED', 'EXPIRED'].includes(status) ? 'CLOSED' : 'OPEN';
+}
+
+/** Field-stage detail for contractor badges, filters, and map pins. */
+export function getContractorTicketDisplayStatus(status: string): ContractorTicketDisplayStatus {
+  if (getContractorTicketStatus(status) === 'CLOSED') return 'CLOSED';
+  if (status === 'ASSIGNED') return 'ASSIGNED';
+  if (status === 'IN_ROUTE') return 'IN_ROUTE';
+  if (['ON_SITE', 'IN_PROGRESS', 'COMPLETE'].includes(status)) return 'ON_SITE';
+  return 'OPEN';
 }
 
 export function getStaffTicketStatusLabel(status: string, reviewStage?: string | null, utilitySubmittedAt?: string | null): string {

@@ -43,6 +43,8 @@ export interface LocalTicket {
 
 export interface TicketFieldProgressSnapshot {
   id: string;
+  /** Added after GPS-based snapshots already existed in IndexedDB. */
+  action?: 'START' | 'OPEN_CHECKLIST';
   actor_profile_id: string;
   contractor_id: string;
   ticket_id: string;
@@ -52,9 +54,10 @@ export interface TicketFieldProgressSnapshot {
   crew_id: string;
   assigned_to: string;
   assigned_driver_id: string;
-  latitude: number;
-  longitude: number;
-  accuracy: number;
+  /** Legacy queued entries may contain these values; click-driven replay ignores them. */
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
   captured_at: string;
   last_error?: string;
 }
@@ -363,6 +366,7 @@ export class GridElectricDatabase extends Dexie {
   ticketDraftQueue!: Table<TicketDraftSnapshot>;
   ticketAssessmentHistory!: Table<import('@/lib/services/ticketAssessmentWorkflow').SubmittedTicketAssessment>;
   ticketFieldProgressQueue!: Table<TicketFieldProgressSnapshot>;
+  ticketWorkNotes!: Table<import('@/lib/services/ticketWorkNotesService').LocalTicketWorkNote>;
   entergyForms!: Table<import('@/lib/services/entergyFormService').LocalEntergyRecord>;
   entergyEditing!: Table<import('@/lib/services/entergyFormService').EntergyEditingDraft>;
   assessmentDrafts!: Table<{ id: string; ticket_id: string; contractor_id: string; answers: import('@/lib/schemas/fieldAssessment').FieldAnswers; photos?: import('@/types').CapturedAssessmentPhoto[]; assessment_id?: string; version?: number | null; updated_at: string }>;
@@ -505,6 +509,7 @@ export class GridElectricDatabase extends Dexie {
     this.version(8).stores({ contractorIdentities:'&profile_id',ticketDraftQueue: '&id, actor_profile_id, ticket_id', ticketAssessmentHistory: '&id, ticket_id' });
     this.version(9).stores({ ticketFieldProgressQueue: '&id, actor_profile_id, ticket_id, captured_at, [actor_profile_id+ticket_id]' });
     this.version(10).stores({ entergyForms: '&id, actor_profile_id', entergyEditing: '&id, actor_profile_id, ticket_id' });
+    this.version(11).stores({ ticketWorkNotes: '&id, actor_profile_id, ticket_id' });
 
   }
 }

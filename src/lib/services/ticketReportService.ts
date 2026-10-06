@@ -3,6 +3,8 @@ import { getTicketTemplateByUtilityClient, normalizeUtilityClient } from '@/lib/
 import { formatAddress } from '@/lib/utils/formatters';
 import type { Ticket } from '@/types';
 import { entergyForms, hasRowData, valueLabel, validateEntergyPayload } from '@/lib/schemas/entergyForms';
+import type { TicketWorkNote } from './ticketWorkNotesService';
+import { ticketWorkNoteLabels } from '@/lib/tickets/workNotes';
 import type { EntergyRecord } from './entergyFormService';
 
 export interface TicketReportAssessment {
@@ -17,6 +19,7 @@ export interface TicketReport {
   ticket: Ticket; assessments: TicketReportAssessment[]; photos: TicketReportPhoto[];
   utilityPayload?: Record<string, unknown> | null; assigneeName?: string;
   entergyRecords?: EntergyRecord[];
+  workNotes?: TicketWorkNote[];
 }
 export function canPrintTicket(ticket: Ticket): boolean {
   return ['COMPLETE', 'PENDING_REVIEW', 'APPROVED', 'CLOSED'].includes(ticket.status) || (ticket.status === 'ARCHIVED' && Boolean(ticket.completed_at));
@@ -68,12 +71,13 @@ export function buildTicketReportHtml(report: TicketReport): string {
     const general = evidence.filter(photo => !photo.sectionKey).map(photo => photos.find(item => item.id === photo.id)!);
     return `<article class="assessment"><h2>Attached assessment ${index + 1}</h2><p class="meta">Assessed: ${escapeHtml(row.assessed_at ?? row.created_at)} · ${row.review_stage ? escapeHtml(row.review_stage.replaceAll('_',' ')) : row.reviewed_at ? 'Reviewed' : 'Awaiting review'}<br />Record: ${escapeHtml(row.id)}</p>${sections}${general.length ? `<section><h3>Site photo evidence</h3><div class="photos">${general.map(imageHtml).join('')}</div></section>` : ''}${row.team_review_notes ? `<section><h3>Team lead review notes</h3><p>${escapeHtml(row.team_review_notes)}</p></section>` : ''}${row.review_notes ? `<section><h3>Final review notes</h3><p>${escapeHtml(row.review_notes)}</p></section>` : ''}</article>`;
   }).join('');
+  const workNotesContent=(report.workNotes??[]).length?`<section><h2>Extra notes & safety escalations</h2>${report.workNotes!.map(note=>`<article><h3>${escapeHtml(ticketWorkNoteLabels[note.kind])}</h3><p class="meta">Reported: ${escapeHtml(note.reported_at)} · Saved: ${escapeHtml(note.created_at)}</p><p>${escapeHtml(note.body)}</p></article>`).join('')}</section>`:'';
   const entergyContent=entergyRecords.map(row=>entergyHtml(row,photos)).join('');
   const linkedIds = new Set([...assessments.flatMap(row => (row.photo_evidence ?? []).map(photo => photo.id)),...entergyRecords.flatMap(row=>row.photo_evidence.map(photo=>photo.id))]);
   const otherPhotos = photos.filter(photo => !linkedIds.has(photo.id));
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ticket ${escapeHtml(ticket.ticket_number)}</title><style>
   @page{size:Letter;margin:0.6in}*{box-sizing:border-box}body{font:11pt Arial,sans-serif;color:#17243a;margin:0;line-height:1.45}header{border-bottom:4px solid #2ea3f2;padding-bottom:14px;margin-bottom:20px}.brand{color:#002168;font-size:10pt;font-weight:bold;letter-spacing:2px}h1{font-size:26pt;margin:7px 0}h2{font-size:18pt;color:#002168;border-bottom:2px solid #ffc038;padding-bottom:6px;margin-top:25px;break-after:avoid}h3{font-size:13pt;color:#002168;margin:20px 0 10px;break-after:avoid}.meta,dt{font-size:9pt;color:#546276}dl{display:grid;grid-template-columns:1fr 1fr;gap:12px}dl.field{display:block;margin:0}dd{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}.answer{margin-bottom:12px;break-inside:avoid}p{white-space:pre-wrap;overflow-wrap:anywhere}.photos{display:grid;grid-template-columns:1fr 1fr;gap:14px}figure{margin:6px 0 14px;break-inside:avoid}img{width:100%;height:2.5in;object-fit:contain;border:1px solid #dde3ec}figcaption{font-size:9pt;margin-top:5px;overflow-wrap:anywhere}.assessment+.assessment{break-before:page}footer{margin-top:25px;border-top:1px solid #dde3ec;padding-top:8px;font-size:8pt;color:#546276}
-  </style></head><body><header><div class="brand">CENTRAL COMMAND / COMPLETED TICKET</div><h1>Ticket ${escapeHtml(ticket.ticket_number)}</h1><div>${escapeHtml(ticket.utility_client)} · ${escapeHtml(ticket.status.replaceAll('_', ' '))}</div></header><dl>${answer('Outage location', formatAddress(ticket.address, ticket.city ?? null, ticket.state ?? null, ticket.zip_code ?? null))}${answer('Assigned contractor', report.assigneeName || ticket.assigned_to)}${answer('Work order', ticket.work_order_ref)}${answer('Created', ticket.created_at)}${answer('Completed', ticket.completed_at)}${answer('Review stage', ticket.review_stage?.replaceAll('_', ' '))}${answer('Importance', ticket.is_important ? 'Important' : 'Standard')}${answer('Severity', ticket.severity)}${answer('Utility handoff',ticket.utility_submission_reference)}${answer('Utility handoff recorded',ticket.utility_submitted_at)}${answer('Contact', [ticket.client_contact_name, ticket.client_contact_phone].filter(Boolean).join(' · '))}</dl><section><h2>Work description</h2><p>${escapeHtml(ticket.work_description)}</p>${ticket.special_instructions ? `<h3>Special instructions</h3><p>${escapeHtml(ticket.special_instructions)}</p>` : ''}</section>${utility ? `<section><h2>Utility ticket details</h2><dl>${utility}</dl></section>` : ''}${content}${entergyContent}${otherPhotos.length ? `<section><h2>Additional ticket photos</h2><div class="photos">${otherPhotos.map(imageHtml).join('')}</div></section>` : ''}<footer>Ticket and attached assessments are one record. All dates are stored timestamps (UTC). Print or choose Save as PDF in the print dialog.</footer></body></html>`;
+  </style></head><body><header><div class="brand">CENTRAL COMMAND / COMPLETED TICKET</div><h1>Ticket ${escapeHtml(ticket.ticket_number)}</h1><div>${escapeHtml(ticket.utility_client)} · ${escapeHtml(ticket.status.replaceAll('_', ' '))}</div></header><dl>${answer('Outage location', formatAddress(ticket.address, ticket.city ?? null, ticket.state ?? null, ticket.zip_code ?? null))}${answer('Assigned contractor', report.assigneeName || ticket.assigned_to)}${answer('Work order', ticket.work_order_ref)}${answer('Created', ticket.created_at)}${answer('Completed', ticket.completed_at)}${answer('Review stage', ticket.review_stage?.replaceAll('_', ' '))}${answer('Importance', ticket.is_important ? 'Important' : 'Standard')}${answer('Severity', ticket.severity)}${answer('Utility handoff',ticket.utility_submission_reference)}${answer('Utility handoff recorded',ticket.utility_submitted_at)}${answer('Contact', [ticket.client_contact_name, ticket.client_contact_phone].filter(Boolean).join(' · '))}</dl><section><h2>Work description</h2><p>${escapeHtml(ticket.work_description)}</p>${ticket.special_instructions ? `<h3>Special instructions</h3><p>${escapeHtml(ticket.special_instructions)}</p>` : ''}</section>${utility ? `<section><h2>Utility ticket details</h2><dl>${utility}</dl></section>` : ''}${content}${entergyContent}${workNotesContent}${otherPhotos.length ? `<section><h2>Additional ticket photos</h2><div class="photos">${otherPhotos.map(imageHtml).join('')}</div></section>` : ''}<footer>Ticket and attached assessments are one record. All dates are stored timestamps (UTC). Print or choose Save as PDF in the print dialog.</footer></body></html>`;
 }
 async function blobDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('Unable to read photo evidence.')); reader.readAsDataURL(blob); });
@@ -83,14 +87,16 @@ export async function loadTicketReport(ticketId: string, assigneeName?: string):
   const { ticketService } = await import('@/lib/services/ticketService');
   const ticket = await ticketService.getTicketById(ticketId);
   if (!ticket || !canPrintTicket(ticket)) throw new Error('Complete the ticket before printing.');
-  const [assessmentResult, mediaResult, utilityPayload, entergyResult] = await Promise.all([
+  const [assessmentResult, mediaResult, utilityPayload, entergyResult, notesResult] = await Promise.all([
     supabase.from('damage_assessments').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true }),
     supabase.from('media_assets').select('id, storage_bucket, storage_path, original_name, mime_type').eq('entity_type', 'ticket').eq('entity_id', ticketId).eq('upload_status', 'COMPLETED').eq('file_type', 'PHOTO'),
     ticketService.getUtilityPayload(ticketId),
     supabase.from('ticket_entergy_forms').select('*').eq('ticket_id',ticketId).eq('status','SUBMITTED').order('created_at',{ascending:true}),
+    supabase.from('ticket_work_notes').select('*').eq('ticket_id',ticketId).order('created_at',{ascending:true}),
   ]);
   if (assessmentResult.error) throw assessmentResult.error;
   if (mediaResult.error) throw mediaResult.error;
+  if (notesResult.error) throw notesResult.error;
   if (entergyResult.error) throw entergyResult.error;
   const entergyRecords=(entergyResult.data??[]) as unknown as EntergyRecord[];
   const assessments = (assessmentResult.data ?? []) as unknown as TicketReportAssessment[];
@@ -107,7 +113,7 @@ export async function loadTicketReport(ticketId: string, assigneeName?: string):
     if (photo) photo.label = `${assessmentSections.flatMap(section => section.fields).find(field => field.key === evidence.sectionKey)?.label ?? evidence.type} · GPS ${evidence.gpsLatitude}, ${evidence.gpsLongitude}`;
   }
   for (const row of entergyRecords) for(const evidence of row.photo_evidence) { const photo=photos.find(p=>p.id===evidence.id);if(photo)photo.label=`Entergy ${entergyForms[row.form_kind].title} · ${evidence.sectionKey ? entergyForms[row.form_kind].sections.find(s=>s.id===evidence.sectionKey!.slice(8))?.title : evidence.type} · GPS ${evidence.gpsLatitude}, ${evidence.gpsLongitude}`; }
-  return { ticket, assessments, photos, utilityPayload, assigneeName, entergyRecords };
+  return { ticket, assessments, photos, utilityPayload, assigneeName, entergyRecords, workNotes:(notesResult.data??[]) as TicketWorkNote[] };
 }
 
 export async function printTicketReport(report: TicketReport): Promise<void> {

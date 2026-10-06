@@ -1,0 +1,30 @@
+.hero { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .55fr); gap: 36px; align-items: center; overflow: hidden; padding: 36px; border: 1px solid #214581; border-radius: 22px; background: radial-gradient(ellipse at 90% 10%, #194b94 0%, transparent 55%), linear-gradient(115deg, var(--grid-navy-dark), var(--grid-navy) 60%, #063678); box-shadow: var(--shadow-elevation-md); }
+.signal { right: -40px; top: -200px; opacity: .45; z-index: -1; }
+.welcome { position: relative; min-width: 0; }
+.welcome :global(.cc-eyebrow) { color: #b7c9e6; }
+.welcome h1 { margin-top: 18px; color: white; font-family: var(--font-barlow), sans-serif; font-size: clamp(2.8rem, 4.2vw, 4rem); line-height: .98; font-weight: 600; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.welcome h1 em { color: var(--grid-lightning); font-style: normal; }
+.welcome > p { margin-top: 18px; max-width: 370px; font-size: 13px; line-height: 1.8; color: #c5d6ef; }
+.shift { position: relative; align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: 26px; border: 1px solid #ffffff22; border-top: 2px solid var(--grid-lightning); border-radius: 16px; background: #001545a6; box-shadow: 0 8px 24px #00154520; backdrop-filter: blur(8px); }
+.shiftHeading { display: flex; align-items: center; gap: 8px; color: var(--grid-lightning); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.shiftTitle { margin-top: 18px; color: white; font-family: var(--font-barlow), sans-serif; font-size: 30px; font-weight: 500; line-height: 1.05; }
+.shift p { margin-top: 12px; color: #c5d6ef; font-size: 12px; line-height: 1.8; }
+.shift a { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #ffffff22; color: white; font-size: 12px; font-weight: 700; }
+.shift a:hover { color: var(--grid-lightning); }
+.ticket { display: flex; align-items: center; gap: 14px; padding: 20px 8px; margin-inline: -8px; border-radius: 10px; transition: background 180ms ease; }
+.ticket:hover { background: var(--surface-sunken); }
+.ticketIcon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 38px; height: 42px; color: var(--grid-navy); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 10px; }
+.important { border: 1px solid #ffc03866; border-radius: 6px; background: #ffc03822; padding: 2px 5px; color: var(--grid-warning-ink); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 32px 20px; text-align: center; }
+.emptyIcon { display: grid; place-items: center; width: 62px; height: 62px; border: 1px solid #2ea3f233; border-radius: 20px; color: var(--grid-blue); background: linear-gradient(135deg, #2ea3f21a, #2ea3f205); }
+.empty h3 { font-family: var(--font-barlow), sans-serif; font-size: 28px; font-weight: 600; color: var(--grid-navy); }
+.empty p { max-width: 360px; color: var(--muted-foreground); font-size: 13px; line-height: 1.8; }
+.storm { display: flex; align-items: flex-start; gap: 14px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: linear-gradient(135deg, var(--surface-sunken), var(--surface-raised)); }
+.reviewRow { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid var(--border); padding-bottom: 14px; color: var(--grid-navy); font-size: 12px; font-weight: 600; }
+.reviewRow:hover { color: var(--grid-blue); }
+.reviewRow small { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: 10px; font-weight: 400; }
+.reviewRow strong { font-family: var(--font-barlow), sans-serif; font-size: 26px; font-weight: 600; }
+.attention { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; border: 1px solid #ffc03866; border-radius: 14px; background: #ffc03812; padding: 16px 20px; color: var(--grid-warning-ink); font-size: 12px; }
+.attention a { display: flex; align-items: center; gap: 6px; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 767px) { .hero { grid-template-columns: minmax(0, 1fr); padding: 26px 22px; gap: 26px; border-radius: 18px; } .shift { padding: 20px; } .shiftTitle { font-size: 26px; margin-top: 12px; } .shift a { margin-top: 16px; } .signal { right: -300px; opacity: .25; } .ticketIcon { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ticket { transition: none; } }

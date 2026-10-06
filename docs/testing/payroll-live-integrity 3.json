@@ -1,0 +1,97 @@
+{
+  "project": "xcvacmreerrypygpritq",
+  "date": "2026-10-03",
+  "agent": "Codex /root",
+  "migration": {
+    "version": "20261004002801",
+    "name": "preserve_payroll_snapshots_and_guard_vehicle_claims",
+    "localFile": "supabase/migrations/20261004002801_preserve_payroll_snapshots_and_guard_vehicle_claims.sql"
+  },
+  "approvedByUser": true,
+  "functionsMatchApprovedRepair": true,
+  "triggerAttachments": [
+    {
+      "table": "time_entries",
+      "definition": "CREATE TRIGGER tr_apply_time_entry_costing BEFORE INSERT OR UPDATE ON public.time_entries FOR EACH ROW EXECUTE FUNCTION private.apply_time_entry_costing()"
+    },
+    {
+      "table": "time_entry_vehicle_claims",
+      "definition": "CREATE TRIGGER tr_compute_vehicle_claim_amount BEFORE INSERT OR UPDATE ON public.time_entry_vehicle_claims FOR EACH ROW EXECUTE FUNCTION private.compute_vehicle_claim_amount()"
+    }
+  ],
+  "isolatedIntegrityChecks": 16,
+  "liveDatabaseChecks": {
+    "checks": [
+      "configured wage and billing snapshots",
+      "contractor reads own shift through live RLS",
+      "other contractor shift hidden through live RLS",
+      "preapproved claim insertion rejected",
+      "foreign photo path rejected",
+      "claim cannot link another contractor shift",
+      "claim capped to four hours and twenty dollars",
+      "contractor approval blocked by live RLS",
+      "closed shift cannot reopen",
+      "snapshot-only tampering overwritten",
+      "status-only trigger requires active administrator",
+      "rate edits and resent costing inputs preserve closed snapshots",
+      "rejection requires a reason",
+      "administrator approval binds real actor and server timestamp",
+      "review preserves amount and original cap",
+      "review cannot be repeated",
+      "contractor reads approved reimbursement",
+      "linked payout matches saved wage plus approved reimbursement",
+      "other contractor cannot read claim",
+      "all fixtures and temporary edits rolled back"
+    ],
+    "passed": 20,
+    "saved_bill": 400,
+    "saved_wage": 180,
+    "proof_scope": "live database and RLS with simulated request identities; not browser or hardware acceptance",
+    "reimbursement": 20,
+    "fixtures_rolled_back": true
+  },
+  "browserHardwareAcceptance": "Physical device GPS/photo/claim workflow pending trusted HTTPS; no retained live shift or claim",
+  "separatePermissionsMigration": "unapplied",
+  "postRollbackState": {
+    "time_entries": 0,
+    "claims": 0,
+    "qa_contractor_role": "DAMAGE_ASSESSER",
+    "driver_travel_rate": 45,
+    "global_travel_bill_rate": 100
+  },
+  "browserAcceptance": {
+    "identity": "Existing QA Alex Rivera contractor",
+    "origin": "http://192.168.1.72:3000",
+    "timeRoute": "/contractor/time",
+    "displayedStandardRate": 85,
+    "submittedTotalsRefresh": true,
+    "identitySurvivesReload": true,
+    "staffPayrollRouteDeniedTo": "/forbidden",
+    "gpsRefresh": "error",
+    "clockIn": "blocked with Unable to read current GPS location",
+    "screenshot": "output/playwright/payroll-live-contractor.png",
+    "testSessionSignedOut": true
+  },
+  "migrationHistoryReconciliation": [
+    {
+      "version": "20261003195208",
+      "name": "role_rates_and_payroll_costing",
+      "sqlMatchesRecordedLiveHistory": true
+    },
+    {
+      "version": "20261003195225",
+      "name": "vehicle_reimbursement_claims",
+      "sqlMatchesRecordedLiveHistory": true
+    },
+    {
+      "version": "20261003195256",
+      "name": "payroll_advisor_cleanup",
+      "sqlMatchesRecordedLiveHistory": true
+    },
+    {
+      "version": "20261003201725",
+      "name": "time_entry_photos_storage_policies",
+      "sqlMatchesRecordedLiveHistory": true
+    }
+  ]
+}

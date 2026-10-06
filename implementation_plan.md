@@ -1,5 +1,32 @@
 # Implementation Plan
 
+## Active Phase 4 task — Click-driven contractor field status (2026-10-06, Codex /root)
+
+User authorized: Start changes Assigned → En Route; opening the assigned assessor's field checklist changes En Route → On Site. Both are explicit click actions; no GPS permission, reading or geofence may be used for these status changes. Contractors see Assigned / En Route / On Site and Closed after submission; admins retain their detailed review labels.
+
+Order: inspect current status/crew RPC, auth guards, Realtime and existing actor-scoped offline queue; add one guarded live Supabase action RPC and status-history action reasons; route Start entry points and checklist entry through it with ordered offline compatibility; update contractor labels/filters and shared status readback; verify backend, browser, tests/build; update checklist and Graphify.
+
+- [x] Read implementation plan, checklist, Graphify status workflow, current source, Next.js dynamic route docs, Supabase docs/migration history, and live ticket eligibility. Target 2026100102 is legacy REJECTED with no team lead/crew/driver; live database has zero dispatched ASSIGNED tickets. Preserve it and test with rollback-only database fixtures. — Codex /root
+- [x] Implement guarded status actions, shared Start action, checklist arrival, contractor status views/filters and immediate cache/read-through. Local migration `20261006204808_click_driven_ticket_field_progress` matches the live migration ledger version.
+- [x] Verify ordered offline/reconnect behavior, authorization and no-GPS action history in 49 isolated database checks; pass 653 tests across 117 files, TypeScript, scoped ESLint, isolated production webpack build (50 pages), generated RPC type merge, live function privilege checks, Supabase advisors, and Graphify refresh. — Codex /root
+- [x] Restore the visible **Start** entry on the legacy QA ticket as a work-page link without changing its rejected status; remove the duplicate ticket-detail footer panel and the redundant Location & Contact card per the user's page feedback. Signed-in contractor DOM shows one Start link in Assigned tickets and neither removed panel/card. — Codex /root
+- [ ] Cross-role live lifecycle on the same dispatched Assigned ticket. Live data has zero dispatched Assigned tickets; ticket 2026100102 remains REJECTED with no crew/driver, so it was left unchanged. — Codex /root
+
+Evidence: `docs/testing/ticket-workflow-local.json` and `docs/testing/click-driven-ticket-progress-validation.md`. Live migration is applied and Supabase confirms authenticated can execute `record_ticket_field_action` while anon/authenticated cannot execute the retired GPS RPC. Live contractor/admin transition readback remains pending an eligible dispatched ticket.
+
+## Active Phase 4 task — Contractor ticket work page (2026-10-06, Codex /root)
+
+User goal: add Start to each assigned-ticket row; open a dedicated screen containing clickable Entergy Clean-up and Damage assessment forms, extra notes, environmental/public-safety escalation, and all ticket assessment/completion tools. Move contractor form tools out of ticket details. Keep the same ticket identity and existing crew, GPS, photo, immutable submission and two-stage staff review gates.
+
+Order: inspect current routes/workflow and live permissions; implement ticket-linked immutable notes/escalation with actor-scoped offline sync; build `/tickets/[id]/work` and Start entry points; return forms to the work page; verify links, saves/readback, escalation/access/idempotence, completion gates, desktop/mobile rendering and build; update progress and Graphify.
+
+- [x] Read objective, plan/checklist, skills, Next.js route guides, current source and running signed-in ticket; confirm Desktop checkout and Central Command Supabase project. — Codex /root
+- [x] Implement persistent notes/escalation, offline recovery, staff readback and report inclusion; activate the guarded notes RPC and append-only table on Central Command Supabase. — Codex /root
+- [x] Implement assigned-row Start and dedicated work page with clickable forms, field progress, notes/safety tools and completion through the existing review workflow. Return form saves and Back navigation to Ticket work. — Codex /root
+- [x] Verify current signed-in runtime, approved permanent QA note save/reload/readback, both form-card routes, 390px/1201px layouts, 639 application tests, TypeScript, scoped ESLint, production build, 15 isolated database checks and six live rollback scenario groups; update progress and Graphify. — Codex /root
+
+Evidence: `docs/testing/ticket-workspace-validation.md`, `docs/testing/ticket-work-notes-local.json`, `docs/testing/ticket-work-notes-live.json`, and `docs/testing/ticket-workspace/`. The user approved one permanent QA note on ticket 2026100102; it saved through the actual signed-in contractor account and survived reload. No travel, arrival, hazard or assessment submission was performed on that workflow-only ticket. Physical GPS/camera, reconnect on real devices, and staff approval acceptance remain tracked in the earlier workflow sections.
+
 ## Active Phase 4 task — Official Entergy forms (2026-10-06, Codex /root)
 
 Create independent ticket-linked Clean-up and Damage assessment forms from the supplied scanned Entergy Clean-up Form and Distribution Change Order (revision 02-25-2019). Preserve every printed input and option, including six equipment rows and three customer-transfer rows, with room for additional rows. Printed operational instructions are reference content, not authority to contact anyone or perform fieldwork.

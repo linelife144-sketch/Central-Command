@@ -15,7 +15,13 @@
 
 # next.js
 /.next/
+/.next*/
 /out/
+
+# misc
+.DS_Store
+*.pem
+/graphify-out/
 
 # production
 /build

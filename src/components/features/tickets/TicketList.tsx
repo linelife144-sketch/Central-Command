@@ -19,7 +19,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
 import { contractorService } from '@/lib/services/contractorService';
 import { getFeederFromPayload } from '@/lib/tickets/templates';
-import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
+import { getContractorTicketDisplayStatus } from '@/lib/utils/statusUpdateFlow';
 import { supabase } from '@/lib/supabase/client';
 import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
 
@@ -105,7 +105,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             ].filter(Boolean).join(' ').toLowerCase().includes(search);
 
             const matchesStatus = filters.status === "ALL" || (userRole === 'contractor'
-                ? getContractorTicketStatus(ticket.status) === filters.status
+                ? getContractorTicketDisplayStatus(ticket.status) === filters.status
                 : filters.status === 'ON_SITE'
                     ? ['ON_SITE', 'IN_PROGRESS', 'COMPLETE'].includes(ticket.status)
                     : ticket.status === filters.status);

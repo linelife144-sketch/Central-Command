@@ -1,0 +1,2 @@
+-- Superseded before deployment by 20261004174918_configurable_contractor_time_payroll.sql.
+-- Intentionally empty: fixed overtime multipliers and frozen whole-shift wages are not deployed.

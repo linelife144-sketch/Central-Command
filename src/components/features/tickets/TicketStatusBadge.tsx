@@ -2,7 +2,7 @@
 
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { getContractorTicketStatus, getStaffTicketStatusLabel } from '@/lib/utils/statusUpdateFlow';
+import { getContractorTicketDisplayStatus, getStaffTicketStatusLabel } from '@/lib/utils/statusUpdateFlow';
 
 interface TicketStatusBadgeProps {
   status: string;
@@ -21,12 +21,12 @@ export function TicketStatusBadge({ status, audienceRole, reviewStage, utilitySu
   const { profile } = useAuth();
 
   if (audienceRole === 'CONTRACTOR' || (audienceRole === undefined && profile?.role === 'CONTRACTOR')) {
-    const contractorStatus = getContractorTicketStatus(status);
+    const contractorStatus = getContractorTicketDisplayStatus(status);
     return (
       <StatusBadge
         status={status}
-        displayLabel={contractorStatus}
-        variant={contractorStatus === 'CLOSED' ? 'success' : 'info'}
+        displayLabel={contractorStatus === 'IN_ROUTE' ? 'En Route' : contractorStatus === 'ON_SITE' ? 'On Site' : contractorStatus === 'OPEN' ? 'Open' : contractorStatus === 'CLOSED' ? 'Closed' : 'Assigned'}
+        variant={contractorStatus === 'CLOSED' ? 'success' : contractorStatus === 'IN_ROUTE' ? 'warning' : 'info'}
         size={size}
         className={className}
       />

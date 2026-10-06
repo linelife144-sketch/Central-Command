@@ -666,7 +666,7 @@ interface SyncManager {
 - [x] Corrected false status-save success and hardcoded assessment-empty messages; connected assigned-ticket assessment navigation.
 - [x] Removed 1099 tracking and app invoicing per user direction. Invoicing is handled externally; historical database records are preserved.
 - [x] TypeScript check and 29 targeted tests passed across eight suites.
-- [ ] Complete contractor status progression after approval of scoped Supabase status permissions.
+- [x] Implement contractor status progression through authenticated click-driven Start and checklist actions with server-guarded crew/assessor scope; see “Phase 4 — Click-driven contractor field status” below. Live cross-role verification on an eligible dispatched ticket remains open.
 - [ ] Restore assessment reads after approval of the scoped SELECT grant with existing RLS.
 - [ ] Finish staff contractor provisioning: one-person invitation implementation and live migration are complete as recorded below; actual email delivery and recipient activation remain pending.
 - GPS/location testing is deferred by the user for a later build.
@@ -967,3 +967,27 @@ Evidence: `docs/testing/ticket-workflow-validation.md`, `ticket-workflow-local.j
 - [ ] Complete real signed-in contractor/staff, physical GPS/camera/private upload, offline/cross-device readback and completed-ticket print-dialog acceptance; deploy hosted frontend. — Codex /root
 
 Evidence: `docs/testing/entergy-source-coverage.md`, `docs/testing/entergy-forms-validation.md`, `docs/testing/entergy-forms-database.json`, `docs/testing/entergy-forms-live.json` and component preview screenshots. Live SQL uses simulated claims and rollback-only object metadata; it does not establish real browser authentication or file uploads.
+
+### Phase 4 — Dedicated contractor Ticket work screen (2026-10-06, Codex /root)
+
+- [x] Add Start beside each own open ticket in the assigned-ticket panel; route to `/tickets/[id]/work` while keeping the same ticket identity. — Codex /root
+- [x] Move contractor Entergy tools into the new work screen, make each entire Clean-up/Damage card clickable, and return form saves and Back navigation there. Preserve arrival and assignment gates. — Codex /root
+- [x] Include field checklist/photos, travel/arrival actions, notes, environmental/public-safety escalation, saved assessment readback, site reference, time clock, assigned-ticket queue and Send ticket for review. Preserve existing crew, GPS/photo and staff approval requirements. — Codex /root
+- [x] Activate append-only `ticket_work_notes`, guarded authenticated RPC, idempotent retries, actor-scoped IndexedDB sync, critical-priority safety flags, dispatch in-app notifications, staff readback and report inclusion on live Central Command Supabase. — Codex /root
+- [x] Verify one explicitly approved permanent QA note through the actual signed-in contractor account, Supabase row readback and page reload; verify both card routes and responsive 390px/1201px browser layouts. — Codex /root
+- [x] Pass the full 639-test suite across 115 files, TypeScript, scoped ESLint, isolated production webpack build (50 generated pages), 15 isolated database checks and six rollback-only live SQL scenario groups. — Codex /root
+- [x] Restore development type paths after the isolated build and refresh Graphify with AST-only extraction (4,700 nodes / 12,984 edges). — Codex /root
+
+Evidence: `docs/testing/ticket-workspace-validation.md`, `docs/testing/ticket-work-notes-local.json`, `docs/testing/ticket-work-notes-live.json` and `docs/testing/ticket-workspace/`. The target ticket remains workflow-only with no field dispatch; its field status and hazard flags were preserved. Real-device GPS/camera/offline submission and staff approval acceptance remain open in the earlier workflow checklist.
+
+### Phase 4 — Click-driven contractor field status (2026-10-06, Codex /root)
+
+- [x] Replace GPS status transitions with the authenticated `record_ticket_field_action` RPC: Start records Assigned → En Route; assigned assessor checklist opening records En Route → On Site. The server validates the active contractor, matching dispatched crew, permitted actor and current status under a ticket row lock. GPS fields remain null for these actions; the legacy GPS RPC is revoked from anon and authenticated callers. — Codex /root
+- [x] Add the shared Start action to the Assigned tickets row and work-page entry; show Continue work once underway; keep Open navigation separate. Remove arrival polling/geofence checks from these actions. Restore a navigation-only Start link for the existing legacy REJECTED QA ticket so the contractor's row still opens Ticket work without changing that record. — Codex /root
+- [x] Record On Site before the assigned assessor's checklist renders, including direct route entry; make reload/reopen idempotent. Preserve ordered, actor-scoped offline actions and replay before assessment uploads; failed/reassigned actions remain visible without overwriting newer server state. — Codex /root
+- [x] Add contractor stage badges/filters and realtime/local refresh paths; retain detailed staff review labels. Remove the duplicate Start footer panel and redundant Location & Contact card from ticket details per user feedback. — Codex /root
+- [x] Apply live migration `20261006204808_click_driven_ticket_field_progress` to Central Command (`xcvacmreerrypygpritq`); align the local migration filename with the live migration ledger; merge generated RPC type; verify live execute grants; run Supabase security/performance advisors. — Codex /root
+- [x] Pass 49 isolated PGlite ticket workflow checks, all 653 tests across 117 files, TypeScript, scoped ESLint, production webpack build with all 50 pages, and Graphify AST refresh. Signed-in contractor browser DOM shows exactly one Start link in the Assigned tickets row and confirms the duplicate panels are absent. — Codex /root
+- [ ] Validate the transition readback across real contractor and staff sessions using the same dispatched Assigned ticket, including location-denied/device/offline acceptance. Current live data has zero dispatched Assigned tickets; target 2026100102 is legacy REJECTED without team lead, crew, or driver and remains unchanged. — Codex /root
+
+Evidence: `docs/testing/ticket-workflow-local.json` and `docs/testing/click-driven-ticket-progress-validation.md`. Supabase advisors currently report the existing Auth leaked-password-protection warning and general existing index/RLS findings; no finding names the new field-action RPC. Advisor remediation should be triaged separately from this workflow.

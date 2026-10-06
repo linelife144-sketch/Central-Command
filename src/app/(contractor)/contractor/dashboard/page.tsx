@@ -11,6 +11,8 @@ import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBad
 import { DashboardDispatch } from '@/components/features/dashboard/DashboardDispatch';
 import { SignalField } from '@/components/common/brand/SignalField';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { supabase } from '@/lib/supabase/client';
+import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
 import { formatCurrency, formatDateTime, formatDuration } from '@/lib/utils/formatters';
 import type { ContractorDashboardData } from '@/lib/services/contractorDashboardService';
 import styles from './dashboard.module.css';
@@ -64,13 +66,25 @@ export default function ContractorDashboardPage() {
   }, [profileId, refreshKey]);
 
   useEffect(() => {
+    if (!profileId) return;
     const refresh = () => { if (navigator.onLine && document.visibilityState === 'visible') setRefreshKey(key => key + 1); };
     const timer = window.setInterval(refresh, 60000);
     window.addEventListener('focus', refresh);
     window.addEventListener('online', refresh);
     window.addEventListener('time-entries-synced', refresh);
-    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); window.removeEventListener('time-entries-synced', refresh); };
-  }, []);
+    window.addEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+    const channel = supabase.channel(`contractor-dashboard-tickets-${profileId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets' }, refresh)
+      .subscribe();
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+      window.removeEventListener('time-entries-synced', refresh);
+      window.removeEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+      void supabase.removeChannel(channel);
+    };
+  }, [profileId]);
 
   const value = (available: boolean, formatted: string | number) => loading ? '…' : available ? formatted : 'Unavailable';
   const firstName = data?.firstName || profile?.first_name;

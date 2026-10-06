@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getContractorTicketStatus, getFieldStatusTransition, getStaffTicketStatusLabel, isFieldStatusFlowStep } from './statusUpdateFlow';
+import { getContractorTicketDisplayStatus, getContractorTicketStatus, getFieldStatusTransition, getStaffTicketStatusLabel, isFieldStatusFlowStep } from './statusUpdateFlow';
 
 describe('getFieldStatusTransition', () => {
   it('returns ASSIGNED -> IN_ROUTE transition', () => {
@@ -29,6 +29,19 @@ describe('contractor and staff status labels', () => {
 
   it.each(['PENDING_REVIEW', 'APPROVED', 'CLOSED', 'ARCHIVED', 'EXPIRED'])('projects %s as closed for contractors', status => {
     expect(getContractorTicketStatus(status)).toBe('CLOSED');
+  });
+
+  it.each([
+    ['ASSIGNED', 'ASSIGNED'],
+    ['IN_ROUTE', 'IN_ROUTE'],
+    ['ON_SITE', 'ON_SITE'],
+    ['IN_PROGRESS', 'ON_SITE'],
+    ['COMPLETE', 'ON_SITE'],
+    ['NEEDS_REWORK', 'OPEN'],
+    ['DRAFT', 'OPEN'],
+    ['PENDING_REVIEW', 'CLOSED'],
+  ])('shows contractor field stage %s as %s', (status, displayStatus) => {
+    expect(getContractorTicketDisplayStatus(status)).toBe(displayStatus);
   });
 
   it('simplifies legacy staff statuses while retaining review stages', () => {

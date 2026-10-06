@@ -167,7 +167,6 @@ export const ticketService = {
         role: UserRole,
         changeReason?: string,
         location?: { latitude: number; longitude: number; accuracy: number; capturedAt?: string },
-        fieldContext?: { contractorId: string },
     ) {
         // 1. Get current status
         const ticket = await this.getTicketById(id);
@@ -178,33 +177,20 @@ export const ticketService = {
             throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus} for role ${role}`);
         }
 
+        if (newStatus === 'IN_ROUTE' || newStatus === 'ON_SITE') {
+            throw new Error(newStatus === 'IN_ROUTE'
+                ? 'Use Start to set this ticket En Route.'
+                : 'Open the field checklist to set this ticket On Site.');
+        }
+
         if (isSuperAdminTestingEnabled()) {
             localTestStore.updateTicketStatus(id, newStatus, userId, changeReason, location);
             notifyTicketsChanged();
             return true;
         }
 
-        if (!location) throw new Error('GPS validation is required before changing field status.');
-        if (typeof navigator !== 'undefined' && !navigator.onLine) {
-            if (role !== 'CONTRACTOR' || !fieldContext?.contractorId || !['IN_ROUTE', 'ON_SITE'].includes(newStatus)) {
-                throw new Error('This field status cannot be queued while offline. Reconnect and retry.');
-            }
-            const { ticketFieldProgressWorkflow } = await import('./ticketFieldProgressWorkflow');
-            await ticketFieldProgressWorkflow.recordOffline({
-                ticket,
-                actorProfileId: userId,
-                contractorId: fieldContext.contractorId,
-                nextStatus: newStatus as 'IN_ROUTE' | 'ON_SITE',
-                location,
-            });
-            return true;
-        }
-        const {ticketWorkflowRpc}=await import('./ticketAssessmentWorkflow');
-        await ticketWorkflowRpc<Ticket>('update_ticket_field_status',{p_ticket_id:id,p_status:newStatus,p_latitude:location.latitude,p_longitude:location.longitude,p_accuracy:location.accuracy});
-
-        // Database trigger writes the status history atomically with this update.
-        notifyTicketsChanged();
-        return true;
+        void location;
+        throw new Error('This ticket status must be changed through its dedicated workflow action.');
     },
 
     /**

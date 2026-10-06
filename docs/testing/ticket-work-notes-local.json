@@ -1,0 +1,20 @@
+{
+  "passed": 15,
+  "checks": [
+    "assigned assessor saves note with server identity",
+    "retry returns same note without duplication",
+    "reusing ID for changed body fails",
+    "blank and oversized notes fail",
+    "unknown report category fails",
+    "direct inserts updates deletes are unavailable",
+    "unassigned team cannot read or add notes",
+    "assigned driver saves a public safety escalation",
+    "environmental escalation saves to same ticket",
+    "escalation sets critical importance without changing field status",
+    "both hazards notify assigned lead and chief",
+    "retry cannot duplicate escalation notification or audit",
+    "assigned staff can read all ticket notes",
+    "closed field work rejects new notes but acknowledges prior retry",
+    "anonymous read and RPC rejected"
+  ]
+}

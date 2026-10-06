@@ -2791,6 +2791,51 @@ export type Database = {
           },
         ]
       }
+      ticket_work_notes: {
+        Row: {
+          actor_profile_id: string
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          reported_at: string
+          ticket_id: string
+        }
+        Insert: {
+          actor_profile_id: string
+          body: string
+          created_at?: string
+          id: string
+          kind: string
+          reported_at: string
+          ticket_id: string
+        }
+        Update: {
+          actor_profile_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          reported_at?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_work_notes_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_work_notes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           address: string
@@ -3743,6 +3788,30 @@ export type Database = {
         Args: { p_notification_id: string }
         Returns: undefined
       }
+      record_ticket_work_note: {
+        Args: {
+          p_body: string
+          p_id: string
+          p_kind: string
+          p_reported_at: string
+          p_ticket_id: string
+        }
+        Returns: {
+          actor_profile_id: string
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          reported_at: string
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_work_notes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_ticket_utility_handoff: {
         Args: { p_reference: string; p_ticket_id: string }
         Returns: {
@@ -3945,6 +4014,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_ticket_field_action: {
+        Args: { p_action: string; p_ticket_id: string }
+        Returns: Database["public"]["Tables"]["tickets"]["Row"]
       }
       ticket_dispatch_options: { Args: { p_ticket_id: string }; Returns: Json }
       update_ticket_field_status: {
