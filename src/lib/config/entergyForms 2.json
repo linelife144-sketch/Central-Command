@@ -1,0 +1,673 @@
+{
+  "cleanup": {
+    "title": "Clean-up form",
+    "source": "Entergy Clean-up Form.pdf",
+    "sourceUrl": "/forms/entergy/clean-up.pdf",
+    "revision": null,
+    "sections": [
+      {
+        "id": "cleanup",
+        "title": "Cleanup scope",
+        "description": "Describe environmental work and every material type and amount.",
+        "fields": [
+          {
+            "key": "environmentalCleanup",
+            "label": "Environmental cleanup",
+            "kind": "notes",
+            "required": true
+          },
+          {
+            "key": "trashCleanup",
+            "label": "Trash cleanup (material type & amount)",
+            "kind": "notes",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "location",
+        "title": "Site & access",
+        "description": "Keep the site identifiable for the Entergy crew lead.",
+        "fields": [
+          {
+            "key": "address",
+            "label": "Address",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "cityTown",
+            "label": "City/Town",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "dloc",
+            "label": "DLOC",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "truckAccess",
+            "label": "Truck access",
+            "kind": "boolean",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "notes",
+        "title": "Field notes",
+        "description": "Record access restrictions, disposal details, or other observations.",
+        "fields": [
+          {
+            "key": "notes",
+            "label": "Notes",
+            "kind": "notes",
+            "required": true
+          }
+        ]
+      }
+    ]
+  },
+  "damage": {
+    "title": "Damage assessment",
+    "source": "Entergy Distribution Change Order.pdf",
+    "sourceUrl": "/forms/entergy/distribution-change-order.pdf",
+    "revision": "02-25-2019",
+    "sections": [
+      {
+        "id": "scope",
+        "title": "Equipment & activity",
+        "description": "Select every equipment type and activity covered by this change order.",
+        "fields": [
+          {
+            "key": "date",
+            "label": "Date",
+            "kind": "date",
+            "required": true
+          },
+          {
+            "key": "equipmentTypes",
+            "label": "Equipment type",
+            "kind": "multi",
+            "options": [
+              "Transformer",
+              "Recloser",
+              "Regulator",
+              "Switch",
+              "Switch Gear",
+              "Pole",
+              "AutoTransformer",
+              "Streetlight",
+              "Capacitor",
+              "Breaker",
+              "Sectionalizer",
+              "Fault Indicator",
+              "Communication Device",
+              "Private Area Light"
+            ],
+            "required": true
+          },
+          {
+            "key": "activities",
+            "label": "Activity",
+            "kind": "multi",
+            "options": [
+              "Install",
+              "Relocate",
+              "Remove",
+              "Install/Remove",
+              "Other",
+              "Misc."
+            ],
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "location",
+        "title": "From / to location",
+        "description": "Preserve location numbers as written, including leading zeros.",
+        "fields": [
+          {
+            "key": "fromLocalOffice",
+            "label": "From · Local office",
+            "kind": "text"
+          },
+          {
+            "key": "fromStoreRoom",
+            "label": "From · Store room",
+            "kind": "text"
+          },
+          {
+            "key": "fromDloc",
+            "label": "From · Distribution location number (DLOC)",
+            "kind": "text"
+          },
+          {
+            "key": "toLocalOffice",
+            "label": "To · Local office",
+            "kind": "text"
+          },
+          {
+            "key": "toStoreRoom",
+            "label": "To · Store room",
+            "kind": "text"
+          },
+          {
+            "key": "toDloc",
+            "label": "To · Distribution location number (DLOC)",
+            "kind": "text"
+          },
+          {
+            "key": "latitude",
+            "label": "GPS · LAT",
+            "kind": "latitude"
+          },
+          {
+            "key": "longitude",
+            "label": "GPS · LONG",
+            "kind": "longitude"
+          }
+        ]
+      },
+      {
+        "id": "equipment",
+        "title": "Equipment register",
+        "description": "Three install/remove pairs on the paper form. Add rows when the site needs more.",
+        "fields": [
+          {
+            "key": "operation",
+            "label": "Install / remove",
+            "kind": "select",
+            "options": [
+              "Install",
+              "Remove"
+            ]
+          },
+          {
+            "key": "type",
+            "label": "Type",
+            "kind": "text"
+          },
+          {
+            "key": "size",
+            "label": "Size",
+            "kind": "text"
+          },
+          {
+            "key": "companyEquipmentNumber",
+            "label": "Company equipment number",
+            "kind": "text"
+          },
+          {
+            "key": "manufacturerSerialNumber",
+            "label": "Manufacturer serial number",
+            "kind": "text"
+          },
+          {
+            "key": "phases",
+            "label": "Phase",
+            "kind": "multi",
+            "options": [
+              "A",
+              "B",
+              "C"
+            ]
+          },
+          {
+            "key": "fieldPhase",
+            "label": "Field phase",
+            "kind": "select",
+            "options": [
+              "F",
+              "M",
+              "R",
+              "T",
+              "C",
+              "B"
+            ]
+          },
+          {
+            "key": "counterReading",
+            "label": "Rec/Reg/Cap counter reading",
+            "kind": "text"
+          }
+        ],
+        "repeat": {
+          "key": "equipmentRows",
+          "minimumRows": 6
+        }
+      },
+      {
+        "id": "transformer",
+        "title": "Transformer & feeder",
+        "description": "Installation purpose, voltage, inspection disposition and bank connection.",
+        "fields": [
+          {
+            "key": "phaseChange",
+            "label": "Phase · Change",
+            "kind": "boolean"
+          },
+          {
+            "key": "transformerPurpose",
+            "label": "Transformer installation purpose",
+            "kind": "multi",
+            "options": [
+              "Change",
+              "Metered Customer",
+              "UnMetered Customer",
+              "Lighting",
+              "Behind Primary Meter",
+              "Company Line",
+              "Company Substation"
+            ]
+          },
+          {
+            "key": "primaryVoltage",
+            "label": "Voltage · Pri.",
+            "kind": "text"
+          },
+          {
+            "key": "secondaryVoltage",
+            "label": "Voltage · Sec.",
+            "kind": "text"
+          },
+          {
+            "key": "idleTransformerInspection",
+            "label": "Idle transformer inspection",
+            "kind": "multi",
+            "options": [
+              "Reuse",
+              "Rebuild",
+              "Scrap",
+              "Spare",
+              "Inactive"
+            ]
+          },
+          {
+            "key": "bankConnection",
+            "label": "Transformer bank secondary connection",
+            "kind": "multi",
+            "options": [
+              "Wye",
+              "Delta"
+            ]
+          },
+          {
+            "key": "feederNumber",
+            "label": "Feeder no.",
+            "kind": "text"
+          },
+          {
+            "key": "feederChange",
+            "label": "Feeder · Change",
+            "kind": "boolean"
+          }
+        ]
+      },
+      {
+        "id": "lighting",
+        "title": "Lighting",
+        "description": "Record street light and private area light wattage and type.",
+        "fields": [
+          {
+            "key": "streetLightWattage",
+            "label": "Street light · Wattage",
+            "kind": "text"
+          },
+          {
+            "key": "streetLightType",
+            "label": "Street light · Type",
+            "kind": "text"
+          },
+          {
+            "key": "privateAreaLightWattage",
+            "label": "Private area light · Wattage",
+            "kind": "text"
+          },
+          {
+            "key": "privateAreaLightType",
+            "label": "Private area light · Type",
+            "kind": "text"
+          }
+        ]
+      },
+      {
+        "id": "customerSite",
+        "title": "Customer & field address",
+        "description": "Customer and location/comments lines from the source.",
+        "fields": [
+          {
+            "key": "customer",
+            "label": "Customer",
+            "kind": "text"
+          },
+          {
+            "key": "fieldAddressComments",
+            "label": "Field address/comments",
+            "kind": "notes",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "switch",
+        "title": "Disconnect / lateral / bypass switch / switch gear / status",
+        "description": "Keep equipment identifiers, switch status and bypass details together.",
+        "fields": [
+          {
+            "key": "switchTypes",
+            "label": "Switch type",
+            "kind": "multi",
+            "options": [
+              "Disconnect",
+              "GOAB",
+              "Fuse",
+              "Switch Gear"
+            ]
+          },
+          {
+            "key": "installedNumber",
+            "label": "Installed #",
+            "kind": "text"
+          },
+          {
+            "key": "removedNumber",
+            "label": "Removed #",
+            "kind": "text"
+          },
+          {
+            "key": "switchQuantity",
+            "label": "Quantity",
+            "kind": "text"
+          },
+          {
+            "key": "switchSize",
+            "label": "Switch size",
+            "kind": "text"
+          },
+          {
+            "key": "switchType",
+            "label": "Switch type (specification)",
+            "kind": "text"
+          },
+          {
+            "key": "changeStatus",
+            "label": "Change status",
+            "kind": "multi",
+            "options": [
+              "New",
+              "Replace",
+              "Change"
+            ]
+          },
+          {
+            "key": "switchPosition",
+            "label": "Switch position",
+            "kind": "multi",
+            "options": [
+              "Open",
+              "Closed",
+              "Bypass"
+            ]
+          },
+          {
+            "key": "switchManufacturerNumber",
+            "label": "Switch manufacturer #",
+            "kind": "text"
+          },
+          {
+            "key": "catalogNumber",
+            "label": "Catalog #",
+            "kind": "text"
+          },
+          {
+            "key": "manufacturerSerialNumber",
+            "label": "Manufacturer serial #",
+            "kind": "text"
+          },
+          {
+            "key": "manufacturerDate",
+            "label": "Manufacturer date",
+            "kind": "date"
+          },
+          {
+            "key": "bypassSwitchTypes",
+            "label": "Bypass switch type",
+            "kind": "multi",
+            "options": [
+              "Disconnect",
+              "Fuse",
+              "Solid Blade",
+              "GOAB",
+              "Fuse Around",
+              "Other"
+            ]
+          },
+          {
+            "key": "bypassSize",
+            "label": "Bypass size",
+            "kind": "text"
+          },
+          {
+            "key": "bypassType",
+            "label": "Bypass type (specification)",
+            "kind": "text"
+          }
+        ]
+      },
+      {
+        "id": "pole",
+        "title": "Pole change out",
+        "description": "Record installed and removed size/class and pole ownership.",
+        "fields": [
+          {
+            "key": "poleInstallSizeClass",
+            "label": "Install size/class",
+            "kind": "text"
+          },
+          {
+            "key": "poleRemoveSizeClass",
+            "label": "Remove size/class",
+            "kind": "text"
+          },
+          {
+            "key": "poleOwners",
+            "label": "Owner",
+            "kind": "multi",
+            "options": [
+              "Company",
+              "ATT",
+              "Other"
+            ]
+          },
+          {
+            "key": "poleOtherOwner",
+            "label": "Other owner",
+            "kind": "text"
+          }
+        ]
+      },
+      {
+        "id": "communication",
+        "title": "Communication devices",
+        "description": "Communication equipment, battery, antenna location and reason for change.",
+        "fields": [
+          {
+            "key": "communicationDeviceTypes",
+            "label": "Type of comm device",
+            "kind": "multi",
+            "options": [
+              "Access Point (AP)",
+              "Relay (RY)"
+            ]
+          },
+          {
+            "key": "commEquipmentNumber",
+            "label": "COMM equipment #",
+            "kind": "text"
+          },
+          {
+            "key": "commSerialNumber",
+            "label": "COMM serial #",
+            "kind": "text"
+          },
+          {
+            "key": "commBatteryEquipmentNumber",
+            "label": "Battery equipment #",
+            "kind": "text"
+          },
+          {
+            "key": "commBatterySerialNumber",
+            "label": "Battery serial #",
+            "kind": "text"
+          },
+          {
+            "key": "antennaLocations",
+            "label": "Antenna location",
+            "kind": "multi",
+            "options": [
+              "w/COMM",
+              "Other Location"
+            ]
+          },
+          {
+            "key": "commReasons",
+            "label": "Reason for change",
+            "kind": "multi",
+            "options": [
+              "PID",
+              "Replacement",
+              "New Installation"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "controls",
+        "title": "Controls",
+        "description": "Select the equipment type at the top of the form.",
+        "fields": [
+          {
+            "key": "controlEquipmentNumber",
+            "label": "Control equipment #",
+            "kind": "text"
+          },
+          {
+            "key": "controlSerialNumber",
+            "label": "Control serial #",
+            "kind": "text"
+          },
+          {
+            "key": "commBridgeEquipmentNumber",
+            "label": "COMM bridge equipment #",
+            "kind": "text"
+          },
+          {
+            "key": "commBridgeSerialNumber",
+            "label": "COMM bridge serial #",
+            "kind": "text"
+          },
+          {
+            "key": "battery1EquipmentNumber",
+            "label": "Battery 1 equipment #",
+            "kind": "text"
+          },
+          {
+            "key": "battery1SerialNumber",
+            "label": "Battery 1 serial #",
+            "kind": "text"
+          },
+          {
+            "key": "battery2EquipmentNumber",
+            "label": "Battery 2 equipment #",
+            "kind": "text"
+          },
+          {
+            "key": "battery2SerialNumber",
+            "label": "Battery 2 serial #",
+            "kind": "text"
+          },
+          {
+            "key": "controlReasons",
+            "label": "Reason for change",
+            "kind": "multi",
+            "options": [
+              "PID",
+              "Replacement",
+              "New Installation"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "transfers",
+        "title": "Customer transfers",
+        "description": "Accounts moved to a new DLOC/transformer. The paper includes three rows.",
+        "fields": [
+          {
+            "key": "customerNameAddress",
+            "label": "Customer name or address",
+            "kind": "text"
+          },
+          {
+            "key": "identifierTypes",
+            "label": "Identifier type",
+            "kind": "multi",
+            "options": [
+              "Account #",
+              "Meter #",
+              "Net Metering #"
+            ]
+          },
+          {
+            "key": "identifier",
+            "label": "Account / meter / net metering number",
+            "kind": "text"
+          },
+          {
+            "key": "oldDlocTransformer",
+            "label": "Old DLOC or trans. #",
+            "kind": "text"
+          },
+          {
+            "key": "newDlocTransformer",
+            "label": "New DLOC or trans. #",
+            "kind": "text"
+          }
+        ],
+        "repeat": {
+          "key": "customerRows",
+          "minimumRows": 3
+        }
+      },
+      {
+        "id": "signoff",
+        "title": "Sign-off",
+        "description": "Keep the printed work order and employee identifiers. Typed signature records the entered name.",
+        "fields": [
+          {
+            "key": "signature",
+            "label": "Signature",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "workOrderNumber",
+            "label": "Work order #",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "employeeId",
+            "label": "Employee ID",
+            "kind": "text",
+            "required": true
+          }
+        ]
+      }
+    ]
+  }
+}
