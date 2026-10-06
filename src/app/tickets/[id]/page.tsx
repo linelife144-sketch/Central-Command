@@ -8,13 +8,13 @@ import { ticketService } from '@/lib/services/ticketService';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { TicketImportanceBadge } from '@/components/features/tickets/TicketImportanceBadge';
-import { formatDate, formatAddress } from '@/lib/utils/formatters';
+import { formatDate } from '@/lib/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { isAdminClassRole } from '@/lib/auth/roleGuards';
-import { StatusUpdateFlow } from '@/components/features/tickets/StatusUpdateFlow';
+import { TicketWorkNotes } from '@/components/features/tickets/TicketWorkNotes';
 import { UtilityTicketDetails } from '@/components/features/tickets/UtilityTicketDetails';
 import { StatusHistoryTimeline } from '@/components/features/tickets/StatusHistoryTimeline';
 import { TicketPrintButton } from '@/components/features/tickets/TicketPrintButton';
@@ -26,7 +26,6 @@ import { Button } from '@/components/ui/button';
 import { useContractorId } from '@/hooks/useContractorId';
 import { ticketAssessmentWorkflow } from '@/lib/services/ticketAssessmentWorkflow';
 import { getErrorLogContext, getErrorMessage } from '@/lib/utils/errorHandling';
-import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
 import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
 import { supabase } from '@/lib/supabase/client';
 
@@ -189,30 +188,12 @@ export default function TicketDetailPage() {
                                 teamLeadName={teamLeadName}
                                 crewName={crewName}
                             />
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Location & Contact</CardTitle>
-                                </CardHeader>
-                                <CardContent className="grid gap-4">
-                                    <div>
-                                        <h4 className="font-semibold text-sm text-muted-foreground">Address</h4>
-                                        <p className="text-lg">{formatAddress(ticket.address, ticket.city ?? null, ticket.state ?? null, ticket.zip_code ?? null)}</p>
-                                    </div>
-                                    {ticket.client_contact_name && (
-                                        <div>
-                                            <h4 className="font-semibold text-sm text-muted-foreground">Client Contact</h4>
-                                            <p>{ticket.client_contact_name} {ticket.client_contact_phone && `• ${ticket.client_contact_phone}`}</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                            {user?.role === 'CONTRACTOR' && <TicketAssessments ticket={ticket} onChanged={handleStatusUpdated} />}
-                            {user?.role === 'CONTRACTOR' && <TicketEntergyForms ticket={ticket} />}
                         </TabsContent>
                         {user?.role !== 'CONTRACTOR' && <TabsContent value="assessment">
                             <div className="mt-4">
                                 <TicketAssessments ticket={ticket} onChanged={handleStatusUpdated} />
                                 <div className="mt-5"><TicketEntergyForms ticket={ticket} /></div>
+                                <div className="mt-5"><TicketWorkNotes ticketId={ticket.id} /></div>
                             </div>
                         </TabsContent>}
                         {user?.role !== 'CONTRACTOR' && <TabsContent value="history">
@@ -270,14 +251,6 @@ export default function TicketDetailPage() {
                     </Card>
                 </div>
             </div>
-            {user?.role === 'CONTRACTOR' && getContractorTicketStatus(ticket.status) === 'OPEN' && contractorId && <StatusUpdateFlow
-                ticket={ticket}
-                userRole={user.role}
-                userId={user.id}
-                contractorId={contractorId}
-                canEditAssessment={contractorId === ticket.assigned_to}
-                onStatusUpdated={handleStatusUpdated}
-            />}
         </div >
     );
 }

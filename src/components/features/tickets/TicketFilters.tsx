@@ -5,12 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Search, X } from "lucide-react"
 import { TicketStatus } from "@/types"
-import type { ContractorTicketStatus } from "@/lib/utils/statusUpdateFlow"
+import type { ContractorTicketDisplayStatus } from "@/lib/utils/statusUpdateFlow"
 import { useState, useEffect } from "react"
 
 export interface TicketFiltersState {
     search: string
-    status: TicketStatus | ContractorTicketStatus | "ALL"
+    status: TicketStatus | ContractorTicketDisplayStatus | "ALL"
     importance: "ALL" | "IMPORTANT" | "STANDARD"
 }
 
@@ -75,6 +75,9 @@ export function TicketFilters({ onFilterChange, userRole }: TicketFiltersProps) 
                     <SelectContent>
                         <SelectItem value="ALL">{userRole === 'contractor' ? 'All' : 'All statuses'}</SelectItem>
                         {userRole === 'contractor' ? <>
+                            <SelectItem value="ASSIGNED">Assigned</SelectItem>
+                            <SelectItem value="IN_ROUTE">En Route</SelectItem>
+                            <SelectItem value="ON_SITE">On Site</SelectItem>
                             <SelectItem value="OPEN">Open</SelectItem>
                             <SelectItem value="CLOSED">Closed</SelectItem>
                         </> : <>

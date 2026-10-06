@@ -1,0 +1,48 @@
+BEGIN;
+CREATE TEMP TABLE ticket_work_note_qa(result jsonb);
+DO $$
+DECLARE t public.tickets; actor uuid; chief uuid; outsider uuid; n public.ticket_work_notes; note_id uuid:=gen_random_uuid();
+ hazard_id uuid:=gen_random_uuid(); when_reported timestamptz:=now(); denied boolean; rows_count integer; checks jsonb:='[]';
+BEGIN
+ SELECT * INTO t FROM public.tickets WHERE id='f34a085b-e16c-475e-b4d9-87896d139863';
+ SELECT profile_id INTO actor FROM public.contractors WHERE id=t.assigned_to;
+ SELECT id INTO chief FROM public.profiles WHERE role::text IN ('CEO','SUPER_ADMIN') AND is_active AND private.has_permission(id,'admin.tickets.view') LIMIT 1;
+ SELECT c.profile_id INTO outsider FROM public.contractors c WHERE c.profile_id<>actor AND private.contractor_portal_ready() IS NOT NULL LIMIT 1;
+ IF actor IS NULL OR chief IS NULL THEN RAISE EXCEPTION 'Required existing QA identities unavailable'; END IF;
+ t.id:=gen_random_uuid();t.ticket_number:='QA-WORK-'||left(t.id::text,8);t.status:='ASSIGNED';t.team_lead_id:=chief;
+ t.crew_id:=NULL;t.assigned_driver_id:=NULL;t.current_assessment_id:=NULL;t.review_stage:='FIELDWORK';
+ INSERT INTO public.tickets SELECT (t).*;
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated')::text,true);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ SELECT * INTO n FROM public.record_ticket_work_note(note_id,t.id,'NOTE','Rollback-only QA note',when_reported);
+ IF n.actor_profile_id<>actor OR n.ticket_id<>t.id THEN RAISE EXCEPTION 'Actor or ticket binding incorrect';END IF;
+ PERFORM public.record_ticket_work_note(note_id,t.id,'NOTE','Rollback-only QA note',when_reported);
+ SELECT count(*) INTO rows_count FROM public.ticket_work_notes WHERE ticket_id=t.id;
+ IF rows_count<>1 THEN RAISE EXCEPTION 'Retry duplicated note'; END IF;
+ checks:=checks||jsonb_build_array('assigned authenticated-role note save/readback/identity and idempotent retry');
+ denied:=false;BEGIN PERFORM public.record_ticket_work_note(note_id,t.id,'NOTE','Changed content',when_reported);EXCEPTION WHEN check_violation THEN denied:=true;END;IF NOT denied THEN RAISE EXCEPTION 'Immutable ID changed';END IF;
+ denied:=false;BEGIN INSERT INTO public.ticket_work_notes(id,ticket_id,actor_profile_id,kind,body,reported_at) VALUES(gen_random_uuid(),t.id,actor,'NOTE','Bypass',now());EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;IF NOT denied THEN RAISE EXCEPTION 'Direct insert allowed';END IF;
+ checks:=checks||jsonb_build_array('changed retry and direct table insert denied');
+ PERFORM public.record_ticket_work_note(hazard_id,t.id,'ENVIRONMENTAL','Rollback-only environmental QA; no actual hazard',when_reported);
+ PERFORM public.record_ticket_work_note(hazard_id,t.id,'ENVIRONMENTAL','Rollback-only environmental QA; no actual hazard',when_reported);
+ EXECUTE 'RESET ROLE';
+ SELECT count(*) INTO rows_count FROM public.notification_logs WHERE dedup_key LIKE 'ticket-work-note:'||hazard_id||':%';
+ IF rows_count<1 THEN RAISE EXCEPTION 'No dispatch notification created';END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.tickets WHERE id=t.id AND severity='CRITICAL' AND is_important AND status='ASSIGNED') THEN RAISE EXCEPTION 'Escalation priority or status incorrect';END IF;
+ IF (SELECT count(*) FROM public.audit_logs WHERE entity_id=t.id AND action='TICKET_SAFETY_ESCALATED')<>1 THEN RAISE EXCEPTION 'Hazard audit duplicated';END IF;
+ checks:=checks||jsonb_build_array('hazard persists, flags critical, notifies dispatch once and preserves status');
+ IF outsider IS NOT NULL THEN
+ PERFORM set_config('request.jwt.claim.sub',outsider::text,true);PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',outsider,'role','authenticated')::text,true);EXECUTE 'SET LOCAL ROLE authenticated';
+ SELECT count(*) INTO rows_count FROM public.ticket_work_notes WHERE ticket_id=t.id;IF rows_count<>0 THEN RAISE EXCEPTION 'Unassigned crew reads notes';END IF;
+ denied:=false;BEGIN PERFORM public.record_ticket_work_note(gen_random_uuid(),t.id,'PUBLIC_SAFETY','Unauthorized hazard',when_reported);EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;IF NOT denied THEN RAISE EXCEPTION 'Unassigned crew can escalate';END IF;
+ EXECUTE 'RESET ROLE';checks:=checks||jsonb_build_array('unassigned contractor read and escalation denied');
+ END IF;
+ PERFORM set_config('request.jwt.claim.sub',chief::text,true);PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',chief,'role','authenticated')::text,true);EXECUTE 'SET LOCAL ROLE authenticated';
+ SELECT count(*) INTO rows_count FROM public.ticket_work_notes WHERE ticket_id=t.id;IF rows_count<>2 THEN RAISE EXCEPTION 'Authorized staff readback missing';END IF;
+ EXECUTE 'RESET ROLE';checks:=checks||jsonb_build_array('authorized staff reads linked note and environmental report');
+ EXECUTE 'SET LOCAL ROLE anon';denied:=false;BEGIN PERFORM public.record_ticket_work_note(gen_random_uuid(),t.id,'NOTE','Anonymous',when_reported);EXCEPTION WHEN insufficient_privilege THEN denied:=true;END;IF NOT denied THEN RAISE EXCEPTION 'Anonymous RPC allowed';END IF;
+ EXECUTE 'RESET ROLE';checks:=checks||jsonb_build_array('anonymous action denied');
+ INSERT INTO ticket_work_note_qa VALUES(jsonb_build_object('passed',jsonb_array_length(checks),'checks',checks,'rollback',true));
+END $$;
+SELECT result FROM ticket_work_note_qa;
+ROLLBACK;

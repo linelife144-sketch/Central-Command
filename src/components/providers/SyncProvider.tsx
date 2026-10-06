@@ -1,5 +1,7 @@
 'use client';
 
+import { ticketWorkNotesService } from '@/lib/services/ticketWorkNotesService';
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import {
@@ -76,6 +78,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [failedFieldProgress,setFailedFieldProgress]=useState(0);
   const [pendingEntergyForms,setPendingEntergyForms]=useState(0);
   const [failedEntergyForms,setFailedEntergyForms]=useState(0);
+  const [pendingWorkNotes,setPendingWorkNotes]=useState(0);
+  const [failedWorkNotes,setFailedWorkNotes]=useState(0);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [lastError, setLastError] = useState<string | undefined>(undefined);
 
@@ -89,6 +93,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     const drafts=profile?.id?await db.ticketDraftQueue.where('actor_profile_id').equals(profile.id).toArray():[];
     const fieldProgress=profile?.id?await db.ticketFieldProgressQueue.where('actor_profile_id').equals(profile.id).toArray():[];
+    const notes=profile?.id?await db.ticketWorkNotes.where('actor_profile_id').equals(profile.id).toArray():[];
+    setPendingWorkNotes(notes.filter(n=>n.pending).length);
+    setFailedWorkNotes(notes.filter(n=>n.pending&&n.last_error).length);
     const entergy=profile?.id?await db.entergyForms.where('actor_profile_id').equals(profile.id).toArray():[];
     setPendingEntergyForms(entergy.filter(item=>item.dirty||item.submit_requested).length);
     setFailedEntergyForms(entergy.filter(item=>item.last_error).length);
@@ -118,10 +125,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       const assessmentResult = await assessmentUploadQueue.process();
 
       const draftResult = profile?.id ? await ticketAssessmentWorkflow.process(profile.id) : {failed:0,errors:[]};
+      const noteResult = profile?.id ? await ticketWorkNotesService.process(profile.id) : {failed:0,errors:[]};
       const entergyResult = profile?.id ? await entergyFormService.process(profile.id) : {failed:0,errors:[]};
       if (progressResult.failed || draftResult.failed) setLastError(progressResult.errors[0] ?? draftResult.errors[0]);
-      if (progressResult.failed > 0 || draftResult.failed > 0 || entergyResult.failed > 0 || result.failed > 0 || timeResult.failed > 0 || assessmentResult.failed > 0) {
-        setLastError(`${progressResult.failed} ticket progress, ${result.failed} photo, ${timeResult.failed} time entry, ${assessmentResult.failed + draftResult.failed} assessment, and ${entergyResult.failed} Entergy form sync(s) failed. Review the records on the ticket and retry.`);
+      if (noteResult.failed > 0 || progressResult.failed > 0 || draftResult.failed > 0 || entergyResult.failed > 0 || result.failed > 0 || timeResult.failed > 0 || assessmentResult.failed > 0) {
+        setLastError(`${progressResult.failed} ticket progress, ${result.failed} photo, ${timeResult.failed} time entry, ${assessmentResult.failed + draftResult.failed} assessment, ${entergyResult.failed} Entergy form, and ${noteResult.failed} ticket note sync(s) failed. Review the records on the ticket and retry.`);
       } else {
         setLastSyncedAt(new Date().toISOString());
       }
@@ -216,8 +224,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh, syncNow]);
 
-  const pendingCount = queueItems.filter((item) => item.status === 'pending').length + pendingTicketDrafts + pendingFieldProgress + pendingEntergyForms;
-  const failedCount = queueItems.filter((item) => item.status === 'failed').length + failedTicketDrafts + failedFieldProgress + failedEntergyForms;
+  const pendingCount = queueItems.filter((item) => item.status === 'pending').length + pendingTicketDrafts + pendingFieldProgress + pendingEntergyForms + pendingWorkNotes;
+  const failedCount = queueItems.filter((item) => item.status === 'failed').length + failedTicketDrafts + failedFieldProgress + failedEntergyForms + failedWorkNotes;
 
   const snapshot = useMemo<SyncSnapshot>(
     () => ({

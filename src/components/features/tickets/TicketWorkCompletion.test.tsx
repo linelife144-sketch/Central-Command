@@ -1,0 +1,20 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { Ticket } from '@/types';
+const mocks=vi.hoisted(()=>({profile:{id:'actor'},draft:vi.fn(),forms:vi.fn(),notes:vi.fn(),submit:vi.fn()}));
+vi.mock('@/components/providers/AuthProvider',()=>({useAuth:()=>({profile:mocks.profile})}));
+vi.mock('@/lib/services/ticketAssessmentWorkflow',()=>({ticketAssessmentWorkflow:{loadDraft:mocks.draft,submit:mocks.submit}}));
+vi.mock('@/lib/services/entergyFormService',()=>({entergyFormService:{list:mocks.forms}}));
+vi.mock('@/lib/services/ticketWorkNotesService',()=>({ticketWorkNotesService:{list:mocks.notes}}));
+import {TicketWorkCompletion} from './TicketWorkCompletion';
+const ticket={id:'ticket',utility_client:'ENTERGY',status:'ON_SITE'} as Ticket;
+beforeEach(()=>{vi.clearAllMocks();mocks.draft.mockResolvedValue({assessment_id:'assessment'});mocks.forms.mockResolvedValue([]);mocks.notes.mockResolvedValue([]);mocks.submit.mockResolvedValue('SUBMITTED');});
+afterEach(cleanup);
+describe('finish ticket gates',()=>{
+  it('sends the exact linked saved assessment for existing review workflow',async()=>{const changed=vi.fn();render(<TicketWorkCompletion ticket={ticket} canSubmit onChanged={changed}/>);const button=await screen.findByRole('button',{name:'Send ticket for review'});await waitFor(()=>expect(button.hasAttribute('disabled')).toBe(false));fireEvent.click(button);await waitFor(()=>expect(mocks.submit).toHaveBeenCalledWith('ticket','actor','assessment'));expect(changed).toHaveBeenCalled();});
+  it('prevents closing with unfinished Entergy forms',async()=>{mocks.forms.mockResolvedValue([{record:{status:'DRAFT'}}]);render(<TicketWorkCompletion ticket={ticket} canSubmit onChanged={()=>{}}/>);await screen.findByText('Finish and submit your Entergy drafts');expect(screen.getByRole('button',{name:'Send ticket for review'}).hasAttribute('disabled')).toBe(true);expect(mocks.submit).not.toHaveBeenCalled();});
+  it('prevents closing while a saved escalation is waiting to sync',async()=>{mocks.notes.mockResolvedValue([{pending:true}]);render(<TicketWorkCompletion ticket={ticket} canSubmit onChanged={()=>{}}/>);await screen.findByText('Sync saved notes and escalations');expect(screen.getByRole('button',{name:'Send ticket for review'}).hasAttribute('disabled')).toBe(true);});
+  it('rechecks records that changed between rendering and sending',async()=>{mocks.forms.mockResolvedValueOnce([]).mockResolvedValue([{record:{status:'DRAFT'}}]);render(<TicketWorkCompletion ticket={ticket} canSubmit onChanged={()=>{}}/>);const button=await screen.findByRole('button',{name:'Send ticket for review'});await waitFor(()=>expect(button.hasAttribute('disabled')).toBe(false));fireEvent.click(button);expect((await screen.findByRole('alert')).textContent).toContain('Finish and submit');expect(mocks.submit).not.toHaveBeenCalled();});
+  it('keeps drivers out of assessment submission',async()=>{render(<TicketWorkCompletion ticket={ticket} canSubmit={false} onChanged={()=>{}}/>);await screen.findByText(/assigned damage assessor sends/);expect(screen.queryByRole('button',{name:'Send ticket for review'})).toBeNull();});
+  it('shows closed field work and staff review instead of a second submit',async()=>{render(<TicketWorkCompletion ticket={{...ticket,status:'PENDING_REVIEW'}} canSubmit onChanged={()=>{}}/>);await screen.findByText('Field work complete');expect(screen.queryByRole('button',{name:'Send ticket for review'})).toBeNull();});
+});

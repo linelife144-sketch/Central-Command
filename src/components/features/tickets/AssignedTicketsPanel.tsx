@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { TicketImportanceBadge } from '@/components/features/tickets/TicketImportanceBadge';
+import { TicketFieldActionButton } from '@/components/features/tickets/TicketFieldActionButton';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { ticketService } from '@/lib/services/ticketService';
 import { formatAddress, formatDate } from '@/lib/utils/formatters';
 import { supabase } from '@/lib/supabase/client';
@@ -53,6 +55,7 @@ export function AssignedTicketsPanel({
   teamLeadName,
   crewName,
 }: AssignedTicketsPanelProps) {
+  const { profile } = useAuth();
   const [rows, setRows] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -64,16 +67,14 @@ export function AssignedTicketsPanel({
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError('');
-
     if (!scope) {
-      setRows([]);
-      setLoading(false);
+      void Promise.resolve().then(() => { if (active) { setRows([]); setLoading(false); setError(''); } });
       return () => { active = false; };
     }
 
     const load = async () => {
+      setLoading(true);
+      setError('');
       try {
         const assigned = scope.kind === 'crew'
           ? await ticketService.getTicketsByCrew(scope.id)
@@ -100,7 +101,7 @@ export function AssignedTicketsPanel({
       }
     };
 
-    void load();
+    void Promise.resolve().then(() => { if (active) void load(); });
     const refresh = () => setRetryKey(value => value + 1);
     window.addEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
     const channel = supabase.channel(`assigned-ticket-queue-${scope.kind}-${scope.id}`)
@@ -173,11 +174,11 @@ export function AssignedTicketsPanel({
             const address = formatAddress(row.address, row.city ?? null, row.state ?? null, row.zip_code ?? null);
             const targetDate = row.due_date ?? row.scheduled_date;
             return (
-              <li key={row.id}>
+              <li key={row.id} className={`grid min-w-0 gap-2 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6 ${isCurrent ? 'border-l-[3px] border-l-grid-lightning bg-grid-blue-soft/35' : 'border-l-[3px] border-l-transparent'}`}>
                 <Link
                   href={`/tickets/${row.id}`}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`group grid min-w-0 gap-3 px-5 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-grid-blue sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6 ${isCurrent ? 'border-l-[3px] border-l-grid-lightning bg-grid-blue-soft/35' : 'border-l-[3px] border-l-transparent hover:bg-grid-blue-soft/25'}`}
+                  className={`group grid min-w-0 gap-3 rounded-lg py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-grid-blue sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center`}
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -196,6 +197,19 @@ export function AssignedTicketsPanel({
                     <ArrowUpRight className="size-4 text-grid-blue transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
                   </div>
                 </Link>
+                {userRole === 'contractor' && contractorId && profile &&
+                  ['ASSIGNED', 'IN_ROUTE', 'ON_SITE', 'IN_PROGRESS', 'COMPLETE', 'NEEDS_REWORK', 'REJECTED'].includes(row.status) &&
+                  (row.assigned_to === contractorId || row.assigned_driver_id === contractorId) && (
+                    <TicketFieldActionButton
+                      ticket={row}
+                      actorProfileId={profile.id}
+                      contractorId={contractorId}
+                      startLabel="Start"
+                      continueLabel="Continue work"
+                      size="sm"
+                      className="min-h-11 sm:ml-3"
+                    />
+                  )}
               </li>
             );
           })}

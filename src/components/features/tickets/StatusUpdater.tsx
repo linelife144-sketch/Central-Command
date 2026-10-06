@@ -51,7 +51,9 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
 
-  const possibleStatuses = getNextPossibleStatuses(ticket.status, userRole).filter(status => userRole !== 'ADMIN' && ['IN_ROUTE','ON_SITE','IN_PROGRESS'].includes(status));
+  const possibleStatuses = userRole === 'CONTRACTOR'
+    ? []
+    : getNextPossibleStatuses(ticket.status, userRole).filter(status => userRole !== 'ADMIN' && ['IN_ROUTE','ON_SITE','IN_PROGRESS'].includes(status));
 
   const handleStatusClick = (status: TicketStatus) => {
     const negativeStatuses: TicketStatus[] = ['NEEDS_REWORK', 'CLOSED'];

@@ -10,17 +10,18 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useContractorId } from '@/hooks/useContractorId';
 import { entergyFormService, type LocalEntergyRecord } from '@/lib/services/entergyFormService';
 import { entergyForms, type EntergyFormKind } from '@/lib/schemas/entergyForms';
+import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
 import { formatDate } from '@/lib/utils/formatters';
 import type { Ticket } from '@/types';
 
-export function TicketEntergyForms({ ticket }: { ticket: Ticket }) {
+export function TicketEntergyForms({ ticket, workspace = false }: { ticket: Ticket; workspace?: boolean }) {
   const { profile, can } = useAuth();
   const { contractorId } = useContractorId(profile?.role === 'CONTRACTOR' ? profile.id : undefined);
   const [records, setRecords] = useState<LocalEntergyRecord[]>([]);
   const [error, setError] = useState(''); const [loading, setLoading] = useState(true);
   const applicable = ticket.utility_client.toUpperCase() === 'ENTERGY';
   const readable = profile?.role === 'CONTRACTOR' || can('admin.assessments.view');
-  const canFill = !!ticket.assigned_to && !!profile && ((['CEO','SUPER_ADMIN'].includes(profile.role) && can('admin.assessments.edit')) || profile.role === 'CONTRACTOR' && contractorId === ticket.assigned_to) && ['ON_SITE','IN_PROGRESS','NEEDS_REWORK'].includes(ticket.status);
+  const canFill = !!ticket.assigned_to && !!profile && ((['CEO','SUPER_ADMIN'].includes(profile.role) && can('admin.assessments.edit')) || profile.role === 'CONTRACTOR' && contractorId === ticket.assigned_to);
   const load = useCallback(async () => {
     if (!profile || !applicable || !readable) return;
     try { setRecords(await entergyFormService.list(ticket.id, profile.id)); setError(''); }
@@ -34,7 +35,9 @@ export function TicketEntergyForms({ ticket }: { ticket: Ticket }) {
       const draft=records.find(r=>r.record.form_kind===kind && r.record.status==='DRAFT');
       const count=records.filter(r=>r.record.form_kind===kind && r.record.status==='SUBMITTED').length;
       const Icon=kind==='cleanup'?Leaf:ClipboardList;
-      return <div key={kind} className="rounded-xl border border-grid-blue/25 bg-grid-blue/5 p-4"><Icon className="text-grid-blue" size={24}/><h3 className="mt-3 font-heading text-2xl font-semibold">{entergyForms[kind].title}</h3><p className="mt-2 text-xs text-muted-foreground">{kind==='cleanup'?'Environmental and trash cleanup, location, access, and notes.':'Equipment, installation/removal, transformer, switches, poles, communication, and customer changes.'}</p><p className="mt-3 text-xs font-semibold">{draft?.submit_requested?'Submission queued':draft?'Draft saved':count?`${count} submitted record${count===1?'':'s'}`:'No form saved yet'}</p>{canFill && !draft?.submit_requested && <Button asChild variant="outline" size="sm" className="mt-4"><Link href={`/tickets/${ticket.id}/entergy/${kind}`}>{draft?'Continue form':count?'Start new revision':'Open form'}<ArrowRight size={14}/></Link></Button>}</div>;
+      const content = <><Icon className="text-grid-blue" size={24}/><h3 className="mt-3 font-heading text-2xl font-semibold">{entergyForms[kind].title}</h3><p className="mt-2 text-xs text-muted-foreground">{kind==='cleanup'?'Environmental and trash cleanup, location, access, and notes.':'Equipment, installation/removal, transformer, switches, poles, communication, and customer changes.'}</p><p className="mt-3 text-xs font-semibold">{draft?.submit_requested?'Submission queued':draft?'Draft saved':count?`${count} submitted record${count===1?'':'s'}`:'No form saved yet'}</p></>;
+      if (workspace && canFill && !draft?.submit_requested && getContractorTicketStatus(ticket.status) === 'OPEN') return <Link key={kind} href={`/tickets/${ticket.id}/entergy/${kind}`} className="group rounded-xl border border-grid-blue/25 bg-grid-blue/5 p-5 transition-colors hover:border-grid-blue hover:bg-grid-blue/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-grid-blue">{content}<span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-grid-blue">{draft?'Continue form':count?'Start new revision':'Open form'}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1"/></span></Link>;
+      return <div key={kind} className="rounded-xl border border-grid-blue/25 bg-grid-blue/5 p-4">{content}{canFill && !draft?.submit_requested && ['ON_SITE','IN_PROGRESS','NEEDS_REWORK'].includes(ticket.status) && <Button asChild variant="outline" size="sm" className="mt-4"><Link href={`/tickets/${ticket.id}/entergy/${kind}`}>{draft?'Continue form':count?'Start new revision':'Open form'}<ArrowRight size={14}/></Link></Button>}</div>;
     })}</div>
     {loading && <p role="status" className="text-sm">Loading saved forms…</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}<Button variant="outline" size="sm" className="ml-3" onClick={()=>void load()}>Retry</Button></p>}

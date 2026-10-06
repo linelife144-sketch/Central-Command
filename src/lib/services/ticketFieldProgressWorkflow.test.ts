@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => {
     tickets: {
       get: async (id: string) => cachedTickets.get(id),
       put: async (ticket: Record<string, unknown>) => { cachedTickets.set(String(ticket.id), ticket); },
+      update: async (id: string, changes: Record<string, unknown>) => { const row = cachedTickets.get(id); if (row) cachedTickets.set(id, { ...row, ...changes }); },
     },
     transaction: async (_mode: string, ...args: unknown[]) => (args.at(-1) as () => Promise<unknown>)(),
   };
@@ -39,13 +40,18 @@ vi.mock('@/lib/db/dexie', () => ({ db: mocks.db }));
 vi.mock('@/lib/supabase/client', () => ({
   supabase: {
     auth: { getUser: vi.fn(async () => ({ data: { user: { id: 'profile' } }, error: null })) },
-    from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn(async () => ({ data: { ...mocks.state.remoteTicket }, error: null })) })) })) })),
+    from: vi.fn(() => ({ select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        single: vi.fn(async () => ({ data: { ...mocks.state.remoteTicket }, error: null })),
+        maybeSingle: vi.fn(async () => ({ data: { ...mocks.state.remoteTicket }, error: null })),
+      })),
+    })) })),
   },
 }));
 vi.mock('@/lib/services/ticketAssessmentWorkflow', () => ({
   ticketWorkflowRpc: vi.fn(async (name: string, args: Record<string, unknown>) => {
     mocks.state.rpcCalls.push({ name, args });
-    mocks.state.remoteTicket.status = args.p_status;
+    mocks.state.remoteTicket.status = args.p_action === 'START' ? 'IN_ROUTE' : 'ON_SITE';
     return mocks.state.remoteTicket;
   }),
 }));
@@ -56,7 +62,7 @@ import { ticketFieldProgressWorkflow } from './ticketFieldProgressWorkflow';
 const ticket = {
   id: 'ticket', ticket_number: 'CC-101', status: 'ASSIGNED', is_important: false, address: '1 Main St',
   utility_client: 'Grid Electric', created_at: '2026-10-06T10:00:00Z', updated_at: '2026-10-06T10:00:00Z',
-  created_by: 'admin', team_lead_id: 'lead', crew_id: 'crew', assigned_to: 'assessor', assigned_driver_id: 'driver',
+  created_by: 'admin', team_lead_id: 'lead', crew_id: 'crew', assigned_to: 'assessor', assigned_driver_id: 'driver', storm_event_id: 'storm',
 } as Ticket;
 
 function setOnline(value: boolean) {
@@ -70,48 +76,77 @@ beforeEach(() => {
   mocks.state.rpcCalls = [];
   mocks.state.remoteTicket = {
     id: 'ticket', status: 'ASSIGNED', team_lead_id: 'lead', crew_id: 'crew',
-    assigned_to: 'assessor', assigned_driver_id: 'driver',
+    assigned_to: 'assessor', assigned_driver_id: 'driver', updated_at: '2026-10-06T10:00:00Z',
   };
 });
 afterEach(() => { setOnline(true); });
 
-describe('offline field progress sync', () => {
-  it('stores and replays Start then GPS-confirmed arrival in order exactly once', async () => {
+describe('click-driven field progress', () => {
+  it('queues Start then checklist opening in order without storing GPS', async () => {
     setOnline(false);
-    const location = { latitude: 32.5, longitude: -93.7, accuracy: 8, capturedAt: '2026-10-06T10:05:00Z' };
-    await ticketFieldProgressWorkflow.recordOffline({ ticket, actorProfileId: 'profile', contractorId: 'assessor', nextStatus: 'IN_ROUTE', location });
-    await ticketFieldProgressWorkflow.recordOffline({ ticket, actorProfileId: 'profile', contractorId: 'assessor', nextStatus: 'IN_ROUTE', location });
-    expect(mocks.queue.size).toBe(1);
-    const cachedAfterStart = mocks.cachedTickets.get('ticket');
-    expect(cachedAfterStart).toMatchObject({ status: 'IN_ROUTE', field_progress_pending: true, sync_status: 'pending' });
-    const startEvent = [...mocks.queue.values()][0];
-    expect(startEvent).toMatchObject({ from_status: 'ASSIGNED', to_status: 'IN_ROUTE', crew_id: 'crew', team_lead_id: 'lead', captured_at: location.capturedAt });
+    await ticketFieldProgressWorkflow.recordOffline({ ticket, actorProfileId: 'profile', contractorId: 'assessor', action: 'START' });
+    await ticketFieldProgressWorkflow.recordOffline({ ticket: { ...ticket, status: 'IN_ROUTE' }, actorProfileId: 'profile', contractorId: 'assessor', action: 'OPEN_CHECKLIST' });
 
-    await ticketFieldProgressWorkflow.recordOffline({ ticket: { ...ticket, status: 'IN_ROUTE' }, actorProfileId: 'profile', contractorId: 'assessor', nextStatus: 'ON_SITE', location: { ...location, capturedAt: '2026-10-06T10:20:00Z' } });
     expect(mocks.queue.size).toBe(2);
+    const [startEvent, checklistEvent] = [...mocks.queue.values()].sort((a, b) => String(a.captured_at).localeCompare(String(b.captured_at)));
+    expect(startEvent).toMatchObject({ action: 'START', from_status: 'ASSIGNED', to_status: 'IN_ROUTE', crew_id: 'crew', team_lead_id: 'lead' });
+    expect(checklistEvent).toMatchObject({ action: 'OPEN_CHECKLIST', from_status: 'IN_ROUTE', to_status: 'ON_SITE' });
+    expect(startEvent).not.toHaveProperty('latitude');
+    expect(checklistEvent).not.toHaveProperty('longitude');
+    expect(mocks.cachedTickets.get('ticket')).toMatchObject({ status: 'ON_SITE', field_progress_pending: true, sync_status: 'pending' });
 
     setOnline(true);
     const result = await ticketFieldProgressWorkflow.process('profile');
     expect(result).toEqual({ failed: 0, pending: 0, errors: [] });
-    expect(mocks.state.rpcCalls.map(call => call.args.p_status)).toEqual(['IN_ROUTE', 'ON_SITE']);
+    expect(mocks.state.rpcCalls.map(call => call.args.p_action)).toEqual(['START', 'OPEN_CHECKLIST']);
+    expect(mocks.state.rpcCalls.every(call => call.name === 'record_ticket_field_action')).toBe(true);
+    expect(mocks.state.rpcCalls[0].args).not.toHaveProperty('p_latitude');
+    expect(mocks.state.rpcCalls[1].args).not.toHaveProperty('p_accuracy');
     expect(mocks.queue.size).toBe(0);
     expect(mocks.cachedTickets.get('ticket')).toMatchObject({ status: 'ON_SITE', field_progress_pending: false, sync_status: 'synced' });
   });
 
-  it('does not replay field progress after the server assignment changes', async () => {
+  it('allows a dispatched driver to start but requires the assigned assessor to open the checklist', async () => {
     setOnline(false);
-    await ticketFieldProgressWorkflow.recordOffline({
-      ticket, actorProfileId: 'profile', contractorId: 'assessor', nextStatus: 'IN_ROUTE',
-      location: { latitude: 32.5, longitude: -93.7, accuracy: 8, capturedAt: '2026-10-06T10:05:00Z' },
+    await expect(ticketFieldProgressWorkflow.recordOffline({ ticket, actorProfileId: 'profile', contractorId: 'driver', action: 'START' })).resolves.toBeUndefined();
+    await expect(ticketFieldProgressWorkflow.recordOffline({ ticket: { ...ticket, status: 'IN_ROUTE' }, actorProfileId: 'profile', contractorId: 'driver', action: 'OPEN_CHECKLIST' })).rejects.toThrow('Only the assigned assessor');
+  });
+
+  it('records online actions without coordinates and returns the server ticket', async () => {
+    setOnline(true);
+    const result = await ticketFieldProgressWorkflow.recordAction({
+      ticket: { ...ticket, status: 'IN_ROUTE', latitude: undefined, longitude: undefined },
+      actorProfileId: 'profile', contractorId: 'assessor', action: 'OPEN_CHECKLIST',
     });
+    expect(result.offline).toBe(false);
+    expect(result.ticket.status).toBe('ON_SITE');
+    expect(mocks.state.rpcCalls).toEqual([{ name: 'record_ticket_field_action', args: { p_ticket_id: 'ticket', p_action: 'OPEN_CHECKLIST' } }]);
+  });
+
+  it('replays an existing GPS-based queue row through the click RPC without sending its GPS values', async () => {
+    mocks.queue.set('profile:ticket:IN_ROUTE', {
+      id: 'profile:ticket:IN_ROUTE', actor_profile_id: 'profile', contractor_id: 'assessor', ticket_id: 'ticket',
+      from_status: 'ASSIGNED', to_status: 'IN_ROUTE', team_lead_id: 'lead', crew_id: 'crew', assigned_to: 'assessor',
+      assigned_driver_id: 'driver', latitude: 32.5, longitude: -93.7, accuracy: 8, captured_at: '2026-10-06T10:05:00Z',
+    });
+    setOnline(true);
+    const result = await ticketFieldProgressWorkflow.process('profile');
+    expect(result.failed).toBe(0);
+    expect(mocks.state.rpcCalls).toEqual([{ name: 'record_ticket_field_action', args: { p_ticket_id: 'ticket', p_action: 'START' } }]);
+  });
+
+  it('keeps a reassigned action and blocks later queued actions for that ticket', async () => {
+    setOnline(false);
+    await ticketFieldProgressWorkflow.recordOffline({ ticket, actorProfileId: 'profile', contractorId: 'assessor', action: 'START' });
+    await ticketFieldProgressWorkflow.recordOffline({ ticket: { ...ticket, status: 'IN_ROUTE' }, actorProfileId: 'profile', contractorId: 'assessor', action: 'OPEN_CHECKLIST' });
     mocks.state.remoteTicket.team_lead_id = 'different-lead';
     setOnline(true);
 
     const result = await ticketFieldProgressWorkflow.process('profile');
-    expect(result.failed).toBe(1);
-    expect(result.pending).toBe(1);
+    expect(result).toMatchObject({ failed: 1, pending: 2 });
     expect(mocks.state.rpcCalls).toHaveLength(0);
     expect(mocks.queue.get('profile:ticket:IN_ROUTE')).toMatchObject({ last_error: expect.stringContaining('assignment changed') });
-    expect(mocks.cachedTickets.get('ticket')).toMatchObject({ field_progress_pending: true, sync_status: 'failed' });
+    expect(mocks.queue.get('profile:ticket:ON_SITE')).toBeDefined();
+    expect(mocks.cachedTickets.get('ticket')).toMatchObject({ status: 'ASSIGNED', field_progress_pending: true, sync_status: 'failed' });
   });
 });

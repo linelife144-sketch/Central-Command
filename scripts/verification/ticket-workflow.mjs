@@ -19,7 +19,7 @@ CREATE TABLE storm_event_roster_members(id uuid PRIMARY KEY DEFAULT gen_random_u
 CREATE TABLE tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_number text,storm_event_id uuid,assigned_to uuid,status ticket_status DEFAULT 'DRAFT',is_deleted boolean DEFAULT false,severity text,is_important boolean DEFAULT false,updated_by uuid,updated_at timestamptz DEFAULT now(),assigned_at timestamptz,assigned_by uuid,completed_at timestamptz,latitude numeric DEFAULT 30,longitude numeric DEFAULT -90,geofence_radius_meters integer DEFAULT 500);
 CREATE TABLE damage_assessments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_id uuid UNIQUE,contractor_id uuid,assessed_by uuid,assessed_at timestamptz,created_by uuid,created_at timestamptz DEFAULT now(),updated_by uuid,updated_at timestamptz,reviewed_by uuid,reviewed_at timestamptz,review_notes text,priority priority_level,sync_status text,safety_observations jsonb);
 CREATE TABLE audit_logs(action text,entity_type text,entity_id uuid,user_id uuid,user_role user_role,old_values jsonb,new_values jsonb,change_summary text);
-CREATE TABLE ticket_payloads(ticket_id uuid,payload jsonb); CREATE TABLE ticket_status_history(ticket_id uuid,from_status ticket_status,to_status ticket_status,changed_by uuid,changed_at timestamptz,gps_latitude numeric,gps_longitude numeric,gps_accuracy numeric);
+CREATE TABLE ticket_payloads(ticket_id uuid,payload jsonb); CREATE TABLE ticket_status_history(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_id uuid,from_status ticket_status,to_status ticket_status,changed_by uuid,changed_at timestamptz,gps_latitude numeric,gps_longitude numeric,gps_accuracy numeric,change_reason text);
 CREATE TABLE notification_logs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid,notification_type text,title text,body text,data jsonb,channel text,status text,sent_at timestamptz,read_at timestamptz,created_at timestamptz DEFAULT now());
 CREATE TABLE media_assets(id uuid PRIMARY KEY,entity_type text,entity_id uuid,uploaded_by uuid,contractor_id uuid,upload_status text,storage_bucket text,storage_path text,gps_latitude numeric,gps_longitude numeric,updated_at timestamptz);
 CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]); CREATE TABLE storage.objects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),bucket_id text,name text);
@@ -103,4 +103,48 @@ await actor(chief);await pass('chief receives final review notification',async()
 await pass('utility handoff is gated by final approval',async()=>assert.rejects(()=>rpc('record_ticket_utility_handoff',[ticket,'QA PDF delivered']),/Final approval/));
 await pass('chief final approval binds reviewer',async()=>{const a=await rpc('review_ticket_assessment',[correctionId,'APPROVED','Verified']);assert.equal(a.reviewed_by,chief);assert.equal(a.review_stage,'APPROVED');});
 await pass('handoff records reference and closes approved ticket',async()=>{const t=await rpc('record_ticket_utility_handoff',[ticket,'QA PDF delivered']);assert.equal(t.status,'CLOSED');assert.equal(t.utility_submission_reference,'QA PDF delivered');});
+// Exercise the click-driven replacement against the same isolated schema after
+// the existing crew/review workflow checks. Never mutates the live project.
+const actionTicket=uuid();
+await db.exec('RESET ROLE');
+await db.exec(`CREATE OR REPLACE FUNCTION public.fixture_log_ticket_status_change() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF OLD.status IS DISTINCT FROM NEW.status THEN
+   INSERT INTO public.ticket_status_history(id,ticket_id,from_status,to_status,changed_by,changed_at)
+   VALUES(gen_random_uuid(),NEW.id,OLD.status,NEW.status,auth.uid(),now());
+ END IF;
+ RETURN NEW;
+END; $$;
+CREATE TRIGGER fixture_ticket_status_history AFTER UPDATE ON public.tickets
+FOR EACH ROW EXECUTE FUNCTION public.fixture_log_ticket_status_change();`);
+await db.query(`INSERT INTO tickets(id,ticket_number,storm_event_id,status,assigned_to,assigned_driver_id,team_lead_id,crew_id,latitude,longitude)
+VALUES($1,'QA-CLICK-ACTIONS',$2,'ASSIGNED',$3,$4,$5,$6,NULL,NULL)`,[actionTicket,storm,aid,did,lead,crew.id]);
+await db.exec(await readFile('supabase/migrations/20261006204808_click_driven_ticket_field_progress.sql','utf8'));
+await actor(driver);
+await pass('unauthenticated anon role cannot execute field action RPC',async()=>{
+ await db.exec('RESET ROLE; SET ROLE anon');
+ await assert.rejects(()=>rpc('record_ticket_field_action',[actionTicket,'START']),/permission denied/);
+ await actor(driver);
+});
+await pass('driver starts dispatched ticket without GPS coordinates',async()=>assert.equal((await rpc('record_ticket_field_action',[actionTicket,'START'])).status,'IN_ROUTE'));
+await pass('repeated Start is idempotent and creates no duplicate history',async()=>{
+ await rpc('record_ticket_field_action',[actionTicket,'START']);
+ assert.equal((await db.query('SELECT count(*)::int AS count FROM ticket_status_history WHERE ticket_id=$1',[actionTicket])).rows[0].count,1);
+});
+await pass('driver cannot open assessor checklist',async()=>assert.rejects(()=>rpc('record_ticket_field_action',[actionTicket,'OPEN_CHECKLIST']),/assigned assessor/));
+await actor(assessor);
+await pass('assessor opening checklist marks ticket On Site without GPS',async()=>assert.equal((await rpc('record_ticket_field_action',[actionTicket,'OPEN_CHECKLIST'])).status,'ON_SITE'));
+await pass('reopening On Site checklist is idempotent',async()=>{
+ await rpc('record_ticket_field_action',[actionTicket,'OPEN_CHECKLIST']);
+ assert.equal((await db.query('SELECT count(*)::int AS count FROM ticket_status_history WHERE ticket_id=$1',[actionTicket])).rows[0].count,2);
+});
+await pass('history records exact actor, action reason, server time and no fabricated GPS',async()=>{
+ const rows=(await db.query('SELECT from_status,to_status,changed_by,changed_at,change_reason,gps_latitude,gps_longitude,gps_accuracy FROM ticket_status_history WHERE ticket_id=$1 ORDER BY changed_at,id',[actionTicket])).rows;
+ assert.deepEqual(rows.map(row=>[row.from_status,row.to_status,row.changed_by,row.change_reason]),[
+   ['ASSIGNED','IN_ROUTE',driver,'Contractor selected Start'],
+   ['IN_ROUTE','ON_SITE',assessor,'Contractor opened field checklist'],
+ ]);
+ assert.ok(rows.every(row=>row.changed_at&&row.gps_latitude===null&&row.gps_longitude===null&&row.gps_accuracy===null));
+});
+await pass('legacy GPS status RPC is retired for contractors',async()=>assert.rejects(()=>rpc('update_ticket_field_status',[actionTicket,'IN_ROUTE',30,-90,25]),/permission denied/));
 await db.close();await writeFile('docs/testing/ticket-workflow-local.json',json({scope:'Exact migrations in isolated PGlite fixtures. Not live browser or Storage API proof.',passed:checks.length,checks})+'\n');console.log(`${checks.length} ticket workflow database checks passed`);
