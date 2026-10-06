@@ -1283,3 +1283,32 @@
 .cc-storm-meta dd { font-size: 12px; font-weight: 600; color: var(--grid-navy); overflow-wrap: anywhere; }
 @media (max-width: 639px) { .cc-storm-meta { grid-template-columns: 1fr 1fr; } }
 .cc-metric-long-value { font-size: clamp(1.5rem, 2vw, 2rem); line-height: 1.6; }
+
+/* Field assessment: numbered utility inspection sheet. */
+.cc-field-assessment { color: var(--grid-navy); }
+.cc-field-hero { display:flex; justify-content:space-between; gap:2rem; padding:2rem; border-radius:1.25rem; color:white; background:radial-gradient(ellipse at 100% 0%, #2ea3f233, transparent 65%), linear-gradient(125deg, var(--grid-navy-dark), var(--grid-navy)); border-top:3px solid var(--grid-blue); box-shadow:var(--shadow-elevation-lg); }
+.cc-field-eyebrow { font-size:.65rem; font-weight:700; letter-spacing:.16em; color:var(--grid-lightning); }
+.cc-field-progress { min-width:165px; align-self:center; padding-left:1.5rem; border-left:1px solid #ffffff25; }
+.cc-field-rail { position:sticky; top:5rem; padding-top:1rem; }
+.cc-field-rail a { display:flex; gap:.65rem; padding:.7rem 0; font-size:.75rem; font-weight:600; border-bottom:1px solid var(--border); }
+.cc-field-rail a span { font-variant-numeric:tabular-nums; color:var(--grid-blue); }
+.cc-field-section { overflow:hidden; background:var(--surface-raised); border:1px solid var(--border); border-radius:1rem; box-shadow:var(--shadow-elevation-sm); }
+.cc-field-section-heading { display:flex; align-items:center; gap:1rem; padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); background:linear-gradient(100deg, #2ea3f208, transparent); }
+.cc-field-number { display:flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; flex-shrink:0; border-radius:.6rem; background:var(--grid-navy); color:var(--grid-lightning); font-family:var(--font-barlow); font-size:1.1rem; font-weight:600; }
+.cc-field-question { min-width:0; }
+.cc-field-followup { padding-left:1rem; border-left:2px solid #2ea3f23b; animation:lift-in .2s var(--ease-standard); }
+.cc-field-choice { position:relative; display:flex; align-items:center; justify-content:center; gap:.65rem; min-height:48px; min-width:100px; padding:.7rem 1.15rem; border:1px solid var(--border-strong); border-radius:.65rem; cursor:pointer; font-size:.875rem; font-weight:600; background:var(--surface-raised); transition:background .15s, border-color .15s; }
+.cc-field-choice:hover { border-color:var(--grid-blue); }
+.cc-field-choice.is-selected { background:#2ea3f211; border-color:var(--grid-blue); box-shadow:inset 0 0 0 1px var(--grid-blue); }
+.cc-field-choice:has(input:focus-visible) { outline:3px solid var(--grid-blue); outline-offset:3px; }
+.cc-choice-dot { display:flex; align-items:center; justify-content:center; width:18px; height:18px; border:1px solid var(--border-strong); border-radius:50%; }
+.is-selected .cc-choice-dot { background:var(--grid-blue); border-color:var(--grid-blue); color:white; }
+.cc-field-select { width:100%; min-height:48px; appearance:none; border:1px solid var(--border-strong); border-radius:.6rem; background:var(--surface-raised); padding:.7rem 2.25rem .7rem .8rem; font-size:.875rem; color:var(--grid-navy); }
+.cc-field-select:focus-visible { outline:3px solid var(--accent-ring); outline-offset:2px; }
+.cc-field-submit { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1.3rem; border:1px solid #2ea3f240; border-radius:1rem; background:linear-gradient(100deg,#2ea3f20c, transparent); }
+fieldset:disabled .cc-field-choice { opacity:.6; cursor:default; }
+@media(max-width:1023px) { .cc-field-rail { display:none; } }
+@media(max-width:639px) { .cc-field-hero { flex-direction:column; padding:1.4rem; gap:1.4rem; } .cc-field-progress { align-self:stretch; border-left:0; border-top:1px solid #ffffff25; padding:1rem 0 0; } .cc-field-progress svg { display:none; } .cc-field-section-heading { padding:1.1rem; gap:.8rem; } .cc-field-submit { flex-direction:column; align-items:stretch; } }
+@media(prefers-reduced-motion:reduce) { .cc-field-followup { animation:none; } .cc-field-choice { transition:none; } }
+
+.cc-field-hero h1 { color:white; }

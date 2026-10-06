@@ -14,6 +14,7 @@ import {
   type LocalSyncConflict,
   type SyncQueueItem,
 } from '@/lib/db/dexie';
+import { assessmentUploadQueue } from '@/lib/sync/assessmentUploadQueue';
 import { photoUploadQueue } from '@/lib/sync/photoUploadQueue';
 import { timeEntryUploadQueue } from '@/lib/sync/timeEntryUploadQueue';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -94,9 +95,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     try {
       const result = await photoUploadQueue.process();
       const timeResult = await timeEntryUploadQueue.process();
+      const assessmentResult = await assessmentUploadQueue.process();
 
-      if (result.failed > 0 || timeResult.failed > 0) {
-        setLastError(`${result.failed} photo upload(s) and ${timeResult.failed} time entry sync(s) failed. Review queue items for retry.`);
+      if (result.failed > 0 || timeResult.failed > 0 || assessmentResult.failed > 0) {
+        setLastError(`${result.failed} photo upload(s) and ${timeResult.failed} time entry sync(s) and ${assessmentResult.failed} assessment sync(s) failed. Review queue items for retry.`);
       } else {
         setLastSyncedAt(new Date().toISOString());
       }

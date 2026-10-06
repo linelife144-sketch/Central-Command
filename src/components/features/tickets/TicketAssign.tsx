@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -30,16 +29,15 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, sto
     setAssigneeId('');
     setContractors([]);
     setError('');
-    setIsLoading(Boolean(stormEventId));
-    if (stormEventId) {
-      stormRosterService.listAssignable(stormEventId).then((members) => {
-        if (cancelled) return;
-        setContractors(members);
-        if (members.some(member => member.contractorId === currentAssigneeId)) setAssigneeId(currentAssigneeId!);
-      }).catch((cause) => {
-        if (!cancelled) setError(cause instanceof Error ? cause.message : 'Unable to load storm contractors. Close and try again.');
-      }).finally(() => { if (!cancelled) setIsLoading(false); });
-    }
+    setIsLoading(true);
+    stormRosterService.listOptions().then((options) => {
+      if (cancelled) return;
+      const members: StormRosterMember[] = options.map(option => ({ contractorId: option.id, displayName: option.displayName }));
+      setContractors(members);
+      if (members.some(member => member.contractorId === currentAssigneeId)) setAssigneeId(currentAssigneeId!);
+    }).catch((cause) => {
+      if (!cancelled) setError(cause instanceof Error ? cause.message : 'Unable to load contractors. Close and try again.');
+    }).finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }, [isOpen, stormEventId, currentAssigneeId]);
 
@@ -51,7 +49,8 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, sto
       await onAssign(assigneeId);
       onClose();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to assign this ticket. Please try again.');
+      const message = cause instanceof Error ? cause.message : (cause as { message?: string } | null)?.message;
+      setError(message || 'Unable to assign this ticket. Please try again.');
     } finally { setIsSubmitting(false); }
   }
 
@@ -60,7 +59,7 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, sto
       <DialogContent className="sm:max-w-[425px]" onEscapeKeyDown={(event) => { if (isSubmitting) event.preventDefault(); }} onPointerDownOutside={(event) => { if (isSubmitting) event.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>Assign Ticket {ticketNumber}</DialogTitle>
-          <DialogDescription>Select a contractor from this storm’s roster.</DialogDescription>
+          <DialogDescription>Select from all active contractors.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <Label htmlFor="ticket-contractor">Assign To</Label>
@@ -72,9 +71,7 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, sto
           </Select>
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           {!isLoading && !error && contractors.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              {stormEventId ? <>Add an approved contractor to this storm before assigning tickets. <Link href={`/admin/storms/${stormEventId}#storm-contractors`} className="text-primary underline">Manage storm contractors</Link></> : 'This ticket needs a storm event before it can be assigned.'}
-            </p>
+            <p className="text-sm text-muted-foreground">No active contractors are available.</p>
           )}
         </div>
         <DialogFooter>

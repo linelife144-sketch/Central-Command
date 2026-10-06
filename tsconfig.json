@@ -41,7 +41,9 @@
     ".next-payroll-validation/types/**/*.ts",
     ".next-payroll-validation/dev/types/**/*.ts",
     ".next-payroll-final/types/**/*.ts",
-    ".next-payroll-final/dev/types/**/*.ts"
+    ".next-payroll-final/dev/types/**/*.ts",
+    ".next-field-assessment-validation/types/**/*.ts",
+    ".next-field-assessment-validation/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -31,6 +31,7 @@ type UploadStatusValue = UploadStatus | 'PENDING' | 'COMPLETED' | 'FAILED';
 interface MediaAssetsTableClient {
   insert: (
     values: Array<{
+      id?: string;
       uploaded_by: string;
       contractor_id?: string | null;
       file_name: string;
@@ -192,6 +193,7 @@ export async function uploadPhotoPipeline(
     .from('media_assets')
     .insert([
       {
+        id: input.photoId,
         uploaded_by: context.userId,
         contractor_id: context.contractorId,
         file_name: originalFile.name,

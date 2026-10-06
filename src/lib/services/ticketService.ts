@@ -86,9 +86,10 @@ export const ticketService = {
         if (!contractorId) throw new Error('Select a contractor.');
         if (isSuperAdminTestingEnabled()) { const updated = localTestStore.assignTicket(id, contractorId); notifyTicketsChanged(); return updated; }
         const ticket = await this.getTicketById(id);
-        if (!ticket.storm_event_id) throw new Error('This ticket needs a storm event before it can be assigned.');
-        const roster = await stormRosterService.listAssignable(ticket.storm_event_id);
-        if (!roster.some(member => member.contractorId === contractorId)) throw new Error('Select an active contractor from this storm’s roster.');
+        const options = await stormRosterService.listOptions();
+        if (!options.some(option => option.id === contractorId)) throw new Error('Select an active contractor.');
+        // The database requires assignees to be on the storm roster; add them if needed (idempotent).
+        if (ticket.storm_event_id) await stormRosterService.assign(ticket.storm_event_id, contractorId);
         // One UPDATE saves the assignee and status together; the database trigger records history.
         return this.updateTicket(id, {
             assigned_to: contractorId,

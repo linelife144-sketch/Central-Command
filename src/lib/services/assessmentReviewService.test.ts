@@ -64,6 +64,20 @@ describe('createAssessmentReviewService', () => {
     expect(items).toHaveLength(1);
   });
 
+  it('scopes embedded review queues to their parent ticket', async () => {
+    const listRemoteAssessments = vi.fn().mockResolvedValue([buildAssessmentItem()]);
+    const service = createAssessmentReviewService({
+      isOnline: () => true,
+      listRemoteAssessments,
+      listLocalAssessments: vi.fn(),
+      reviewRemoteAssessment: vi.fn(),
+    });
+
+    await service.listAssessments({ ticketId: 'ticket-1' });
+
+    expect(listRemoteAssessments).toHaveBeenCalledWith({ ticketId: 'ticket-1' });
+  });
+
   it('falls back to local list when remote listing fails', async () => {
     const listRemoteAssessments = vi.fn().mockRejectedValue(new Error('remote failure'));
     const listLocalAssessments = vi

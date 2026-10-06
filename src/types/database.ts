@@ -617,6 +617,8 @@ export type Database = {
       }
       damage_assessments: {
         Row: {
+          field_assessment: Json | null
+          photo_evidence: Json | null
           assessed_at: string | null
           assessed_by: string | null
           contractor_id: string
@@ -641,6 +643,8 @@ export type Database = {
           weather_conditions: string | null
         }
         Insert: {
+          field_assessment?: Json | null
+          photo_evidence?: Json | null
           assessed_at?: string | null
           assessed_by?: string | null
           contractor_id: string
@@ -665,6 +669,8 @@ export type Database = {
           weather_conditions?: string | null
         }
         Update: {
+          field_assessment?: Json | null
+          photo_evidence?: Json | null
           assessed_at?: string | null
           assessed_by?: string | null
           contractor_id?: string

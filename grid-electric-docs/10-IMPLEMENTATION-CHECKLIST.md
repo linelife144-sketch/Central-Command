@@ -873,3 +873,16 @@ See `docs/testing/contractor-onboarding-verification.json` for the observed Auth
 - [x] Apply migration `20261004234500_remove_vehicle_registration_from_onboarding_gate.sql` to live database `xcvacmreerrypygpritq`, removing the driver vehicle registration tag photo requirement from the `complete_contractor_onboarding` RPC gate. — Antigravity
 - [x] Update schema validation, server onboarding loader, and unit test suites: 101/101 test files passing (508/508 tests). — Antigravity
 - [x] Update codebase knowledge graph with `graphify update .`. — Antigravity
+
+### Phase 4 — Required top-down ticket assessment (2026-10-05, Codex /root)
+
+- [x] Implement every requested inspection topic with explicit unanswered yes/no choices, conditional required detail, predefined values, and final notes. — Codex /root
+- [x] Add responsive numbered field-sheet UI using blue primary/navy and gold accents; preserve GPS/photo capture. — Codex /root
+- [x] Add IndexedDB answer drafts, ticket/staff readback, and stable-ID reconnect processing scoped to the signed-in contractor. — Codex /root
+- [x] Prepare and locally verify exact server validation/assignment/review/escalation migration: 29 PGlite checks. — Codex /root
+- [x] Verify typecheck, scoped lint, production webpack build, focused tests, desktop/phone component interactions, draft restore, and no horizontal overflow. — Codex /root
+- [x] Apply live assessment migration `20261006120830_top_down_ticket_assessments` to Central Command Supabase after the user authorized activation; confirm structured columns, trigger installation, and retained RLS policy set. — Codex /root (2026-10-06)
+- [x] Remove standalone assessment links from admin and contractor sidebars; add ticket-filtered assessment review controls to ticket detail, route the former admin review URL to `/tickets`, and route dashboard entry points through tickets. — Codex /root (2026-10-06)
+- [ ] Verify authenticated live RLS/trigger rollback behavior and complete a real contractor submission, staff readback, GPS/photo upload, and reconnect on the same ticket. — Codex /root
+
+Evidence and approval scope: `docs/testing/field-assessments-validation.md`. Full regression run leaves four unrelated TicketAssign mock failures (stormRosterService.listOptions absent).

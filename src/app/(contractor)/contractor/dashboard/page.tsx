@@ -17,7 +17,7 @@ const actions = [
   { href: '/contractor/time', label: 'Time tracking', description: 'Clock in, clock out, and review your hours', icon: Clock },
   { href: '/contractor/map', label: 'Field map', description: 'Find your assigned work in the field', icon: MapPin },
   { href: '/contractor/expenses/create', label: 'Add an expense', description: 'Capture a receipt and submit your costs', icon: Receipt },
-  { href: '/contractor/assessments/create', label: 'New assessment', description: 'Record damage from your assigned ticket', icon: FileCheck2 },
+  { href: '/tickets', label: 'Assess a ticket', description: 'Open an assigned ticket to record damage', icon: FileCheck2 },
 ];
 
 function LoadingPanel() {

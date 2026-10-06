@@ -1,0 +1,424 @@
+[
+  {
+    "id": "framing",
+    "title": "Pole framing",
+    "description": "Start at the top: identify phases, framing, and taps.",
+    "fields": [
+      {
+        "key": "phases",
+        "label": "Number of phases",
+        "kind": "select",
+        "options": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      {
+        "key": "framing",
+        "label": "Framing type",
+        "kind": "select",
+        "options": [
+          "TANGENT",
+          "DOUBLE_DEAD_END",
+          "ANGLE",
+          "DEAD_END"
+        ]
+      },
+      {
+        "key": "hasTap",
+        "label": "Is there a tap?",
+        "kind": "boolean"
+      },
+      {
+        "key": "tapPhases",
+        "label": "Tap phases",
+        "kind": "select",
+        "options": [
+          "1",
+          "2",
+          "3"
+        ],
+        "when": {
+          "key": "hasTap",
+          "value": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "vegetation",
+    "title": "Tree crews",
+    "description": "Record vegetation work needed at the incident site.",
+    "fields": [
+      {
+        "key": "treeCrewsNeeded",
+        "label": "Are tree crews needed?",
+        "kind": "boolean"
+      },
+      {
+        "key": "treeWorkload",
+        "label": "Tree crew workload",
+        "kind": "select",
+        "options": [
+          "LIGHT",
+          "MODERATE",
+          "HEAVY"
+        ],
+        "when": {
+          "key": "treeCrewsNeeded",
+          "value": true
+        }
+      },
+      {
+        "key": "treeDamage",
+        "label": "Describe vegetation damage",
+        "kind": "text",
+        "when": {
+          "key": "treeCrewsNeeded",
+          "value": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "pole",
+    "title": "Pole damage",
+    "description": "Check the structure and replacement access.",
+    "fields": [
+      {
+        "key": "poleBroken",
+        "label": "Is the pole broken?",
+        "kind": "boolean"
+      },
+      {
+        "key": "poleHeight",
+        "label": "Pole height (feet)",
+        "kind": "select",
+        "options": [
+          "35",
+          "40",
+          "45",
+          "50",
+          "55",
+          "60",
+          "65"
+        ],
+        "when": {
+          "key": "poleBroken",
+          "value": true
+        }
+      },
+      {
+        "key": "poleAccessible",
+        "label": "Is the pole accessible?",
+        "kind": "boolean",
+        "when": {
+          "key": "poleBroken",
+          "value": true
+        }
+      },
+      {
+        "key": "poleDamage",
+        "label": "Describe pole damage and access",
+        "kind": "text",
+        "when": {
+          "key": "poleBroken",
+          "value": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "conductor",
+    "title": "Conductor damage",
+    "description": "Identify the conductor size and spans down.",
+    "fields": [
+      {
+        "key": "conductorBroken",
+        "label": "Is the conductor broken?",
+        "kind": "boolean"
+      },
+      {
+        "key": "conductorSize",
+        "label": "Conductor size",
+        "kind": "select",
+        "options": [
+          "#6",
+          "#4",
+          "#2",
+          "#1",
+          "1/0",
+          "2/0",
+          "4/0",
+          "336",
+          "556",
+          "795"
+        ],
+        "when": {
+          "key": "conductorBroken",
+          "value": true
+        }
+      },
+      {
+        "key": "spansDown",
+        "label": "Spans down",
+        "kind": "select",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "when": {
+          "key": "conductorBroken",
+          "value": true
+        }
+      },
+      {
+        "key": "conductorDamage",
+        "label": "Describe conductor damage",
+        "kind": "text",
+        "when": {
+          "key": "conductorBroken",
+          "value": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "transformer",
+    "title": "Transformer damage",
+    "description": "Record the downed transformer capacity and quantity.",
+    "fields": [
+      {
+        "key": "transformerDown",
+        "label": "Is a transformer down?",
+        "kind": "boolean"
+      },
+      {
+        "key": "transformerKva",
+        "label": "Transformer size (kVA)",
+        "kind": "select",
+        "options": [
+          "5",
+          "10",
+          "15",
+          "25",
+          "37.5",
+          "50",
+          "75",
+          "100"
+        ],
+        "when": {
+          "key": "transformerDown",
+          "value": true
+        }
+      },
+      {
+        "key": "transformerCount",
+        "label": "Transformers down",
+        "kind": "select",
+        "options": [
+          "1",
+          "2",
+          "3"
+        ],
+        "when": {
+          "key": "transformerDown",
+          "value": true
+        }
+      },
+      {
+        "key": "transformerDamage",
+        "label": "Describe transformer damage",
+        "kind": "text",
+        "when": {
+          "key": "transformerDown",
+          "value": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "services",
+    "title": "Service damage",
+    "description": "Check customer service conductors.",
+    "fields": [
+      {
+        "key": "servicesDamaged",
+        "label": "Are any services damaged?",
+        "kind": "boolean"
+      },
+      {
+        "key": "serviceCount",
+        "label": "Number of damaged services",
+        "kind": "count",
+        "when": {
+          "key": "servicesDamaged",
+          "value": true
+        },
+        "minimum": 1
+      },
+      {
+        "key": "serviceSize",
+        "label": "Service conductor size",
+        "kind": "select",
+        "options": [
+          "4/0",
+          "2/0",
+          "1/0",
+          "#2",
+          "#4",
+          "#6"
+        ],
+        "when": {
+          "key": "servicesDamaged",
+          "value": true
+        }
+      },
+      {
+        "key": "serviceConfiguration",
+        "label": "Service configuration",
+        "kind": "select",
+        "options": [
+          "DUPLEX",
+          "TRIPLEX",
+          "QUADRUPLEX"
+        ],
+        "when": {
+          "key": "servicesDamaged",
+          "value": true
+        }
+      },
+      {
+        "key": "serviceDamage",
+        "label": "Describe service damage",
+        "kind": "text",
+        "when": {
+          "key": "servicesDamaged",
+          "value": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "hardware",
+    "title": "Hardware",
+    "description": "Inspect cross arms and insulators.",
+    "fields": [
+      {
+        "key": "hasCrossArm",
+        "label": "Does the pole have a cross arm?",
+        "kind": "boolean"
+      },
+      {
+        "key": "crossArmMaterial",
+        "label": "Cross arm material",
+        "kind": "select",
+        "options": [
+          "WOOD",
+          "METAL",
+          "FIBER"
+        ],
+        "when": {
+          "key": "hasCrossArm",
+          "value": true
+        }
+      },
+      {
+        "key": "crossArmsDamaged",
+        "label": "Are any cross arms damaged?",
+        "kind": "boolean",
+        "when": {
+          "key": "hasCrossArm",
+          "value": true
+        }
+      },
+      {
+        "key": "crossArmCount",
+        "label": "Number of damaged cross arms",
+        "kind": "count",
+        "when": {
+          "key": "crossArmsDamaged",
+          "value": true
+        },
+        "minimum": 1
+      },
+      {
+        "key": "crossArmDamage",
+        "label": "Describe cross arm damage",
+        "kind": "text",
+        "when": {
+          "key": "crossArmsDamaged",
+          "value": true
+        }
+      },
+      {
+        "key": "insulatorsBroken",
+        "label": "Are any insulators broken?",
+        "kind": "boolean"
+      },
+      {
+        "key": "insulatorCount",
+        "label": "Number of broken insulators",
+        "kind": "count",
+        "when": {
+          "key": "insulatorsBroken",
+          "value": true
+        },
+        "minimum": 1
+      },
+      {
+        "key": "insulatorDamage",
+        "label": "Describe insulator damage",
+        "kind": "text",
+        "when": {
+          "key": "insulatorsBroken",
+          "value": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "escalation",
+    "title": "Safety escalation",
+    "description": "Either hazard raises the ticket to critical priority.",
+    "fields": [
+      {
+        "key": "publicDanger",
+        "label": "Is the public in danger?",
+        "kind": "boolean"
+      },
+      {
+        "key": "publicDangerDetails",
+        "label": "Describe the public danger",
+        "kind": "text",
+        "when": {
+          "key": "publicDanger",
+          "value": true
+        }
+      },
+      {
+        "key": "oilLeak",
+        "label": "Is equipment leaking oil?",
+        "kind": "boolean"
+      },
+      {
+        "key": "oilLeakDetails",
+        "label": "Describe the oil leak and environmental impact",
+        "kind": "text",
+        "when": {
+          "key": "oilLeak",
+          "value": true
+        }
+      }
+    ]
+  }
+]

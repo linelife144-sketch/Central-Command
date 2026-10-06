@@ -13,7 +13,7 @@ import { SignalField } from '@/components/common/brand/SignalField';
 const quickActions = [
   { href: '/admin/storms', label: 'Storm workspaces', description: 'Coordinate your response', icon: CloudLightning },
   { href: '/admin/map', label: 'Field overview', description: 'View tickets and crew locations', icon: Route },
-  { href: '/admin/assessment-review', label: 'Review assessments', description: 'Keep fieldwork moving forward', icon: FileCheck2 },
+  { href: '/tickets', label: 'Review ticket assessments', description: 'Open a ticket to review its field assessment', icon: FileCheck2 },
   { href: '/admin/time-review', label: 'Review timesheets', description: 'Manage submitted crew hours', icon: Clock },
 ];
 

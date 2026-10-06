@@ -17,6 +17,10 @@ import {
 import type { AssessmentPhotoType, CapturedAssessmentPhoto } from '@/types';
 
 interface PhotoCaptureProps {
+  photos?: CapturedAssessmentPhoto[];
+  availableTypes?: AssessmentPhotoType[];
+  title?: string;
+  disabled?: boolean;
   ticketId: string;
   requiredTypes?: AssessmentPhotoType[];
   onPhotosCaptured?: (photos: CapturedAssessmentPhoto[]) => void;
@@ -32,24 +36,31 @@ function formatPhotoType(type: AssessmentPhotoType): string {
 
 export function PhotoCapture({
   ticketId,
+  photos: controlledPhotos,
+  availableTypes = ALL_PHOTO_TYPES,
+  title = 'Photo Capture',
+  disabled = false,
   requiredTypes = DEFAULT_REQUIRED_PHOTO_TYPES,
   onPhotosCaptured,
   maxPhotos = 12,
   queueOnCapture = false,
 }: PhotoCaptureProps) {
-  const [photos, setPhotos] = useState<CapturedAssessmentPhoto[]>([]);
+  const [localPhotos, setLocalPhotos] = useState<CapturedAssessmentPhoto[]>([]);
+  const photos = controlledPhotos ?? localPhotos;
+  const setPhotos = (next: CapturedAssessmentPhoto[]) => { setLocalPhotos(next); onPhotosCaptured?.(next); };
   const [selectedType, setSelectedType] = useState<AssessmentPhotoType>(requiredTypes[0] ?? 'OVERVIEW');
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const photosRef = useRef<CapturedAssessmentPhoto[]>([]);
+  const controlledRef = useRef(Boolean(controlledPhotos));
 
   useEffect(() => {
     photosRef.current = photos;
-    onPhotosCaptured?.(photos);
-  }, [onPhotosCaptured, photos]);
+
+  }, [photos]);
 
   useEffect(() => () => {
-    photosRef.current.forEach((photo) => revokeCapturedPhotoPreview(photo));
+    if (!controlledRef.current) photosRef.current.forEach((photo) => revokeCapturedPhotoPreview(photo));
   }, []);
 
   const missingRequiredTypes = useMemo(
@@ -85,7 +96,7 @@ export function PhotoCapture({
           checksumSha256: photo.checksumSha256,
         })),
       });
-      setPhotos((previous) => [...previous, capturedPhoto]);
+      setPhotos([...photos, capturedPhoto]);
       if (capturedPhoto.isDuplicate) {
         toast.warning(`${formatPhotoType(selectedType)} photo captured and flagged as duplicate.`);
       } else {
@@ -107,28 +118,23 @@ export function PhotoCapture({
   };
 
   const handleRemovePhoto = (photoId: string) => {
-    setPhotos((previous) => {
-      const nextPhotos = previous.filter((photo) => photo.id !== photoId);
-      const removedPhoto = previous.find((photo) => photo.id === photoId);
-      if (removedPhoto) {
-        revokeCapturedPhotoPreview(removedPhoto);
-      }
-      return nextPhotos;
-    });
+    const removedPhoto = photos.find(photo => photo.id === photoId);
+    if (removedPhoto) revokeCapturedPhotoPreview(removedPhoto);
+    setPhotos(photos.filter(photo => photo.id !== photoId));
   };
 
   return (
-    <div className="space-y-4">
+    <fieldset disabled={disabled} className="min-w-0 space-y-4">
       <Card>
         <CardHeader className="space-y-2">
-          <CardTitle className="text-lg">Photo Capture</CardTitle>
+          <CardTitle className="text-lg">{title}</CardTitle>
           <p className="text-sm text-slate-600">
             Capture photos with EXIF metadata, GPS coordinates, and image compression.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            {ALL_PHOTO_TYPES.map((type) => (
+            {availableTypes.map((type) => (
               <Button
                 key={type}
                 variant={selectedType === type ? 'default' : 'outline'}
@@ -193,6 +199,6 @@ export function PhotoCapture({
       </Card>
 
       <PhotoGallery photos={photos} onRemovePhoto={handleRemovePhoto} />
-    </div>
+    </fieldset>
   );
 }

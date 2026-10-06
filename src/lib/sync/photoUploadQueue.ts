@@ -23,7 +23,7 @@ export interface PhotoUploadProcessResult {
 }
 
 interface PhotoUploadQueueDependencies {
-  addLocalPhoto: (photo: Omit<LocalPhoto, 'id'>) => Promise<string>;
+  addLocalPhoto: (photo: Omit<LocalPhoto, 'id'> & { id?: string }) => Promise<string>;
   getPendingLocalPhotos: () => Promise<LocalPhoto[]>;
   markLocalPhotoUploaded: (id: string) => Promise<void>;
   markLocalPhotoFailed: (id: string) => Promise<void>;
@@ -100,6 +100,7 @@ export function createPhotoUploadQueue(
       const preview = await dependencies.generatePreview(photo.file);
 
       return dependencies.addLocalPhoto({
+        id: photo.id,
         file: photo.file,
         preview: preview || photo.previewUrl,
         type: photo.type,

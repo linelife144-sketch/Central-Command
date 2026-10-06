@@ -18,11 +18,13 @@ import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { StatusUpdater } from '@/components/features/tickets/StatusUpdater';
 import { UtilityTicketDetails } from '@/components/features/tickets/UtilityTicketDetails';
 import { StatusHistoryTimeline } from '@/components/features/tickets/StatusHistoryTimeline';
+import { TicketPrintButton } from '@/components/features/tickets/TicketPrintButton';
 import { TicketAssessments } from '@/components/features/tickets/TicketAssessments';
+import { AssessmentReviewList } from '@/components/features/assessments';
 
 export default function TicketDetailPage() {
     const params = useParams();
-    const { profile: user } = useAuth();
+    const { profile: user, can } = useAuth();
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [assigneeName, setAssigneeName] = useState('');
@@ -86,6 +88,7 @@ export default function TicketDetailPage() {
                         <TicketImportanceBadge isImportant={ticket.is_important} />
                         <StatusBadge status={ticket.status} />
                     </div>
+                    <TicketPrintButton ticket={ticket} assigneeName={assigneeName || (userRole === 'contractor' ? `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() : undefined)} />
                     {user && (
                         <StatusUpdater
                             ticket={ticket}
@@ -110,12 +113,26 @@ export default function TicketDetailPage() {
 
                     <Tabs defaultValue="details">
                         <TabsList>
-                            <TabsTrigger value="details">Details</TabsTrigger>
-                            <TabsTrigger value="assessments">Assessments</TabsTrigger>
+                            <TabsTrigger value="details">Ticket & assessment</TabsTrigger>
                             <TabsTrigger value="history">History</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details" className="space-y-4 mt-4">
                             <UtilityTicketDetails ticket={ticket} />
+                            <TicketAssessments ticket={ticket} canCreate={userRole === 'contractor'} />
+                            {userRole === 'admin' && can('admin.assessments.view') && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Assessment review</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <AssessmentReviewList
+                                            reviewerId={user?.id}
+                                            canEdit={can('admin.assessments.edit')}
+                                            ticketId={ticket.id}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            )}
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Location & Contact</CardTitle>
@@ -133,9 +150,6 @@ export default function TicketDetailPage() {
                                     )}
                                 </CardContent>
                             </Card>
-                        </TabsContent>
-                        <TabsContent value="assessments">
-                            <TicketAssessments ticket={ticket} canCreate={userRole === 'contractor'} />
                         </TabsContent>
                         <TabsContent value="history">
                             <div className="mt-4">

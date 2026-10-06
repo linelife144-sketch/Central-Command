@@ -1,3 +1,4 @@
+import type { FieldAssessment } from '@/lib/schemas/fieldAssessment';
 import type { TimeInterval, PaySegment } from '@/lib/compensation/validation';
 // Central Command - Type Definitions
 
@@ -277,6 +278,8 @@ export type PolicyFlag =
 
 // Assessment Types
 export interface DamageAssessment {
+  photo_evidence?: import('@/lib/schemas/fieldAssessment').AssessmentPhotoEvidence[];
+  field_assessment?: FieldAssessment;
   id: string;
   ticket_id: string;
   contractor_id: string;
@@ -446,6 +449,7 @@ export interface CapturedPhotoMetadata {
 }
 
 export interface CapturedAssessmentPhoto {
+  sectionKey?: string;
   id: string;
   ticketId: string;
   type: AssessmentPhotoType;

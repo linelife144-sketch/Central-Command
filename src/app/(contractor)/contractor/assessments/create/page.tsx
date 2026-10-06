@@ -59,13 +59,14 @@ function AssessmentCreateInner() {
     <div className="space-y-6">
       <PageHeader
         title="Damage Assessment"
-        description="Document safety conditions, equipment impact, and photo evidence for ticket review."
+        description="Complete the required top-down site assessment and photo evidence for your assigned ticket."
         showBackButton
         backHref={backHref}
       />
 
       <div className="cc-work-panel p-4 sm:p-5">
         {ticketId ? <AssessmentForm
+          key={`${contractorId ?? 'resolving'}:${ticketId}`}
           ticketId={ticketId}
           contractorId={contractorId}
           onSaved={() => {
