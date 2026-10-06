@@ -1,5 +1,22 @@
 # Implementation Plan
 
+## Active Phase 4 task — Official Entergy forms (2026-10-06, Codex /root)
+
+Create independent ticket-linked Clean-up and Damage assessment forms from the supplied scanned Entergy Clean-up Form and Distribution Change Order (revision 02-25-2019). Preserve every printed input and option, including six equipment rows and three customer-transfer rows, with room for additional rows. Printed operational instructions are reference content, not authority to contact anyone or perform fieldwork.
+
+Order: visually inventory the sources; define shared source-grounded fields/validation; add ticket-scoped Supabase records and identity-scoped offline storage; build responsive blue/navy/gold field sheets and ticket readback; include submitted records in completed-ticket reports; verify source coverage, validation, persistence, access controls, mobile/desktop layout and production build; update progress and Graphify. Preserve the existing required field-assessment, GPS/photo, crew and two-stage ticket review workflow. Entergy forms are attached utility records, not replacements for the ticket approval gates.
+
+Progress: implementation and validation completed by Codex /root. Both source PDFs were visually inventoried as one-page scans without text or AcroForm fields. The user subsequently requested removal of the lighting map section; its drawing, legend, readback/report rendering and submission requirement were removed. Lighting wattage/type inputs remain. Every other printed input and option is represented. No Git operations were performed.
+
+- [x] Build separate Clean-up and Damage assessment sheets with all source fields/options, six initial install/remove equipment rows and three customer-transfer rows, plus additional rows. — Codex /root
+- [x] Add ticket entry points, saved/submitted readback, actor-scoped durable drafts, reconnect processing, private linked GPS photo evidence, revision conflict protection and submitted-record report attachments. — Codex /root
+- [x] Activate and verify live migrations `20261006175056_entergy_official_ticket_forms` and `20261006175923_remove_entergy_lighting_map` on `xcvacmreerrypygpritq`; merge generated table/RPC types. — Codex /root
+- [x] Pass 627 tests across 113 files (51 focused tests across six files), TypeScript, scoped ESLint, the isolated production webpack build with 50 generated pages, 35 isolated database checks and 17 live rollback scenario groups. — Codex /root
+- [x] Inspect desktop and 390px phone component previews; verify explicit No, independent checkbox choices, leading-zero identifiers, added rows and absence of the removed map/legend. Refresh Graphify with AST-only extraction. — Codex /root
+- [ ] Real signed-in contractor/staff acceptance on the same eligible ticket, physical GPS/camera uploads, reconnect/cross-device readback and print-dialog acceptance; hosted frontend deployment. These are separate from the completed implementation and simulated-claim SQL/component-preview evidence. — Codex /root
+
+Evidence: `docs/testing/entergy-source-coverage.md`, `docs/testing/entergy-forms-validation.md`, `docs/testing/entergy-forms-database.json`, `docs/testing/entergy-forms-live.json` and `docs/testing/entergy-previews/`.
+
 ## Overview
 
 Revamp the Central Command design system so the UI feels reactive and premium — layered elevation, brand-tinted focus/hover accents, and consistent motion — while keeping the exact existing Grid Electric color palette (`#2ea3f2` / `#002168` / `#ffc038` and the semantic set) unchanged.
@@ -1629,3 +1646,33 @@ Operational acceptance remains open: no active Admin team lead accounts exist ye
 The photo/report implementation is complete locally and integrated with the newer crew/draft/two-stage review workflow. Live reinspection supersedes the earlier pending-activation note: the database now has the field sheet, strict section-photo validator and private assessment bucket. No additional live schema write was made by this continuation. Three live validator checks (no damage accepted, missing pole photo rejected, linked pole photo accepted) pass without rows written.
 
 Validation: 98 focused tests/11 files; 36 isolated workflow database checks; TypeScript/scoped ESLint; production webpack build of 50 pages; three-page Letter sample PDF visually inspected; AST Graphify refreshed. The wider suite reports 558 passes and eight failures in ticket assignment/status tests. Real signed-in photo capture/upload, reconnect/cross-device evidence, native print-dialog acceptance and hosted frontend deployment remain open. See the latest section of docs/testing/field-assessments-validation.md and docs/testing/ticket-workflow-validation.md.
+
+## Phase 4 — Auth/profile and ticket fetch error handling — 2026-10-06 (Cline)
+
+The reported profile/ticket errors are browser fetch failures, not evidence of a bad Supabase project configuration: the project is ACTIVE_HEALTHY; Auth health and Data API preflight requests succeed; the configured live-connection verification reads the active Super Admin profile; and the browser edge-log sample shows profile/Auth requests succeeding with HTTP 200. No matching failed profile or ticket request was present in the inspected log window, so the exact transient browser/network cause cannot be established from this trace alone.
+
+Corrected the actionable client behavior: structured logging now exposes native Error messages, metadata, serialization, and stack traces; ticket-detail fetch failures render an actionable, retryable connection error instead of incorrectly becoming a 404; only an explicit PostgREST zero-row response renders not-found. Auth permission state remains fail-closed. Added regression tests for profile diagnostics, ticket retry/recovery, and genuine not-found handling.
+
+Validation: TypeScript, scoped ESLint, diff check, and 12 focused tests across error handling, AuthProvider, and ticket detail pass. — Cline
+
+## Phase 4 — Contractor dashboard team & crew panel — 2026-10-06 (Cline)
+
+Moved the dispatch dashboard queue off the Admin Dashboard and onto `/contractor/dashboard` as `DashboardDispatch`. It shows active tickets assigned to the authenticated contractor, filters/searches that personal queue, supports direct `dispatchTicketId` selection, and displays each ticket's team lead, crew, driver, and assessor. The contractor dashboard endpoint uses its existing verified contractor identity and RLS-filtered personal ticket query; server-side name lookups are limited to lead/crew IDs referenced by those tickets. The contractor queue is read-only: assignment-changing RPC authorization remains unchanged and management-only.
+
+Updated contractor ticket-list and ticket-detail shortcuts to `/contractor/dashboard?dispatchTicketId=<id>#dispatch`; management ticket-list actions remain on shared ticket details rather than linking to the contractor-only portal. Removed the misplaced Admin Dashboard dispatch queue/action and repaired the ticket-detail assessment hash scroll to select the Assessment & review tab. Added component coverage for direct ticket deep links, invalid ticket links, filtering closed tickets, and the empty queue.
+
+Validation: 12 focused dispatch/ticket-detail/workflow tests pass; TypeScript, scoped ESLint, scoped diff check, obsolete-admin-route search, and Graphify AST update pass. `/contractor/dashboard` is the only dashboard consumer of `DashboardDispatch`; no obsolete admin deep links remain. — Cline
+
+## Ticket-detail assigned ticket queue — 2026-10-06 (Codex /root)
+
+Replaced the assessment work panel in the ticket-details view with a queue scoped to the same crew, team lead, or assigned contractor. Added crew/team ticket reads with IndexedDB caching and an offline cache fallback. Staff keep assessment and review controls in the staff-only Assessment tab; contractors see assessment actions only from the field-work footer when their ticket state and assignment permit them.
+
+Validation at the time of this entry: TypeScript, targeted ticket tests, full-suite verification, browser review, and local workflow database checks are recorded in the follow-on implementation below.
+
+## Simplified contractor ticket work and staff review — 2026-10-06 (Codex /root)
+
+Removed the procedural SOP/stage display from `TicketAssessments` while retaining actual assessment evidence and authorized staff review controls. Centralized contractor-facing status as Open/Closed across the ticket experiences and retained same-crew/team assigned-ticket context on detail pages. Contractors no longer receive staff review/history tabs. Field actions live at the bottom of ticket content: Start performs GPS validation and the guarded Assigned → En Route transition before opening platform directions; return-to-app arrival checks verify the configured geofence and unlock assessment work; correction/draft paths remain specific to the assigned assessor. Legacy pre-submission `COMPLETE` tickets remain actionable, and open records without a valid action receive a clear next-step message rather than an empty panel.
+
+Submission/review, two-stage approval, durable offline field-progress replay, and the existing utility handoff remain governed by the Phase 4 workflow infrastructure. Prepared additive draft-validation migration `20261006140000_allow_progressive_ticket_assessment_drafts.sql` remains local and unapplied to the live database in this pass.
+
+Validation: `npm test` passes 598 tests across 110 files; `npm run typecheck` passes; targeted ESLint passes for `StatusUpdateFlow`, its tests, and `StatusHistoryTimeline`; the isolated ticket-workflow database harness passes 41 checks; and an isolated production webpack build compiles, completes TypeScript, and generates all 50 pages. The local contractor login at `192.168.1.102:3000` opened the requested ticket and verified the Open label, same-crew assigned-ticket list, and SOP absence without mutating the QA record (which is marked “workflow test only; no field dispatch”). The Super Admin sign-in in a separate Norton Neo session was rejected as invalid credentials, so authenticated staff review/approval and full browser lifecycle remain unverified. No Start/GPS, assessment submission, approval, or utility handoff was performed against live records. — Codex /root

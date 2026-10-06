@@ -95,12 +95,24 @@ export function getErrorLogContext(error: unknown): Record<string, unknown> {
   const serialized = stringifyUnknown(error);
 
   if (error instanceof Error) {
+    const errorLike = error as Error & ErrorWithMetadata;
+    const originalMessage = error.message || message;
+
     return {
       name: error.name,
-      message,
+      message: originalMessage,
+      details: errorLike.details,
+      hint: errorLike.hint,
       code,
       status,
-      serialized,
+      serialized: stringifyUnknown({
+        name: error.name,
+        message: originalMessage,
+        details: errorLike.details,
+        hint: errorLike.hint,
+        code,
+        status,
+      }),
       stack: error.stack,
     };
   }

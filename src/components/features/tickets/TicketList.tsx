@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
 import { DataTable, Column } from '@/components/common/data-display/DataTable';
@@ -11,7 +11,7 @@ import { TicketImportanceBadge } from './TicketImportanceBadge';
 import { formatAddress, formatDateTime } from '@/lib/utils/formatters';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus, UserPlus } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TicketFilters, TicketFiltersState } from './TicketFilters';
 import { TicketCard } from './TicketCard';
@@ -19,6 +19,9 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
 import { contractorService } from '@/lib/services/contractorService';
 import { getFeederFromPayload } from '@/lib/tickets/templates';
+import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
+import { supabase } from '@/lib/supabase/client';
+import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
 
 interface TicketListProps {
     userRole: 'admin' | 'contractor';
@@ -27,8 +30,8 @@ interface TicketListProps {
 
 export function TicketList({ userRole, userId }: TicketListProps) {
     const { can, profile } = useAuth();
+    const profileRole = profile?.role;
     const canCreate = ['CEO','SUPER_ADMIN'].includes(profile?.role??'') && can('admin.tickets.edit');
-    const canEdit = userRole === 'admin' && can('admin.tickets.edit');
     const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [feedersByTicketId, setFeedersByTicketId] = useState<Record<string, string>>({});
@@ -40,8 +43,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
     });
     const router = useRouter();
 
-    useEffect(() => {
-        async function loadTickets() {
+    const loadTickets = useCallback(async () => {
             setIsLoading(true);
             try {
                 let data: Ticket[];
@@ -51,7 +53,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                     data = await ticketService.getTickets();
                 }
                 setTickets(Array.isArray(data) ? data : []);
-                if (userRole === 'admin' && profile?.role !== 'ADMIN') {
+                if (userRole === 'admin' && profileRole !== 'ADMIN') {
                     try {
                         const contractors = await contractorService.listContractors();
                         setAssigneeNames(Object.fromEntries(contractors.map(c => [c.id, c.fullName])));
@@ -74,9 +76,20 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             } finally {
                 setIsLoading(false);
             }
-        }
-        loadTickets();
-    }, [userRole, userId, profile?.role]);
+    }, [userRole, userId, profileRole]);
+
+    useEffect(() => {
+        void Promise.resolve().then(loadTickets);
+        const refresh = () => void loadTickets();
+        window.addEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+        const channel = supabase.channel(`ticket-list-${userRole}-${userId ?? 'staff'}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, refresh)
+            .subscribe();
+        return () => {
+            window.removeEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+            void supabase.removeChannel(channel);
+        };
+    }, [loadTickets, userRole, userId]);
 
     const filteredTickets = useMemo(() => {
         const search = filters.search.trim().toLowerCase();
@@ -91,12 +104,16 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                 ticket.assigned_to ? assigneeNames[ticket.assigned_to] : '',
             ].filter(Boolean).join(' ').toLowerCase().includes(search);
 
-            const matchesStatus = filters.status === "ALL" || ticket.status === filters.status;
+            const matchesStatus = filters.status === "ALL" || (userRole === 'contractor'
+                ? getContractorTicketStatus(ticket.status) === filters.status
+                : filters.status === 'ON_SITE'
+                    ? ['ON_SITE', 'IN_PROGRESS', 'COMPLETE'].includes(ticket.status)
+                    : ticket.status === filters.status);
             const matchesImportance = filters.importance === "ALL" || (filters.importance === "IMPORTANT" ? ticket.is_important : !ticket.is_important);
 
             return matchesSearch && matchesStatus && matchesImportance;
         });
-    }, [tickets, filters, assigneeNames]);
+    }, [tickets, filters, assigneeNames, userRole]);
 
     const columns: Column<Ticket>[] = [
         {
@@ -135,7 +152,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         {
             key: 'status',
             header: 'Status',
-            cell: (ticket) => <TicketStatusBadge status={ticket.status} />,
+            cell: (ticket) => <TicketStatusBadge status={ticket.status} audienceRole={userRole === 'contractor' ? 'CONTRACTOR' : 'STAFF'} reviewStage={ticket.review_stage} utilitySubmittedAt={ticket.utility_submitted_at} />,
         },
         {
             key: 'location',
@@ -157,22 +174,28 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             cell: (ticket) => (
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/tickets/${ticket.id}#assessment`}>
-                            Assessment
+                        <Link href={userRole === 'contractor' ? `/tickets/${ticket.id}` : `/tickets/${ticket.id}#assessment`}>
+                            {userRole === 'contractor' ? 'Open ticket' : 'Assessment'}
                         </Link>
                     </Button>
-                    {canEdit && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Assign Ticket"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/admin/dashboard?dispatchTicketId=${ticket.id}#dispatch`);
-                            }}
-                        >
-                            <UserPlus className="h-4 w-4" />
-                        </Button>
+                    {['DRAFT', 'ASSIGNED', 'NEEDS_REWORK'].includes(ticket.status) && (
+                        userRole === 'contractor' ? (
+                            <Button variant="ghost" size="icon" asChild title="View team and crew">
+                                <Link
+                                    href={`/contractor/dashboard?dispatchTicketId=${encodeURIComponent(ticket.id)}#dispatch`}
+                                    aria-label={`View team and crew for ticket ${ticket.ticket_number}`}
+                                    onClick={event => event.stopPropagation()}
+                                >
+                                    <Users className="size-4" />
+                                </Link>
+                            </Button>
+                        ) : can('admin.tickets.edit') ? (
+                            <Button variant="ghost" size="sm" asChild title="Open ticket dispatch details">
+                                <Link href={`/tickets/${ticket.id}`} onClick={event => event.stopPropagation()}>
+                                    Dispatch details
+                                </Link>
+                            </Button>
+                        ) : null
                     )}
                 </div>
             ),
@@ -196,7 +219,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                 )}
             </div>
 
-            <TicketFilters onFilterChange={setFilters} />
+            <TicketFilters onFilterChange={setFilters} userRole={userRole} />
 
             {/* Desktop View */}
             <div className="hidden md:block">
@@ -221,6 +244,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                         <TicketCard
                             key={ticket.id}
                             ticket={ticket}
+                            audienceRole={userRole === 'contractor' ? 'CONTRACTOR' : 'STAFF'}
                             assigneeName={ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : undefined) : undefined}
                             onClick={handleRowClick}
                         />

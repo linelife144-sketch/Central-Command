@@ -36,22 +36,13 @@ export function isValidTransition(
     }
   }
 
-  // Contractor Transitions
-  if (role === 'TEAM_LEAD' || role === 'CONTRACTOR') {
+  // Contractors use Start and GPS arrival. Assessment save/submit owns all later changes.
+  if (role === 'CONTRACTOR') {
     switch (current) {
       case 'ASSIGNED':
         return next === 'IN_ROUTE';
       case 'IN_ROUTE':
         return next === 'ON_SITE';
-      case 'ON_SITE':
-        return next === 'IN_PROGRESS';
-      case 'IN_PROGRESS':
-        return next === 'COMPLETE';
-      case 'COMPLETE':
-        // Contractor submission leads to system review
-        return next === 'PENDING_REVIEW';
-      case 'NEEDS_REWORK':
-        return next === 'IN_PROGRESS';
       default:
         return false;
     }

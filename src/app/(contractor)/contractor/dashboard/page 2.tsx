@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, CircleCheck, Clock, CloudLightning, FileCheck2, MapPin, Radio, Receipt, RefreshCw, Ticket, Wallet } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, CircleCheck, Clock, CloudLightning, MapPin, Radio, Receipt, RefreshCw, Ticket, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
+import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { SignalField } from '@/components/common/brand/SignalField';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { formatCurrency, formatDateTime, formatDuration } from '@/lib/utils/formatters';
@@ -17,7 +18,6 @@ const actions = [
   { href: '/contractor/time', label: 'Time tracking', description: 'Clock in, clock out, and review your hours', icon: Clock },
   { href: '/contractor/map', label: 'Field map', description: 'Find your assigned work in the field', icon: MapPin },
   { href: '/contractor/expenses/create', label: 'Add an expense', description: 'Capture a receipt and submit your costs', icon: Receipt },
-  { href: '/contractor/assessments/create', label: 'New assessment', description: 'Record damage from your assigned ticket', icon: FileCheck2 },
 ];
 
 function LoadingPanel() {
@@ -122,10 +122,10 @@ export default function ContractorDashboardPage() {
           {loading ? <LoadingPanel /> : !data?.tickets ? <p className="py-8 text-sm text-muted-foreground">Your assigned work could not be loaded.</p> : data.tickets.recent.length ? <div className="divide-y divide-border">
             {data.tickets.recent.map(ticket => <Link key={ticket.id} href={`/tickets/${ticket.id}`} className={styles.ticket}>
               <span className={styles.ticketIcon}><Ticket className="size-4" /></span>
-              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm text-grid-navy">#{ticket.ticket_number}</strong>{ticket.is_important && <span className={styles.important}>Important</span>}<StatusBadge status={ticket.status} size="sm" /></div><p className="mt-1.5 text-sm text-grid-navy">{[ticket.address, ticket.city, ticket.state].filter(Boolean).join(', ') || 'Location not provided'}</p><p className="mt-1 text-xs text-muted-foreground">{ticket.utility_client}{ticket.due_date ? ` · Due ${formatDateTime(ticket.due_date)}` : ' · No due date set'}</p></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm text-grid-navy">#{ticket.ticket_number}</strong>{ticket.is_important && <span className={styles.important}>Important</span>}<TicketStatusBadge status={ticket.status} audienceRole="CONTRACTOR" size="sm" /></div><p className="mt-1.5 text-sm text-grid-navy">{[ticket.address, ticket.city, ticket.state].filter(Boolean).join(', ') || 'Location not provided'}</p><p className="mt-1 text-xs text-muted-foreground">{ticket.utility_client}{ticket.due_date ? ` · Due ${formatDateTime(ticket.due_date)}` : ' · No due date set'}</p></div>
               <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
             </Link>)}
-          </div> : <div className={styles.empty}><div className={styles.emptyIcon}><CircleCheck className="size-7" /></div><h3>No open assignments.</h3><p>{data.tickets.completed ? 'Your assigned work is complete. New tickets will appear here when dispatched to you.' : 'You’re set up and ready. Tickets will appear here when your team assigns work to you.'}</p><Button asChild variant="outline" size="sm"><Link href="/tickets">View my tickets<ArrowRight className="size-4" /></Link></Button></div>}
+          </div> : <div className={styles.empty}><div className={styles.emptyIcon}><CircleCheck className="size-7" /></div><h3>No open assignments.</h3><p>{data.tickets.closed ? 'Your assigned work is closed. New tickets will appear here when your team assigns work to you.' : 'You’re set up and ready. Tickets will appear here when your team assigns work to you.'}</p><Button asChild variant="outline" size="sm"><Link href="/tickets">View my tickets<ArrowRight className="size-4" /></Link></Button></div>}
         </CardContent>
       </Card>
       <Card>
@@ -141,7 +141,6 @@ export default function ContractorDashboardPage() {
         <CardContent className="space-y-4">
           <Link href="/contractor/time" className={styles.reviewRow}><span>Time entries in review<small>Completed in the last 7 days</small></span><strong>{value(!!data?.time, data?.time?.pendingCount ?? 0)}</strong></Link>
           <Link href="/contractor/expenses" className={styles.reviewRow}><span>Expense reports in review<small>All submitted reports</small></span><strong>{value(!!data?.expenses, data?.expenses?.pendingCount ?? 0)}</strong></Link>
-          <Link href="/tickets" className={styles.reviewRow}><span>Tickets in review<small>Awaiting your team’s review</small></span><strong>{value(!!data?.tickets, data?.tickets?.pendingReview ?? 0)}</strong></Link>
           <Link href="/contractor/expenses" className={styles.reviewRow}><span>Approved expenses<small>Approved reports awaiting payment</small></span><strong>{value(!!data?.expenses, formatCurrency(data?.expenses?.approvedAmount ?? 0))}</strong></Link>
           {!!data?.expenses?.draftCount && <Link href="/contractor/expenses" className="cc-dispatch-link"><Receipt className="size-4" />{data.expenses.draftCount} draft expense {data.expenses.draftCount === 1 ? 'report' : 'reports'}<ArrowUpRight className="ml-auto size-4" /></Link>}
           <p className="text-xs leading-relaxed text-muted-foreground">Wages and approved expenses are review totals. Payment is handled separately.</p>

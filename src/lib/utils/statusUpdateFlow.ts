@@ -13,21 +13,6 @@ const FIELD_STATUS_TRANSITIONS: Record<string, Omit<FieldStatusTransition, 'curr
     actionLabel: 'Start Ticket',
     requiresGeofence: false,
   },
-  IN_ROUTE: {
-    nextStatus: 'ON_SITE',
-    actionLabel: 'Mark On Site',
-    requiresGeofence: true,
-  },
-  NEEDS_REWORK: {
-    nextStatus: 'IN_PROGRESS',
-    actionLabel: 'Begin corrections',
-    requiresGeofence: true,
-  },
-  ON_SITE: {
-    nextStatus: 'IN_PROGRESS',
-    actionLabel: 'Begin assessment',
-    requiresGeofence: true,
-  },
 };
 
 export function getFieldStatusTransition(currentStatus: TicketStatus): FieldStatusTransition | null {
@@ -43,16 +28,26 @@ export function getFieldStatusTransition(currentStatus: TicketStatus): FieldStat
 }
 
 export function isFieldStatusFlowStep(status: TicketStatus): boolean {
-  return status === 'ASSIGNED' || status === 'IN_ROUTE' || status === 'ON_SITE' || status === 'COMPLETE';
+  return ['ASSIGNED', 'IN_ROUTE', 'ON_SITE', 'IN_PROGRESS', 'COMPLETE'].includes(status);
 }
 
-export type ContractorTicketStatus = 'OPEN' | 'COMPLETE';
+export type ContractorTicketStatus = 'OPEN' | 'CLOSED';
 
 /**
- * Contractors only ever see "Open" or "Complete". Every in-flight step
- * (assigned, en route, on site, in progress, under review, rework) is "Open";
- * a ticket becomes "Complete" after final approval by the CEO or storm manager.
+ * Contractors only see whether they still have an action to take. Review and
+ * approval stages are closed from their view; returned corrections reopen it.
  */
 export function getContractorTicketStatus(status: string): ContractorTicketStatus {
-  return ['APPROVED', 'CLOSED', 'ARCHIVED'].includes(status) ? 'COMPLETE' : 'OPEN';
+  return ['PENDING_REVIEW', 'APPROVED', 'CLOSED', 'ARCHIVED', 'EXPIRED'].includes(status) ? 'CLOSED' : 'OPEN';
+}
+
+export function getStaffTicketStatusLabel(status: string, reviewStage?: string | null, utilitySubmittedAt?: string | null): string {
+  const normalizedStage = reviewStage?.toUpperCase();
+  if (utilitySubmittedAt || normalizedStage === 'UTILITY_SUBMITTED') return 'Submitted to utility';
+  if (status === 'PENDING_REVIEW' && normalizedStage === 'FINAL_REVIEW') return 'Final review · CEO / Super Admin';
+  if (status === 'PENDING_REVIEW') return 'Review · team lead';
+  if (status === 'NEEDS_REWORK') return 'Corrections';
+  if (status === 'IN_PROGRESS' || status === 'COMPLETE' || status === 'ON_SITE') return 'On site';
+  if (status === 'IN_ROUTE') return 'En route';
+  return status.toLowerCase().split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }

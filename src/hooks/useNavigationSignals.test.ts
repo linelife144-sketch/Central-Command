@@ -50,8 +50,8 @@ describe('useNavigationSignals helpers', () => {
     ] as unknown as Ticket[]);
 
     expect(counts).toEqual({
-      tickets: 3,
-      reviews: 2,
+      tickets: 2,
+      reviews: 0,
       storms: 0,
     });
   });

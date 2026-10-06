@@ -19,17 +19,25 @@ import { UtilityTicketDetails } from '@/components/features/tickets/UtilityTicke
 import { StatusHistoryTimeline } from '@/components/features/tickets/StatusHistoryTimeline';
 import { TicketPrintButton } from '@/components/features/tickets/TicketPrintButton';
 import { TicketAssessments } from '@/components/features/tickets/TicketAssessments';
+import { TicketEntergyForms } from '@/components/features/tickets/TicketEntergyForms';
+import { AssignedTicketsPanel } from '@/components/features/tickets/AssignedTicketsPanel';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useContractorId } from '@/hooks/useContractorId';
 import { ticketAssessmentWorkflow } from '@/lib/services/ticketAssessmentWorkflow';
+import { getErrorLogContext, getErrorMessage } from '@/lib/utils/errorHandling';
+import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
+import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
+import { supabase } from '@/lib/supabase/client';
 
 export default function TicketDetailPage() {
     const params = useParams();
-    const { profile: user,can } = useAuth();
+    const { profile: user } = useAuth();
     const {contractorId}=useContractorId(user?.role==='CONTRACTOR'?user.id:undefined);
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [ticketNotFound, setTicketNotFound] = useState(false);
     const [assigneeName, setAssigneeName] = useState('');
     const [teamLeadName, setTeamLeadName] = useState('');
     const [crewName, setCrewName] = useState('');
@@ -56,11 +64,27 @@ export default function TicketDetailPage() {
 
     const loadTicket = useCallback(async () => {
         if (!params.id) return;
+        setIsLoading(true);
+        setTicket(null);
+        setLoadError(null);
+        setTicketNotFound(false);
         try {
             const data = await ticketService.getTicketById(params.id as string);
             setTicket(data);
         } catch (error) {
-            console.error('Failed to load ticket:', error);
+            const missingTicket = typeof error === 'object'
+                && error !== null
+                && 'code' in error
+                && error.code === 'PGRST116'
+                && 'details' in error
+                && typeof error.details === 'string'
+                && /contains 0 rows/i.test(error.details);
+            if (missingTicket) {
+                setTicketNotFound(true);
+            } else {
+                console.error('Failed to load ticket:', getErrorLogContext(error));
+                setLoadError(getErrorMessage(error, 'Unable to load this ticket. Please try again.'));
+            }
         } finally {
             setIsLoading(false);
         }
@@ -68,10 +92,33 @@ export default function TicketDetailPage() {
 
     useEffect(() => {
         void Promise.resolve().then(loadTicket);
-    }, [loadTicket]);
+    }, [loadTicket, params.id]);
 
-    const handleStatusUpdated = () => {
-        loadTicket();
+    useEffect(() => {
+        const refresh = () => void loadTicket();
+        window.addEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+        const channel = supabase.channel(`ticket-detail-${params.id}`)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets', filter: `id=eq.${params.id}` }, refresh)
+            .subscribe();
+        return () => {
+            window.removeEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+            void supabase.removeChannel(channel);
+        };
+    }, [loadTicket, params.id]);
+
+    useEffect(() => {
+        if (!['#assessment', '#entergy-forms'].includes(window.location.hash) || !ticket || isLoading) return;
+        const firstFrame = window.requestAnimationFrame(() => {
+            setTab(user?.role === 'CONTRACTOR' ? 'details' : 'assessment');
+            window.requestAnimationFrame(() => {
+                document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: 'start' });
+            });
+        });
+        return () => window.cancelAnimationFrame(firstFrame);
+    }, [ticket, isLoading, user?.role]);
+
+    const handleStatusUpdated = async () => {
+        await loadTicket();
         setRefreshKey(prev => prev + 1);
     };
 
@@ -79,9 +126,20 @@ export default function TicketDetailPage() {
         return <TicketDetailSkeleton />;
     }
 
-    if (!ticket) {
+    if (!ticket && ticketNotFound) {
         return notFound();
     }
+
+    if (!ticket && loadError) {
+        return (
+            <div role="alert" className="space-y-4 rounded-xl border border-grid-danger/20 bg-grid-danger-soft p-5 text-grid-danger-ink">
+                <p>{loadError}</p>
+                <Button variant="outline" onClick={() => void loadTicket()}>Try again</Button>
+            </div>
+        );
+    }
+
+    if (!ticket) return <TicketDetailSkeleton />;
 
     if (user?.role==='CONTRACTOR' && !contractorId) return <p role="status">Verifying your crew access…</p>;
     if (user?.role==='CONTRACTOR' && ticket.assigned_to!==contractorId && ticket.assigned_driver_id!==contractorId || user?.role==='ADMIN' && ticket.team_lead_id!==user.id) return <p role="alert">This ticket is not assigned to your team or crew.</p>;
@@ -95,12 +153,12 @@ export default function TicketDetailPage() {
                 showBackButton={true}
             >
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-                    <Button asChild variant="accent"><Link onClick={()=>setTab('details')} href={['ON_SITE','IN_PROGRESS','NEEDS_REWORK'].includes(ticket.status)&&(user?.role==='CONTRACTOR'&&contractorId===ticket.assigned_to||['CEO','SUPER_ADMIN'].includes(user?.role??'')&&can('admin.assessments.edit'))?`/tickets/${ticket.id}/assessment`:'#assessment'}>Assessment</Link></Button>
+                    {user?.role !== 'CONTRACTOR' && <Button variant="accent" onClick={() => setTab('assessment')}>Assessment record</Button>}
                     <div className="flex gap-2">
                         <TicketImportanceBadge isImportant={ticket.is_important} />
-                        <TicketStatusBadge status={ticket.status} />
+                        <TicketStatusBadge status={ticket.status} audienceRole={user?.role === 'CONTRACTOR' ? 'CONTRACTOR' : 'STAFF'} reviewStage={ticket.review_stage} utilitySubmittedAt={ticket.utility_submitted_at} />
                     </div>
-                    <TicketPrintButton ticket={ticket} assigneeName={assigneeName || (userRole === 'contractor' ? `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() : undefined)} />
+                    {user?.role !== 'CONTRACTOR' && <TicketPrintButton ticket={ticket} assigneeName={assigneeName || `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim()} />}
 
                 </div>
             </PageHeader>
@@ -117,13 +175,20 @@ export default function TicketDetailPage() {
                     </Card>
 
                     <Tabs value={tab} onValueChange={setTab}>
-                        <TabsList>
-                            <TabsTrigger value="details">Ticket & assessment</TabsTrigger>
+                        {user?.role !== 'CONTRACTOR' && <TabsList>
+                            <TabsTrigger value="details">Ticket details</TabsTrigger>
+                            <TabsTrigger value="assessment">Assessment</TabsTrigger>
                             <TabsTrigger value="history">History</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="details" className="space-y-4 mt-4">
+                        </TabsList>}
+                        <TabsContent value="details" className="mt-4 space-y-4">
                             <UtilityTicketDetails ticket={ticket} />
-                            <TicketAssessments ticket={ticket} onChanged={handleStatusUpdated} />
+                            <AssignedTicketsPanel
+                                ticket={ticket}
+                                userRole={userRole}
+                                contractorId={contractorId}
+                                teamLeadName={teamLeadName}
+                                crewName={crewName}
+                            />
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Location & Contact</CardTitle>
@@ -141,17 +206,24 @@ export default function TicketDetailPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                            {user?.role === 'CONTRACTOR' && <TicketAssessments ticket={ticket} onChanged={handleStatusUpdated} />}
+                            {user?.role === 'CONTRACTOR' && <TicketEntergyForms ticket={ticket} />}
                         </TabsContent>
-                        <TabsContent value="history">
+                        {user?.role !== 'CONTRACTOR' && <TabsContent value="assessment">
+                            <div className="mt-4">
+                                <TicketAssessments ticket={ticket} onChanged={handleStatusUpdated} />
+                                <div className="mt-5"><TicketEntergyForms ticket={ticket} /></div>
+                            </div>
+                        </TabsContent>}
+                        {user?.role !== 'CONTRACTOR' && <TabsContent value="history">
                             <div className="mt-4">
                                 <StatusHistoryTimeline ticketId={ticket.id} refreshKey={refreshKey} />
                             </div>
-                        </TabsContent>
+                        </TabsContent>}
                     </Tabs>
                 </div>
 
                 <div className="space-y-6">
-                    {user?.role==='CONTRACTOR'&&<StatusUpdateFlow ticket={ticket} userRole={user.role} userId={user.id} onStatusUpdated={handleStatusUpdated}/> }
                     <Card>
                         <CardHeader>
                             <CardTitle>{userRole === 'contractor' ? 'Metadata' : 'Info'}</CardTitle>
@@ -181,15 +253,15 @@ export default function TicketDetailPage() {
                                 <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Created</span>
                                 <p>{formatDate(ticket.created_at)}</p>
                             </div>
-                            <div>
+                            {user?.role !== 'CONTRACTOR' && <div>
                                 <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Geofence</span>
-                                <p>{ticket.geofence_radius_meters}m</p>
-                            </div>
-                            {userRole === 'admin' && can('admin.tickets.edit') && ['DRAFT', 'ASSIGNED', 'NEEDS_REWORK'].includes(ticket.status) && (
+                                <p>{ticket.geofence_radius_meters || 500}m</p>
+                            </div>}
+                            {user?.role === 'CONTRACTOR' && ['DRAFT', 'ASSIGNED', 'NEEDS_REWORK'].includes(ticket.status) && (
                                 <div className="pt-2 border-t">
                                     <Button variant="outline" size="sm" className="w-full text-xs font-semibold" asChild>
-                                        <Link href={`/admin/dashboard?dispatchTicketId=${ticket.id}#dispatch`}>
-                                            Manage dispatch on dashboard
+                                        <Link href={`/contractor/dashboard?dispatchTicketId=${encodeURIComponent(ticket.id)}#dispatch`}>
+                                            View team & crew on dashboard
                                         </Link>
                                     </Button>
                                 </div>
@@ -198,6 +270,14 @@ export default function TicketDetailPage() {
                     </Card>
                 </div>
             </div>
+            {user?.role === 'CONTRACTOR' && getContractorTicketStatus(ticket.status) === 'OPEN' && contractorId && <StatusUpdateFlow
+                ticket={ticket}
+                userRole={user.role}
+                userId={user.id}
+                contractorId={contractorId}
+                canEditAssessment={contractorId === ticket.assigned_to}
+                onStatusUpdated={handleStatusUpdated}
+            />}
         </div >
     );
 }

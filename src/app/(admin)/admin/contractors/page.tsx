@@ -10,6 +10,7 @@ import { DataTable, type Column } from '@/components/common/data-display/DataTab
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ROLE_LABELS } from '@/lib/config/appConfig';
 import { contractorService, type ContractorListItem } from '@/lib/services/contractorService';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { supabase } from '@/lib/supabase/client';
@@ -19,7 +20,7 @@ function statusOf(contractor: ContractorListItem) {
 }
 const columns: Column<ContractorListItem>[] = [
   { key: 'fullName', header: 'Name', cell: c => <Link className="font-semibold text-grid-navy underline-offset-4 hover:underline" href={`/admin/contractors/${c.id}`}>{c.fullName}</Link> },
-  { key: 'businessName', header: 'Business', cell: c => c.businessName },
+  { key: 'role', header: 'Role', cell: c => ROLE_LABELS[c.role] },
   { key: 'isActive', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
   { key: 'assignedTicketCount', header: 'Assigned Tickets', cell: c => c.assignedTicketCount },
   { key: 'alerts', header: 'Alerts', cell: c => c.alerts.join('; ') || '—' },

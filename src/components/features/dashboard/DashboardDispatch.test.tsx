@@ -1,141 +1,85 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { DashboardDispatch } from './DashboardDispatch';
+import React from 'react';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ContractorDispatchTicket } from '@/lib/services/contractorDashboardService';
 
-const mockTickets = [
+const mocks = vi.hoisted(() => ({
+  params: new URLSearchParams(),
+}));
+
+vi.mock('next/navigation', () => ({ useSearchParams: () => mocks.params }));
+vi.mock('@/components/providers/AuthProvider', () => ({
+  useAuth: () => ({ profile: { id: 'contractor-profile', role: 'CONTRACTOR' } }),
+}));
+vi.mock('@/components/ui/card', () => ({
+  Card: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+  CardContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardTitle: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props}>{children}</h2>,
+}));
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props}>{children}</button>,
+}));
+vi.mock('@/components/ui/input', () => ({ Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} /> }));
+vi.mock('@/components/features/tickets/TicketStatusBadge', () => ({ TicketStatusBadge: ({ status }: { status: string }) => <span>{status}</span> }));
+vi.mock('@/lib/utils/formatters', () => ({ formatAddress: (...parts: string[]) => parts.filter(Boolean).join(', ') }));
+
+import { DashboardDispatch, getActiveAssignedDispatchTickets } from './DashboardDispatch';
+
+const tickets: ContractorDispatchTicket[] = [
   {
-    id: 'ticket-1',
-    ticket_number: 'TK-1001',
-    status: 'DRAFT',
-    utility_client: 'Pacific Power',
-    address: '100 Main St',
-    city: 'Portland',
-    state: 'OR',
-    zip_code: '97201',
-    is_important: false,
-    team_lead_id: null,
-    crew_id: null,
-    created_at: '2026-10-06T10:00:00Z',
-    geofence_radius_meters: 500,
+    id: 'ticket-1', ticket_number: 'CC-101', status: 'ASSIGNED', address: '1 Main St', city: 'Dallas', state: 'TX',
+    utility_client: 'Grid Electric', due_date: null, updated_at: '2026-10-06T10:00:00Z', is_important: false,
+    storm_event_id: 'storm-1', team_lead_id: 'lead-1', crew_id: 'crew-1', teamLeadName: 'Team Lead One',
+    crewName: 'Crew One', driverName: 'Driver One', assessorName: 'Assessor One',
   },
   {
-    id: 'ticket-2',
-    ticket_number: 'TK-1002',
-    status: 'ASSIGNED',
-    utility_client: 'Energy Corp',
-    address: '200 Oak Ave',
-    city: 'Salem',
-    state: 'OR',
-    zip_code: '97301',
-    is_important: true,
-    team_lead_id: 'lead-1',
-    crew_id: null,
-    created_at: '2026-10-06T11:00:00Z',
-    geofence_radius_meters: 500,
+    id: 'ticket-2', ticket_number: 'CC-102', status: 'ASSIGNED', address: '2 Oak St', city: 'Austin', state: 'TX',
+    utility_client: 'Grid Electric', due_date: null, updated_at: '2026-10-06T11:00:00Z', is_important: true,
+    storm_event_id: 'storm-1', team_lead_id: 'lead-2', crew_id: 'crew-2', teamLeadName: 'Team Lead Two',
+    crewName: 'Crew Two', driverName: 'Driver Two', assessorName: 'Assessor Two',
   },
 ];
 
-const mockOptions = {
-  teamLeads: [{ id: 'lead-1', name: 'Commander Shepherd' }],
-  crews: [
-    {
-      id: 'crew-1',
-      name: 'Alpha Crew',
-      teamLeadId: 'lead-1',
-      driverId: 'drv-1',
-      assessorId: 'ass-1',
-      driverName: 'Driver Bob',
-      assessorName: 'Assessor Alice',
-    },
-  ],
-  workers: [
-    { id: 'drv-2', name: 'Driver Dan', role: 'DRIVER' },
-    { id: 'ass-2', name: 'Assessor Ann', role: 'DAMAGE_ASSESSER' },
-  ],
-};
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
-}));
-
-vi.mock('@/components/providers/AuthProvider', () => ({
-  useAuth: () => ({
-    profile: { id: 'admin-1', role: 'SUPER_ADMIN' },
-    can: (perm: string) => true,
-  }),
-}));
-
-vi.mock('@/lib/services/ticketService', () => ({
-  ticketService: {
-    getTickets: vi.fn().mockImplementation(async () => mockTickets),
-  },
-}));
-
-vi.mock('@/lib/services/ticketAssessmentWorkflow', () => ({
-  ticketAssessmentWorkflow: {
-    options: vi.fn().mockImplementation(async () => mockOptions),
-    assignLead: vi.fn().mockResolvedValue({}),
-    assignCrew: vi.fn().mockResolvedValue({}),
-    createCrew: vi.fn().mockResolvedValue({}),
-  },
-}));
-
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
-describe('DashboardDispatch', () => {
+describe('DashboardDispatch on the contractor dashboard', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mocks.params = new URLSearchParams();
   });
 
-  it('renders heading and dispatch queue', async () => {
-    render(<DashboardDispatch />);
+  afterEach(() => cleanup());
 
-    expect(screen.getByRole('heading', { name: /team & crew dispatch/i })).toBeTruthy();
+  it('selects the ticket from the dashboard deep link and shows its team and crew read-only', async () => {
+    mocks.params = new URLSearchParams('dispatchTicketId=ticket-2');
+    render(<DashboardDispatch tickets={tickets} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('TK-1001')).toBeTruthy();
-      expect(screen.getByText('TK-1002')).toBeTruthy();
-    });
+    expect(screen.getByText('Team Lead Two')).toBeTruthy();
+    expect(screen.getByText('Crew Two')).toBeTruthy();
+    expect(screen.getByText('Driver Two')).toBeTruthy();
+    expect(screen.getByText('Assessor Two')).toBeTruthy();
+    expect(screen.queryByText('Assign team lead')).toBeNull();
+    expect(screen.queryByText('Assign crew')).toBeNull();
+    expect(screen.queryByText('Create a crew')).toBeNull();
   });
 
-  it('shows filter pills with ticket counts', async () => {
-    render(<DashboardDispatch />);
+  it('shows an empty state when the contractor has no active tickets', () => {
+    render(<DashboardDispatch tickets={[]} />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /all \(2\)/i })).toBeTruthy();
-      expect(screen.getByRole('button', { name: /needs lead \(1\)/i })).toBeTruthy();
-      expect(screen.getByRole('button', { name: /needs crew \(1\)/i })).toBeTruthy();
-    });
+    expect(screen.getByText(/team and crew details will appear here when a ticket is assigned to you/i)).toBeTruthy();
   });
 
-  it('displays selected ticket details and assignment status', async () => {
-    render(<DashboardDispatch />);
-
-    await waitFor(() => {
-      // First ticket is auto-selected
-      expect(screen.getByRole('heading', { name: /ticket TK-1001/i })).toBeTruthy();
-      expect(screen.getByText(/awaiting team lead/i)).toBeTruthy();
-    });
+  it('filters out closed tickets from the contractor dispatch queue', () => {
+    expect(getActiveAssignedDispatchTickets([
+      ...tickets,
+      { ...tickets[0], id: 'closed-ticket', ticket_number: 'CC-103', status: 'CLOSED' },
+    ]).map(ticket => ticket.id)).toEqual(['ticket-1', 'ticket-2']);
   });
 
-  it('switches selected ticket on click', async () => {
-    render(<DashboardDispatch />);
+  it('does not silently show a different assignment for an unavailable deep-link ticket', () => {
+    mocks.params = new URLSearchParams('dispatchTicketId=not-assigned-to-this-contractor');
+    render(<DashboardDispatch tickets={tickets} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('TK-1002')).toBeTruthy();
-    });
-
-    fireEvent.click(screen.getByText('TK-1002'));
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /ticket TK-1002/i })).toBeTruthy();
-      expect(screen.getAllByText('Commander Shepherd').length).toBeGreaterThan(0);
-    });
+    expect(screen.getByText(/that ticket is not part of your assigned work/i)).toBeTruthy();
+    expect(screen.queryByText('Team Lead One')).toBeNull();
+    expect(screen.queryByText('Team Lead Two')).toBeNull();
   });
 });

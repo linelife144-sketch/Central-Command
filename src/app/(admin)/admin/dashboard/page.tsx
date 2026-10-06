@@ -1,11 +1,9 @@
 'use client';
 
-import { Suspense } from 'react';
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, Clock, CloudLightning, FileCheck2, Plus, Route, Users, Zap } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Clock, CloudLightning, FileCheck2, Plus, Route, Zap } from 'lucide-react';
 import { DashboardMetrics } from '@/components/features/dashboard/DashboardMetrics';
 import { DashboardRecentTickets } from '@/components/features/dashboard/DashboardRecentTickets';
-import { DashboardDispatch } from '@/components/features/dashboard/DashboardDispatch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -13,7 +11,6 @@ import { mayOpenPath } from '@/lib/auth/permissionCatalog';
 import { SignalField } from '@/components/common/brand/SignalField';
 
 const quickActions = [
-  { href: '#dispatch', label: 'Team & crew dispatch', description: 'Assign leads and field crews', icon: Users },
   { href: '/admin/storms', label: 'Storm workspaces', description: 'Coordinate your response', icon: CloudLightning },
   { href: '/admin/map', label: 'Field overview', description: 'View tickets and crew locations', icon: Route },
   { href: '/tickets', label: 'Review ticket assessments', description: 'Open a ticket to review its field assessment', icon: FileCheck2 },
@@ -50,10 +47,5 @@ export default function AdminDashboardPage() {
         </CardContent>
       </Card>
     </div>
-    {(can('admin.tickets.view') || can('admin.tickets.edit')) && (
-      <Suspense fallback={<div className="p-8 text-center text-sm text-muted-foreground">Loading dispatch console…</div>}>
-        <DashboardDispatch />
-      </Suspense>
-    )}
   </div>;
 }

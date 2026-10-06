@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // Keep verification builds separate from a running development server.
   distDir: process.env.CC_NEXT_DIST_DIR || '.next',
   // Allow the current Wi-Fi address for local multi-device development.
-  allowedDevOrigins: ["192.168.1.72"],
+  allowedDevOrigins: ["192.168.1.72", "192.168.1.102"],
   turbopack: {},
   webpack: (config, { dev }) => {
     // Prevent intermittent dev chunk corruption that causes MODULE_NOT_FOUND runtime errors.

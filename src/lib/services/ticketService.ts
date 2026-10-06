@@ -5,6 +5,32 @@ import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { localTestStore } from '@/lib/testing/localTestStore';
 import { stormRosterService } from './stormRosterService';
 import { notifyTicketsChanged } from '@/lib/tickets/events';
+import type { LocalTicket } from '@/lib/db/dexie';
+
+type TicketAssignmentColumn = 'crew_id' | 'team_lead_id';
+
+async function getTicketsForAssignment(column: TicketAssignmentColumn, assignmentId: string): Promise<Ticket[]> {
+    if (!assignmentId) return [];
+    if (isSuperAdminTestingEnabled()) {
+        return localTestStore.getTickets().filter(ticket => ticket[column] === assignmentId);
+    }
+
+    const { db } = await import('@/lib/db/dexie');
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return (await db.tickets.toArray()).filter(ticket => ticket[column] === assignmentId) as unknown as Ticket[];
+    }
+
+    const query = supabase.from('tickets').select('*');
+    const result = column === 'crew_id'
+        ? await query.eq('crew_id', assignmentId).order('created_at', { ascending: false })
+        : await query.eq('team_lead_id', assignmentId).order('created_at', { ascending: false });
+
+    if (result.error) throw result.error;
+    const rows = (result.data ?? []) as unknown as Ticket[];
+    const { cacheTickets } = await import('@/lib/db/dexie');
+    await cacheTickets(rows as unknown as LocalTicket[]);
+    return rows;
+}
 
 export const ticketService = {
     async getUtilityPayload(id: string): Promise<Record<string, unknown> | null> {
@@ -41,6 +67,14 @@ export const ticketService = {
 
         if (error) throw error;
         return data as Ticket[];
+    },
+
+    async getTicketsByCrew(crewId: string) {
+        return getTicketsForAssignment('crew_id', crewId);
+    },
+
+    async getTicketsByTeamLead(teamLeadId: string) {
+        return getTicketsForAssignment('team_lead_id', teamLeadId);
     },
 
     async getTicketById(id: string) {
@@ -132,7 +166,8 @@ export const ticketService = {
         userId: string,
         role: UserRole,
         changeReason?: string,
-        location?: { latitude: number; longitude: number; accuracy: number }
+        location?: { latitude: number; longitude: number; accuracy: number; capturedAt?: string },
+        fieldContext?: { contractorId: string },
     ) {
         // 1. Get current status
         const ticket = await this.getTicketById(id);
@@ -150,6 +185,20 @@ export const ticketService = {
         }
 
         if (!location) throw new Error('GPS validation is required before changing field status.');
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            if (role !== 'CONTRACTOR' || !fieldContext?.contractorId || !['IN_ROUTE', 'ON_SITE'].includes(newStatus)) {
+                throw new Error('This field status cannot be queued while offline. Reconnect and retry.');
+            }
+            const { ticketFieldProgressWorkflow } = await import('./ticketFieldProgressWorkflow');
+            await ticketFieldProgressWorkflow.recordOffline({
+                ticket,
+                actorProfileId: userId,
+                contractorId: fieldContext.contractorId,
+                nextStatus: newStatus as 'IN_ROUTE' | 'ON_SITE',
+                location,
+            });
+            return true;
+        }
         const {ticketWorkflowRpc}=await import('./ticketAssessmentWorkflow');
         await ticketWorkflowRpc<Ticket>('update_ticket_field_status',{p_ticket_id:id,p_status:newStatus,p_latitude:location.latitude,p_longitude:location.longitude,p_accuracy:location.accuracy});
 

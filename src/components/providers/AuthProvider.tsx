@@ -8,6 +8,7 @@ import { User as AppUser } from '@/types';
 import { isSuperAdminTestingEnabled, SUPER_ADMIN_TEST_PROFILE } from '@/lib/testing/superAdminTesting';
 import { saveVerifiedFieldProfile, readVerifiedFieldProfile, clearPrivateBrowserState } from '@/lib/auth/fieldIdentityCache';
 import { resolvePermissions, type PermissionKey, type PermissionMap } from '@/lib/auth/permissionCatalog';
+import { getErrorLogContext } from '@/lib/utils/errorHandling';
 
 interface AuthContextType {
   user: User | null;
@@ -86,15 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setProfile(null);
         setPermissions({});
-        // Supabase returns a `PostgrestError` (a class extending Error). The
-        // Next.js dev overlay cannot serialize it and shows `{}`, so log the
-        // enumerable fields explicitly to keep the real cause visible.
-        console.error('Error fetching profile:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        });
+        // Supabase/PostgREST and browser fetch errors are Error instances whose
+        // useful properties are non-enumerable. Flatten them before logging so
+        // the cause is visible in the browser and Next.js dev overlay.
+        console.error('Error fetching profile:', getErrorLogContext(error));
         if (DEV_BYPASS_AUTH) {
           setProfile(DEV_MOCK_PROFILE);
         }
@@ -113,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       if (currentUserId.current === userId) { setProfile(null); setPermissions({}); }
-      console.error('Error in fetchProfile:', error);
+      console.error('Error in fetchProfile:', getErrorLogContext(error));
       if (DEV_BYPASS_AUTH) {
         setProfile(DEV_MOCK_PROFILE);
       }

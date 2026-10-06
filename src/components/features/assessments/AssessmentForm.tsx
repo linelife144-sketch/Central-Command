@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowDown, ClipboardCheck, Loader2, Save } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ClipboardCheck, Loader2, Save, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -77,10 +77,23 @@ export function AssessmentForm({ ticketId, contractorId, actorProfileId, correct
   const updatePhotos = (sectionKey: string | undefined, captured: CapturedAssessmentPhoto[]) => setPhotos(current => [...current.filter(photo => photo.sectionKey !== sectionKey), ...captured.map(photo => ({ ...photo, sectionKey }))]);
   const updateAnswer = (key: string, value: FieldAnswer) => setAnswers(current => normalizeFieldAnswers({ ...current, [key]: value }, false));
 
-  const handleSubmit = async () => {
+  const saveDraft = async () => {
+    if (!ticketId || !contractorId || !actorProfileId) { setFormError('An assigned ticket and signed-in contractor are required.'); return; }
+    setFormError(null);
+    setIsSubmitting(true);
+    try {
+      const saved = await ticketAssessmentWorkflow.save({ticketId, contractorId, actor:actorProfileId, assessmentId, version, fieldAssessment, photos:evidencePhotos});
+      setVersion(saved.version);
+      setDraftNotice(saved.dirty ? 'Draft saved on this device. It will sync when you reconnect.' : 'Draft saved. Continue the assessment when you are ready.');
+      toast.success(saved.dirty ? 'Draft saved on this device.' : 'Draft saved.');
+    } catch (error) { setFormError(error instanceof Error ? error.message : 'Unable to save this draft.'); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const submitAssessment = async () => {
     setShowErrors(true);
     if (Object.keys(errors).length) {
-      setFormError('Complete every required answer before saving.');
+      setFormError('Complete every required answer before submitting.');
       const first = document.getElementById(`assessment-${Object.keys(errors)[0]}`) ?? document.querySelector(`input[name="assessment-${Object.keys(errors)[0]}"]`);
       first?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       (first as HTMLElement | null)?.focus();
@@ -89,14 +102,22 @@ export function AssessmentForm({ ticketId, contractorId, actorProfileId, correct
     if (!ticketId || !contractorId || !actorProfileId) { setFormError('An assigned ticket and signed-in contractor are required.'); return; }
     if (Object.keys(photoErrors).length) { setFormError(Object.values(photoErrors)[0]); document.getElementById(`damage-photo-${Object.keys(photoErrors)[0]}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     if (evidencePhotos.length < 4 || missingPhotos.length) { setFormError('Capture at least four GPS-verified photos: Overview, Equipment, Damage, and Safety.'); return; }
-    setFormError(null); setIsSubmitting(true);
+    setFormError(null);
+    setIsSubmitting(true);
     try {
       const saved = await ticketAssessmentWorkflow.save({ticketId, contractorId, actor:actorProfileId, assessmentId, version, fieldAssessment, photos:evidencePhotos});
+      setVersion(saved.version);
+      const result = await ticketAssessmentWorkflow.submit(ticketId, actorProfileId, assessmentId);
       setSubmitted(true);
       await db.assessmentDrafts.delete(draftId).catch(() => undefined);
-      toast.success(saved.dirty ? 'Assessment saved on this device. Review it on the ticket and sync when connected.' : 'Assessment saved. Review it on the ticket before submitting.');
+      if (result === 'QUEUED') {
+        setDraftNotice('Submission queued on this device. Your team lead will be notified when it syncs.');
+        toast.info('Submission queued. It will sync when you reconnect.');
+      } else {
+        toast.success('Assessment submitted to your team lead.');
+      }
       onSaved?.();
-    } catch (error) { setFormError(error instanceof Error ? error.message : 'Unable to save assessment.'); }
+    } catch (error) { setFormError(error instanceof Error ? error.message : 'Unable to submit this assessment.'); }
     finally { setIsSubmitting(false); }
   };
 
@@ -117,7 +138,7 @@ export function AssessmentForm({ ticketId, contractorId, actorProfileId, correct
         </div>} />
         <section className="cc-field-section p-5 sm:p-6"><p className="cc-field-eyebrow mb-2 text-grid-blue!">09 / PHOTO EVIDENCE</p><h2 className="mb-4 font-heading text-2xl font-semibold">Four views. One clear record.</h2>{ticketId && <PhotoCapture ticketId={ticketId} photos={photos.filter(photo => !photo.sectionKey)} onPhotosCaptured={captured => updatePhotos(undefined, captured)} disabled={isSubmitting || submitted || !draftReady} />}<p className="mt-3 text-sm text-muted-foreground">{evidencePhotos.length} captured · {missingPhotos.length} required views remaining</p></section>
         <fieldset disabled={isSubmitting || submitted || !draftReady} className="cc-field-section p-5 sm:p-6"><p className="cc-field-eyebrow mb-4 text-grid-blue!">10 / FINAL NOTES</p><AssessmentAnswerControl field={additionalNotesField} answers={answers} onChange={updateAnswer} error={showErrors ? errors.additionalNotes : undefined} /></fieldset>
-        <footer className="cc-field-submit"><div><p className="font-semibold text-grid-navy">{urgent ? 'Critical priority on save' : 'Save, then review on the ticket'}</p><p className="mt-1 text-xs text-muted-foreground">Saving returns you to the ticket. Submit for review after checking the saved assessment.</p></div><Button type="button" variant="accent" size="lg" disabled={isSubmitting || submitted || !draftReady || !ticketId || !contractorId} onClick={() => void handleSubmit()}>{isSubmitting ? <Loader2 className="animate-spin" /> : <Save />} {isSubmitting ? 'Saving…' : submitted ? 'Assessment saved' : 'Save assessment'}</Button></footer>
+        <footer className="cc-field-submit"><div><p className="font-semibold text-grid-navy">{urgent ? 'Critical priority on save' : 'Save your draft or submit for review'}</p><p className="mt-1 text-xs text-muted-foreground">Saving keeps the assessment editable. Submit sends it to your team lead after the required answers and photos are complete.</p></div><div className="flex flex-wrap justify-end gap-3"><Button type="button" variant="outline" size="lg" disabled={isSubmitting || submitted || !draftReady || !ticketId || !contractorId} onClick={() => void saveDraft()}>{isSubmitting ? <Loader2 className="animate-spin" /> : <Save />}Save draft</Button><Button type="button" variant="accent" size="lg" disabled={isSubmitting || submitted || !draftReady || !ticketId || !contractorId} onClick={() => void submitAssessment()}>{isSubmitting ? <Loader2 className="animate-spin" /> : <Send />} {isSubmitting ? 'Submitting…' : submitted ? 'Submitted' : 'Submit'}</Button></div></footer>
       </div>
     </div>
   </div>;

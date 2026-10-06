@@ -38,6 +38,7 @@ await db.exec('CREATE TRIGGER aa_guard_worker_ticket_update BEFORE UPDATE ON tic
 await db.exec(await readFile('supabase/migrations/20261006123214_ticket_draft_crew_review_workflow.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20261006131038_fix_ticket_intake_scope.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20261006132900_require_ticket_crew_before_fieldwork.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20261006140000_allow_progressive_ticket_assessment_drafts.sql','utf8'));
 const chief=uuid(),lead=uuid(),other=uuid(),assessor=uuid(),driver=uuid(),aid=uuid(),did=uuid(),storm=uuid(),ticket=uuid(),revision=uuid();
 await db.query("INSERT INTO profiles(id,role,first_name,last_name) VALUES($1,'CEO','Chief','One'),($2,'ADMIN','Lead','One'),($3,'ADMIN','Lead','Two'),($4,'CONTRACTOR','Assessor','One'),($5,'CONTRACTOR','Driver','One')",[chief,lead,other,assessor,driver]);
 await db.query("INSERT INTO contractors(id,profile_id,role) VALUES($1,$2,'DAMAGE_ASSESSER'),($3,$4,'DRIVER')",[aid,assessor,did,driver]);
@@ -48,7 +49,7 @@ const photos=['OVERVIEW','EQUIPMENT','DAMAGE','SAFETY'].map(type=>({id:uuid(),ty
 const checks=[];async function pass(label,fn){await fn();checks.push(label);}
 async function actor(id){await db.exec('RESET ROLE');await db.query("SELECT set_config('test.actor',$1,false)",[id]);await db.exec('SET ROLE authenticated');}
 async function rpc(name,args){const marks=args.map((_,i)=>'$'+(i+1)).join(',');return (await db.query(`SELECT * FROM public.${name}(${marks})`,args)).rows[0];}
-const json=x=>JSON.stringify(x);const save=()=>rpc('save_ticket_assessment_draft',[ticket,revision,json(payload),json(photos),null]);
+const json=x=>JSON.stringify(x);const save=(data=payload,evidence=photos,version=null)=>rpc('save_ticket_assessment_draft',[ticket,revision,json(data),json(evidence),version]);
 await db.query("UPDATE tickets SET assigned_to=$2,status='ASSIGNED' WHERE id=$1",[ticket,aid]);
 await actor(assessor);
 await pass('legacy single-contractor assignment cannot start fieldwork before dispatch',async()=>assert.rejects(()=>rpc('update_ticket_field_status',[ticket,'IN_ROUTE',30,-90,25]),/assign a team lead/));
@@ -68,17 +69,21 @@ await actor(assessor);
 await pass('GPS status update rejects poor accuracy',async()=>assert.rejects(()=>rpc('update_ticket_field_status',[ticket,'IN_ROUTE',30,-90,200]),/GPS accuracy/));
 await pass('cannot save before on-site status',async()=>assert.rejects(save,/on site/));
 await pass('GPS status update rejects distant arrival',async()=>{await rpc('update_ticket_field_status',[ticket,'IN_ROUTE',30,-90,25]);await assert.rejects(()=>rpc('update_ticket_field_status',[ticket,'ON_SITE',31,-90,25]),/geofence/);});
-for(const status of ['IN_ROUTE','ON_SITE','IN_PROGRESS']) await rpc('update_ticket_field_status',[ticket,status,30,-90,25]);
-let draft;await pass('valid checklist saves draft without submission',async()=>{draft=await save();assert.equal(draft.assessment_id,revision);assert.equal((await db.query('SELECT * FROM damage_assessments')).rows.length,0);});
+await actor(driver);await pass('assigned driver can start the ticket',async()=>assert.equal((await rpc('update_ticket_field_status',[ticket,'IN_ROUTE',30,-90,25])).status,'IN_ROUTE'));
+await actor(assessor);await pass('assigned assessor confirms arrival within the geofence',async()=>assert.equal((await rpc('update_ticket_field_status',[ticket,'ON_SITE',30,-90,25])).status,'ON_SITE'));
+await pass('legacy In Progress status is not created by field progress',async()=>assert.rejects(()=>rpc('update_ticket_field_status',[ticket,'IN_PROGRESS',30,-90,25]),/Invalid field status transition/));
+let draft;await pass('partial answers and photos save as an editable draft',async()=>{draft=await save({version:1,answers:{phases:'1',hasTap:false}},[]);assert.equal(draft.assessment_id,revision);assert.equal(draft.field_assessment.answers.phases,'1');assert.equal(json(draft.photo_evidence),'[]');assert.equal((await db.query('SELECT * FROM damage_assessments')).rows.length,0);});
+await pass('incomplete draft cannot be submitted for review',async()=>assert.rejects(()=>rpc('submit_ticket_assessment',[ticket,revision,draft.version]),/Complete every required assessment answer/));
+await pass('complete checklist can replace its partial draft without submission',async()=>{draft=await save(payload,photos,draft.version);assert.equal(draft.field_assessment.answers.additionalNotes,'None');assert.equal((await db.query('SELECT * FROM damage_assessments')).rows.length,0);});
 await actor(chief);const notifications=(await db.query('SELECT * FROM notification_logs')).rows.length;await actor(assessor);
 await pass('save creates no review notification',async()=>{await rpc('save_ticket_assessment_draft',[ticket,revision,json(payload),json(photos),draft.version]);await actor(chief);assert.equal((await db.query('SELECT * FROM notification_logs')).rows.length,notifications);await actor(assessor);});
 await pass('stale device version rejected',async()=>assert.rejects(()=>rpc('save_ticket_assessment_draft',[ticket,revision,json({...payload,answers:{...payload.answers,additionalNotes:'Changed on second device'}}),json(photos),0]),/changed on another device/));
-await pass('submission waits for uploaded photo evidence',async()=>assert.rejects(()=>rpc('submit_ticket_assessment',[ticket,revision,1]),/still uploading/));
+await pass('submission waits for uploaded photo evidence',async()=>assert.rejects(()=>rpc('submit_ticket_assessment',[ticket,revision,draft.version]),/still uploading/));
 await pass('cannot skip review by direct status change',async()=>assert.rejects(()=>db.query("UPDATE tickets SET status='APPROVED' WHERE id=$1",[ticket]),/workflow/));
 await db.exec('RESET ROLE');for(const p of photos){const path=`${assessor}/tickets/${ticket}/${p.id}-original.jpg`;await db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('assessment-photos',$1)",[path]);await db.query("INSERT INTO media_assets(id,entity_type,entity_id,uploaded_by,contractor_id,upload_status,storage_bucket,storage_path,gps_latitude,gps_longitude) VALUES($1,'ticket',$2,$3,$4,'COMPLETED','assessment-photos',$5,30,-90)",[p.id,ticket,assessor,aid,path]);}
 await actor(assessor);
-await pass('submit binds identity and starts team lead review',async()=>{const a=await rpc('submit_ticket_assessment',[ticket,revision,1]);assert.equal(a.assessed_by,assessor);assert.equal(a.review_stage,'TEAM_LEAD_REVIEW');});
-await pass('submission retry is idempotent',async()=>assert.equal((await rpc('submit_ticket_assessment',[ticket,revision,1])).id,revision));
+await pass('submit binds identity and starts team lead review',async()=>{const a=await rpc('submit_ticket_assessment',[ticket,revision,draft.version]);assert.equal(a.assessed_by,assessor);assert.equal(a.review_stage,'TEAM_LEAD_REVIEW');});
+await pass('submission retry is idempotent',async()=>assert.equal((await rpc('submit_ticket_assessment',[ticket,revision,draft.version])).id,revision));
 await pass('submitted assessment has no direct write permission',async()=>assert.rejects(()=>db.query('UPDATE damage_assessments SET field_assessment=$2 WHERE id=$1',[revision,json(payload)]),/permission denied/));
 await actor(driver);await pass('driver reads submitted linked assessment and photos',async()=>{assert.equal((await db.query('SELECT * FROM damage_assessments')).rows.length,1);assert.equal((await db.query('SELECT * FROM media_assets')).rows.length,4);});
 await actor(other);await pass('other team lead cannot review',async()=>assert.rejects(()=>rpc('review_ticket_assessment',[revision,'APPROVED','']),/permission/));

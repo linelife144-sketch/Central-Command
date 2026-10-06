@@ -1,198 +1,199 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, Loader2, MapPin, Navigation } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGPSValidation } from '@/hooks/useGPSValidation';
 import { APP_CONFIG } from '@/lib/config/appConfig';
 import { ticketService } from '@/lib/services/ticketService';
+import { ticketAssessmentWorkflow } from '@/lib/services/ticketAssessmentWorkflow';
 import { getFieldStatusTransition } from '@/lib/utils/statusUpdateFlow';
+import { formatAddress } from '@/lib/utils/formatters';
 import type { Ticket, TicketStatus, UserRole } from '@/types';
 
 interface StatusUpdateFlowProps {
-  ticket: Ticket;
+  ticket: Ticket & { field_progress_pending?: boolean; field_progress_error?: string };
   userId: string;
+  contractorId: string | null;
+  canEditAssessment: boolean;
   userRole: UserRole;
   onStatusUpdated?: (newStatus: TicketStatus) => void | Promise<void>;
+  openNavigation?: (url: string) => void;
 }
 
-function formatWorkflowStatus(status: TicketStatus): string {
-  return status.replace(/_/g, ' ');
+export function getNavigationUrl(ticket: Ticket, environment: Pick<Navigator, 'userAgent' | 'platform'> = {
+  userAgent: typeof navigator === 'undefined' ? '' : navigator.userAgent,
+  platform: typeof navigator === 'undefined' ? '' : navigator.platform,
+}): string {
+  const address = formatAddress(ticket.address, ticket.city ?? null, ticket.state ?? null, ticket.zip_code ?? null);
+  const appleDevice = /iPhone|iPad|iPod|Macintosh|Mac OS/.test(environment.userAgent) || /Mac|iPhone|iPad|iPod/.test(environment.platform);
+  if (appleDevice) {
+    const params = new URLSearchParams({ daddr: address, dirflg: 'd' });
+    if (!address.trim() && typeof ticket.latitude === 'number' && typeof ticket.longitude === 'number') params.set('daddr', `${ticket.latitude},${ticket.longitude}`);
+    return `https://maps.apple.com/?${params.toString()}`;
+  }
+
+  const destination = address.trim() || (typeof ticket.latitude === 'number' && typeof ticket.longitude === 'number' ? `${ticket.latitude},${ticket.longitude}` : '');
+  const params = new URLSearchParams({ api: '1', destination, travelmode: 'driving', dir_action: 'navigate' });
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-export function StatusUpdateFlow({ ticket, userId, userRole, onStatusUpdated }: StatusUpdateFlowProps) {
+export function StatusUpdateFlow({ ticket, userId, contractorId, canEditAssessment, userRole, onStatusUpdated, openNavigation }: StatusUpdateFlowProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [arrivalHint, setArrivalHint] = useState('');
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const autoCheckInFlight = useRef(false);
+  const startInFlight = useRef(false);
   const transition = useMemo(() => getFieldStatusTransition(ticket.status), [ticket.status]);
   const geofenceTarget = useMemo(() => {
-    if (typeof ticket.latitude !== 'number' || typeof ticket.longitude !== 'number') {
-      return undefined;
-    }
-
+    if (typeof ticket.latitude !== 'number' || typeof ticket.longitude !== 'number') return undefined;
     return {
       latitude: ticket.latitude,
       longitude: ticket.longitude,
-      radiusMeters: ticket.geofence_radius_meters || APP_CONFIG.GEOFENCE_RADIUS_METERS,
+      radiusMeters: ticket.geofence_radius_meters && ticket.geofence_radius_meters > 0
+        ? ticket.geofence_radius_meters
+        : APP_CONFIG.GEOFENCE_RADIUS_METERS,
     };
   }, [ticket.geofence_radius_meters, ticket.latitude, ticket.longitude]);
-
-  const gpsValidation = useGPSValidation({
-    target: geofenceTarget,
-    minAccuracyMeters: APP_CONFIG.MIN_GPS_ACCURACY_METERS,
-  });
-
+  const gpsValidation = useGPSValidation({ target: geofenceTarget, minAccuracyMeters: APP_CONFIG.MIN_GPS_ACCURACY_METERS });
   const isEnRoute = ticket.status === 'IN_ROUTE';
-  // IN_ROUTE → ON_SITE is automatic (GPS proximity), so no manual step is offered.
-  const manualTransition = isEnRoute ? null : transition;
-  const autoCheckInFlight = useRef(false);
+  const navigationUrl = useMemo(() => getNavigationUrl(ticket), [ticket]);
   const { refreshAndValidate } = gpsValidation;
+  const offlinePending = Boolean(ticket.field_progress_pending);
+  const missingGeofenceHint = isEnRoute && !geofenceTarget
+    ? 'Ticket coordinates are missing, so arrival cannot be verified. Ask your team lead to update the ticket location.'
+    : '';
+  const visibleArrivalHint = arrivalHint || ticket.field_progress_error || missingGeofenceHint;
+
+  useEffect(() => {
+    if (!canEditAssessment || !['ON_SITE', 'IN_PROGRESS', 'COMPLETE', 'NEEDS_REWORK'].includes(ticket.status)) {
+      void Promise.resolve().then(() => setHasSavedDraft(false));
+      return;
+    }
+    let active = true;
+    void ticketAssessmentWorkflow.loadDraft(ticket.id, userId).then(draft => {
+      if (active) setHasSavedDraft(Boolean(draft));
+    }).catch(() => {
+      if (active) setHasSavedDraft(false);
+    });
+    return () => { active = false; };
+  }, [canEditAssessment, ticket.id, ticket.status, userId]);
 
   const checkArrival = useCallback(async () => {
-    if (autoCheckInFlight.current || !geofenceTarget) return;
+    if (autoCheckInFlight.current || !geofenceTarget || !contractorId) return;
     autoCheckInFlight.current = true;
     try {
       const snapshot = await refreshAndValidate();
-      if (
-        snapshot.status === 'ready'
-        && snapshot.validation.gpsValid
-        && snapshot.validation.withinGeofence === true
-        && snapshot.reading.latitude !== null
-        && snapshot.reading.longitude !== null
-      ) {
-        await ticketService.updateTicketStatus(ticket.id, 'ON_SITE', userId, userRole, undefined, {
-          latitude: snapshot.reading.latitude,
-          longitude: snapshot.reading.longitude,
-          accuracy: snapshot.reading.accuracy ?? APP_CONFIG.MAX_GPS_ACCURACY_METERS,
-        });
-        await onStatusUpdated?.('ON_SITE');
+      if (snapshot.status === 'unsupported' || snapshot.status === 'error' || !snapshot.validation.gpsValid) {
+        setArrivalHint('Location needs attention. Turn on device location and return here to retry.');
+        return;
       }
-    } catch {
-      // Silent: the next poll retries; the contractor never sees a status error here.
+      if (snapshot.validation.withinGeofence !== true
+        || snapshot.reading.latitude === null || snapshot.reading.longitude === null
+        || snapshot.reading.accuracy === null) {
+        setArrivalHint('Arrival will update when your device confirms you are at the ticket address.');
+        return;
+      }
+
+      await ticketService.updateTicketStatus(ticket.id, 'ON_SITE', userId, userRole, undefined, {
+        latitude: snapshot.reading.latitude,
+        longitude: snapshot.reading.longitude,
+        accuracy: snapshot.reading.accuracy,
+        capturedAt: snapshot.lastUpdatedAt ?? undefined,
+      }, { contractorId });
+      setArrivalHint('');
+      await onStatusUpdated?.('ON_SITE');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to confirm arrival yet.';
+      setArrivalHint(message);
     } finally {
       autoCheckInFlight.current = false;
     }
-  }, [geofenceTarget, onStatusUpdated, refreshAndValidate, ticket.id, userId, userRole]);
+  }, [contractorId, geofenceTarget, onStatusUpdated, refreshAndValidate, ticket.id, userId, userRole]);
 
   useEffect(() => {
-    if (!isEnRoute || !geofenceTarget) return;
-    void checkArrival();
-    const interval = window.setInterval(() => void checkArrival(), 30000);
-    return () => window.clearInterval(interval);
+    if (!isEnRoute) return;
+    if (!geofenceTarget) return;
+    const checkWhenVisible = () => {
+      if (!document.hidden) void checkArrival();
+    };
+    checkWhenVisible();
+    const interval = window.setInterval(checkWhenVisible, 30000);
+    document.addEventListener('visibilitychange', checkWhenVisible);
+    window.addEventListener('focus', checkWhenVisible);
+    window.addEventListener('pageshow', checkWhenVisible);
+    window.addEventListener('online', checkWhenVisible);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', checkWhenVisible);
+      window.removeEventListener('focus', checkWhenVisible);
+      window.removeEventListener('pageshow', checkWhenVisible);
+      window.removeEventListener('online', checkWhenVisible);
+    };
   }, [checkArrival, geofenceTarget, isEnRoute]);
 
-  const canAttemptTransition = Boolean(
-    manualTransition
-    && ticket.crew_id && ticket.team_lead_id && ticket.assigned_driver_id
-    && (!manualTransition.requiresGeofence || geofenceTarget),
-  );
+  const canStart = Boolean(transition && ticket.crew_id && ticket.team_lead_id && ticket.assigned_driver_id && ticket.assigned_to && contractorId);
 
-  const handleStatusUpdate = async () => {
-    if (!transition) {
-      return;
-    }
-
+  const handleStart = async () => {
+    if (!transition || !canStart || startInFlight.current) return;
+    startInFlight.current = true;
     setIsSubmitting(true);
+    setArrivalHint('');
     try {
-      const gpsSnapshot = await gpsValidation.refreshAndValidate();
-      if (gpsSnapshot.status === 'unsupported' || gpsSnapshot.status === 'error') {
-        throw new Error(gpsSnapshot.errorMessage ?? 'Unable to capture GPS location.');
+      const gps = await gpsValidation.refreshAndValidate();
+      if (!gps.validation.gpsValid || gps.reading.latitude === null || gps.reading.longitude === null || gps.reading.accuracy === null) {
+        throw new Error(gps.errorMessage ?? gps.validation.gpsError ?? 'Allow location access and retry Start.');
       }
-
-      if (!gpsSnapshot.validation.gpsValid) {
-        throw new Error(gpsSnapshot.validation.gpsError ?? 'GPS validation failed.');
-      }
-
-      if (transition.requiresGeofence && gpsSnapshot.validation.withinGeofence !== true) {
-        const radius = geofenceTarget?.radiusMeters ?? APP_CONFIG.GEOFENCE_RADIUS_METERS;
-        const distance = gpsSnapshot.validation.distanceMeters;
-        throw new Error(
-          distance
-            ? `Outside geofence (${distance}m away). Must be within ${radius}m of the ticket location.`
-            : `Must be within ${radius}m of the ticket location.`,
-        );
-      }
-
-      if (gpsSnapshot.reading.latitude === null || gpsSnapshot.reading.longitude === null) {
-        throw new Error('GPS coordinates were unavailable. Please retry.');
-      }
-
-      await ticketService.updateTicketStatus(
-        ticket.id,
-        transition.nextStatus,
-        userId,
-        userRole,
-        undefined,
-        {
-          latitude: gpsSnapshot.reading.latitude,
-          longitude: gpsSnapshot.reading.longitude,
-          accuracy: gpsSnapshot.reading.accuracy ?? APP_CONFIG.MAX_GPS_ACCURACY_METERS,
-        },
-      );
-
-      toast.success(transition.nextStatus === 'IN_ROUTE' ? 'Ticket started.' : `Ticket status updated to ${formatWorkflowStatus(transition.nextStatus).toLowerCase()}.`);
-      await onStatusUpdated?.(transition.nextStatus);
+      await ticketService.updateTicketStatus(ticket.id, 'IN_ROUTE', userId, userRole, undefined, {
+        latitude: gps.reading.latitude,
+        longitude: gps.reading.longitude,
+        accuracy: gps.reading.accuracy,
+        capturedAt: gps.lastUpdatedAt ?? undefined,
+      }, { contractorId: contractorId! });
+      const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+      toast.success(offline ? 'Start saved on this device. It will sync when you reconnect.' : 'Ticket started. Opening navigation.');
+      await onStatusUpdated?.('IN_ROUTE');
+      (openNavigation ?? (url => window.location.assign(url)))(navigationUrl);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to update ticket status.');
+      toast.error(error instanceof Error ? error.message : 'Unable to start this ticket.');
     } finally {
+      startInFlight.current = false;
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Field Status Flow</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {!ticket.crew_id && <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">A storm manager must assign the team lead and driver/assessor crew before fieldwork starts.</p>}
-        {isEnRoute ? (
-          <p className="text-slate-600">
-            Ticket started. Your status updates automatically when you arrive at the site.
-          </p>
-        ) : !manualTransition ? (
-          <p className="text-slate-500">
-            Review or complete the assessment from the ticket.
-          </p>
-        ) : (
-          <>
-            <p className="text-slate-600">
-              GPS validation is required before status updates.
-              {manualTransition.requiresGeofence ? ' Geofence check is required for this step.' : ''}
-            </p>
-            {manualTransition.requiresGeofence && !geofenceTarget && (
-              <p className="text-amber-700">
-                Ticket coordinates are required to validate geofence for this status change.
-              </p>
-            )}
-            <Button
-              onClick={handleStatusUpdate}
-              disabled={!canAttemptTransition || isSubmitting || gpsValidation.status === 'loading'}
-              className="w-full sm:w-auto"
-            >
-              {(isSubmitting || gpsValidation.status === 'loading') && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {manualTransition.actionLabel}
-            </Button>
-          </>
-        )}
+  // COMPLETE is retained for tickets created under the legacy workflow. Until
+  // they have a submitted assessment, contractors still need to finish them.
+  const canOpenAssessment = ['ON_SITE', 'IN_PROGRESS', 'COMPLETE'].includes(ticket.status) && canEditAssessment;
+  const isCorrections = ticket.status === 'NEEDS_REWORK' && canEditAssessment;
 
-        {['ON_SITE','IN_PROGRESS','NEEDS_REWORK'].includes(ticket.status) && <Button asChild variant="accent"><Link href={`/tickets/${ticket.id}#assessment`}>Open ticket assessment</Link></Button>}
-        {gpsValidation.status === 'ready' && (
-          <p className="text-slate-600">
-            Latest GPS check:{' '}
-            {gpsValidation.reading.accuracy !== null
-              ? `${Math.round(gpsValidation.reading.accuracy)}m accuracy`
-              : 'accuracy unavailable'}
-            {gpsValidation.validation.distanceMeters !== undefined
-              ? `, ${gpsValidation.validation.distanceMeters}m from site`
-              : ''}
-            .
-          </p>
+  return (
+    <section id="field-actions" aria-labelledby="field-actions-title" className="cc-work-panel overflow-hidden border-t-4 border-t-grid-blue p-5 shadow-card sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-grid-blue"><MapPin className="size-4" aria-hidden="true" /> Field work</div>
+        <h2 id="field-actions-title" className="mt-2 font-heading text-xl font-semibold text-grid-navy">
+          {isCorrections ? 'Corrections requested' : ticket.status === 'ASSIGNED' ? 'Ready when you are' : isEnRoute ? 'En route to the site' : canOpenAssessment ? 'At the ticket location' : 'Ticket actions'}
+        </h2>
+        {offlinePending && <p role="status" className="mt-1 text-sm text-amber-800">Saved on this device · waiting to sync</p>}
+        {visibleArrivalHint && <p role="status" className="mt-1 max-w-2xl text-sm text-muted-foreground">{visibleArrivalHint}</p>}
+        {!canStart && ticket.status === 'ASSIGNED' && <p className="mt-1 text-sm text-muted-foreground">A team lead, driver, and assessor must be assigned before you can start.</p>}
+        {isEnRoute && !arrivalHint && <p className="mt-1 text-sm text-muted-foreground">Arrival is checked automatically when you return to this ticket.</p>}
+        {ticket.status === 'ON_SITE' && !canEditAssessment && <p className="mt-1 text-sm text-muted-foreground">The assigned assessor can open the assessment from this ticket.</p>}
+        {!transition && !isEnRoute && !canOpenAssessment && !isCorrections && ticket.status !== 'ON_SITE' && (
+          <p className="mt-1 text-sm text-muted-foreground">Contact your team lead for the next step on this ticket.</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      <div className="mt-4 flex shrink-0 flex-wrap gap-3 sm:mt-0 sm:justify-end">
+        {transition && <Button variant="accent" size="lg" onClick={() => void handleStart()} disabled={!canStart || isSubmitting || gpsValidation.status === 'loading'}>
+          {isSubmitting || gpsValidation.status === 'loading' ? <Loader2 className="size-4 animate-spin" /> : <Navigation className="size-4" />}
+          Start
+        </Button>}
+        {isEnRoute && <Button asChild variant="outline" size="lg"><a href={navigationUrl}><ArrowUpRight className="size-4" />Open navigation</a></Button>}
+        {canOpenAssessment && <Button asChild variant="accent" size="lg"><Link href={`/tickets/${ticket.id}/assessment`}><MapPin className="size-4" />{hasSavedDraft ? 'Continue assessment' : 'Open assessment'}</Link></Button>}
+        {isCorrections && <Button asChild variant="accent" size="lg"><Link href={`/tickets/${ticket.id}/assessment`}><MapPin className="size-4" />Correct assessment</Link></Button>}
+      </div>
+    </section>
   );
 }

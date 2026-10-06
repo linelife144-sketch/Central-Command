@@ -913,3 +913,57 @@ Evidence: `docs/testing/ticket-workflow-validation.md`, `ticket-workflow-local.j
 - [x] Pass 98 focused tests across 11 files, 36 isolated exact-workflow database checks, TypeScript, scoped ESLint, and production webpack compilation/static generation of 50 pages. Generate and inspect a three-page Letter PDF from labeled sample data. Refresh Graphify with AST extraction. — Codex /root
 - [ ] Resolve the broader suite's eight ticket assignment/status test failures (558 tests pass); these files are outside this photo/report change. — Codex /root
 - [ ] Complete real signed-in physical GPS/photo upload, offline/cross-device readback, and completed-ticket print-dialog acceptance. Sample rendering and SQL validator checks do not establish device acceptance or hosted deployment. — Codex /root
+
+### Auth/profile and ticket fetch error handling — 2026-10-06 (Cline)
+
+- [x] Preserve native Error messages and metadata in profile/ticket diagnostics instead of opaque `{}` output; retain fail-closed permissions. — Cline
+- [x] Render ticket-fetch/network errors with a retry action; show 404 only for a confirmed zero-row ticket query. — Cline
+- [x] Pass TypeScript, scoped ESLint, diff check, and 12 focused error-handling/AuthProvider/ticket-detail tests. Supabase project health, Auth, Data API CORS preflight, live profile access, and sampled browser profile requests were verified; the exact transient browser fetch failure was not reproduced. — Cline
+
+### Ticket-detail assigned ticket queue — 2026-10-06 (Codex /root)
+
+- [x] Replace the ticket-details assessment panel with a same-crew/team assigned-ticket list; add assignment-scoped reads that cache for offline use. Keep staff assessment/review controls in the staff-only Assessment tab and show contractors only the field actions their assignment/state permit. — Codex /root
+- [x] Verify ticket-detail implementation with the full 598-test suite, TypeScript, focused ticket tests, and the 41-check local ticket-workflow database harness. — Codex /root (2026-10-06)
+- [x] Sign in to the contractor account at `192.168.1.102:3000`; confirm the target ticket shows Open, the same-crew queue, no SOP panel, and a useful field-action explanation. Leave the record untouched because its comments mark it workflow-only with no field dispatch. — Codex /root (2026-10-06)
+
+### Simplified contractor ticket work and staff review — 2026-10-06 (Codex /root)
+
+- [x] Remove SOP/workflow instruction content from `TicketAssessments` for all roles; preserve assessment answers, evidence, correction notes, and authorized staff review controls. — Codex /root
+- [x] Project contractor state to Open/Closed, remove contractor review/history tabs, and place Start/navigation/arrival/assessment actions at the bottom of the ticket. Keep same-crew/team assigned-ticket context. — Codex /root
+- [x] Keep legacy pre-submission `COMPLETE` work accessible to its assessor and replace empty field-action panels with a clear next-step message. — Codex /root (2026-10-06)
+- [x] Pass full tests (598/598 across 110 files), TypeScript, targeted ESLint, and 41 local ticket-workflow database checks. — Codex /root (2026-10-06)
+- [x] Finish an isolated production webpack build after the last footer adjustments; webpack compilation, TypeScript, and generation of all 50 static pages pass. — Codex /root (2026-10-06)
+- [ ] Repeat browser QA with valid Super Admin access for staff-side review, corrections, final approval, and utility-record screens. The supplied Super Admin login was rejected as invalid credentials; no approval or utility handoff was attempted. — Codex /root
+- [ ] Verify Start, real device navigation/GPS return, draft upload/reconnect, submission, and staff review on an eligible test ticket. The signed-in contractor record was explicitly marked workflow-only with no field dispatch, so no status or evidence mutation was made. — Codex /root
+- [ ] Apply the prepared progressive-draft migration `20261006140000_allow_progressive_ticket_assessment_drafts.sql` to the verified backend before accepting the updated save/submit behavior against that database. No live migration was applied in this pass. — Codex /root
+
+### Contractor dashboard team & crew panel — 2026-10-06 (Cline)
+
+- [x] Remove the misplaced dispatch queue and quick action from `/admin/dashboard`; add a contractor-scoped Team & Crew panel to `/contractor/dashboard` using only tickets assigned to the signed-in contractor. — Cline
+- [x] Move `DashboardDispatch` to the contractor dashboard: active assigned tickets, queue filtering/search, deep-linked ticket selection, and team/crew/driver/assessor readout; preserve management-only dispatch writes and scope server-side name lookups to those assigned ticket IDs. — Cline
+- [x] Route contractor ticket-list and ticket-detail team/crew links to `/contractor/dashboard?dispatchTicketId=<ticket-id>#dispatch`; support ticket selection from that query parameter. — Cline
+- [x] Pass contractor dispatch/deep-link, ticket-detail, and workflow tests (12/12), full TypeScript, scoped ESLint, scoped diff check, obsolete-admin-route search, and Graphify AST update. — Cline
+- [x] Preserve the existing management-only dispatch assignment authorization; the contractor dashboard queue is read-only and does not broaden database permissions. — Cline
+
+### Admin dashboard metric label — 2026-10-06 (Cline)
+
+- [x] Rename the admin dashboard metric title from “Active Contractor Crews” to “Active Contractors”; preserve the metric value and behavior. — Cline
+
+### Admin contractor roster role column — 2026-10-06 (Cline)
+
+- [x] Replace the Business column in `/admin/contractors` with each contractor's role, using the shared human-readable role labels. — Cline
+- [x] Pass scoped ESLint for the roster page. The full TypeScript check did not complete within the available command window. — Cline
+
+
+### Phase 4 — Official Entergy Clean-up and Damage assessment forms (2026-10-06, Codex /root)
+
+- [x] Visually inventory both supplied scanned Entergy PDFs; implement separate forms covering every printed field/option, six equipment rows and three customer-transfer rows with additional-row support. — Codex /root
+- [x] Add responsive blue/navy/gold field sheets, ticket entry points and saved/submitted readback; retain identifiers as text and display printed directions as source reference. — Codex /root
+- [x] Add actor-scoped offline drafts/queues, private linked GPS photo evidence, stale-device conflict protection, immutable submission and completed-ticket report attachments. — Codex /root
+- [x] Install live migrations `20261006175056_entergy_official_ticket_forms` and `20261006175923_remove_entergy_lighting_map` on Central Command (`xcvacmreerrypygpritq`); merge generated table/RPC types and confirm RLS/grants. — Codex /root
+- [x] Remove lighting map drawing, legend, readback/report rendering and required-map validation at the user's request; preserve lighting wattage/type inputs and existing saved data. Verify live lighting submission without a map. — Codex /root
+- [x] Pass 627 full-suite tests across 113 files, 51 focused tests, TypeScript, scoped ESLint, production webpack build (50 pages), 35 local database checks and 17 live rollback scenario groups with matching fixture row counts. — Codex /root
+- [x] Verify desktop/mobile component layout and interactions; update Graphify with AST-only extraction. — Codex /root
+- [ ] Complete real signed-in contractor/staff, physical GPS/camera/private upload, offline/cross-device readback and completed-ticket print-dialog acceptance; deploy hosted frontend. — Codex /root
+
+Evidence: `docs/testing/entergy-source-coverage.md`, `docs/testing/entergy-forms-validation.md`, `docs/testing/entergy-forms-database.json`, `docs/testing/entergy-forms-live.json` and component preview screenshots. Live SQL uses simulated claims and rollback-only object metadata; it does not establish real browser authentication or file uploads.

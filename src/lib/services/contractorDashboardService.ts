@@ -2,25 +2,31 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { round2, timeEntryMoney } from '@/lib/utils/payroll';
 import { resolveBillableMinutesForEntry } from '@/lib/utils/timeTracking';
+import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
 
 type Row<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-export type PersonalTicket = Pick<Row<'tickets'>, 'id' | 'ticket_number' | 'status' | 'address' | 'city' | 'state' | 'utility_client' | 'due_date' | 'updated_at' | 'is_important' | 'storm_event_id'>;
+export type PersonalTicket = Pick<Row<'tickets'>, 'id' | 'ticket_number' | 'status' | 'address' | 'city' | 'state' | 'utility_client' | 'due_date' | 'updated_at' | 'is_important' | 'storm_event_id' | 'team_lead_id' | 'crew_id'>;
+export interface ContractorDispatchTicket extends PersonalTicket {
+  teamLeadName: string | null;
+  crewName: string | null;
+  driverName: string | null;
+  assessorName: string | null;
+}
 export type PersonalTime = Pick<Row<'time_entries'>, 'id' | 'clock_in_at' | 'clock_out_at' | 'status' | 'total_minutes' | 'break_minutes' | 'paid_minutes_exact' | 'billable_minutes' | 'payroll_amount' | 'billable_amount' | 'sync_status'>;
 export type PersonalExpense = Pick<Row<'expense_reports'>, 'id' | 'status' | 'total_amount' | 'item_count'>;
 export type PersonalStorm = Pick<Row<'storm_events'>, 'id' | 'name' | 'utility_client' | 'region' | 'status'>;
 
-const CLOSED_TICKET_STATUSES = new Set(['COMPLETE', 'APPROVED', 'CLOSED', 'ARCHIVED', 'EXPIRED']);
 export function summarizeTickets(rows: PersonalTicket[]) {
-  const open = rows.filter(row => !CLOSED_TICKET_STATUSES.has(row.status));
+  const open = rows.filter(row => getContractorTicketStatus(row.status) === 'OPEN');
   const recent = [...open].sort((a, b) =>
     Number(b.is_important) - Number(a.is_important)
     || (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999')
     || (b.updated_at ?? '').localeCompare(a.updated_at ?? '')
     || a.id.localeCompare(b.id),
   ).slice(0, 5);
-  return { open: open.length, pendingReview: open.filter(row => row.status === 'PENDING_REVIEW').length,
+  return { open: open.length,
     needsRework: open.filter(row => row.status === 'NEEDS_REWORK').length,
-    completed: rows.filter(row => ['COMPLETE', 'APPROVED', 'CLOSED'].includes(row.status)).length, recent };
+    closed: rows.filter(row => getContractorTicketStatus(row.status) === 'CLOSED').length, recent };
 }
 
 /** Entire completed shifts ending in this rolling window; rejected and active shifts are excluded. */
@@ -69,20 +75,21 @@ export interface ContractorDashboardData {
   generatedAt: string;
   periodStart: string;
   tickets: ReturnType<typeof summarizeTickets> | null;
+  dispatchTickets: ContractorDispatchTicket[] | null;
   time: ReturnType<typeof summarizeTime> | null;
   expenses: ReturnType<typeof summarizeExpenses> | null;
   storms: Array<PersonalStorm & { openTickets: number }> | null;
   unavailable: string[];
 }
 
-/** The caller supplies the verified linked contractor ID; all reads still use the caller's RLS session. */
-export async function loadContractorDashboard(client: SupabaseClient<Database>, contractorId: string, firstName: string, now = new Date()): Promise<ContractorDashboardData> {
+/** Primary dashboard rows use the caller's RLS session. Optional staff labels use the server-only admin client, limited to IDs referenced by the caller's assigned tickets. */
+export async function loadContractorDashboard(client: SupabaseClient<Database>, contractorId: string, firstName: string, now = new Date(), adminClient?: SupabaseClient<Database>): Promise<ContractorDashboardData> {
   const to = now.toISOString();
   const from = new Date(now.getTime() - 7 * 86400000).toISOString();
-  const result: ContractorDashboardData = { firstName, generatedAt: to, periodStart: from, tickets: null, time: null, expenses: null, storms: null, unavailable: [] };
+  const result: ContractorDashboardData = { firstName, generatedAt: to, periodStart: from, tickets: null, dispatchTickets: null, time: null, expenses: null, storms: null, unavailable: [] };
   const [tickets, time, expenses] = await Promise.allSettled([
     readDashboardRows<PersonalTicket>((start, end) => client.from('tickets')
-      .select('id,ticket_number,status,address,city,state,utility_client,due_date,updated_at,is_important,storm_event_id')
+      .select('id,ticket_number,status,address,city,state,utility_client,due_date,updated_at,is_important,storm_event_id,team_lead_id,crew_id')
       .or(`assigned_to.eq.${contractorId},assigned_driver_id.eq.${contractorId}`).eq('is_deleted', false).order('id').range(start, end)),
     readDashboardRows<PersonalTime>((start, end) => client.from('time_entries')
       .select('id,clock_in_at,clock_out_at,status,total_minutes,break_minutes,paid_minutes_exact,billable_minutes,payroll_amount,billable_amount,sync_status')
@@ -97,9 +104,10 @@ export async function loadContractorDashboard(client: SupabaseClient<Database>, 
   else result.unavailable.push('expenses');
   if (tickets.status === 'fulfilled') {
     result.tickets = summarizeTickets(tickets.value);
+    result.dispatchTickets = await loadContractorDispatchTickets(adminClient, tickets.value);
     const counts = new Map<string, number>();
     for (const ticket of tickets.value) {
-      if (ticket.storm_event_id && !CLOSED_TICKET_STATUSES.has(ticket.status)) counts.set(ticket.storm_event_id, (counts.get(ticket.storm_event_id) ?? 0) + 1);
+      if (ticket.storm_event_id && getContractorTicketStatus(ticket.status) === 'OPEN') counts.set(ticket.storm_event_id, (counts.get(ticket.storm_event_id) ?? 0) + 1);
     }
     result.storms = [];
     if (counts.size) {
@@ -110,4 +118,55 @@ export async function loadContractorDashboard(client: SupabaseClient<Database>, 
     }
   } else result.unavailable.push('tickets', 'storm details');
   return result;
+}
+
+async function loadContractorDispatchTickets(
+  adminClient: SupabaseClient<Database> | undefined,
+  tickets: PersonalTicket[],
+): Promise<ContractorDispatchTicket[]> {
+  const rows = tickets.filter(ticket => getContractorTicketStatus(ticket.status) === 'OPEN');
+  const fallback = rows.map(ticket => ({ ...ticket, teamLeadName: null, crewName: null, driverName: null, assessorName: null }));
+  if (!adminClient || !rows.length) return fallback;
+
+  try {
+    const teamLeadIds = [...new Set(rows.map(ticket => ticket.team_lead_id).filter((id): id is string => Boolean(id)))];
+    const crewIds = [...new Set(rows.map(ticket => ticket.crew_id).filter((id): id is string => Boolean(id)))];
+    const [leadResult, crewResult] = await Promise.all([
+      teamLeadIds.length
+        ? adminClient.from('profiles').select('id,first_name,last_name').in('id', teamLeadIds)
+        : Promise.resolve({ data: [], error: null }),
+      crewIds.length
+        ? adminClient.from('field_crews').select('id,name,driver_id,assessor_id').in('id', crewIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (leadResult.error) throw leadResult.error;
+    if (crewResult.error) throw crewResult.error;
+
+    const crews = crewResult.data ?? [];
+    const workerIds = [...new Set(crews.flatMap(crew => [crew.driver_id, crew.assessor_id]))];
+    const workerResult = workerIds.length
+      ? await adminClient.from('contractors').select('id,first_name,last_name').in('id', workerIds)
+      : { data: [], error: null };
+    if (workerResult.error) throw workerResult.error;
+
+    const fullName = (person: { first_name: string | null; last_name: string | null } | undefined) =>
+      person ? `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || null : null;
+    const leadsById = new Map((leadResult.data ?? []).map(lead => [lead.id, fullName(lead)]));
+    const workersById = new Map((workerResult.data ?? []).map(worker => [worker.id, fullName(worker)]));
+    const crewsById = new Map(crews.map(crew => [crew.id, crew]));
+
+    return rows.map(ticket => {
+      const crew = ticket.crew_id ? crewsById.get(ticket.crew_id) : undefined;
+      return {
+        ...ticket,
+        teamLeadName: ticket.team_lead_id ? leadsById.get(ticket.team_lead_id) ?? null : null,
+        crewName: crew?.name ?? null,
+        driverName: crew ? workersById.get(crew.driver_id) ?? null : null,
+        assessorName: crew ? workersById.get(crew.assessor_id) ?? null : null,
+      };
+    });
+  } catch {
+    // Crew names are an enhancement; preserve the personal dashboard if staff lookup is unavailable.
+    return fallback;
+  }
 }

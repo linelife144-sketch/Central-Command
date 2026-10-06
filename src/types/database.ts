@@ -2424,6 +2424,73 @@ export type Database = {
           },
         ]
       }
+      ticket_entergy_forms: {
+        Row: {
+          created_at: string
+          created_by: string
+          form_kind: string
+          id: string
+          payload: Json
+          photo_evidence: Json
+          saved_at: string
+          saved_by: string
+          status: string
+          submitted_at: string | null
+          ticket_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          form_kind: string
+          id?: string
+          payload: Json
+          photo_evidence?: Json
+          saved_at?: string
+          saved_by: string
+          status?: string
+          submitted_at?: string | null
+          ticket_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          form_kind?: string
+          id?: string
+          payload?: Json
+          photo_evidence?: Json
+          saved_at?: string
+          saved_by?: string
+          status?: string
+          submitted_at?: string | null
+          ticket_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_entergy_forms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_entergy_forms_saved_by_fkey"
+            columns: ["saved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_entergy_forms_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_extraction_sessions: {
         Row: {
           attachment_id: string | null
@@ -3772,6 +3839,37 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "damage_assessments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_entergy_ticket_form: {
+        Args: {
+          p_expected_version?: number
+          p_id: string
+          p_kind: string
+          p_payload: Json
+          p_photos: Json
+          p_submit?: boolean
+          p_ticket_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          form_kind: string
+          id: string
+          payload: Json
+          photo_evidence: Json
+          saved_at: string
+          saved_by: string
+          status: string
+          submitted_at: string | null
+          ticket_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_entergy_forms"
           isOneToOne: true
           isSetofReturn: false
         }

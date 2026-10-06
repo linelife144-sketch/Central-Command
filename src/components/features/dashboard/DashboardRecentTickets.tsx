@@ -15,7 +15,7 @@ import { GRID_TICKETS_CHANGED_EVENT, GRID_TICKETS_VERSION_KEY } from '@/lib/tick
 const columns: Column<DashboardTicketRow>[] = [
   { key: 'ticket', header: 'Ticket #', cell: row => <span className="font-medium">{row.ticketNumber}</span> },
   { key: 'location', header: 'Location', cell: row => row.location || 'Location unavailable' },
-  { key: 'status', header: 'Status', cell: row => <StatusBadge status={row.status} size="sm" /> },
+  { key: 'status', header: 'Status', cell: row => <StatusBadge status={row.status} displayLabel={row.status} size="sm" /> },
   { key: 'assignedTo', header: 'Assigned', cell: row => row.assignedTo },
   { key: 'dueAt', header: 'Due', cell: row => row.dueAt },
 ];
@@ -31,7 +31,7 @@ export function DashboardRecentTickets() {
     finally { setIsLoading(false); }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
   useEffect(() => {
     let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const scheduleLoad = () => {

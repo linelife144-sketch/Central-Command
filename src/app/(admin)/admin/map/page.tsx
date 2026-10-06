@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { optimizeRoute, type RouteStop } from '@/lib/services/routeOptimizationService';
 import { ticketService } from '@/lib/services/ticketService';
 import { formatDate } from '@/lib/utils/formatters';
+import { getStaffTicketStatusLabel } from '@/lib/utils/statusUpdateFlow';
+import { supabase } from '@/lib/supabase/client';
+import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
 import type { Ticket } from '@/types';
 import type { GeofenceOverlay, LngLatTuple } from '@/components/features/map/types';
 import { toast } from 'sonner';
@@ -19,7 +22,7 @@ function toMapTicket(ticket: Ticket): MapTicketMarker {
     ticketNumber: ticket.ticket_number,
     latitude: ticket.latitude,
     longitude: ticket.longitude,
-    status: ticket.status,
+    status: getStaffTicketStatusLabel(ticket.status, ticket.review_stage, ticket.utility_submitted_at),
     isImportant: ticket.is_important,
     geofenceRadiusMeters: ticket.geofence_radius_meters,
   };
@@ -48,6 +51,9 @@ export default function AdminMapPage() {
         const data = await ticketService.getTickets();
         if (active) {
           setTickets(data);
+          setSelectedTicketId((currentId) => currentId && data.some((ticket) => ticket.id === currentId)
+            ? currentId
+            : data.find((ticket) => isValidLngLat(ticket.longitude, ticket.latitude))?.id);
         }
       } catch {
         if (active) {
@@ -61,29 +67,26 @@ export default function AdminMapPage() {
     };
 
     void loadTickets();
+    const refresh = () => void loadTickets();
+    window.addEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+    const channel = supabase.channel('admin-ticket-map')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, refresh)
+      .subscribe();
 
     return () => {
       active = false;
+      window.removeEventListener(GRID_TICKETS_CHANGED_EVENT, refresh);
+      void supabase.removeChannel(channel);
     };
   }, []);
 
   const mapTickets = useMemo(() => tickets.map(toMapTicket), [tickets]);
 
   const selectedTicket = useMemo(
-    () => mapTickets.find((ticket) => ticket.id === selectedTicketId),
+    () => mapTickets.find((ticket) => ticket.id === selectedTicketId)
+      ?? mapTickets.find((ticket) => isValidLngLat(ticket.longitude, ticket.latitude)),
     [mapTickets, selectedTicketId],
   );
-
-  useEffect(() => {
-    if (selectedTicketId) {
-      return;
-    }
-
-    const firstWithCoordinates = mapTickets.find((ticket) => isValidLngLat(ticket.longitude, ticket.latitude));
-    if (firstWithCoordinates) {
-      setSelectedTicketId(firstWithCoordinates.id);
-    }
-  }, [mapTickets, selectedTicketId]);
 
   const routeStops = useMemo<RouteStop[]>(
     () => mapTickets

@@ -20,3 +20,14 @@ describe('completed ticket print document',()=>{
  it('rejects arbitrary remote URLs as report photos',()=>expect(()=>buildTicketReportHtml({...report,photos:[{...report.photos[0],src:'https://attacker.invalid/photo'}]})).toThrow('Invalid report photo'));
  it('retains assessment revisions and review notes',()=>{const html=buildTicketReportHtml({...report,assessments:[...report.assessments,{...report.assessments[0],id:'rework',review_notes:'[APPROVED] Repairs verified'}]});expect(html).toContain('Attached assessment 2');expect(html).toContain('Repairs verified');});
 });
+
+describe('Entergy attachments in completed-ticket reports',()=>{
+ it('includes each submitted form and keeps draft records out of the printout',async()=>{
+  const {emptyEntergyPayload}=await import('@/lib/schemas/entergyForms');const payload=emptyEntergyPayload('cleanup');Object.assign(payload.answers,{environmentalCleanup:'None',trashCleanup:'Two wood poles',address:'100 Utility Lane',cityTown:'Shreveport',dloc:'0000942',truckAccess:false,notes:'Gate blocked'});
+  const record={id:'official-form',ticket_id:report.ticket.id,form_kind:'cleanup' as const,payload,photo_evidence:[],status:'SUBMITTED' as const,version:2,created_by:'actor',saved_by:'actor',created_at:'2026-10-06',saved_at:'2026-10-06',submitted_at:'2026-10-06'};
+  const html=buildTicketReportHtml({...report,entergyRecords:[record,{...record,id:'draft',status:'DRAFT',payload:{...payload,answers:{...payload.answers,notes:'UNSUBMITTED NOTE'}}}]});expect(html).toContain('Entergy Clean-up form');expect(html).toContain('Two wood poles');expect(html).toContain('0000942');expect(html).toContain('Truck access');expect(html).not.toContain('UNSUBMITTED NOTE');
+ });
+ it('refuses to omit missing Entergy evidence',async()=>{
+  const {emptyEntergyPayload}=await import('@/lib/schemas/entergyForms');const row={id:'form',ticket_id:'ticket',form_kind:'cleanup' as const,payload:emptyEntergyPayload('cleanup'),photo_evidence:[{id:'missing',type:'DAMAGE'}],status:'SUBMITTED' as const,version:1,created_by:'actor',saved_by:'actor',created_at:'2026-10-06',saved_at:'2026-10-06',submitted_at:'2026-10-06'};expect(()=>buildTicketReportHtml({...report,entergyRecords:[row]})).toThrow('Entergy photo evidence');
+ });
+});

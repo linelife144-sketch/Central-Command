@@ -6,13 +6,13 @@ import { MapView } from '@/components/features/map/MapView';
 import { isValidLngLat, type MapTicketMarker } from '@/components/features/map/TicketMarkers';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StatusUpdateFlow } from '@/components/features/tickets/StatusUpdateFlow';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useContractorId } from '@/hooks/useContractorId';
 import { ticketService } from '@/lib/services/ticketService';
 import type { Ticket } from '@/types';
 import type { GeofenceOverlay, LngLatTuple } from '@/components/features/map/types';
 import { toast } from 'sonner';
+import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
 
 function toMapTicket(ticket: Ticket): MapTicketMarker {
   return {
@@ -20,7 +20,7 @@ function toMapTicket(ticket: Ticket): MapTicketMarker {
     ticketNumber: ticket.ticket_number,
     latitude: ticket.latitude,
     longitude: ticket.longitude,
-    status: ticket.status,
+    status: getContractorTicketStatus(ticket.status),
     isImportant: ticket.is_important,
     geofenceRadiusMeters: ticket.geofence_radius_meters,
   };
@@ -37,7 +37,8 @@ function getTicketCenter(ticket: MapTicketMarker | undefined): LngLatTuple | nul
 export default function ContractorMapPage() {
   const { profile, isLoading: isAuthLoading } = useAuth();
   const { contractorId, isLoading: isResolvingContractorId } = useContractorId(profile?.id);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+  const isLoading = isAuthLoading || isResolvingContractorId || Boolean(contractorId && isLoadingTickets);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | undefined>();
   const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
@@ -49,19 +50,20 @@ export default function ContractorMapPage() {
 
   useEffect(() => {
     if (!contractorId) {
-      setTickets([]);
-      setIsLoading(false);
       return;
     }
 
     let active = true;
 
     const loadTicketsForMap = async () => {
-      setIsLoading(true);
+      setIsLoadingTickets(true);
       try {
         const data = await fetchAssignedTickets(contractorId);
         if (active) {
           setTickets(data);
+          setSelectedTicketId((currentId) => currentId && data.some((ticket) => ticket.id === currentId)
+            ? currentId
+            : data.find((ticket) => isValidLngLat(ticket.longitude, ticket.latitude))?.id);
         }
       } catch {
         if (active) {
@@ -69,12 +71,12 @@ export default function ContractorMapPage() {
         }
       } finally {
         if (active) {
-          setIsLoading(false);
+          setIsLoadingTickets(false);
         }
       }
     };
 
-    void loadTicketsForMap();
+    void Promise.resolve().then(loadTicketsForMap);
 
     return () => {
       active = false;
@@ -84,18 +86,10 @@ export default function ContractorMapPage() {
   const mapTickets = useMemo(() => tickets.map(toMapTicket), [tickets]);
 
   const selectedTicket = useMemo(
-    () => mapTickets.find((ticket) => ticket.id === selectedTicketId),
+    () => mapTickets.find((ticket) => ticket.id === selectedTicketId)
+      ?? mapTickets.find((ticket) => isValidLngLat(ticket.longitude, ticket.latitude)),
     [mapTickets, selectedTicketId],
   );
-
-  useEffect(() => {
-    if (selectedTicketId && mapTickets.some((ticket) => ticket.id === selectedTicketId)) {
-      return;
-    }
-
-    const firstWithCoordinates = mapTickets.find((ticket) => isValidLngLat(ticket.longitude, ticket.latitude));
-    setSelectedTicketId(firstWithCoordinates?.id);
-  }, [mapTickets, selectedTicketId]);
 
   const geofence = useMemo<GeofenceOverlay | null>(() => {
     const center = getTicketCenter(selectedTicket);
@@ -124,24 +118,6 @@ export default function ContractorMapPage() {
   }, [mapTickets, selectedTicket]);
 
   const hasCoordinateTickets = mapTickets.some((ticket) => isValidLngLat(ticket.longitude, ticket.latitude));
-  const selectedTicketRecord = useMemo(
-    () => tickets.find((ticket) => ticket.id === selectedTicketId),
-    [selectedTicketId, tickets],
-  );
-
-  const handleStatusUpdated = useCallback(async () => {
-    if (!contractorId) {
-      return;
-    }
-
-    try {
-      const data = await fetchAssignedTickets(contractorId);
-      setTickets(data);
-    } catch {
-      toast.error('Status updated, but ticket refresh failed.');
-    }
-  }, [fetchAssignedTickets, contractorId]);
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -184,7 +160,7 @@ export default function ContractorMapPage() {
           {selectedTicket ? (
             <>
               <p className="font-medium">{selectedTicket.ticketNumber}</p>
-              <p>Status: {selectedTicket.status ?? 'UNKNOWN'}</p>
+              <p>Status: {selectedTicket.status ?? 'Open'}</p>
               <p>Important: {selectedTicket.isImportant ? 'Yes' : 'No'}</p>
               <p>Geofence Radius: {selectedTicket.geofenceRadiusMeters ?? 500}m</p>
             </>
@@ -193,15 +169,6 @@ export default function ContractorMapPage() {
           )}
         </CardContent>
       </Card>
-
-      {profile && selectedTicketRecord && (
-        <StatusUpdateFlow
-          ticket={selectedTicketRecord}
-          userId={profile.id}
-          userRole={profile.role}
-          onStatusUpdated={handleStatusUpdated}
-        />
-      )}
 
       {isMobileMapOpen && hasCoordinateTickets && (
         <div className="fixed inset-0 z-50 bg-grid-surface sm:hidden">
