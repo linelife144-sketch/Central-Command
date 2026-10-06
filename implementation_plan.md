@@ -1,5 +1,98 @@
 # Implementation Plan
 
+## Active Phase 4 plan — Contractor team/crew roster and scratchpad UI feedback (2026-10-06, Cline)
+
+### Overview
+
+Implement all actionable items in `/Users/davidmccarty/Desktop/GRID/Projects/Central Command/scratchpad.md`: CEO/Super Admin-managed operational contractor teams and crews in `/admin/contractors`; replace the Alerts column with Team / Crew Assignment; address the listed redundant ticket-page elements after confirming they still exist; and investigate/improve the reported AuthProvider profile-fetch diagnostic and recovery behavior.
+
+Operational teams are distinct from the existing ticket review chain. A contractor with contractor payroll role `TEAM_LEAD` is the operational team lead; each team has that lead’s driver and 1–10 paired damage-assessor/driver crews. The existing Admin remains the ticket reviewer/team-review actor; CEO/Super Admin retains final-review and roster-management duties. Backend associations always use unique contractor/profile IDs. UI codes follow `T1-TL`, `T1-TLD`, `T1-C1-D`, and `T1-C1-DA`, with initials appended as in `T1-TL-JS`; when initials collide, show full names or other disambiguation rather than treating the code as an identity.
+
+Existing `field_crews` records are storm-scoped, contain a driver and assessor plus a `team_lead_id` that references an Admin profile, and are currently created through a ticket-bound workflow. Do not repurpose the review lead or assume those rows already represent reusable contractor-led teams. First map the live/local schema, current RPC authorization, assignment uniqueness rules, storm roster semantics, and active callers; then select the smallest additive persistence design that supports a reusable operational roster without breaking ticket dispatch or review. Keep the work within Phase 4 and preserve historical plan entries below.
+
+The scratchpad’s page-feedback snapshots may describe controls already removed or changed by subsequent work. Verify each item in current source/DOM before touching it; remove only the specifically called-out redundant UI, never substitute away required ticket workflow tools. Investigate the reported `Error fetching profile: {}` through the current error formatter and fetch/retry paths; do not infer a root cause from the logged empty object or relax fail-closed auth.
+
+### Types
+
+- Add typed operational roster shapes (in the service/UI layer, not conflated with `UserRole`): team ID/code, contractor Team Lead, Team Lead driver, ordered crew pairs, active state, and display names/codes.
+- Use contractor IDs as member keys and profile IDs only for authenticated staff/review actors. Preserve the existing distinction between `ContractorRole` and application authorization roles.
+- Model crew count as an integer from 1 through 10 for a saved team; support incomplete creation as a draft UI state only if the persistence and UX design explicitly require it. A finalized team cannot omit its lead, lead driver, or any crew member in a pair.
+- Define selectable contractor eligibility by slot: active/eligible `TEAM_LEAD` for operational lead; eligible `DRIVER` for lead driver and crew driver; eligible `DAMAGE_ASSESSER` or `SR_DAMAGE_ASSESSER` for assessor. Enforce eligibility on the server, not only in the select controls.
+- Define display-code formatting as presentation derived from stable team/crew ordinals and names. If two people in a team share initials, display full name (and, if needed, a short stable suffix) alongside the role code.
+- Do not change ticket review types, reviewer fields, contractor payroll role enums, or backend authentication identity as part of this task.
+
+### Files
+
+#### New, subject to schema/service review
+
+- `src/lib/services/contractorTeamService.ts` — typed read and guarded mutation operations for reusable operational teams and their paired crews; call existing RPCs only where their semantics and authorization match.
+- `src/lib/services/contractorTeamService.test.ts` — service mapping, error propagation, role/ID handling, and mutation argument tests.
+- `src/components/features/contractors/ContractorTeamRoster.tsx` — roster list and team detail display in the Contractors page.
+- `src/components/features/contractors/ContractorTeamRoster.test.tsx` — roster rows, display codes, duplicate initials, loading/empty/error, and permission behavior.
+- `src/components/features/contractors/ContractorTeamEditor.tsx` and `.test.tsx` — create-team/add-crew dialog or form only if separating the editor improves the existing page; otherwise keep it local to the roster component.
+- `supabase/migrations/<timestamp>_contractor_operational_team_rosters.sql` — additive tables/functions/indexes/policies only if existing persistence cannot meet reusable operational-team requirements. Do not modify production schema during planning; implementation must follow the migration approval/verification requirements.
+- A focused isolated database regression fixture under the repository’s established workflow verification conventions if a migration or RPC is added.
+
+#### Existing files to inspect and modify only as required
+
+- `src/app/(admin)/admin/contractors/page.tsx` — replace the Alerts column with Team / Crew Assignment; add roster management actions under CEO/Super Admin authorization while retaining contractor search, status filter, CSV export, and existing contractor details.
+- `src/lib/services/contractorService.ts` — supply eligible contractor choices and identity/name/role information through existing permitted reads or a guarded endpoint; avoid broadening staff/contractor access.
+- `src/lib/services/stormRosterService.ts` — determine whether current storm roster membership is relevant to reusable operational teams and whether team creation should update roster membership atomically.
+- `src/lib/services/ticketAssessmentWorkflow.ts` and `src/components/features/tickets/TicketAssign.tsx` — inspect existing ticket-bound `create_field_crew` dispatch path. Keep its Admin reviewer semantics intact; integrate an operational team’s lead/crew selection only if consistent with existing dispatch authorization and transactional guarantees.
+- `src/types/database.ts` — update only through generated Supabase type generation if schema/RPC signatures change.
+- `src/app/tickets/[id]/page.tsx` — inspect the reported duplicate footer work panel and Location & Contact card; current implementation history says these were already removed. Modify only if either unwanted duplicate has reappeared.
+- `src/components/features/tickets/TicketWorkNotes.tsx` — inspect the reported note-list card wrapper; adjust only the redundant presentation container, retaining note content and accessibility.
+- `src/app/tickets/[id]/work/page.tsx` — inspect the Time clock link and ensure any removal does not remove required clock functionality/navigation; remove only the redundant link the feedback targets.
+- `src/components/features/tickets/AssignedTicketsPanel.tsx` — inspect whether this panel is still rendered redundantly on the work route. Preserve assigned-ticket navigation if it is the only queue/context for that page.
+- `src/components/providers/AuthProvider.tsx` — trace `fetchProfile`, `refreshProfile`, and `getErrorLogContext`; improve diagnostic serialization/context and retry/user-facing state only as warranted by current code and tests. Preserve fail-closed permissions.
+- Existing colocated tests for each changed component/provider; prefer extending current coverage.
+- `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md` — add a dated progress entry after implementation; do not reinterpret the old roadmap checklist as proof these new requirements are already complete.
+- `implementation_plan.md` — preserve this active plan and all historical task records; implementation should append progress rather than replace history.
+
+### Functions
+
+- **New if needed:** `contractorTeamService.listTeams()` / `listEligibleMembers()` / `createTeam()` / `addCrew()` / `updateMember()` / `removeMember()` with concrete typed inputs/outputs matching the final persistence design. Mutations must use server-guarded RPCs and return canonical IDs and display data.
+- **New:** pure display helpers for team/crew role codes and initials formatting, with collision-safe display behavior. Put these in a focused contractor-team utility module if reused by the service and component; otherwise keep them module-local.
+- **Modified:** Contractors page query/render handlers to load team assignments and expose add-team/add-crew actions. CEO/Super Admin are the only roster editors unless existing permission policy explicitly authorizes another role; verify server-side enforcement rather than trusting UI guards.
+- **Modified only if required:** ticket dispatch option mapping so it can resolve the operational contractor lead independently from the existing Admin reviewer. Existing `assign_ticket_team_lead` and `create_field_crew` signatures must not silently change meaning.
+- **Modified only if current source confirms:** ticket detail/work/notes render functions to remove the exact extra UI elements in the scratchpad while preserving essential actions.
+- **Modified after tracing error source:** profile fetch error conversion/logging and retry path in `AuthProvider.tsx`. Log the actual message/name/code/status/cause where available; distinguish unauthenticated, permission, not-found, and transient transport errors; do not treat transport errors as successful auth or fabricate a profile outside the existing explicit dev-bypass path.
+- **Removed:** none planned at module/API level. Any removed UI element requires a test proving its duplicated/obsolete behavior and confirming the necessary underlying capability remains available.
+
+### Classes
+
+- No class-based modules are expected; the app uses functional React components and service objects.
+- Add `ContractorTeamRoster` and, if useful, `ContractorTeamEditor` function components with explicit props and accessible controls.
+- No existing class hierarchy changes or removals.
+
+### Dependencies
+
+- No new package expected. Reuse Supabase client/RPC patterns, TanStack Query, React, TypeScript, and existing shadcn/ui controls.
+- Any database modification must be additive, least-privilege, RLS/guarded-RPC protected, migration-ledger aligned, and followed by regenerated types and security/performance checks as appropriate.
+
+### Testing
+
+- Service tests: stable IDs, role-to-slot eligibility, roster ordering, error propagation, idempotent/retry behavior where supported, and no accidental substitution of Admin reviewer IDs for contractor Team Lead IDs.
+- Component tests: create a team with lead and lead driver; add crews up to ten; prevent an eleventh crew; prevent saving without at least one complete driver/assessor pair; ensure a contractor cannot occupy an incompatible slot; handle repeated initials; verify full names remain visible; verify unauthorized users cannot edit.
+- Contractors page tests: “Team / Crew Assignment” replaces “Alerts”; a contractor’s team/crew role labels render correctly; search/status filters/export/loading/error behavior continue working.
+- Database/RPC checks if persistence changes: only authorized CEO/Super Admin actors can mutate; all selected contractors are active, eligible, and role-compatible; crew count and pair completeness are enforced atomically; no contractor is improperly assigned to conflicting active positions; reviewer remains an Admin profile; ticket assignment and existing review workflow remain valid. Use isolated rollback fixtures and only authorized live checks.
+- Ticket feedback tests: inspect current code first; assert absence of only the explicitly unwanted elements while preserving assessment, work notes, Start/Continue, ticket queue/navigation, clock capabilities, staff review, and accessibility.
+- AuthProvider tests: native Error and structured backend error diagnostics are preserved; network failure is distinguishable from authorization failure; retry can recover; permission/auth failure remains fail-closed; dev bypass remains narrowly gated.
+- Run focused Vitest suites, `npm run typecheck`, scoped ESLint, `npm test`, applicable isolated database checks, and an isolated production build if the normal build is blocked by the documented environment constraints. Refresh Graphify after source edits and update the implementation checklist.
+
+### Implementation Order
+
+1. Re-read this implementation plan and `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md`; check current worktree state and the task’s active Phase 4 ordering before implementation.
+2. Inspect current contractors page, contractor eligibility reads, database schema/RLS/RPCs, storm roster semantics, ticket dispatch, and review flow. Confirm no active roster model already exists and identify the intended scope (reusable operational team versus storm-specific roster) before creating schema.
+3. Add failing focused tests for role-code formatting, eligibility, minimum/maximum crew constraints, authorization, and distinction between operational lead and Admin reviewer.
+4. Implement the minimal typed service and, only if required, an additive guarded persistence migration. Verify constraints and access in isolated database tests before wiring UI.
+5. Build roster list/editor in `/admin/contractors`; replace the Alerts column with Team / Crew Assignment; preserve contractor list features; connect create-team and add-crew operations to eligible manually added contractors.
+6. Test ticket dispatch integration, if any, ensuring operational lead assignment does not overwrite or reinterpret the Admin reviewer. Preserve unique backend IDs and existing ticket state transitions.
+7. Reinspect the scratchpad’s ticket-page feedback targets against current source/runtime; remove only confirmed redundant UI and cover preserved work/review/navigation actions with regression tests.
+8. Trace the AuthProvider profile error from its origin through the current diagnostic helper and retry state; implement evidence-based diagnostic/recovery changes and tests without weakening auth.
+9. Run focused tests, full test suite, typecheck, scoped lint, database validation, and production build; review diffs and verify no unintended UI/backend behavior changed.
+10. Update the progress tracker in `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md`, append implementation evidence/status to this plan, and run `graphify update .` after source modifications. Report any live/device/deployment acceptance still outstanding.
+
 ## Active Phase 4 task — Click-driven contractor field status (2026-10-06, Codex /root)
 
 User authorized: Start changes Assigned → En Route; opening the assigned assessor's field checklist changes En Route → On Site. Both are explicit click actions; no GPS permission, reading or geofence may be used for these status changes. Contractors see Assigned / En Route / On Site and Closed after submission; admins retain their detailed review labels.
@@ -1703,3 +1796,7 @@ Removed the procedural SOP/stage display from `TicketAssessments` while retainin
 Submission/review, two-stage approval, durable offline field-progress replay, and the existing utility handoff remain governed by the Phase 4 workflow infrastructure. Prepared additive draft-validation migration `20261006140000_allow_progressive_ticket_assessment_drafts.sql` remains local and unapplied to the live database in this pass.
 
 Validation: `npm test` passes 598 tests across 110 files; `npm run typecheck` passes; targeted ESLint passes for `StatusUpdateFlow`, its tests, and `StatusHistoryTimeline`; the isolated ticket-workflow database harness passes 41 checks; and an isolated production webpack build compiles, completes TypeScript, and generates all 50 pages. The local contractor login at `192.168.1.102:3000` opened the requested ticket and verified the Open label, same-crew assigned-ticket list, and SOP absence without mutating the QA record (which is marked “workflow test only; no field dispatch”). The Super Admin sign-in in a separate Norton Neo session was rejected as invalid credentials, so authenticated staff review/approval and full browser lifecycle remain unverified. No Start/GPS, assessment submission, approval, or utility handoff was performed against live records. — Codex /root
+
+## Ticket work page cleanup — 2026-10-06 (Codex /root)
+
+Removed the same-crew Assigned tickets panel from `/tickets/[id]/work` at the user's request. The Assigned tickets row on ticket details remains the sole Start entrypoint; Site reference and Time clock remain on the work page.

@@ -8,7 +8,6 @@ import { PageHeader } from '@/components/common/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { AssignedTicketsPanel } from '@/components/features/tickets/AssignedTicketsPanel';
 import { TicketEntergyForms } from '@/components/features/tickets/TicketEntergyForms';
 import { TicketAssessments } from '@/components/features/tickets/TicketAssessments';
 import { StatusUpdateFlow } from '@/components/features/tickets/StatusUpdateFlow';
@@ -72,7 +71,7 @@ export default function TicketWorkPage() {
         <TicketWorkCompletion ticket={ticket} canSubmit={canAssess} onChanged={load}/>
         <details className="cc-work-panel p-5 sm:p-6"><summary className="cursor-pointer font-semibold text-grid-navy">Saved checklist & submitted assessment</summary><div className="mt-4"><TicketAssessments ticket={ticket} onChanged={load}/></div></details>
       </div>
-      <aside className="space-y-5"><div className="cc-work-panel p-5"><h2 className="font-heading text-xl font-semibold text-grid-navy">Site reference</h2><p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">{ticket.special_instructions||'Review the ticket details for dispatcher comments, utility identifiers, and access information.'}</p>{ticket.client_contact_name&&<p className="mt-4 text-sm"><strong>{ticket.client_contact_name}</strong>{ticket.client_contact_phone&&<a className="mt-1 block text-grid-blue underline" href={`tel:${ticket.client_contact_phone}`}>{ticket.client_contact_phone}</a>}</p>}<Button asChild variant="outline" size="sm" className="mt-4 w-full"><Link href={`/tickets/${id}`}>View location & utility details</Link></Button></div>{worker&&<Button asChild variant="outline" className="w-full"><Link href="/contractor/time"><Clock3 className="size-4"/>Time clock</Link></Button>}<AssignedTicketsPanel ticket={ticket} userRole={worker?'contractor':'admin'} contractorId={contractorId}/></aside>
+      <aside className="space-y-5"><div className="cc-work-panel p-5"><h2 className="font-heading text-xl font-semibold text-grid-navy">Site reference</h2><p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">{ticket.special_instructions||'Review the ticket details for dispatcher comments, utility identifiers, and access information.'}</p>{ticket.client_contact_name&&<p className="mt-4 text-sm"><strong>{ticket.client_contact_name}</strong>{ticket.client_contact_phone&&<a className="mt-1 block text-grid-blue underline" href={`tel:${ticket.client_contact_phone}`}>{ticket.client_contact_phone}</a>}</p>}<Button asChild variant="outline" size="sm" className="mt-4 w-full"><Link href={`/tickets/${id}`}>View location & utility details</Link></Button></div>{worker&&<Button asChild variant="outline" className="w-full"><Link href="/contractor/time"><Clock3 className="size-4"/>Time clock</Link></Button>}</aside>
     </div>
   </div>;
 }

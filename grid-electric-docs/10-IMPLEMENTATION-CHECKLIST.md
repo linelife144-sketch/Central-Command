@@ -976,6 +976,7 @@ Evidence: `docs/testing/entergy-source-coverage.md`, `docs/testing/entergy-forms
 - [x] Activate append-only `ticket_work_notes`, guarded authenticated RPC, idempotent retries, actor-scoped IndexedDB sync, critical-priority safety flags, dispatch in-app notifications, staff readback and report inclusion on live Central Command Supabase. — Codex /root
 - [x] Verify one explicitly approved permanent QA note through the actual signed-in contractor account, Supabase row readback and page reload; verify both card routes and responsive 390px/1201px browser layouts. — Codex /root
 - [x] Pass the full 639-test suite across 115 files, TypeScript, scoped ESLint, isolated production webpack build (50 generated pages), 15 isolated database checks and six rollback-only live SQL scenario groups. — Codex /root
+- [x] Remove the same-crew Assigned tickets panel from `/tickets/[id]/work`; keep the Assigned tickets row on ticket details as the contractor's Start entrypoint. — Codex /root
 - [x] Restore development type paths after the isolated build and refresh Graphify with AST-only extraction (4,700 nodes / 12,984 edges). — Codex /root
 
 Evidence: `docs/testing/ticket-workspace-validation.md`, `docs/testing/ticket-work-notes-local.json`, `docs/testing/ticket-work-notes-live.json` and `docs/testing/ticket-workspace/`. The target ticket remains workflow-only with no field dispatch; its field status and hazard flags were preserved. Real-device GPS/camera/offline submission and staff approval acceptance remain open in the earlier workflow checklist.
