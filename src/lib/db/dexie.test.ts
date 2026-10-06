@@ -162,6 +162,7 @@ describe('dexie offline queues', () => {
   });
 
   it('queues photos with default upload metadata', async () => {
+    vi.spyOn(db.photos, 'get').mockResolvedValue(undefined);
     const putPhotoSpy = vi.spyOn(db.photos, 'put').mockResolvedValue('photo-1' as never);
     const putSyncQueueSpy = vi.spyOn(db.syncQueue, 'put').mockResolvedValue('sync-1' as never);
 

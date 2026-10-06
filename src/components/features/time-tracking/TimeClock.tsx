@@ -57,7 +57,7 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
     // Loading begins in the asynchronous request to keep effects passive.
     void ticketService.getTicketsByAssignee(contractorId).then(tickets => {
       if (!mounted) return;
-      const available = tickets.filter(ticket => ticket.storm_event_id && !['CLOSED', 'ARCHIVED', 'EXPIRED', 'REJECTED'].includes(ticket.status));
+      const available = tickets.filter(ticket => ticket.storm_event_id && !['CLOSED', 'ARCHIVED', 'EXPIRED'].includes(ticket.status));
       setAssignedTickets(available);
       setTicketId(current => available.some(ticket => ticket.id === current) ? current : available[0]?.id ?? '');
     }).catch(() => { if (mounted) setAssignedTickets([]); })

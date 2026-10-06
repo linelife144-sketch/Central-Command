@@ -198,7 +198,7 @@ export async function updateSession(request: NextRequest) {
     return redirectWithSession(forbiddenUrl);
   }
 
-  if (isAdminRole && !mayOpenPath(pathname, permissions)) {
+  if (isAdminRole && !mayOpenPath(pathname, permissions, role)) {
     const forbiddenUrl = request.nextUrl.clone();
     // Sign-in and password forms use the dashboard as the staff home. A hidden
     // dashboard should lead to the person's first allowed module after sign-in.

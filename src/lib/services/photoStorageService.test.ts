@@ -44,6 +44,7 @@ function createMockClient() {
       if (table === 'media_assets') {
         return {
           insert,
+          select:vi.fn(()=>({eq:vi.fn(()=>({maybeSingle:vi.fn().mockResolvedValue({data:null,error:null})}))})),
         };
       }
 
@@ -107,6 +108,8 @@ describe('uploadPhotoPipeline', () => {
 
     expect(spies.upload).toHaveBeenCalledTimes(2);
     expect(spies.insert).toHaveBeenCalledTimes(1);
+    expect(spies.getPublicUrl).not.toHaveBeenCalled();
+    expect(spies.insert.mock.calls[0][0][0].public_url).toBeUndefined();
     expect(result.storagePath).toContain('photo-1-original');
     expect(result.thumbnailPath).toContain('photo-1-thumbnail');
   });

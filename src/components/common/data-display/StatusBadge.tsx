@@ -17,6 +17,7 @@ type StatusVariant =
 
 interface StatusBadgeProps {
   status: string;
+  displayLabel?: string;
   variant?: StatusVariant;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -94,6 +95,7 @@ function getVariantFromStatus(status: string): StatusVariant {
 
 export function StatusBadge({ 
   status, 
+  displayLabel,
   variant,
   className,
   size = 'md' 
@@ -101,7 +103,7 @@ export function StatusBadge({
   const determinedVariant = variant || getVariantFromStatus(status);
   
   // Format the status string for display (e.g., PENDING_REVIEW -> Pending Review)
-  const displayStatus = status
+  const displayStatus = displayLabel ?? status
     .toLowerCase()
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))

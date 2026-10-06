@@ -5,6 +5,32 @@ import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { localTestStore } from '@/lib/testing/localTestStore';
 import { stormRosterService } from './stormRosterService';
 import { notifyTicketsChanged } from '@/lib/tickets/events';
+import type { LocalTicket } from '@/lib/db/dexie';
+
+type TicketAssignmentColumn = 'crew_id' | 'team_lead_id';
+
+async function getTicketsForAssignment(column: TicketAssignmentColumn, assignmentId: string): Promise<Ticket[]> {
+    if (!assignmentId) return [];
+    if (isSuperAdminTestingEnabled()) {
+        return localTestStore.getTickets().filter(ticket => ticket[column] === assignmentId);
+    }
+
+    const { db } = await import('@/lib/db/dexie');
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return (await db.tickets.toArray()).filter(ticket => ticket[column] === assignmentId) as unknown as Ticket[];
+    }
+
+    const query = supabase.from('tickets').select('*');
+    const result = column === 'crew_id'
+        ? await query.eq('crew_id', assignmentId).order('created_at', { ascending: false })
+        : await query.eq('team_lead_id', assignmentId).order('created_at', { ascending: false });
+
+    if (result.error) throw result.error;
+    const rows = (result.data ?? []) as unknown as Ticket[];
+    const { cacheTickets } = await import('@/lib/db/dexie');
+    await cacheTickets(rows as unknown as LocalTicket[]);
+    return rows;
+}
 
 export const ticketService = {
     async getUtilityPayload(id: string): Promise<Record<string, unknown> | null> {
@@ -43,8 +69,22 @@ export const ticketService = {
         return data as Ticket[];
     },
 
+    async getTicketsByCrew(crewId: string) {
+        return getTicketsForAssignment('crew_id', crewId);
+    },
+
+    async getTicketsByTeamLead(teamLeadId: string) {
+        return getTicketsForAssignment('team_lead_id', teamLeadId);
+    },
+
     async getTicketById(id: string) {
         if (isSuperAdminTestingEnabled()) return localTestStore.getTicketById(id);
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            const {db}=await import('@/lib/db/dexie');
+            const cached=await db.tickets.get(id);
+            if (!cached) throw new Error('This ticket is not stored on this device. Reconnect to load it.');
+            return cached as unknown as Ticket;
+        }
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
@@ -52,6 +92,8 @@ export const ticketService = {
             .single();
 
         if (error) throw error;
+        const {db}=await import('@/lib/db/dexie');
+        await db.tickets.put({...data,assigned_to:data.assigned_to??undefined,storm_event_id:data.storm_event_id??undefined,work_description:data.work_description??undefined,latitude:data.latitude??undefined,longitude:data.longitude??undefined,updated_at:data.updated_at??data.created_at??new Date().toISOString(),synced:true,sync_status:'synced'});
         return data as Ticket;
     },
 
@@ -86,9 +128,10 @@ export const ticketService = {
         if (!contractorId) throw new Error('Select a contractor.');
         if (isSuperAdminTestingEnabled()) { const updated = localTestStore.assignTicket(id, contractorId); notifyTicketsChanged(); return updated; }
         const ticket = await this.getTicketById(id);
-        if (!ticket.storm_event_id) throw new Error('This ticket needs a storm event before it can be assigned.');
-        const roster = await stormRosterService.listAssignable(ticket.storm_event_id);
-        if (!roster.some(member => member.contractorId === contractorId)) throw new Error('Select an active contractor from this storm’s roster.');
+        const options = await stormRosterService.listOptions();
+        if (!options.some(option => option.id === contractorId)) throw new Error('Select an active contractor.');
+        // The database requires assignees to be on the storm roster; add them if needed (idempotent).
+        if (ticket.storm_event_id) await stormRosterService.assign(ticket.storm_event_id, contractorId);
         // One UPDATE saves the assignee and status together; the database trigger records history.
         return this.updateTicket(id, {
             assigned_to: contractorId,
@@ -102,11 +145,11 @@ export const ticketService = {
             return localTestStore.getTickets().filter((ticket) => ticket.assigned_to === assigneeId);
         }
         const { db } = await import('@/lib/db/dexie');
-        if (typeof navigator !== 'undefined' && !navigator.onLine) return await db.tickets.where('assigned_to').equals(assigneeId).toArray() as unknown as Ticket[];
+        if (typeof navigator !== 'undefined' && !navigator.onLine) return await db.tickets.filter(t=>t.assigned_to===assigneeId||t.assigned_driver_id===assigneeId).toArray() as unknown as Ticket[];
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
-            .eq('assigned_to', assigneeId)
+            .or(`assigned_to.eq.${assigneeId},assigned_driver_id.eq.${assigneeId}`)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -123,7 +166,8 @@ export const ticketService = {
         userId: string,
         role: UserRole,
         changeReason?: string,
-        location?: { latitude: number; longitude: number; accuracy: number }
+        location?: { latitude: number; longitude: number; accuracy: number; capturedAt?: string },
+        fieldContext?: { contractorId: string },
     ) {
         // 1. Get current status
         const ticket = await this.getTicketById(id);
@@ -140,27 +184,23 @@ export const ticketService = {
             return true;
         }
 
-        // 3. Start transaction-like update
-        // Note: Supabase doesn't support multi-table transactions in a simple client call, 
-        // but we can use an Edge Function or just sequential calls for this MVP.
-
-        // Update ticket
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: updatedTicket, error: updateError } = await (supabase.from('tickets') as any)
-            .update({
-                status: newStatus,
-                updated_at: new Date().toISOString(),
-                updated_by: userId
-            })
-            .eq('id', id)
-            .eq('status', currentStatus)
-            .select('id, status')
-            .maybeSingle();
-
-        if (updateError) throw updateError;
-        if (!updatedTicket || updatedTicket.status !== newStatus) {
-            throw new Error('Ticket status was not saved. Your account may not have permission, or the ticket changed. Refresh and try again.');
+        if (!location) throw new Error('GPS validation is required before changing field status.');
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            if (role !== 'CONTRACTOR' || !fieldContext?.contractorId || !['IN_ROUTE', 'ON_SITE'].includes(newStatus)) {
+                throw new Error('This field status cannot be queued while offline. Reconnect and retry.');
+            }
+            const { ticketFieldProgressWorkflow } = await import('./ticketFieldProgressWorkflow');
+            await ticketFieldProgressWorkflow.recordOffline({
+                ticket,
+                actorProfileId: userId,
+                contractorId: fieldContext.contractorId,
+                nextStatus: newStatus as 'IN_ROUTE' | 'ON_SITE',
+                location,
+            });
+            return true;
         }
+        const {ticketWorkflowRpc}=await import('./ticketAssessmentWorkflow');
+        await ticketWorkflowRpc<Ticket>('update_ticket_field_status',{p_ticket_id:id,p_status:newStatus,p_latitude:location.latitude,p_longitude:location.longitude,p_accuracy:location.accuracy});
 
         // Database trigger writes the status history atomically with this update.
         notifyTicketsChanged();

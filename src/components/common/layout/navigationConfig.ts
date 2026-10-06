@@ -33,7 +33,6 @@ export const ADMIN_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
   },
   { href: '/admin/time-review', label: 'Time Review', signalKey: 'reviews', badgeStyle: 'count' },
   { href: '/admin/expense-review', label: 'Expenses', signalKey: 'reviews', badgeStyle: 'count' },
-  { href: '/admin/assessment-review', label: 'Assessments', signalKey: 'reviews', badgeStyle: 'count' },
   { href: '/admin/payroll', label: 'Payroll', signalKey: 'reviews', badgeStyle: 'count' },
   { href: '/admin/reports', label: 'Reports' },
   {
@@ -50,7 +49,6 @@ export const CONTRACTOR_SIDEBAR_NAV_ITEMS: NavLinkItem[] = [
   { href: '/contractor/map', label: 'Map' },
   { href: '/contractor/time', label: 'Time Tracking', signalKey: 'sync', badgeStyle: 'dot' },
   { href: '/contractor/expenses', label: 'Expenses', signalKey: 'sync', badgeStyle: 'dot' },
-  { href: '/contractor/assessments/create', label: 'Assessments', signalKey: 'reviews', badgeStyle: 'dot' },
   { href: '/contractor/account', label: 'Account' },
 ];
 

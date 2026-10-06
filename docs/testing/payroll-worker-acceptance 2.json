@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-03",
+  "agent": "Codex /root",
+  "liveMigrationApplied": false,
+  "completionAudit": {
+    "complete": false,
+    "fourActiveApprovedProfilesAndAuthSignIns": "verified live",
+    "oneAssignedQaTicketPerWorker": "verified live",
+    "sixPersistedClockEntriesAndPayrollBillingTotals": "verified live",
+    "validatedSelectionsAndOfflineBehavior": "verified in local app against live backend",
+    "weeklyOvertimeAndWorkerIsolationMigration": "tested locally; live migration absent",
+    "staffPayrollReview": "not verified; six pending shifts and zero approved shifts",
+    "blockingCondition": "Explicit approval for live migration and existing privileged staff Chrome session remains unanswered after automatic approval review rejected both actions",
+    "consecutiveGoalTurnsWithSameBlocker": 3
+  },
+  "liveBrowser": {
+    "accounts": 4,
+    "signIn": true,
+    "identitySurvivesReload": true,
+    "submittedTotalsVerifiedAfterReload": true,
+    "gps": "Playwright emulated; accuracy 10m",
+    "time": "Playwright fixed clock; September 21, 2026 06:00 to 22:00 America/Chicago",
+    "shifts": [
+      {
+        "email": "qa.payroll.driver.20261003@example.com",
+        "id": "1828d6e5-5183-4a04-92db-f8ff1a591af4",
+        "ticket_id": "7df3d94f-0d69-47d3-8b8c-408be00b9285",
+        "storm_event_id": "a01b1189-4544-43d7-a4f5-af30f51fb613",
+        "clock_in_at": "2026-09-21 11:00:00+00",
+        "clock_out_at": "2026-09-22 03:00:00+00",
+        "clock_in_accuracy": "10.00",
+        "clock_out_accuracy": "10.00",
+        "billable_minutes": 960,
+        "pay_rate_applied": "65.00",
+        "payroll_amount": "1040.00",
+        "utility_bill_rate_applied": "175.00",
+        "utility_bill_amount": "2800.00",
+        "margin": "1760.00"
+      },
+      {
+        "email": "qa.payroll.lead.20261003@example.com",
+        "id": "b56562b9-07dc-4713-9a5a-c4e34f4b353a",
+        "ticket_id": "167856f0-e3f0-4364-af0b-713b589da3c0",
+        "storm_event_id": "a01b1189-4544-43d7-a4f5-af30f51fb613",
+        "clock_in_at": "2026-09-21 11:00:00+00",
+        "clock_out_at": "2026-09-22 03:00:00+00",
+        "clock_in_accuracy": "10.00",
+        "clock_out_accuracy": "10.00",
+        "billable_minutes": 960,
+        "pay_rate_applied": "105.00",
+        "payroll_amount": "1680.00",
+        "utility_bill_rate_applied": "175.00",
+        "utility_bill_amount": "2800.00",
+        "margin": "1120.00"
+      },
+      {
+        "email": "qa.payroll.manager.20261003@example.com",
+        "id": "8a11d289-22ca-4029-9465-a55af6681cfd",
+        "ticket_id": "f7afbe2a-62f3-44b4-9385-243a1694511c",
+        "storm_event_id": "a01b1189-4544-43d7-a4f5-af30f51fb613",
+        "clock_in_at": "2026-09-21 11:00:00+00",
+        "clock_out_at": "2026-09-22 03:00:00+00",
+        "clock_in_accuracy": "10.00",
+        "clock_out_accuracy": "10.00",
+        "billable_minutes": 960,
+        "pay_rate_applied": "115.00",
+        "payroll_amount": "1840.00",
+        "utility_bill_rate_applied": "175.00",
+        "utility_bill_amount": "2800.00",
+        "margin": "960.00"
+      },
+      {
+        "email": "qa.payroll.senior.20261003@example.com",
+        "id": "e823fde2-2820-4458-830b-f581a20d7a9c",
+        "ticket_id": "429d0bcb-9c0c-4ee6-be86-b6701c370981",
+        "storm_event_id": "a01b1189-4544-43d7-a4f5-af30f51fb613",
+        "clock_in_at": "2026-09-21 11:00:00+00",
+        "clock_out_at": "2026-09-22 03:00:00+00",
+        "clock_in_accuracy": "10.00",
+        "clock_out_accuracy": "10.00",
+        "billable_minutes": 960,
+        "pay_rate_applied": "95.00",
+        "payroll_amount": "1520.00",
+        "utility_bill_rate_applied": "175.00",
+        "utility_bill_amount": "2800.00",
+        "margin": "1280.00"
+      }
+    ],
+    "totalsScope": "Four original 16-hour shifts; additional offline shifts are recorded below",
+    "totals": {
+      "hours": 64,
+      "payroll": 6080,
+      "utilityBilling": 11200,
+      "marginBeforeReimbursement": 5120
+    }
+  },
+  "liveOffline": {
+    "queueUploadsExactlyOnce": true,
+    "gps": "Playwright emulated; accuracy 10m at both clock actions",
+    "identityPreservedAcrossOfflineFocusAnd35SecondRefresh": true,
+    "previouslyLoadedPayrollHistoryAvailableOffline": true,
+    "unsyncedWagesRemainUnknown": true,
+    "pendingHoursIncludeQueuedShifts": true,
+    "submittedTotalsRefreshAfterUpload": true,
+    "shifts": [
+      {
+        "id": "ebe40d2c-44f7-4f07-a293-8a13b50331ba",
+        "clockIn": "2026-09-22T12:00:00Z",
+        "clockOut": "2026-09-22T13:00:00Z",
+        "breakMinutes": 0,
+        "paidMinutes": 60,
+        "wages": 65,
+        "customerBilling": 175
+      },
+      {
+        "id": "4c194f77-bcd9-4c3e-a4d9-e8d88d1d7130",
+        "clockIn": "2026-09-23T12:00:00Z",
+        "clockOut": "2026-09-23T13:00:00Z",
+        "breakMinutes": 15,
+        "paidMinutes": 45,
+        "wages": 48.75,
+        "customerBilling": 131.25
+      }
+    ],
+    "allQaShiftTotals": {
+      "entries": 6,
+      "elapsedHours": 66,
+      "paidHours": 65.75,
+      "wages": 6193.75,
+      "customerBilling": 11506.25,
+      "marginBeforeReimbursement": 5312.5
+    },
+    "screenshots": [
+      "output/playwright/payroll-driver-offline-queued.png",
+      "output/playwright/payroll-driver-offline-synced.png",
+      "output/playwright/payroll-driver-offline-break-synced.png",
+      "output/playwright/payroll-driver-offline-identity-history.png"
+    ]
+  },
+  "localValidation": {
+    "vitestTests": 452,
+    "vitestFiles": 86,
+    "databaseSuites": 15,
+    "roleWorkTypeCombinations": 30,
+    "typecheck": "passed",
+    "build": "webpack production passed",
+    "weeklyPolicy": {
+      "week": "Monday-Sunday",
+      "timezone": "America/Chicago",
+      "thresholdHours": 40,
+      "multiplier": 1.5
+    },
+    "driver48Hours": {
+      "regularHours": 40,
+      "overtimeHours": 8,
+      "regularPay": 2600,
+      "overtimePay": 780,
+      "totalPay": 3380,
+      "billing": 8400,
+      "marginBeforeReimbursement": 5020
+    }
+  },
+  "pending": [
+    "Explicit approval to deploy weekly_overtime_and_clock_validation on live backend",
+    "Explicit approval to use existing staff Chrome session for QA review and dashboard totals",
+    "Live weekly overtime acceptance after migration",
+    "Live weekly overtime and offline allocation acceptance after migration",
+    "Vehicle reimbursement submission and staff review acceptance",
+    "Physical device GPS/photo acceptance"
+  ]
+}

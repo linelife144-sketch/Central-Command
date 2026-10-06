@@ -1,0 +1,31 @@
+{
+  "scope": "Live Postgres with simulated request claims; fixtures rolled back. Browser and Storage API uploads not tested.",
+  "checks": [
+    "chief creates draft and assigns active Admin team lead",
+    "other team lead cannot see or dispatch this ticket",
+    "Admin ticket/assessment edits allowed; finance and full contractor records denied",
+    "driver/assessor role validation and atomic crew assignment",
+    "assigned driver reads ticket but cannot author assessor draft",
+    "server rejects poor GPS and distant arrival; valid field progress persists",
+    "live assessor saves and reads independent cleanup/damage drafts, preserving leading zeros",
+    "live stale-device edits rejected and exact retries idempotent",
+    "live submission rejects absent and unuploaded evidence",
+    "live submission binds uploaded linked GPS evidence, identity and immutable version",
+    "live direct writes, submitted form edits and linked object overwrites rejected",
+    "live damage sections require their own linked photo",
+    "live new lighting work submits without a map",
+    "live assigned driver reads forms/private evidence but cannot author",
+    "live assigned team lead reads forms without bypassing assessor write boundary",
+    "live unrelated staff cannot read or author another team forms",
+    "live audit identity, privileged immutability guards and anonymous denial verified"
+  ],
+  "passed": 17,
+  "rollback_counts_match": true,
+  "project_id": "xcvacmreerrypygpritq",
+  "migration_versions": [
+    "20261006175056",
+    "20261006175923"
+  ],
+  "security_advisor": "No database security findings. Existing Auth leaked password protection warning remains; settings were not changed.",
+  "security_advisor_remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+}

@@ -1,5 +1,4 @@
-import { TicketStatus, UserRole } from "@/types";
-import { isValidTransition } from "./statusTransitions";
+import { getNextPossibleStatuses, isValidTransition } from "./statusTransitions";
 
 describe("statusTransitions", () => {
   describe("isValidTransition", () => {
@@ -8,8 +7,8 @@ describe("statusTransitions", () => {
       expect(isValidTransition("DRAFT", "ASSIGNED", "ADMIN")).toBe(true);
     });
 
-    it("should allow Admin to move from ASSIGNED to REJECTED", () => {
-        expect(isValidTransition("ASSIGNED", "REJECTED", "ADMIN")).toBe(true);
+    it("should NOT allow Admin to move from ASSIGNED to a rejected state", () => {
+        expect(getNextPossibleStatuses("ASSIGNED", "ADMIN")).toEqual(["CLOSED"]);
     });
 
     it("should allow Admin to move from PENDING_REVIEW to APPROVED", () => {
@@ -20,8 +19,8 @@ describe("statusTransitions", () => {
       expect(isValidTransition("PENDING_REVIEW", "NEEDS_REWORK", "ADMIN")).toBe(true);
     });
 
-    it("should allow Admin to move from PENDING_REVIEW to REJECTED", () => {
-        expect(isValidTransition("PENDING_REVIEW", "REJECTED", "ADMIN")).toBe(true);
+    it("should NOT offer REJECTED from PENDING_REVIEW", () => {
+        expect(getNextPossibleStatuses("PENDING_REVIEW", "ADMIN")).not.toContain("REJECTED");
     });
 
     it("should allow Admin to move from any status to CLOSED", () => {
@@ -43,21 +42,14 @@ describe("statusTransitions", () => {
       expect(isValidTransition("IN_ROUTE", "ON_SITE", "CONTRACTOR")).toBe(true);
     });
 
-    it("should allow Contractor to move from ON_SITE to IN_PROGRESS", () => {
-      expect(isValidTransition("ON_SITE", "IN_PROGRESS", "CONTRACTOR")).toBe(true);
+    it.each([
+      ['ON_SITE', 'IN_PROGRESS'], ['IN_PROGRESS', 'COMPLETE'], ['COMPLETE', 'PENDING_REVIEW'], ['NEEDS_REWORK', 'IN_PROGRESS'],
+    ] as const)("does not expose legacy contractor transition %s -> %s", (current, next) => {
+      expect(isValidTransition(current, next, "CONTRACTOR")).toBe(false);
     });
 
-    it("should allow Contractor to move from IN_PROGRESS to COMPLETE", () => {
-      expect(isValidTransition("IN_PROGRESS", "COMPLETE", "CONTRACTOR")).toBe(true);
-    });
-    
-    it("should allow Contractor to move from COMPLETE to PENDING_REVIEW (System auto)", () => {
-        // Usually system auto-transitions, but if client-triggered:
-        expect(isValidTransition("COMPLETE", "PENDING_REVIEW", "CONTRACTOR")).toBe(true);
-    });
-
-    it("should allow Contractor to move from NEEDS_REWORK to IN_PROGRESS", () => {
-        expect(isValidTransition("NEEDS_REWORK", "IN_PROGRESS", "CONTRACTOR")).toBe(true);
+    it("does not let team leads bypass the ticket review workflow", () => {
+      expect(getNextPossibleStatuses('ASSIGNED', 'TEAM_LEAD')).toEqual([]);
     });
 
     it("should NOT allow Contractor to move from DRAFT to ASSIGNED", () => {

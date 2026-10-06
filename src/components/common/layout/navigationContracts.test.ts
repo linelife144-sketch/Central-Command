@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ADMIN_SIDEBAR_NAV_ITEMS, CONTRACTOR_BOTTOM_NAV_ITEMS } from './navigationConfig';
+import { ADMIN_SIDEBAR_NAV_ITEMS, CONTRACTOR_BOTTOM_NAV_ITEMS, CONTRACTOR_SIDEBAR_NAV_ITEMS } from './navigationConfig';
 
 describe('navigation contracts', () => {
   it('includes contractor Home with field-tool links', () => {
@@ -21,6 +21,11 @@ describe('navigation contracts', () => {
         expect.objectContaining({ href: '/admin/payroll', label: 'Payroll' }),
       ])
     );
+    expect(ADMIN_SIDEBAR_NAV_ITEMS.some((item) => item.href.includes('assessment'))).toBe(false);
+  });
+
+  it('keeps contractor assessments inside tickets instead of a sidebar destination', () => {
+    expect(CONTRACTOR_SIDEBAR_NAV_ITEMS.some((item) => item.href.includes('assessment'))).toBe(false);
   });
 
   it('supports badge metadata for reactive navigation signals', () => {

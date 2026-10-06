@@ -1,33 +1,45 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ticketService } from './ticketService';
-const remote = vi.hoisted(() => ({from:vi.fn(), notify:vi.fn()}));
-vi.mock('@/lib/supabase/client', () => ({supabase:{from:remote.from}}));
-vi.mock('@/lib/testing/superAdminTesting', () => ({isSuperAdminTestingEnabled:()=>false}));
-vi.mock('@/lib/tickets/events', () => ({notifyTicketsChanged:remote.notify}));
-function query(result: unknown) {
- const chain = {select:vi.fn(),eq:vi.fn(),update:vi.fn(),single:vi.fn(),maybeSingle:vi.fn()};
- for (const method of [chain.select,chain.eq,chain.update]) method.mockReturnValue(chain);
- chain.single.mockResolvedValue(result);chain.maybeSingle.mockResolvedValue(result);
- return chain;
-}
-beforeEach(()=>vi.clearAllMocks());
-describe('persisted status updates',()=>{
- it('rejects a zero-row update and does not publish a success event',async()=>{
-  remote.from.mockReturnValueOnce(query({data:{status:'ASSIGNED'},error:null})).mockReturnValueOnce(query({data:null,error:null}));
-  await expect(ticketService.updateTicketStatus('ticket','IN_ROUTE','alex','CONTRACTOR')).rejects.toThrow('not saved');
-  expect(remote.notify).not.toHaveBeenCalled();
- });
- it('publishes only after a confirmed row and guards concurrent status changes',async()=>{
-  const update=query({data:{id:'ticket',status:'IN_ROUTE'},error:null});
-  remote.from.mockReturnValueOnce(query({data:{status:'ASSIGNED'},error:null})).mockReturnValueOnce(update);
-  await expect(ticketService.updateTicketStatus('ticket','IN_ROUTE','alex','CONTRACTOR')).resolves.toBe(true);
-  expect(update.eq).toHaveBeenCalledWith('status','ASSIGNED');
-  expect(remote.notify).toHaveBeenCalledOnce();
- });
- it('rejects an administrative approval attempted by a contractor before writing',async()=>{
-  remote.from.mockReturnValueOnce(query({data:{status:'PENDING_REVIEW'},error:null}));
-  await expect(ticketService.updateTicketStatus('ticket','APPROVED','alex','CONTRACTOR')).rejects.toThrow('Invalid status transition');
-  expect(remote.from).toHaveBeenCalledOnce();
-  expect(remote.notify).not.toHaveBeenCalled();
- });
+import { ticketWorkflowRpc } from './ticketAssessmentWorkflow';
+import type { Ticket } from '@/types';
+
+const remote = vi.hoisted(() => ({ from: vi.fn(), notify: vi.fn() }));
+vi.mock('@/lib/supabase/client', () => ({ supabase: { from: remote.from } }));
+vi.mock('@/lib/testing/superAdminTesting', () => ({ isSuperAdminTestingEnabled: () => false }));
+vi.mock('@/lib/tickets/events', () => ({ notifyTicketsChanged: remote.notify }));
+vi.mock('./ticketAssessmentWorkflow', () => ({ ticketWorkflowRpc: vi.fn() }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.spyOn(ticketService, 'getTicketById').mockResolvedValue({ id: 'ticket', status: 'ASSIGNED' } as Ticket);
+});
+
+describe('guarded field status updates', () => {
+  const gps = { latitude: 30.2, longitude: -92.1, accuracy: 12, capturedAt: '2026-10-06T15:00:00Z' };
+
+  it('does not publish a success event when the server rejects the transition', async () => {
+    vi.mocked(ticketWorkflowRpc).mockRejectedValueOnce(new Error('not saved'));
+
+    await expect(ticketService.updateTicketStatus('ticket', 'IN_ROUTE', 'alex', 'CONTRACTOR', undefined, gps, { contractorId: 'crew-1' })).rejects.toThrow('not saved');
+    expect(ticketWorkflowRpc).toHaveBeenCalledWith('update_ticket_field_status', {
+      p_ticket_id: 'ticket', p_status: 'IN_ROUTE', p_latitude: gps.latitude, p_longitude: gps.longitude, p_accuracy: gps.accuracy,
+    });
+    expect(remote.notify).not.toHaveBeenCalled();
+  });
+
+  it('publishes only after the guarded server transition succeeds', async () => {
+    vi.mocked(ticketWorkflowRpc).mockResolvedValueOnce(true);
+
+    await expect(ticketService.updateTicketStatus('ticket', 'IN_ROUTE', 'alex', 'CONTRACTOR', undefined, gps, { contractorId: 'crew-1' })).resolves.toBe(true);
+    expect(ticketWorkflowRpc).toHaveBeenCalledOnce();
+    expect(remote.notify).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a review approval attempted by a contractor before calling the server', async () => {
+    vi.spyOn(ticketService, 'getTicketById').mockResolvedValueOnce({ id: 'ticket', status: 'PENDING_REVIEW' } as Ticket);
+
+    await expect(ticketService.updateTicketStatus('ticket', 'APPROVED', 'alex', 'CONTRACTOR')).rejects.toThrow('Invalid status transition');
+    expect(ticketWorkflowRpc).not.toHaveBeenCalled();
+    expect(remote.notify).not.toHaveBeenCalled();
+  });
 });

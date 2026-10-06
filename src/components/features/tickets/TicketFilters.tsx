@@ -5,19 +5,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Search, X } from "lucide-react"
 import { TicketStatus } from "@/types"
+import type { ContractorTicketStatus } from "@/lib/utils/statusUpdateFlow"
 import { useState, useEffect } from "react"
 
 export interface TicketFiltersState {
     search: string
-    status: TicketStatus | "ALL"
+    status: TicketStatus | ContractorTicketStatus | "ALL"
     importance: "ALL" | "IMPORTANT" | "STANDARD"
 }
 
 interface TicketFiltersProps {
     onFilterChange: (filters: TicketFiltersState) => void
+    userRole: 'admin' | 'contractor'
 }
 
-export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
+export function TicketFilters({ onFilterChange, userRole }: TicketFiltersProps) {
     const [filters, setFilters] = useState<TicketFiltersState>({
         search: "",
         status: "ALL",
@@ -38,7 +40,7 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
     }
 
     const handleStatusChange = (value: string) => {
-        setFilters(prev => ({ ...prev, status: value as TicketStatus | "ALL" }))
+        setFilters(prev => ({ ...prev, status: value as TicketFiltersState['status'] }))
     }
 
     const handleImportanceChange = (value: string) => {
@@ -71,20 +73,22 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="ALL">All Statuses</SelectItem>
-                        <SelectItem value="DRAFT">Draft</SelectItem>
-                        <SelectItem value="ASSIGNED">Assigned</SelectItem>
-                        <SelectItem value="REJECTED">Rejected</SelectItem>
-                        <SelectItem value="IN_ROUTE">In Route</SelectItem>
-                        <SelectItem value="ON_SITE">On Site</SelectItem>
-                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                        <SelectItem value="COMPLETE">Complete</SelectItem>
-                        <SelectItem value="PENDING_REVIEW">Pending Review</SelectItem>
-                        <SelectItem value="APPROVED">Approved</SelectItem>
-                        <SelectItem value="NEEDS_REWORK">Needs Rework</SelectItem>
-                        <SelectItem value="CLOSED">Closed</SelectItem>
-                        <SelectItem value="ARCHIVED">Archived</SelectItem>
-                        <SelectItem value="EXPIRED">Expired</SelectItem>
+                        <SelectItem value="ALL">{userRole === 'contractor' ? 'All' : 'All statuses'}</SelectItem>
+                        {userRole === 'contractor' ? <>
+                            <SelectItem value="OPEN">Open</SelectItem>
+                            <SelectItem value="CLOSED">Closed</SelectItem>
+                        </> : <>
+                            <SelectItem value="DRAFT">Draft</SelectItem>
+                            <SelectItem value="ASSIGNED">Assigned</SelectItem>
+                            <SelectItem value="IN_ROUTE">En route</SelectItem>
+                            <SelectItem value="ON_SITE">On site</SelectItem>
+                            <SelectItem value="PENDING_REVIEW">Review</SelectItem>
+                            <SelectItem value="APPROVED">Approved</SelectItem>
+                            <SelectItem value="NEEDS_REWORK">Corrections</SelectItem>
+                            <SelectItem value="CLOSED">Submitted to utility</SelectItem>
+                            <SelectItem value="ARCHIVED">Archived</SelectItem>
+                            <SelectItem value="EXPIRED">Expired</SelectItem>
+                        </>}
                     </SelectContent>
                 </Select>
 

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import type { Ticket } from '@/types';
 import { toast } from 'sonner';
+import { getStaffTicketStatusLabel } from '@/lib/utils/statusUpdateFlow';
 
 export function StormWorkspace({ stormId }: { stormId: string }) {
   const { profile, permissions } = useAuth();
@@ -66,7 +67,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
       }}><div className="flex-1 space-y-2"><Label htmlFor="test-contractor-name">Test contractor name</Label><Input id="test-contractor-name" required value={name} onChange={event => setName(event.target.value)} /></div><Button disabled={saving} type="submit" variant="storm">Create Test Contractor</Button></form> : canManage ? <p className="text-sm"><Link className="text-grid-blue underline" href="/admin/contractors/add">Add a new contractor</Link> before assigning them to this storm.</p> : null}
     </section>}
     <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-tickets"><h2 id="storm-tickets" className="text-xl font-semibold text-white">Tickets · {tickets.length}</h2>
-      {tickets.length ? <ul className="divide-y">{tickets.map(ticket => <li key={ticket.id} className="flex justify-between gap-3 py-3"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticket_number}</Link><span>{ticket.status}</span></li>)}</ul> : <p className="text-sm text-grid-muted">Create the first {storm.utilityClient} ticket for this event.</p>}
+      {tickets.length ? <ul className="divide-y">{tickets.map(ticket => <li key={ticket.id} className="flex justify-between gap-3 py-3"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticket_number}</Link><span>{getStaffTicketStatusLabel(ticket.status, ticket.review_stage, ticket.utility_submitted_at)}</span></li>)}</ul> : <p className="text-sm text-grid-muted">Create the first {storm.utilityClient} ticket for this event.</p>}
     </section>
 
   </div>;

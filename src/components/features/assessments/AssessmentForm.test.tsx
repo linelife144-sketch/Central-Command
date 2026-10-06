@@ -1,0 +1,42 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { AssessmentForm } from './AssessmentForm';
+const workflow = vi.hoisted(() => ({ save: vi.fn() }));
+vi.mock('@/lib/db/dexie',()=>({db:{assessmentDrafts:{get:vi.fn().mockResolvedValue(undefined),put:vi.fn().mockResolvedValue(undefined),delete:vi.fn().mockResolvedValue(undefined)}}}));
+vi.mock('@/lib/services/ticketAssessmentWorkflow',()=>({ticketAssessmentWorkflow:{loadDraft:vi.fn().mockResolvedValue(null),save:workflow.save}}));
+vi.mock('@/lib/sync/photoUploadQueue',()=>({photoUploadQueue:{add:vi.fn(),process:vi.fn().mockResolvedValue({failed:0})}}));
+vi.mock('./PhotoCapture',()=>({PhotoCapture:()=> <div>GPS photo capture</div>}));
+Element.prototype.scrollIntoView = vi.fn();
+beforeEach(()=>workflow.save.mockResolvedValue({version:1,dirty:false,saved_at:'2026-10-06T12:00:00Z'}));
+afterEach(()=>{cleanup();workflow.save.mockReset();workflow.save.mockResolvedValue({version:1,dirty:false,saved_at:'2026-10-06T12:00:00Z'});});
+describe('field assessment interactions',()=>{
+ it('requires explicit answers and expands/clears pole damage details',async()=>{
+  render(<AssessmentForm ticketId="ticket" contractorId="contractor" actorProfileId="actor" />);
+  const pole=screen.getByRole('group',{name:/Is the pole broken/});
+  await waitFor(()=>expect(within(pole).getByRole('radio',{name:'Yes'}).hasAttribute('disabled')).toBe(false));
+  expect(screen.queryByLabelText(/Pole height/)).toBeNull();
+  fireEvent.click(within(pole).getByRole('radio',{name:'Yes'}));
+  expect(screen.getByLabelText(/Pole height/)).toBeTruthy();
+  expect(document.getElementById('damage-photo-poleDamage')?.textContent).toContain('GPS photo capture');
+  fireEvent.change(screen.getByLabelText(/Pole height/),{target:{value:'40'}});
+  fireEvent.click(within(pole).getByRole('radio',{name:'No'}));
+  expect(screen.queryByLabelText(/Pole height/)).toBeNull();
+  expect(document.getElementById('damage-photo-poleDamage')).toBeNull();
+  fireEvent.click(within(pole).getByRole('radio',{name:'Yes'}));
+  expect((screen.getByLabelText(/Pole height/) as HTMLSelectElement).value).toBe('');
+ });
+ it('allows incomplete drafts while requiring all answers before submission',async()=>{
+  render(<AssessmentForm ticketId="ticket" contractorId="contractor" actorProfileId="actor" />);
+  const danger=screen.getByRole('group',{name:/Is the public in danger/});
+  await waitFor(()=>expect(screen.getByRole('button',{name:/Save draft/}).hasAttribute('disabled')).toBe(false));
+  fireEvent.click(within(danger).getByRole('radio',{name:'Yes'}));
+  expect(screen.getByText('Critical escalation identified.')).toBeTruthy();
+  expect(screen.getByLabelText(/Describe the public danger/)).toBeTruthy();
+  expect(screen.getByLabelText(/Additional notes/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button',{name:/Save draft/}));
+  await waitFor(()=>expect(workflow.save).toHaveBeenCalled());
+  expect(screen.queryByText(/Complete every required answer before submitting/)).toBeNull();
+  fireEvent.click(screen.getByRole('button',{name:/^Submit$/}));
+  expect(screen.getByText('Complete every required answer before submitting.')).toBeTruthy();
+ });
+});

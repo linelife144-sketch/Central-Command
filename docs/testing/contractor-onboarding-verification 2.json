@@ -1,0 +1,121 @@
+{
+  "verifiedAt": "2026-10-04T23:22:35.935711+00:00",
+  "agent": "Codex /root",
+  "checkout": "/Users/davidmccarty/Desktop/GRID/Projects/Central Command",
+  "deployment": {
+    "project": "Central Command",
+    "projectId": "xcvacmreerrypygpritq",
+    "authorization": "User: go ahead and make it live then",
+    "appliedMigrations": [
+      "20261004223538_contractor_account_setup_and_minimal_onboarding",
+      "20261004223756_harden_contractor_roster_trigger_search_path",
+      "20261004231500_fix_contractor_account_setup_claim"
+    ],
+    "frontend": "Updated Desktop checkout and running localhost development app; no external web hosting deployment performed"
+  },
+  "liveChecks": {
+    "beforeAndAfterCounts": {
+      "contractors": 7,
+      "authUsers": 8,
+      "timeEntries": 10,
+      "agreements": 7
+    },
+    "setupEndpoint": {
+      "request": "Reserved unknown email via same-origin HTTP POST against the local app connected to live Supabase",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "response": "Generic eligibility-neutral response"
+    },
+    "rpcPrivileges": {
+      "functions": [
+        "claim_contractor_account_setup",
+        "complete_account_password_setup",
+        "complete_contractor_onboarding"
+      ],
+      "anonymous": false,
+      "authenticated": false,
+      "serviceRole": true,
+      "securityDefiner": true
+    },
+    "storage": {
+      "bucket": "contractor-registration-tags",
+      "public": false,
+      "maxBytes": 10485760,
+      "mimeTypes": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "restrictiveBoundaryPolicies": 7
+    },
+    "securityAdvisor": {
+      "newDatabaseFindingsAfterHardening": 0,
+      "remainingExistingFinding": "Leaked password protection disabled",
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+    },
+    "latestSetupRequestDiagnosis": {
+      "requestTime": "2026-10-04T23:03:45.760272Z",
+      "authLogTime": "2026-10-04T23:03:46Z",
+      "authOperation": "POST /admin/users returned 500",
+      "postgresError": "Internally added contractor required (SQLSTATE 42501)",
+      "cause": "Auth insert trigger evaluated raw_app_meta_data before the server-managed metadata was available; account setup then returned the generic response without sending OTP",
+      "fix": "Deploy one-use random contractor setup claim, bound to matching pre-added record/email and expiring after 10 minutes; finalize server-managed app_metadata after Auth insertion; log only error code and status."
+    },
+    "postFixVerification": {
+      "claimTable": "private.contractor_account_setup_claims",
+      "serviceRpcOnly": true,
+      "directServiceTableAccess": false,
+      "contractors": 7,
+      "authUsers": 8,
+      "timeEntries": 10,
+      "agreements": 7,
+      "verificationEmailRetriedByAgent": false
+    },
+    "latestSetupEmailLink": {
+      "otpRequest": "2026-10-04T23:11Z POST /otp returned 200",
+      "verification": "2026-10-04T23:12Z GET /verify recorded 403 Email link is invalid or has expired and redirected with HTTP 303",
+      "userObservedUrl": "http://localhost:3000/login#error=access_denied&error_code=otp_expired",
+      "interpretation": "The clicked one-time email token was expired or already consumed. The final /login path also indicates the app did not receive its contractor setup callback, likely because the requested callback URL is not allow-listed or the email template redirects to Site URL."
+    }
+  },
+  "localChecks": {
+    "unitComponentTests": 499,
+    "testFiles": 99,
+    "testRuntime": "NODE_OPTIONS=--no-experimental-webstorage npm test (Node 25 WebStorage compatibility)",
+    "isolatedDatabaseSuites": 21,
+    "databaseEvidence": "docs/testing/contractor-onboarding-local.json",
+    "typeScript": "passed",
+    "scopedEslint": "Onboarding/auth/contractor changes passed. StormWorkspace has an unchanged pre-existing react-hooks/set-state-in-effect violation at line 38; its changes only replace legacy approval/invitation labels.",
+    "productionBuild": "passed; Next.js 16.3.8; 48 pages; CC_NEXT_DIST_DIR=.next-onboarding-build",
+    "graphify": {
+      "mode": "AST-only update",
+      "nodes": 2860,
+      "edges": 7770,
+      "communities": 247
+    },
+    "testsAfterIncidentFix": "Not rerun after the new incident fix.",
+    "testsAfterCurrentFlowChanges": "Not run per instruction."
+  },
+  "fixes": [
+    "Apply previously missing database setup functions",
+    "Preserve actual HTTP host during same-origin validation when Next dev canonicalizes the URL",
+    "Preserve request Origin hostname in email callback URL",
+    "Permit verification callback before password-reset middleware redirect",
+    "Keep password recovery compatible with existing accounts",
+    "Use server-only security-definer RPCs because service_role cannot directly read auth.users",
+    "Restore fixed search_path on ticket roster trigger"
+  ],
+  "acceptancePending": [
+    "Real email delivery and redirect allowlist behavior for the contractor-requested verification email",
+    "Contractor enters and submits their own new password",
+    "Authenticated live minimal onboarding including real driver photo upload, completion persistence, and portal navigation",
+    "Live identity-based inactive sign-in and cross-account storage tests; isolated policy tests passed"
+  ],
+  "browserEvidence": "Login/setup navigation and layout were observed. Automated in-app browser did not hydrate the form reliably; submission acceptance is HTTP API evidence, not a passed browser flow.",
+  "emailAndAccountSideEffects": "No verification email sent and no new Auth user created by agent deployment checks; existing user-created contractor retained.",
+  "flowUpdates": {
+    "callback": "Setup emails now request /auth/confirm?flow=contractor-setup; confirmed setup links route to /set-password even if the profile lookup has not yet returned must_reset_password.",
+    "expiredLink": "Show expiration guidance on /login and link back to /setup-account.",
+    "afterPassword": "Clear setup gate, sign out the temporary verification session, and return contractor to /login; their first password login is redirected by middleware to /contractor/onboarding."
+  }
+}

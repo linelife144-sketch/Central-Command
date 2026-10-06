@@ -16,7 +16,7 @@ describe('individual staff access', () => {
     expect(permissions['admin.time.edit']).toBe(false);
     expect(permissions['admin.expenses.edit']).toBe(false);
     expect(permissions['admin.storms.edit']).toBe(false);
-    expect(permissionLanding(permissions)).toBe('/admin/storms');
+    expect(permissionLanding(permissions)).toBe('/tickets');
     expect(mayOpenPath('/admin/time-review', permissions)).toBe(false);
     expect(mayOpenPath('/admin/account', permissions)).toBe(true);
   });
@@ -25,8 +25,10 @@ describe('individual staff access', () => {
   });
   it('covers direct ticket/storm create URLs and rejects unknown input', () => {
     const map = resolvePermissions('ADMIN');
-    expect(mayOpenPath('/tickets/create', map)).toBe(false);
-    expect(mayOpenPath('/storms/123/tickets/new', map)).toBe(false);
+    expect(map['admin.tickets.edit']).toBe(true);
+    expect(mayOpenPath('/tickets/create',map,'ADMIN')).toBe(false);
+    expect(mayOpenPath('/storms/123/tickets/new',map,'ADMIN')).toBe(false);
+    expect(mayOpenPath('/admin/payroll', map)).toBe(false);
     expect(mayOpenPath('/admin/storms/create', map)).toBe(false);
     expect(permissionUpdateSchema.safeParse({overrides:{'invented.edit':'allow'},version:null}).success).toBe(false);
     expect(validatePermissionOverrides({'admin.time.view':'deny','admin.time.edit':'allow'})).toBeTruthy();
@@ -39,9 +41,9 @@ describe('individual staff access', () => {
 });
 
 
-it('gates Payroll independently of time review and makes admin wage edits opt-in', () => {
+it('gates Payroll independently of time review and limits team leads to their ticket workspace', () => {
   const permissions = resolvePermissions('ADMIN', { 'admin.time.view': 'deny' });
-  expect(mayOpenPath('/admin/payroll', permissions)).toBe(true);
+  expect(mayOpenPath('/admin/payroll', permissions)).toBe(false);
   expect(permissions['admin.payroll.edit']).toBe(false);
   expect(mayOpenPath('/admin/payroll', resolvePermissions('ADMIN', { 'admin.payroll.view': 'deny' }))).toBe(false);
 });

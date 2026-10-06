@@ -14,6 +14,11 @@ import {
   type LocalSyncConflict,
   type SyncQueueItem,
 } from '@/lib/db/dexie';
+import { ticketAssessmentWorkflow } from '@/lib/services/ticketAssessmentWorkflow';
+import { ticketFieldProgressWorkflow } from '@/lib/services/ticketFieldProgressWorkflow';
+import { entergyFormService } from '@/lib/services/entergyFormService';
+import { db } from '@/lib/db/dexie';
+import { assessmentUploadQueue } from '@/lib/sync/assessmentUploadQueue';
 import { photoUploadQueue } from '@/lib/sync/photoUploadQueue';
 import { timeEntryUploadQueue } from '@/lib/sync/timeEntryUploadQueue';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -65,6 +70,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [conflicts, setConflicts] = useState<LocalSyncConflict[]>([]);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
   const [pendingTimeEntryCount, setPendingTimeEntryCount] = useState(0);
+  const [pendingTicketDrafts,setPendingTicketDrafts]=useState(0);
+  const [failedTicketDrafts,setFailedTicketDrafts]=useState(0);
+  const [pendingFieldProgress,setPendingFieldProgress]=useState(0);
+  const [failedFieldProgress,setFailedFieldProgress]=useState(0);
+  const [pendingEntergyForms,setPendingEntergyForms]=useState(0);
+  const [failedEntergyForms,setFailedEntergyForms]=useState(0);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [lastError, setLastError] = useState<string | undefined>(undefined);
 
@@ -76,11 +87,20 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       getPendingTimeEntryCount(),
     ]);
 
+    const drafts=profile?.id?await db.ticketDraftQueue.where('actor_profile_id').equals(profile.id).toArray():[];
+    const fieldProgress=profile?.id?await db.ticketFieldProgressQueue.where('actor_profile_id').equals(profile.id).toArray():[];
+    const entergy=profile?.id?await db.entergyForms.where('actor_profile_id').equals(profile.id).toArray():[];
+    setPendingEntergyForms(entergy.filter(item=>item.dirty||item.submit_requested).length);
+    setFailedEntergyForms(entergy.filter(item=>item.last_error).length);
+    setPendingTicketDrafts(drafts.filter(d=>d.dirty||d.submit_requested).length);
+    setFailedTicketDrafts(drafts.filter(d=>d.last_error).length);
+    setPendingFieldProgress(fieldProgress.filter(item=>!item.last_error).length);
+    setFailedFieldProgress(fieldProgress.filter(item=>item.last_error).length);
     setQueueItems(pendingItems);
     setConflicts(unresolvedConflicts);
     setPendingPhotoCount(pendingPhotos);
     setPendingTimeEntryCount(pendingTimeEntries);
-  }, []);
+  }, [profile]);
 
   const syncNow = useCallback(async () => {
     if (!readOnlineStatus()) {
@@ -92,11 +112,16 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setLastError(undefined);
 
     try {
+      const progressResult=profile?.id?await ticketFieldProgressWorkflow.process(profile.id):{failed:0,pending:0,errors:[]};
       const result = await photoUploadQueue.process();
       const timeResult = await timeEntryUploadQueue.process();
+      const assessmentResult = await assessmentUploadQueue.process();
 
-      if (result.failed > 0 || timeResult.failed > 0) {
-        setLastError(`${result.failed} photo upload(s) and ${timeResult.failed} time entry sync(s) failed. Review queue items for retry.`);
+      const draftResult = profile?.id ? await ticketAssessmentWorkflow.process(profile.id) : {failed:0,errors:[]};
+      const entergyResult = profile?.id ? await entergyFormService.process(profile.id) : {failed:0,errors:[]};
+      if (progressResult.failed || draftResult.failed) setLastError(progressResult.errors[0] ?? draftResult.errors[0]);
+      if (progressResult.failed > 0 || draftResult.failed > 0 || entergyResult.failed > 0 || result.failed > 0 || timeResult.failed > 0 || assessmentResult.failed > 0) {
+        setLastError(`${progressResult.failed} ticket progress, ${result.failed} photo, ${timeResult.failed} time entry, ${assessmentResult.failed + draftResult.failed} assessment, and ${entergyResult.failed} Entergy form sync(s) failed. Review the records on the ticket and retry.`);
       } else {
         setLastSyncedAt(new Date().toISOString());
       }
@@ -107,7 +132,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncState('idle');
     }
-  }, [refresh]);
+  }, [refresh,profile]);
 
   useEffect(() => {
     if (isOnline && profile?.id) void Promise.resolve().then(syncNow);
@@ -191,8 +216,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh, syncNow]);
 
-  const pendingCount = queueItems.filter((item) => item.status === 'pending').length;
-  const failedCount = queueItems.filter((item) => item.status === 'failed').length;
+  const pendingCount = queueItems.filter((item) => item.status === 'pending').length + pendingTicketDrafts + pendingFieldProgress + pendingEntergyForms;
+  const failedCount = queueItems.filter((item) => item.status === 'failed').length + failedTicketDrafts + failedFieldProgress + failedEntergyForms;
 
   const snapshot = useMemo<SyncSnapshot>(
     () => ({

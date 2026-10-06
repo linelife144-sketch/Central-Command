@@ -6,10 +6,16 @@ import { loadContractorDashboard } from '@/lib/services/contractorDashboardServi
 
 export async function GET() {
   try {
-    const { contractor, profile } = await requireOnboardingContractor();
+    const { contractor, profile, admin } = await requireOnboardingContractor();
     if (!contractor.onboarding_completed_at) throw new AccessError('Finish onboarding to open your dashboard.', 403);
     const client = await createClient();
-    const data = await loadContractorDashboard(client, contractor.id, profile.first_name || contractor.first_name || '');
+    const data = await loadContractorDashboard(
+      client,
+      contractor.id,
+      profile.first_name || contractor.first_name || '',
+      new Date(),
+      admin,
+    );
     return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof AccessError ? error.message : 'Unable to load your dashboard. Please try again.' },

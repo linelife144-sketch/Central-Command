@@ -1,3 +1,4 @@
+import type { FieldAssessment } from '@/lib/schemas/fieldAssessment';
 import type { TimeInterval, PaySegment } from '@/lib/compensation/validation';
 // Central Command - Type Definitions
 
@@ -97,6 +98,14 @@ export interface Ticket {
   longitude?: number;
   geofence_radius_meters: number;
   assigned_to?: string;
+  team_lead_id?: string | null;
+  assigned_driver_id?: string | null;
+  crew_id?: string | null;
+  current_assessment_id?: string | null;
+  review_stage?: 'FIELDWORK' | 'TEAM_LEAD_REVIEW' | 'FINAL_REVIEW' | 'APPROVED' | 'CORRECTIONS' | 'UTILITY_SUBMITTED';
+  utility_submitted_at?: string | null;
+  utility_submitted_by?: string | null;
+  utility_submission_reference?: string | null;
   assigned_by?: string;
   assigned_at?: string;
   created_at: string;
@@ -119,7 +128,6 @@ export interface Ticket {
 export type TicketStatus =
   | 'DRAFT'
   | 'ASSIGNED'
-  | 'REJECTED'
   | 'IN_ROUTE'
   | 'ON_SITE'
   | 'IN_PROGRESS'
@@ -277,6 +285,8 @@ export type PolicyFlag =
 
 // Assessment Types
 export interface DamageAssessment {
+  photo_evidence?: import('@/lib/schemas/fieldAssessment').AssessmentPhotoEvidence[];
+  field_assessment?: FieldAssessment;
   id: string;
   ticket_id: string;
   contractor_id: string;
@@ -446,6 +456,9 @@ export interface CapturedPhotoMetadata {
 }
 
 export interface CapturedAssessmentPhoto {
+  actorProfileId?: string;
+  remotePersisted?: boolean;
+  sectionKey?: string;
   id: string;
   ticketId: string;
   type: AssessmentPhotoType;

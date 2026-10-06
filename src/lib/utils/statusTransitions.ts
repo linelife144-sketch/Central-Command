@@ -22,9 +22,9 @@ export function isValidTransition(
       case 'DRAFT':
         return ['ASSIGNED', 'CLOSED'].includes(next);
       case 'ASSIGNED':
-        return ['REJECTED', 'CLOSED'].includes(next);
+        return ['CLOSED'].includes(next);
       case 'PENDING_REVIEW':
-        return ['APPROVED', 'NEEDS_REWORK', 'REJECTED', 'CLOSED'].includes(next);
+        return ['APPROVED', 'NEEDS_REWORK', 'CLOSED'].includes(next);
       case 'APPROVED':
         return ['CLOSED', 'ARCHIVED'].includes(next);
       case 'CLOSED':
@@ -36,22 +36,13 @@ export function isValidTransition(
     }
   }
 
-  // Contractor Transitions
-  if (role === 'TEAM_LEAD' || role === 'CONTRACTOR') {
+  // Contractors use Start and GPS arrival. Assessment save/submit owns all later changes.
+  if (role === 'CONTRACTOR') {
     switch (current) {
       case 'ASSIGNED':
         return next === 'IN_ROUTE';
       case 'IN_ROUTE':
         return next === 'ON_SITE';
-      case 'ON_SITE':
-        return next === 'IN_PROGRESS';
-      case 'IN_PROGRESS':
-        return next === 'COMPLETE';
-      case 'COMPLETE':
-        // Contractor submission leads to system review
-        return next === 'PENDING_REVIEW';
-      case 'NEEDS_REWORK':
-        return next === 'IN_PROGRESS';
       default:
         return false;
     }
@@ -68,7 +59,7 @@ export function getNextPossibleStatuses(
   role: UserRole
 ): TicketStatus[] {
   const allStatuses: TicketStatus[] = [
-    'DRAFT', 'ASSIGNED', 'REJECTED', 'IN_ROUTE', 'ON_SITE', 
+    'DRAFT', 'ASSIGNED', 'IN_ROUTE', 'ON_SITE', 
     'IN_PROGRESS', 'COMPLETE', 'PENDING_REVIEW', 'APPROVED', 
     'NEEDS_REWORK', 'CLOSED', 'ARCHIVED', 'EXPIRED'
   ];

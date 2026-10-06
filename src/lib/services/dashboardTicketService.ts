@@ -2,13 +2,14 @@ import { contractorService } from '@/lib/services/contractorService';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { localTestStore } from '@/lib/testing/localTestStore';
 import { ticketService } from '@/lib/services/ticketService';
-import type { Ticket, TicketStatus } from '@/types';
+import type { Ticket } from '@/types';
+import { getStaffTicketStatusLabel } from '@/lib/utils/statusUpdateFlow';
 
 export interface DashboardTicketRow {
   id: string;
   ticketNumber: string;
   location: string;
-  status: TicketStatus;
+  status: string;
   assignedTo: string;
   dueAt: string;
 }
@@ -35,7 +36,7 @@ export const dashboardTicketService = {
       id: ticket.id,
       ticketNumber: ticket.ticket_number,
       location: [ticket.address, ticket.city, ticket.state].filter(Boolean).join(', '),
-      status: ticket.status,
+      status: getStaffTicketStatusLabel(ticket.status, ticket.review_stage, ticket.utility_submitted_at),
       assignedTo: ticket.assigned_to ? assigneeName.get(ticket.assigned_to) ?? 'Contractor assigned' : 'Unassigned',
       dueAt: ticket.due_date ? new Date(ticket.due_date).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '—',
     }));

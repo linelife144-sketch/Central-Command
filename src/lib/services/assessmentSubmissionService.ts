@@ -1,3 +1,4 @@
+import { validateAssessmentPhotos, validateFieldAssessment, requiresAssessmentEscalation, type FieldAssessment } from '../schemas/fieldAssessment';
 import { addToSyncQueue, db, type LocalAssessment } from '../db/dexie';
 import type {
   AssessmentPhotoType,
@@ -10,6 +11,8 @@ import type {
 } from '../../types';
 
 interface RemoteDamageAssessmentRow {
+  photo_evidence?: AssessmentPhotoMetadataInput[];
+  field_assessment?: FieldAssessment;
   id: string;
   ticket_id: string;
   contractor_id: string;
@@ -33,6 +36,9 @@ interface RemoteDamageAssessmentRow {
 }
 
 interface RemoteDamageAssessmentInsert {
+  photo_evidence?: AssessmentPhotoMetadataInput[];
+  id?: string;
+  field_assessment?: FieldAssessment;
   ticket_id: string;
   contractor_id: string;
   safety_observations: SafetyObservations;
@@ -132,6 +138,8 @@ function toNumberOrNull(value?: number): number | null {
 
 function mapRemoteAssessment(row: RemoteDamageAssessmentRow): DamageAssessment {
   return {
+    field_assessment: row.field_assessment,
+    photo_evidence: row.photo_evidence,
     id: row.id,
     ticket_id: row.ticket_id,
     contractor_id: row.contractor_id,
@@ -168,6 +176,8 @@ function mapLocalAssessment(row: LocalAssessment): DamageAssessment {
   const updatedAt = row.updated_at ?? createdAt;
 
   return {
+    field_assessment: row.field_assessment,
+    photo_evidence: row.photo_metadata as AssessmentPhotoMetadataInput[],
     id: row.id,
     ticket_id: row.ticket_id,
     contractor_id: row.contractor_id,
@@ -211,6 +221,12 @@ function assertRequiredFields(input: CreateAssessmentInput): void {
     throw new Error('Contractor is required to submit an assessment.');
   }
 
+  if (input.fieldAssessment) {
+    validateFieldAssessment(input.fieldAssessment);
+    validateAssessmentPhotos(input.fieldAssessment.answers, input.photoMetadata ?? []);
+    return;
+  }
+
   if (input.equipmentItems.length === 0) {
     throw new Error('At least one equipment assessment is required.');
   }
@@ -245,10 +261,13 @@ async function resolveContractorId(contractorOrProfileId: string): Promise<strin
 }
 
 export interface AssessmentPhotoMetadataInput {
+  sectionKey?: string;
   id: string;
   type: AssessmentPhotoType;
   previewUrl?: string;
   checksumSha256?: string;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
 }
 
 export interface AssessmentDamageClassificationInput {
@@ -274,6 +293,8 @@ export interface AssessmentEquipmentInput {
 }
 
 export interface CreateAssessmentInput {
+  id?: string;
+  fieldAssessment?: FieldAssessment;
   ticketId: string;
   contractorId: string;
   assessedBy?: string;
@@ -294,19 +315,30 @@ export interface AssessmentSubmissionService {
   createAssessment: (input: CreateAssessmentInput) => Promise<DamageAssessment>;
 }
 
-async function createRemoteAssessment(input: CreateAssessmentInput): Promise<DamageAssessment> {
+export async function createRemoteAssessment(input: CreateAssessmentInput): Promise<DamageAssessment> {
   const { supabase } = await import('../supabase/client');
   const contractorId = await resolveContractorId(input.contractorId);
   const nowIso = new Date().toISOString();
 
+  if (input.id && input.fieldAssessment) {
+    const existing = await supabase.from('damage_assessments').select('*').eq('id', input.id).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (existing.data) {
+      if (existing.data.ticket_id !== input.ticketId || existing.data.contractor_id !== contractorId) throw new Error('Assessment identity conflict.');
+      return mapRemoteAssessment(existing.data as unknown as RemoteDamageAssessmentRow);
+    }
+  }
+
   const assessmentInsert: RemoteDamageAssessmentInsert = {
+    ...(input.id ? { id: input.id } : {}),
+    ...(input.fieldAssessment ? { field_assessment: validateFieldAssessment(input.fieldAssessment), photo_evidence: input.photoMetadata } : {}),
     ticket_id: input.ticketId,
     contractor_id: contractorId,
     safety_observations: input.safetyObservations,
     damage_cause: normalizeOptionalText(input.damageClassification.damageCause),
     weather_conditions: normalizeOptionalText(input.damageClassification.weatherConditions),
     estimated_repair_hours: toNumberOrNull(input.damageClassification.estimatedRepairHours),
-    priority: input.damageClassification.priority ?? null,
+    priority: input.fieldAssessment && requiresAssessmentEscalation(input.fieldAssessment) ? 'A' : input.damageClassification.priority ?? null,
     immediate_actions: normalizeOptionalText(input.damageClassification.immediateActions),
     repair_vs_replace: input.damageClassification.repairVsReplace ?? null,
     estimated_repair_cost: toNumberOrNull(input.damageClassification.estimatedRepairCost),
@@ -351,6 +383,9 @@ async function createRemoteAssessment(input: CreateAssessmentInput): Promise<Dam
     }
   }
 
+  if (input.fieldAssessment) {
+    await db.assessments.put({ ...assessment, field_assessment: input.fieldAssessment, photo_metadata: input.photoMetadata, synced: true, sync_status: 'synced' }).catch(() => undefined);
+  }
   return assessment;
 }
 
@@ -359,9 +394,10 @@ async function createLocalAssessment(
   errorMessage?: string,
 ): Promise<DamageAssessment> {
   const nowIso = new Date().toISOString();
-  const assessmentId = createId();
+  const assessmentId = input.id ?? createId();
 
   const localAssessment: LocalAssessment = {
+    field_assessment: input.fieldAssessment,
     id: assessmentId,
     ticket_id: input.ticketId,
     contractor_id: input.contractorId,
@@ -412,11 +448,15 @@ export function createAssessmentSubmissionService(
   return {
     async createAssessment(input: CreateAssessmentInput): Promise<DamageAssessment> {
       assertRequiredFields(input);
+      if (input.fieldAssessment) input = { ...input, id: input.id ?? createId(), fieldAssessment: validateFieldAssessment(input.fieldAssessment) };
 
       if (dependencies.isOnline()) {
         try {
-          return await dependencies.createRemoteAssessment(input);
+          const result = await dependencies.createRemoteAssessment(input);
+          return result;
         } catch (error) {
+          const code = (error as { code?: string }).code;
+          if (input.fieldAssessment && code && !['57014', '53300', '08000', '08006'].includes(code)) throw new Error((error as {message?: string}).message ?? 'Assessment submission rejected.');
           const message = error instanceof Error ? error.message : 'Remote assessment creation failed.';
           return dependencies.createLocalAssessment(input, message);
         }

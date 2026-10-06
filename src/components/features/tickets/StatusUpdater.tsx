@@ -17,7 +17,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { TicketAssign } from './TicketAssign';
 import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { useAuth } from '@/components/providers/AuthProvider';
 
@@ -29,14 +28,13 @@ interface StatusUpdaterProps {
 }
 
 const statusButtonConfig: Record<TicketStatus, { label: string; variant: 'default' | 'outline' | 'destructive' | 'secondary' }> = {
-  IN_ROUTE: { label: 'Start Route', variant: 'default' },
+  IN_ROUTE: { label: 'Start Ticket', variant: 'default' },
   ON_SITE: { label: 'Mark On Site', variant: 'default' },
   IN_PROGRESS: { label: 'Start Assessment', variant: 'default' },
   COMPLETE: { label: 'Mark Complete', variant: 'default' },
   PENDING_REVIEW: { label: 'Submit for Review', variant: 'default' },
   APPROVED: { label: 'Approve', variant: 'secondary' },
   NEEDS_REWORK: { label: 'Request Rework', variant: 'outline' },
-  REJECTED: { label: 'Reject', variant: 'destructive' },
   CLOSED: { label: 'Close Ticket', variant: 'destructive' },
   DRAFT: { label: 'Revert to Draft', variant: 'outline' },
   ASSIGNED: { label: 'Assign', variant: 'default' },
@@ -52,13 +50,11 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
   const [reason, setReason] = useState('');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const [isAssignOpen, setIsAssignOpen] = useState(false);
 
-  const possibleStatuses = getNextPossibleStatuses(ticket.status, userRole);
+  const possibleStatuses = getNextPossibleStatuses(ticket.status, userRole).filter(status => userRole !== 'ADMIN' && ['IN_ROUTE','ON_SITE','IN_PROGRESS'].includes(status));
 
   const handleStatusClick = (status: TicketStatus) => {
-    if (status === 'ASSIGNED') { setIsAssignOpen(true); return; }
-    const negativeStatuses: TicketStatus[] = ['REJECTED', 'NEEDS_REWORK', 'CLOSED'];
+    const negativeStatuses: TicketStatus[] = ['NEEDS_REWORK', 'CLOSED'];
     
     if (negativeStatuses.includes(status)) {
       setPendingStatus(status);
@@ -90,11 +86,7 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
     }
   };
 
-  const canReassign = isAdminClassRole(userRole) && Boolean(ticket.assigned_to) && !['DRAFT', 'CLOSED', 'ARCHIVED', 'EXPIRED'].includes(ticket.status);
-
-  if (possibleStatuses.length === 0 && !canReassign) {
-    return null;
-  }
+  if (possibleStatuses.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -114,28 +106,18 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
         );
       })}
 
-      {canReassign && <Button onClick={() => setIsAssignOpen(true)} disabled={!canEdit || isUpdating}>Reassign</Button>}
-
-      <TicketAssign isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)}
-        stormEventId={ticket.storm_event_id ?? undefined} currentAssigneeId={ticket.assigned_to} ticketNumber={ticket.ticket_number}
-        onAssign={async (contractorId) => {
-          const updated = await ticketService.assignTicket(ticket.id, contractorId);
-          toast.success('Ticket assigned successfully');
-          onStatusUpdated?.(updated.status);
-        }} />
-
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Status Change</DialogTitle>
             <DialogDescription>
               Are you sure you want to change the status to {pendingStatus?.toLowerCase().replace('_', ' ')}?
-              {['REJECTED', 'NEEDS_REWORK', 'CLOSED'].includes(pendingStatus!) && 
+              {['NEEDS_REWORK', 'CLOSED'].includes(pendingStatus!) && 
                 " This action requires a reason."}
             </DialogDescription>
           </DialogHeader>
           
-          {['REJECTED', 'NEEDS_REWORK', 'CLOSED'].includes(pendingStatus!) && (
+          {['NEEDS_REWORK', 'CLOSED'].includes(pendingStatus!) && (
             <div className="space-y-2 py-4">
               <Label htmlFor="reason">Reason for Change</Label>
               <Textarea 
@@ -154,7 +136,7 @@ export function StatusUpdater({ ticket, userRole, userId, onStatusUpdated }: Sta
             <Button 
               variant={pendingStatus ? statusButtonConfig[pendingStatus]?.variant : 'default'}
               onClick={() => performUpdate(pendingStatus!, reason)}
-              disabled={isUpdating || (['REJECTED', 'NEEDS_REWORK', 'CLOSED'].includes(pendingStatus!) && !reason.trim())}
+              disabled={isUpdating || (['NEEDS_REWORK', 'CLOSED'].includes(pendingStatus!) && !reason.trim())}
             >
               {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirm

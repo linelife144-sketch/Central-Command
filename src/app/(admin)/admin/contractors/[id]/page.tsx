@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
+import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ContractorPayrollEditor } from '@/components/features/payroll';
@@ -34,6 +35,6 @@ export default function ContractorDetailPage() {
       {!c.profileId && <p className="text-sm text-muted-foreground">The contractor can set up their account from the login screen using this email. Account access begins after email verification and password setup.</p>}
     </CardContent></Card>
     {can('admin.payroll.view') && <ContractorPayrollEditor contractorId={c.id} currentRole={c.role} canEdit={can('admin.payroll.edit')} canChangeRole={profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO'} onRoleChanged={() => query.refetch()} />}
-    <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><StatusBadge status={ticket.status} /><span>{ticket.utilityClient}{ticket.isImportant ? ' · Important' : ''}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>
+    <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><TicketStatusBadge status={ticket.status} audienceRole="STAFF" reviewStage={ticket.reviewStage} utilitySubmittedAt={ticket.utilitySubmittedAt} /><span>{ticket.utilityClient}{ticket.isImportant ? ' · Important' : ''}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>
   </div>;
 }

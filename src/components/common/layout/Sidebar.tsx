@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowUpRight, ChartNoAxesCombined, Clock, CloudLightning, FileText, LayoutDashboard, Map, Menu, Receipt, Settings, Ticket, Users } from 'lucide-react';
+import { ArrowUpRight, ChartNoAxesCombined, Clock, CloudLightning, LayoutDashboard, Map, Menu, Receipt, Settings, Ticket, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -25,7 +25,6 @@ export const adminNavItems = [
   { href: '/admin/map', label: 'Map View', icon: Map, group: 'Operations' },
   { href: '/admin/time-review', label: 'Time Review', icon: Clock, group: 'Review & reporting' },
   { href: '/admin/expense-review', label: 'Expenses', icon: Receipt, group: 'Review & reporting' },
-  { href: '/admin/assessment-review', label: 'Assessments', icon: FileText, group: 'Review & reporting' },
   { href: '/admin/payroll', label: 'Payroll', icon: ChartNoAxesCombined, group: 'Review & reporting' },
   { href: '/admin/reports', label: 'Reports', icon: ChartNoAxesCombined, group: 'Review & reporting' },
   { href: '/admin/account', label: 'Account', icon: Settings, group: 'Workspace' },
@@ -38,7 +37,6 @@ export const contractorNavItems = [
   { href: '/contractor/map', label: 'Map', icon: Map, group: 'Field operations' },
   { href: '/contractor/time', label: 'Time Tracking', icon: Clock, group: 'Field operations' },
   { href: '/contractor/expenses', label: 'Expenses', icon: Receipt, group: 'Field operations' },
-  { href: '/contractor/assessments/create', label: 'Assessments', icon: FileText, group: 'Field operations' },
   { href: '/contractor/account', label: 'Account', icon: Settings, group: 'Workspace' },
 ];
 

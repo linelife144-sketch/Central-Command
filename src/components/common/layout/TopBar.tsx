@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SidebarTrigger, adminNavItems, contractorNavItems } from './Sidebar';
 import { NavigationSearch } from './NavigationSearch';
+import { TicketNotifications } from './TicketNotifications';
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -35,11 +36,12 @@ export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal }: T
     </div>
     <div className="flex shrink-0 items-center gap-2 sm:gap-4">
       <NavigationSearch portal={portal} />
+      <TicketNotifications />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="cc-user-trigger" aria-label={`Open account menu for ${userName}`}>
             <Avatar className="size-9"><AvatarFallback className="cc-user-avatar">{initials}</AvatarFallback></Avatar>
-            <div className="hidden text-left sm:block"><p className="text-xs font-bold text-grid-navy">{userName}</p><p className="mt-0.5 text-[10px] capitalize text-muted-foreground">{userRole === 'CEO' ? 'CEO' : userRole.toLowerCase().replaceAll('_', ' ')}</p></div>
+            <div className="hidden text-left sm:block"><p className="text-xs font-bold text-grid-navy">{userName}</p><p className="mt-0.5 text-[10px] capitalize text-muted-foreground">{userRole === 'CEO' ? 'CEO' : userRole === 'ADMIN' ? 'Team lead' : userRole === 'SUPER_ADMIN' ? 'Storm manager' : userRole.toLowerCase().replaceAll('_', ' ')}</p></div>
             <ChevronDown className="hidden size-3.5 text-muted-foreground sm:block" />
           </Button>
         </DropdownMenuTrigger>

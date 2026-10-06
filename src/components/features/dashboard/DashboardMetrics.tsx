@@ -140,7 +140,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
         />}
 
         {can('admin.contractors.view') && <MetricCard
-          title="Active Contractor Crews"
+          title="Active Contractors"
           value={fieldCrewsValue}
           icon={<Users className="h-4 w-4 text-grid-lightning" />}
           description={metrics ? `${metrics.on_site_crews} on site · assigned to active tickets` : 'Active assignments'}

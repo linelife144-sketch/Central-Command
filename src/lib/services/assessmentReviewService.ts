@@ -1,7 +1,10 @@
+import type { FieldAssessment } from '../schemas/fieldAssessment';
 import { db, type LocalAssessment } from '../db/dexie';
 import type { PriorityLevel, SyncStatus } from '@/types';
 
 interface RemoteAssessmentRow {
+  photo_evidence?: import('../schemas/fieldAssessment').AssessmentPhotoEvidence[];
+  field_assessment?: FieldAssessment;
   id: string;
   ticket_id: string;
   contractor_id: string;
@@ -41,6 +44,8 @@ export type AssessmentReviewDecision = 'APPROVED' | 'NEEDS_REWORK';
 export type AssessmentReviewState = 'PENDING' | 'REVIEWED';
 
 export interface AssessmentReviewListItem {
+  photo_evidence?: import('../schemas/fieldAssessment').AssessmentPhotoEvidence[];
+  field_assessment?: FieldAssessment;
   id: string;
   ticket_id: string;
   ticket_number?: string;
@@ -62,6 +67,7 @@ export interface AssessmentReviewListItem {
 }
 
 export interface AssessmentReviewFilters {
+  ticketId?: string;
   reviewed?: AssessmentReviewState | 'ALL';
   decision?: AssessmentReviewDecision | 'ALL';
   priority?: PriorityLevel | 'ALL';
@@ -210,6 +216,7 @@ function applyFilters(
   filters: AssessmentReviewFilters,
 ): AssessmentReviewListItem[] {
   return items
+    .filter((item) => (filters.ticketId ? item.ticket_id === filters.ticketId : true))
     .filter((item) => (filters.reviewed && filters.reviewed !== 'ALL' ? item.review_state === filters.reviewed : true))
     .filter((item) =>
       filters.decision && filters.decision !== 'ALL' ? item.review_decision === filters.decision : true,
@@ -233,6 +240,8 @@ function mapRemoteAssessment(
   const reviewDecision = parseReviewDecision(row.review_notes);
 
   return {
+    field_assessment: row.field_assessment,
+    photo_evidence: row.photo_evidence,
     id: row.id,
     ticket_id: row.ticket_id,
     ticket_number: ticketNumberById.get(row.ticket_id),
@@ -260,6 +269,8 @@ function mapLocalAssessment(row: LocalAssessment): AssessmentReviewListItem {
   const updatedAt = row.updated_at ?? createdAt;
 
   return {
+    field_assessment: row.field_assessment,
+    photo_evidence: row.photo_metadata as import('../schemas/fieldAssessment').AssessmentPhotoEvidence[],
     id: row.id,
     ticket_id: row.ticket_id,
     contractor_id: row.contractor_id,
@@ -396,7 +407,7 @@ async function listRemoteAssessments(filters: AssessmentReviewFilters): Promise<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from('damage_assessments') as any)
     .select(
-      'id, ticket_id, contractor_id, safety_observations, damage_cause, priority, assessed_at, reviewed_by, reviewed_at, review_notes, sync_status, created_at, updated_at',
+      'photo_evidence, field_assessment, id, ticket_id, contractor_id, safety_observations, damage_cause, priority, assessed_at, reviewed_by, reviewed_at, review_notes, sync_status, created_at, updated_at',
     )
     .order('assessed_at', { ascending: false });
 
@@ -410,6 +421,10 @@ async function listRemoteAssessments(filters: AssessmentReviewFilters): Promise<
 
   if (filters.priority && filters.priority !== 'ALL') {
     query = query.eq('priority', filters.priority);
+  }
+
+  if (filters.ticketId) {
+    query = query.eq('ticket_id', filters.ticketId);
   }
 
   if (filters.from) {
@@ -459,31 +474,15 @@ export function composeReviewNotes(decision: AssessmentReviewDecision, reviewNot
 }
 
 async function reviewRemoteAssessment(input: ReviewAssessmentInput): Promise<ReviewedAssessment> {
-  const { supabase } = await import('../supabase/client');
-  const nowIso = new Date().toISOString();
-
-  const composedNotes = composeReviewNotes(input.decision, input.reviewNotes);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('damage_assessments') as any)
-    .update({
-      reviewed_by: input.reviewerId,
-      reviewed_at: nowIso,
-      review_notes: composedNotes,
-      updated_at: nowIso,
-    })
-    .eq('id', input.assessmentId)
-    .select('id, reviewed_by, reviewed_at, review_notes')
-    .single();
-
-  if (error) {
-    throw error;
-  }
+  const {ticketAssessmentWorkflow}=await import('./ticketAssessmentWorkflow');
+  const data=await ticketAssessmentWorkflow.review(input.assessmentId,input.decision,input.reviewNotes??'');
+  const nowIso=new Date().toISOString();
+  const composedNotes=composeReviewNotes(input.decision,input.reviewNotes);
 
   return {
     assessmentId: (data?.id as string) ?? input.assessmentId,
-    reviewedBy: (data?.reviewed_by as string) ?? input.reviewerId,
-    reviewedAt: (data?.reviewed_at as string) ?? nowIso,
+    reviewedBy: ((data as unknown as {reviewed_by?:string;team_reviewed_by?:string}).reviewed_by??(data as unknown as {team_reviewed_by?:string}).team_reviewed_by as string) ?? input.reviewerId,
+    reviewedAt: ((data as unknown as {reviewed_at?:string;team_reviewed_at?:string}).reviewed_at??(data as unknown as {team_reviewed_at?:string}).team_reviewed_at as string) ?? nowIso,
     reviewNotes: (data?.review_notes as string) ?? composedNotes,
     decision: input.decision,
   };

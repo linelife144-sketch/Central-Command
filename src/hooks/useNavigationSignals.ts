@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSync, type SyncSnapshot } from '@/components/providers/SyncProvider';
 import { dashboardReportingService, type DashboardMetricsData } from '@/lib/services/dashboardReportingService';
 import type { Ticket } from '@/types';
+import { getContractorTicketStatus } from '@/lib/utils/statusUpdateFlow';
 
 export type NavigationSignalKey = 'tickets' | 'reviews' | 'storms' | 'sync' | 'conflicts';
 
@@ -50,25 +51,11 @@ export function buildAdminRoleSignalCounts(metrics: DashboardMetricsData): RoleS
 }
 
 export function buildContractorRoleSignalCounts(tickets: Ticket[]): RoleSignalCounts {
-  const activeStatuses = new Set(['DRAFT', 'ASSIGNED', 'IN_ROUTE', 'ON_SITE', 'IN_PROGRESS', 'PENDING_REVIEW', 'NEEDS_REWORK']);
-  const reviewStatuses = new Set(['PENDING_REVIEW', 'NEEDS_REWORK']);
-
-  let activeTicketCount = 0;
-  let reviewCount = 0;
-
-  for (const ticket of tickets) {
-    if (activeStatuses.has(ticket.status)) {
-      activeTicketCount += 1;
-    }
-
-    if (reviewStatuses.has(ticket.status)) {
-      reviewCount += 1;
-    }
-  }
+  const activeTicketCount = tickets.filter(ticket => getContractorTicketStatus(ticket.status) === 'OPEN').length;
 
   return {
     tickets: clampCount(activeTicketCount),
-    reviews: clampCount(reviewCount),
+    reviews: 0,
     storms: 0,
   };
 }
@@ -152,7 +139,7 @@ export function useNavigationSignals({
   }, [contractorId, userRole]);
 
   useEffect(() => {
-    void refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   useEffect(() => {

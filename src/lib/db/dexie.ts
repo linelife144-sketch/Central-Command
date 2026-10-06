@@ -1,3 +1,4 @@
+import type { FieldAssessment } from '@/lib/schemas/fieldAssessment';
 import { scrubBillingFields } from '../compensation/timeEntryProjection';
 import type { TimeInterval, PaySegment, PayAgreement } from '../compensation/validation';
 // Central Command - Dexie.js IndexedDB Configuration
@@ -12,13 +13,22 @@ export type ConflictResolutionStrategy = 'LOCAL' | 'SERVER' | 'MERGED';
 
 // Types for local database
 export interface LocalTicket {
+  assigned_driver_id?: string | null;
+  team_lead_id?: string | null;
+  crew_id?: string | null;
   id: string;
   ticket_number: string;
   status: string;
+  review_stage?: string | null;
+  utility_submitted_at?: string | null;
   is_important: boolean;
   address: string;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
   latitude?: number;
   longitude?: number;
+  geofence_radius_meters?: number | null;
   assigned_to?: string;
   storm_event_id?: string;
   utility_client: string;
@@ -26,7 +36,27 @@ export interface LocalTicket {
   synced: boolean;
   sync_status?: LocalSyncStatus;
   last_error?: string;
+  field_progress_pending?: boolean;
+  field_progress_error?: string;
   updated_at: string;
+}
+
+export interface TicketFieldProgressSnapshot {
+  id: string;
+  actor_profile_id: string;
+  contractor_id: string;
+  ticket_id: string;
+  from_status: 'ASSIGNED' | 'IN_ROUTE';
+  to_status: 'IN_ROUTE' | 'ON_SITE';
+  team_lead_id: string;
+  crew_id: string;
+  assigned_to: string;
+  assigned_driver_id: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  captured_at: string;
+  last_error?: string;
 }
 
 export interface LocalTimeEntry {
@@ -124,6 +154,7 @@ export interface LocalExpenseItem {
 }
 
 export interface LocalAssessment {
+  field_assessment?: FieldAssessment;
   id: string;
   ticket_id: string;
   contractor_id: string;
@@ -150,7 +181,24 @@ export interface LocalAssessment {
   updated_at?: string;
 }
 
+export interface TicketDraftSnapshot {
+  id: string;
+  actor_profile_id: string;
+  ticket_id: string;
+  contractor_id: string;
+  assessment_id: string;
+  field_assessment: import('@/lib/schemas/fieldAssessment').FieldAssessment;
+  photo_evidence: import('@/lib/schemas/fieldAssessment').AssessmentPhotoEvidence[];
+  photos?: import('@/types').CapturedAssessmentPhoto[];
+  version: number | null;
+  dirty: boolean;
+  submit_requested: boolean;
+  last_error?: string;
+  saved_at: string;
+}
+
 export interface LocalPhoto {
+  actor_profile_id?: string;
   id: string;
   file: Blob;
   preview: string;
@@ -311,6 +359,13 @@ export class GridElectricDatabase extends Dexie {
   expenseReports!: Table<LocalExpenseReport>;
   expenseItems!: Table<LocalExpenseItem>;
   assessments!: Table<LocalAssessment>;
+  contractorIdentities!: Table<{profile_id:string;contractor_id:string}>;
+  ticketDraftQueue!: Table<TicketDraftSnapshot>;
+  ticketAssessmentHistory!: Table<import('@/lib/services/ticketAssessmentWorkflow').SubmittedTicketAssessment>;
+  ticketFieldProgressQueue!: Table<TicketFieldProgressSnapshot>;
+  entergyForms!: Table<import('@/lib/services/entergyFormService').LocalEntergyRecord>;
+  entergyEditing!: Table<import('@/lib/services/entergyFormService').EntergyEditingDraft>;
+  assessmentDrafts!: Table<{ id: string; ticket_id: string; contractor_id: string; answers: import('@/lib/schemas/fieldAssessment').FieldAnswers; photos?: import('@/types').CapturedAssessmentPhoto[]; assessment_id?: string; version?: number | null; updated_at: string }>;
   photos!: Table<LocalPhoto>;
   syncQueue!: Table<SyncQueueItem>;
   conflicts!: Table<LocalSyncConflict>;
@@ -446,6 +501,10 @@ export class GridElectricDatabase extends Dexie {
       });
     });
     this.version(6).stores({ payAgreements: '&id, contractor_id, viewer_profile_id, [viewer_profile_id+contractor_id]' });
+    this.version(7).stores({ assessmentDrafts: '&id, ticket_id, contractor_id' });
+    this.version(8).stores({ contractorIdentities:'&profile_id',ticketDraftQueue: '&id, actor_profile_id, ticket_id', ticketAssessmentHistory: '&id, ticket_id' });
+    this.version(9).stores({ ticketFieldProgressQueue: '&id, actor_profile_id, ticket_id, captured_at, [actor_profile_id+ticket_id]' });
+    this.version(10).stores({ entergyForms: '&id, actor_profile_id', entergyEditing: '&id, actor_profile_id, ticket_id' });
 
   }
 }
@@ -757,8 +816,9 @@ export async function markTimeEntryFailed(id: string, error: string): Promise<vo
 }
 
 // Photo queue management
-export async function queuePhoto(photo: Omit<LocalPhoto, 'id'>): Promise<string> {
-  const id = createId();
+export async function queuePhoto(photo: Omit<LocalPhoto, 'id'> & { id?: string }): Promise<string> {
+  const id = photo.id ?? createId();
+  if (await db.photos.get(id)) return id;
   const normalizedPhoto = normalizePhotoForQueue({ ...photo, id });
 
   await db.photos.put(normalizedPhoto);

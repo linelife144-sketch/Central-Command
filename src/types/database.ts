@@ -449,7 +449,6 @@ export type Database = {
       contractors: {
         Row: {
           account_setup_requested_at: string | null
-          vehicle_registration_photo_path: string | null
           address_line1: string | null
           address_line2: string | null
           approved_at: string | null
@@ -478,11 +477,11 @@ export type Database = {
           tax_id_encrypted: string | null
           updated_at: string | null
           updated_by: string | null
+          vehicle_registration_photo_path: string | null
           zip_code: string | null
         }
         Insert: {
           account_setup_requested_at?: string | null
-          vehicle_registration_photo_path?: string | null
           address_line1?: string | null
           address_line2?: string | null
           approved_at?: string | null
@@ -511,11 +510,11 @@ export type Database = {
           tax_id_encrypted?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          vehicle_registration_photo_path?: string | null
           zip_code?: string | null
         }
         Update: {
           account_setup_requested_at?: string | null
-          vehicle_registration_photo_path?: string | null
           address_line1?: string | null
           address_line2?: string | null
           approved_at?: string | null
@@ -544,6 +543,7 @@ export type Database = {
           tax_id_encrypted?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          vehicle_registration_photo_path?: string | null
           zip_code?: string | null
         }
         Relationships: [
@@ -626,15 +626,21 @@ export type Database = {
           digital_signature: string | null
           estimated_repair_cost: number | null
           estimated_repair_hours: number | null
+          field_assessment: Json | null
           id: string
           immediate_actions: string | null
+          photo_evidence: Json | null
           priority: Database["public"]["Enums"]["priority_level"] | null
           repair_vs_replace: string | null
           review_notes: string | null
+          review_stage: string
           reviewed_at: string | null
           reviewed_by: string | null
           safety_observations: Json | null
           sync_status: Database["public"]["Enums"]["sync_status"] | null
+          team_review_notes: string | null
+          team_reviewed_at: string | null
+          team_reviewed_by: string | null
           ticket_id: string
           updated_at: string | null
           updated_by: string | null
@@ -650,15 +656,21 @@ export type Database = {
           digital_signature?: string | null
           estimated_repair_cost?: number | null
           estimated_repair_hours?: number | null
+          field_assessment?: Json | null
           id?: string
           immediate_actions?: string | null
+          photo_evidence?: Json | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           repair_vs_replace?: string | null
           review_notes?: string | null
+          review_stage?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           safety_observations?: Json | null
           sync_status?: Database["public"]["Enums"]["sync_status"] | null
+          team_review_notes?: string | null
+          team_reviewed_at?: string | null
+          team_reviewed_by?: string | null
           ticket_id: string
           updated_at?: string | null
           updated_by?: string | null
@@ -674,15 +686,21 @@ export type Database = {
           digital_signature?: string | null
           estimated_repair_cost?: number | null
           estimated_repair_hours?: number | null
+          field_assessment?: Json | null
           id?: string
           immediate_actions?: string | null
+          photo_evidence?: Json | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           repair_vs_replace?: string | null
           review_notes?: string | null
+          review_stage?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           safety_observations?: Json | null
           sync_status?: Database["public"]["Enums"]["sync_status"] | null
+          team_review_notes?: string | null
+          team_reviewed_at?: string | null
+          team_reviewed_by?: string | null
           ticket_id?: string
           updated_at?: string | null
           updated_by?: string | null
@@ -718,9 +736,16 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "damage_assessments_team_reviewed_by_fkey"
+            columns: ["team_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "damage_assessments_ticket_id_fkey"
             columns: ["ticket_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -1137,6 +1162,78 @@ export type Database = {
           },
         ]
       }
+      field_crews: {
+        Row: {
+          assessor_id: string
+          created_at: string
+          created_by: string
+          driver_id: string
+          id: string
+          is_active: boolean
+          name: string
+          storm_event_id: string
+          team_lead_id: string
+        }
+        Insert: {
+          assessor_id: string
+          created_at?: string
+          created_by: string
+          driver_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          storm_event_id: string
+          team_lead_id: string
+        }
+        Update: {
+          assessor_id?: string
+          created_at?: string
+          created_by?: string
+          driver_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          storm_event_id?: string
+          team_lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_crews_assessor_id_fkey"
+            columns: ["assessor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_crews_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_crews_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_crews_storm_event_id_fkey"
+            columns: ["storm_event_id"]
+            isOneToOne: false
+            referencedRelation: "storm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_crews_team_lead_id_fkey"
+            columns: ["team_lead_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hazard_categories: {
         Row: {
           created_at: string | null
@@ -1334,6 +1431,7 @@ export type Database = {
           channel: string | null
           created_at: string | null
           data: Json | null
+          dedup_key: string | null
           delivered_at: string | null
           error_message: string | null
           id: string
@@ -1349,6 +1447,7 @@ export type Database = {
           channel?: string | null
           created_at?: string | null
           data?: Json | null
+          dedup_key?: string | null
           delivered_at?: string | null
           error_message?: string | null
           id?: string
@@ -1364,6 +1463,7 @@ export type Database = {
           channel?: string | null
           created_at?: string | null
           data?: Json | null
+          dedup_key?: string | null
           delivered_at?: string | null
           error_message?: string | null
           id?: string
@@ -2211,6 +2311,61 @@ export type Database = {
           },
         ]
       }
+      ticket_assessment_drafts: {
+        Row: {
+          assessment_id: string
+          contractor_id: string
+          field_assessment: Json
+          photo_evidence: Json
+          saved_at: string
+          saved_by: string
+          ticket_id: string
+          version: number
+        }
+        Insert: {
+          assessment_id: string
+          contractor_id: string
+          field_assessment: Json
+          photo_evidence: Json
+          saved_at?: string
+          saved_by: string
+          ticket_id: string
+          version?: number
+        }
+        Update: {
+          assessment_id?: string
+          contractor_id?: string
+          field_assessment?: Json
+          photo_evidence?: Json
+          saved_at?: string
+          saved_by?: string
+          ticket_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_assessment_drafts_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_assessment_drafts_saved_by_fkey"
+            columns: ["saved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_assessment_drafts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_attachments: {
         Row: {
           created_at: string
@@ -2265,6 +2420,73 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_entergy_forms: {
+        Row: {
+          created_at: string
+          created_by: string
+          form_kind: string
+          id: string
+          payload: Json
+          photo_evidence: Json
+          saved_at: string
+          saved_by: string
+          status: string
+          submitted_at: string | null
+          ticket_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          form_kind: string
+          id?: string
+          payload: Json
+          photo_evidence?: Json
+          saved_at?: string
+          saved_by: string
+          status?: string
+          submitted_at?: string | null
+          ticket_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          form_kind?: string
+          id?: string
+          payload?: Json
+          photo_evidence?: Json
+          saved_at?: string
+          saved_by?: string
+          status?: string
+          submitted_at?: string | null
+          ticket_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_entergy_forms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_entergy_forms_saved_by_fkey"
+            columns: ["saved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_entergy_forms_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -2575,6 +2797,7 @@ export type Database = {
           address_line2: string | null
           assigned_at: string | null
           assigned_by: string | null
+          assigned_driver_id: string | null
           assigned_to: string | null
           city: string | null
           client_contact_name: string | null
@@ -2582,6 +2805,8 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           created_by: string | null
+          crew_id: string | null
+          current_assessment_id: string | null
           damage_types: string[] | null
           deleted_at: string | null
           deleted_by: string | null
@@ -2594,6 +2819,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           raw_ocr_text: string | null
+          review_stage: string
           route_batch_id: string | null
           route_order: number | null
           scheduled_date: string | null
@@ -2605,11 +2831,15 @@ export type Database = {
           state: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           storm_event_id: string | null
+          team_lead_id: string | null
           template_key: string | null
           ticket_number: string
           updated_at: string | null
           updated_by: string | null
           utility_client: string
+          utility_submission_reference: string | null
+          utility_submitted_at: string | null
+          utility_submitted_by: string | null
           work_description: string | null
           work_order_ref: string | null
           zip_code: string | null
@@ -2619,6 +2849,7 @@ export type Database = {
           address_line2?: string | null
           assigned_at?: string | null
           assigned_by?: string | null
+          assigned_driver_id?: string | null
           assigned_to?: string | null
           city?: string | null
           client_contact_name?: string | null
@@ -2626,6 +2857,8 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
+          crew_id?: string | null
+          current_assessment_id?: string | null
           damage_types?: string[] | null
           deleted_at?: string | null
           deleted_by?: string | null
@@ -2638,6 +2871,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           raw_ocr_text?: string | null
+          review_stage?: string
           route_batch_id?: string | null
           route_order?: number | null
           scheduled_date?: string | null
@@ -2649,11 +2883,15 @@ export type Database = {
           state?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           storm_event_id?: string | null
+          team_lead_id?: string | null
           template_key?: string | null
           ticket_number: string
           updated_at?: string | null
           updated_by?: string | null
           utility_client: string
+          utility_submission_reference?: string | null
+          utility_submitted_at?: string | null
+          utility_submitted_by?: string | null
           work_description?: string | null
           work_order_ref?: string | null
           zip_code?: string | null
@@ -2663,6 +2901,7 @@ export type Database = {
           address_line2?: string | null
           assigned_at?: string | null
           assigned_by?: string | null
+          assigned_driver_id?: string | null
           assigned_to?: string | null
           city?: string | null
           client_contact_name?: string | null
@@ -2670,6 +2909,8 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
+          crew_id?: string | null
+          current_assessment_id?: string | null
           damage_types?: string[] | null
           deleted_at?: string | null
           deleted_by?: string | null
@@ -2682,6 +2923,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           raw_ocr_text?: string | null
+          review_stage?: string
           route_batch_id?: string | null
           route_order?: number | null
           scheduled_date?: string | null
@@ -2693,11 +2935,15 @@ export type Database = {
           state?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           storm_event_id?: string | null
+          team_lead_id?: string | null
           template_key?: string | null
           ticket_number?: string
           updated_at?: string | null
           updated_by?: string | null
           utility_client?: string
+          utility_submission_reference?: string | null
+          utility_submitted_at?: string | null
+          utility_submitted_by?: string | null
           work_description?: string | null
           work_order_ref?: string | null
           zip_code?: string | null
@@ -2708,6 +2954,13 @@ export type Database = {
             columns: ["assigned_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_assigned_driver_id_fkey"
+            columns: ["assigned_driver_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
             referencedColumns: ["id"]
           },
           {
@@ -2722,6 +2975,20 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "field_crews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_current_assessment_id_fkey"
+            columns: ["current_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "damage_assessments"
             referencedColumns: ["id"]
           },
           {
@@ -2746,8 +3013,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_team_lead_id_fkey"
+            columns: ["team_lead_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_utility_submitted_by_fkey"
+            columns: ["utility_submitted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -3231,9 +3512,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      claim_contractor_account_setup: { Args: { p_email: string }; Returns: Json }
-      complete_account_password_setup: { Args: { p_profile_id: string }; Returns: undefined }
-      complete_contractor_onboarding: { Args: { p_profile_id: string; p_details: Json }; Returns: undefined }
       add_contractor_record: {
         Args: {
           p_actor_id: string
@@ -3249,9 +3527,169 @@ export type Database = {
         Args: { p_contractor_id: string; p_storm_id: string }
         Returns: undefined
       }
+      assign_ticket_crew: {
+        Args: { p_crew_id: string; p_ticket_id: string }
+        Returns: {
+          address: string
+          address_line2: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_driver_id: string | null
+          assigned_to: string | null
+          city: string | null
+          client_contact_name: string | null
+          client_contact_phone: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          crew_id: string | null
+          current_assessment_id: string | null
+          damage_types: string[] | null
+          deleted_at: string | null
+          deleted_by: string | null
+          due_date: string | null
+          estimated_travel_time: number | null
+          geofence_radius_meters: number | null
+          id: string
+          is_deleted: boolean | null
+          is_important: boolean
+          latitude: number | null
+          longitude: number | null
+          raw_ocr_text: string | null
+          review_stage: string
+          route_batch_id: string | null
+          route_order: number | null
+          scheduled_date: string | null
+          severity: string | null
+          source_file_id: string | null
+          source_type: Database["public"]["Enums"]["ticket_source_type"]
+          special_instructions: string | null
+          started_at: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          storm_event_id: string | null
+          team_lead_id: string | null
+          template_key: string | null
+          ticket_number: string
+          updated_at: string | null
+          updated_by: string | null
+          utility_client: string
+          utility_submission_reference: string | null
+          utility_submitted_at: string | null
+          utility_submitted_by: string | null
+          work_description: string | null
+          work_order_ref: string | null
+          zip_code: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_ticket_team_lead: {
+        Args: { p_team_lead_id: string; p_ticket_id: string }
+        Returns: {
+          address: string
+          address_line2: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_driver_id: string | null
+          assigned_to: string | null
+          city: string | null
+          client_contact_name: string | null
+          client_contact_phone: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          crew_id: string | null
+          current_assessment_id: string | null
+          damage_types: string[] | null
+          deleted_at: string | null
+          deleted_by: string | null
+          due_date: string | null
+          estimated_travel_time: number | null
+          geofence_radius_meters: number | null
+          id: string
+          is_deleted: boolean | null
+          is_important: boolean
+          latitude: number | null
+          longitude: number | null
+          raw_ocr_text: string | null
+          review_stage: string
+          route_batch_id: string | null
+          route_order: number | null
+          scheduled_date: string | null
+          severity: string | null
+          source_file_id: string | null
+          source_type: Database["public"]["Enums"]["ticket_source_type"]
+          special_instructions: string | null
+          started_at: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          storm_event_id: string | null
+          team_lead_id: string | null
+          template_key: string | null
+          ticket_number: string
+          updated_at: string | null
+          updated_by: string | null
+          utility_client: string
+          utility_submission_reference: string | null
+          utility_submitted_at: string | null
+          utility_submitted_by: string | null
+          work_description: string | null
+          work_order_ref: string | null
+          zip_code: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      claim_contractor_account_setup: {
+        Args: { p_email: string }
+        Returns: Json
+      }
+      complete_account_password_setup: {
+        Args: { p_profile_id: string }
+        Returns: undefined
+      }
+      complete_contractor_onboarding: {
+        Args: { p_details: Json; p_profile_id: string }
+        Returns: undefined
+      }
       complete_invitation_pay_setup: {
         Args: { p_actor: string; p_email: string; p_profile: string }
         Returns: string
+      }
+      create_field_crew: {
+        Args: {
+          p_assessor_id: string
+          p_driver_id: string
+          p_name: string
+          p_team_lead_id: string
+          p_ticket_id: string
+        }
+        Returns: {
+          assessor_id: string
+          created_at: string
+          created_by: string
+          driver_id: string
+          id: string
+          is_active: boolean
+          name: string
+          storm_event_id: string
+          team_lead_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "field_crews"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_storm_ticket: {
         Args: {
@@ -3301,9 +3739,280 @@ export type Database = {
         Returns: Json
       }
       list_storm_contractors: { Args: { p_storm_id: string }; Returns: Json }
+      mark_ticket_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: undefined
+      }
+      record_ticket_utility_handoff: {
+        Args: { p_reference: string; p_ticket_id: string }
+        Returns: {
+          address: string
+          address_line2: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_driver_id: string | null
+          assigned_to: string | null
+          city: string | null
+          client_contact_name: string | null
+          client_contact_phone: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          crew_id: string | null
+          current_assessment_id: string | null
+          damage_types: string[] | null
+          deleted_at: string | null
+          deleted_by: string | null
+          due_date: string | null
+          estimated_travel_time: number | null
+          geofence_radius_meters: number | null
+          id: string
+          is_deleted: boolean | null
+          is_important: boolean
+          latitude: number | null
+          longitude: number | null
+          raw_ocr_text: string | null
+          review_stage: string
+          route_batch_id: string | null
+          route_order: number | null
+          scheduled_date: string | null
+          severity: string | null
+          source_file_id: string | null
+          source_type: Database["public"]["Enums"]["ticket_source_type"]
+          special_instructions: string | null
+          started_at: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          storm_event_id: string | null
+          team_lead_id: string | null
+          template_key: string | null
+          ticket_number: string
+          updated_at: string | null
+          updated_by: string | null
+          utility_client: string
+          utility_submission_reference: string | null
+          utility_submitted_at: string | null
+          utility_submitted_by: string | null
+          work_description: string | null
+          work_order_ref: string | null
+          zip_code: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      review_ticket_assessment: {
+        Args: { p_assessment_id: string; p_decision: string; p_notes?: string }
+        Returns: {
+          assessed_at: string | null
+          assessed_by: string | null
+          contractor_id: string
+          created_at: string | null
+          created_by: string | null
+          damage_cause: string | null
+          digital_signature: string | null
+          estimated_repair_cost: number | null
+          estimated_repair_hours: number | null
+          field_assessment: Json | null
+          id: string
+          immediate_actions: string | null
+          photo_evidence: Json | null
+          priority: Database["public"]["Enums"]["priority_level"] | null
+          repair_vs_replace: string | null
+          review_notes: string | null
+          review_stage: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          safety_observations: Json | null
+          sync_status: Database["public"]["Enums"]["sync_status"] | null
+          team_review_notes: string | null
+          team_reviewed_at: string | null
+          team_reviewed_by: string | null
+          ticket_id: string
+          updated_at: string | null
+          updated_by: string | null
+          weather_conditions: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "damage_assessments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_entergy_ticket_form: {
+        Args: {
+          p_expected_version?: number
+          p_id: string
+          p_kind: string
+          p_payload: Json
+          p_photos: Json
+          p_submit?: boolean
+          p_ticket_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          form_kind: string
+          id: string
+          payload: Json
+          photo_evidence: Json
+          saved_at: string
+          saved_by: string
+          status: string
+          submitted_at: string | null
+          ticket_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_entergy_forms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_ticket_assessment_draft: {
+        Args: {
+          p_assessment_id: string
+          p_expected_version?: number
+          p_payload: Json
+          p_photos: Json
+          p_ticket_id: string
+        }
+        Returns: {
+          assessment_id: string
+          contractor_id: string
+          field_assessment: Json
+          photo_evidence: Json
+          saved_at: string
+          saved_by: string
+          ticket_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_assessment_drafts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_user_permissions: {
         Args: { p_overrides: Json; p_profile_id: string; p_version?: string }
         Returns: Json
+      }
+      submit_ticket_assessment: {
+        Args: {
+          p_assessment_id: string
+          p_expected_version: number
+          p_ticket_id: string
+        }
+        Returns: {
+          assessed_at: string | null
+          assessed_by: string | null
+          contractor_id: string
+          created_at: string | null
+          created_by: string | null
+          damage_cause: string | null
+          digital_signature: string | null
+          estimated_repair_cost: number | null
+          estimated_repair_hours: number | null
+          field_assessment: Json | null
+          id: string
+          immediate_actions: string | null
+          photo_evidence: Json | null
+          priority: Database["public"]["Enums"]["priority_level"] | null
+          repair_vs_replace: string | null
+          review_notes: string | null
+          review_stage: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          safety_observations: Json | null
+          sync_status: Database["public"]["Enums"]["sync_status"] | null
+          team_review_notes: string | null
+          team_reviewed_at: string | null
+          team_reviewed_by: string | null
+          ticket_id: string
+          updated_at: string | null
+          updated_by: string | null
+          weather_conditions: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "damage_assessments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      ticket_dispatch_options: { Args: { p_ticket_id: string }; Returns: Json }
+      update_ticket_field_status: {
+        Args: {
+          p_accuracy: number
+          p_latitude: number
+          p_longitude: number
+          p_status: string
+          p_ticket_id: string
+        }
+        Returns: {
+          address: string
+          address_line2: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_driver_id: string | null
+          assigned_to: string | null
+          city: string | null
+          client_contact_name: string | null
+          client_contact_phone: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          crew_id: string | null
+          current_assessment_id: string | null
+          damage_types: string[] | null
+          deleted_at: string | null
+          deleted_by: string | null
+          due_date: string | null
+          estimated_travel_time: number | null
+          geofence_radius_meters: number | null
+          id: string
+          is_deleted: boolean | null
+          is_important: boolean
+          latitude: number | null
+          longitude: number | null
+          raw_ocr_text: string | null
+          review_stage: string
+          route_batch_id: string | null
+          route_order: number | null
+          scheduled_date: string | null
+          severity: string | null
+          source_file_id: string | null
+          source_type: Database["public"]["Enums"]["ticket_source_type"]
+          special_instructions: string | null
+          started_at: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          storm_event_id: string | null
+          team_lead_id: string | null
+          template_key: string | null
+          ticket_number: string
+          updated_at: string | null
+          updated_by: string | null
+          utility_client: string
+          utility_submission_reference: string | null
+          utility_submitted_at: string | null
+          utility_submitted_by: string | null
+          work_description: string | null
+          work_order_ref: string | null
+          zip_code: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       validate_storm_ticket_payload: {
         Args: { p_payload: Json; p_storm_id: string }
@@ -3353,6 +4062,7 @@ export type Database = {
         | "DOCUMENT_EXPIRING"
         | "SAFETY_ALERT"
       payment_method: "ACH" | "CHECK" | "WIRE" | "OTHER"
+      pole_size: "30'" | "35'" | "40'" | "45'" | "50'" | "55'" | "60'"
       priority_level: "A" | "B" | "C" | "X"
       sync_status: "SYNCED" | "PENDING" | "FAILED" | "CONFLICT"
       ticket_source_type:
@@ -3376,6 +4086,17 @@ export type Database = {
         | "ARCHIVED"
         | "EXPIRED"
       user_role: "CEO" | "SUPER_ADMIN" | "ADMIN" | "CONTRACTOR"
+      wire_size:
+        | "#6"
+        | "#4"
+        | "#2"
+        | "1/0"
+        | "2/0"
+        | "3/0"
+        | "4/0"
+        | "336"
+        | "556"
+        | "795"
       work_type:
         | "STANDARD_ASSESSMENT"
         | "EMERGENCY_RESPONSE"
@@ -3555,6 +4276,7 @@ export const Constants = {
         "SAFETY_ALERT",
       ],
       payment_method: ["ACH", "CHECK", "WIRE", "OTHER"],
+      pole_size: ["30'", "35'", "40'", "45'", "50'", "55'", "60'"],
       priority_level: ["A", "B", "C", "X"],
       sync_status: ["SYNCED", "PENDING", "FAILED", "CONFLICT"],
       ticket_source_type: [
@@ -3580,6 +4302,18 @@ export const Constants = {
         "EXPIRED",
       ],
       user_role: ["CEO", "SUPER_ADMIN", "ADMIN", "CONTRACTOR"],
+      wire_size: [
+        "#6",
+        "#4",
+        "#2",
+        "1/0",
+        "2/0",
+        "3/0",
+        "4/0",
+        "336",
+        "556",
+        "795",
+      ],
       work_type: [
         "STANDARD_ASSESSMENT",
         "EMERGENCY_RESPONSE",
@@ -3589,4 +4323,3 @@ export const Constants = {
     },
   },
 } as const
-

@@ -37,7 +37,7 @@ const ticketFormSchema = z.object({
     work_description: z.string().min(10, "Description must be at least 10 characters"),
     special_instructions: z.string().optional(),
     is_important: z.boolean(),
-    status: z.enum(["DRAFT", "ASSIGNED", "REJECTED", "IN_ROUTE", "ON_SITE", "IN_PROGRESS", "COMPLETE", "PENDING_REVIEW", "APPROVED", "NEEDS_REWORK", "CLOSED", "ARCHIVED", "EXPIRED"]),
+    status: z.enum(["DRAFT", "ASSIGNED", "IN_ROUTE", "ON_SITE", "IN_PROGRESS", "COMPLETE", "PENDING_REVIEW", "APPROVED", "NEEDS_REWORK", "CLOSED", "ARCHIVED", "EXPIRED"]),
     scheduled_date: z.string().min(1, "Scheduled date is required"),
     due_date: z.string().min(1, "Due date is required"),
     equipment_type: z.string().optional(),

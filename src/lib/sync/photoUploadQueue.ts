@@ -23,7 +23,7 @@ export interface PhotoUploadProcessResult {
 }
 
 interface PhotoUploadQueueDependencies {
-  addLocalPhoto: (photo: Omit<LocalPhoto, 'id'>) => Promise<string>;
+  addLocalPhoto: (photo: Omit<LocalPhoto, 'id'> & { id?: string }) => Promise<string>;
   getPendingLocalPhotos: () => Promise<LocalPhoto[]>;
   markLocalPhotoUploaded: (id: string) => Promise<void>;
   markLocalPhotoFailed: (id: string) => Promise<void>;
@@ -79,7 +79,7 @@ function defaultIsOnline(): boolean {
 
 const defaultDependencies: PhotoUploadQueueDependencies = {
   addLocalPhoto: queuePhoto,
-  getPendingLocalPhotos: getPendingPhotos,
+  getPendingLocalPhotos: async()=>{const {supabase}=await import('../supabase/client');const {data}=await supabase.auth.getUser();if(!data.user)return [];return (await getPendingPhotos()).filter(photo=>photo.actor_profile_id===data.user!.id);},
   markLocalPhotoUploaded: markPhotoUploaded,
   markLocalPhotoFailed: markPhotoUploadFailed,
   uploadPhotoAsset: uploadPhotoPipeline,
@@ -100,6 +100,8 @@ export function createPhotoUploadQueue(
       const preview = await dependencies.generatePreview(photo.file);
 
       return dependencies.addLocalPhoto({
+        id: photo.id,
+        actor_profile_id: photo.actorProfileId,
         file: photo.file,
         preview: preview || photo.previewUrl,
         type: photo.type,
@@ -174,4 +176,9 @@ export function createPhotoUploadQueue(
   };
 }
 
-export const photoUploadQueue = createPhotoUploadQueue();
+const baseQueue=createPhotoUploadQueue();
+let photoSync:Promise<PhotoUploadProcessResult>|null=null;
+export const photoUploadQueue:PhotoUploadQueue={...baseQueue,process:()=>{
+  if(!photoSync) photoSync=baseQueue.process().finally(()=>{photoSync=null;});
+  return photoSync;
+}};

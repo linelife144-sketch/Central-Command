@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCheck, RefreshCw, ShieldAlert, Wrench, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { FieldAssessmentReadback } from './FieldAssessmentSheet';
 import { AssessmentDecisionSheet } from '@/components/features/assessments/AssessmentDecisionSheet';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -131,9 +132,10 @@ function toSafetyFlagLabel(flag: string): string {
 interface AssessmentReviewListProps {
   reviewerId?: string;
   canEdit?: boolean;
+  ticketId?: string;
 }
 
-export function AssessmentReviewList({ reviewerId, canEdit = true }: AssessmentReviewListProps) {
+export function AssessmentReviewList({ reviewerId, canEdit = true, ticketId }: AssessmentReviewListProps) {
   const [assessments, setAssessments] = useState<AssessmentReviewListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,6 +156,7 @@ export function AssessmentReviewList({ reviewerId, canEdit = true }: AssessmentR
 
     try {
       const rows = await assessmentReviewService.listAssessments({
+        ticketId,
         reviewed: reviewedFilter,
         priority: priorityFilter,
         decision: decisionFilter,
@@ -169,7 +172,7 @@ export function AssessmentReviewList({ reviewerId, canEdit = true }: AssessmentR
     } finally {
       setIsLoading(false);
     }
-  }, [decisionFilter, fromDate, priorityFilter, reviewedFilter, searchTerm, toDate]);
+  }, [decisionFilter, fromDate, priorityFilter, reviewedFilter, searchTerm, ticketId, toDate]);
 
   useEffect(() => {
     void loadAssessments();
@@ -328,7 +331,7 @@ export function AssessmentReviewList({ reviewerId, canEdit = true }: AssessmentR
   );
 
   return (
-    <div className="space-y-4 cc-assessment-review">
+    <div className="space-y-4 cc-assessment-review" aria-label={ticketId ? 'Ticket assessment review' : 'Assessment review'}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Card className="cc-review-card rounded-xl border border-border py-0">
           <CardContent className="p-3">
@@ -650,6 +653,8 @@ export function AssessmentReviewList({ reviewerId, canEdit = true }: AssessmentR
           </Card>
         </aside>
       </div>
+
+      {focusedAssessment?.field_assessment && <details className="cc-field-section p-5"><summary className="cursor-pointer font-heading text-xl font-semibold">Full field assessment · {focusedAssessment.ticket_number ?? focusedAssessment.ticket_id}</summary><div className="mt-4"><FieldAssessmentReadback assessment={focusedAssessment.field_assessment} ticketId={focusedAssessment.ticket_id} photoEvidence={focusedAssessment.photo_evidence} /></div></details>}
 
       <AssessmentDecisionSheet
         open={Boolean(decisionSheetState)}
