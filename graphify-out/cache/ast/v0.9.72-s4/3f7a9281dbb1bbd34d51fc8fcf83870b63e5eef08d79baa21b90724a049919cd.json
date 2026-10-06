@@ -1,1 +1,0 @@
-{"nodes": [{"id": "$graphify-root$_supabase_migrations_20260219055000_add_ceo_enum_value_sql", "label": "20260219055000_add_ceo_enum_value.sql", "file_type": "code", "source_file": "supabase/migrations/20260219055000_add_ceo_enum_value.sql", "source_location": null}], "edges": []}
