@@ -74,7 +74,6 @@ export function TicketFilters({ onFilterChange }: TicketFiltersProps) {
                         <SelectItem value="ALL">All Statuses</SelectItem>
                         <SelectItem value="DRAFT">Draft</SelectItem>
                         <SelectItem value="ASSIGNED">Assigned</SelectItem>
-                        <SelectItem value="REJECTED">Rejected</SelectItem>
                         <SelectItem value="IN_ROUTE">In Route</SelectItem>
                         <SelectItem value="ON_SITE">On Site</SelectItem>
                         <SelectItem value="IN_PROGRESS">In Progress</SelectItem>

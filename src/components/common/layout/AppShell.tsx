@@ -18,7 +18,7 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { profile, signOut, permissions, isLoading } = useAuth();
   const pathname = usePathname();
-  const allowed = userRole === 'contractor' || mayOpenPath(pathname, permissions);
+  const allowed = userRole === 'contractor' || mayOpenPath(pathname, permissions, profile?.role);
 
   return (
     <div className="cc-shell min-h-screen bg-grid-shell">

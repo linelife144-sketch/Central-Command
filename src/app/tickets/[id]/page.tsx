@@ -1,13 +1,12 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
-import { stormRosterService } from '@/lib/services/stormRosterService';
 import { PageHeader } from '@/components/common/layout/PageHeader';
-import { StatusBadge } from '@/components/common/data-display/StatusBadge';
+import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { TicketImportanceBadge } from '@/components/features/tickets/TicketImportanceBadge';
 import { formatDate, formatAddress } from '@/lib/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,19 +14,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { isAdminClassRole } from '@/lib/auth/roleGuards';
-import { StatusUpdater } from '@/components/features/tickets/StatusUpdater';
+import { StatusUpdateFlow } from '@/components/features/tickets/StatusUpdateFlow';
 import { UtilityTicketDetails } from '@/components/features/tickets/UtilityTicketDetails';
 import { StatusHistoryTimeline } from '@/components/features/tickets/StatusHistoryTimeline';
 import { TicketPrintButton } from '@/components/features/tickets/TicketPrintButton';
 import { TicketAssessments } from '@/components/features/tickets/TicketAssessments';
-import { AssessmentReviewList } from '@/components/features/assessments';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { useContractorId } from '@/hooks/useContractorId';
+import { ticketAssessmentWorkflow } from '@/lib/services/ticketAssessmentWorkflow';
 
 export default function TicketDetailPage() {
     const params = useParams();
-    const { profile: user, can } = useAuth();
+    const { profile: user,can } = useAuth();
+    const {contractorId}=useContractorId(user?.role==='CONTRACTOR'?user.id:undefined);
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [assigneeName, setAssigneeName] = useState('');
+    const [teamLeadName, setTeamLeadName] = useState('');
+    const [crewName, setCrewName] = useState('');
+    const [tab,setTab]=useState('details');
     const [refreshKey, setRefreshKey] = useState(0);
 
     const userRole: 'admin' | 'contractor' =
@@ -36,17 +42,19 @@ export default function TicketDetailPage() {
             : 'contractor';
 
     useEffect(() => {
-        let cancelled = false;
-        setAssigneeName('');
-        if (userRole === 'admin' && ticket?.assigned_to && ticket.storm_event_id) {
-            stormRosterService.list(ticket.storm_event_id).then(members => {
-                if (!cancelled) setAssigneeName(members.find(member => member.contractorId === ticket.assigned_to)?.displayName ?? '');
-            }).catch(error => console.error('Failed to load assigned contractor:', error));
-        }
-        return () => { cancelled = true; };
-    }, [ticket?.assigned_to, ticket?.storm_event_id, userRole]);
+        let active = true;
+        if (ticket) void ticketAssessmentWorkflow.options(ticket.id).then(options=>{
+            if(!active) return;
+            const assignedCrew = options.crews.find(c=>c.id===ticket.crew_id);
+            const team = options.teamLeads.find(l=>l.id===ticket.team_lead_id);
+            setAssigneeName(assignedCrew?.assessorName??'');
+            setTeamLeadName(team?.name??'');
+            setCrewName(assignedCrew?.name??'');
+        }).catch(()=>undefined);
+        return ()=>{active=false;};
+    }, [ticket]);
 
-    const loadTicket = async () => {
+    const loadTicket = useCallback(async () => {
         if (!params.id) return;
         try {
             const data = await ticketService.getTicketById(params.id as string);
@@ -56,11 +64,11 @@ export default function TicketDetailPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [params.id]);
 
     useEffect(() => {
-        loadTicket();
-    }, [params.id]);
+        void Promise.resolve().then(loadTicket);
+    }, [loadTicket]);
 
     const handleStatusUpdated = () => {
         loadTicket();
@@ -75,6 +83,9 @@ export default function TicketDetailPage() {
         return notFound();
     }
 
+    if (user?.role==='CONTRACTOR' && !contractorId) return <p role="status">Verifying your crew access…</p>;
+    if (user?.role==='CONTRACTOR' && ticket.assigned_to!==contractorId && ticket.assigned_driver_id!==contractorId || user?.role==='ADMIN' && ticket.team_lead_id!==user.id) return <p role="alert">This ticket is not assigned to your team or crew.</p>;
+
     return (
         <div className="space-y-6">
             <PageHeader
@@ -84,19 +95,13 @@ export default function TicketDetailPage() {
                 showBackButton={true}
             >
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                    <Button asChild variant="accent"><Link onClick={()=>setTab('details')} href={['ON_SITE','IN_PROGRESS','NEEDS_REWORK'].includes(ticket.status)&&(user?.role==='CONTRACTOR'&&contractorId===ticket.assigned_to||['CEO','SUPER_ADMIN'].includes(user?.role??'')&&can('admin.assessments.edit'))?`/tickets/${ticket.id}/assessment`:'#assessment'}>Assessment</Link></Button>
                     <div className="flex gap-2">
                         <TicketImportanceBadge isImportant={ticket.is_important} />
-                        <StatusBadge status={ticket.status} />
+                        <TicketStatusBadge status={ticket.status} />
                     </div>
                     <TicketPrintButton ticket={ticket} assigneeName={assigneeName || (userRole === 'contractor' ? `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() : undefined)} />
-                    {user && (
-                        <StatusUpdater
-                            ticket={ticket}
-                            userRole={user.role}
-                            userId={user.id}
-                            onStatusUpdated={handleStatusUpdated}
-                        />
-                    )}
+
                 </div>
             </PageHeader>
 
@@ -111,28 +116,14 @@ export default function TicketDetailPage() {
                         </CardContent>
                     </Card>
 
-                    <Tabs defaultValue="details">
+                    <Tabs value={tab} onValueChange={setTab}>
                         <TabsList>
                             <TabsTrigger value="details">Ticket & assessment</TabsTrigger>
                             <TabsTrigger value="history">History</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details" className="space-y-4 mt-4">
                             <UtilityTicketDetails ticket={ticket} />
-                            <TicketAssessments ticket={ticket} canCreate={userRole === 'contractor'} />
-                            {userRole === 'admin' && can('admin.assessments.view') && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Assessment review</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <AssessmentReviewList
-                                            reviewerId={user?.id}
-                                            canEdit={can('admin.assessments.edit')}
-                                            ticketId={ticket.id}
-                                        />
-                                    </CardContent>
-                                </Card>
-                            )}
+                            <TicketAssessments ticket={ticket} onChanged={handleStatusUpdated} />
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Location & Contact</CardTitle>
@@ -160,6 +151,7 @@ export default function TicketDetailPage() {
                 </div>
 
                 <div className="space-y-6">
+                    {user?.role==='CONTRACTOR'&&<StatusUpdateFlow ticket={ticket} userRole={user.role} userId={user.id} onStatusUpdated={handleStatusUpdated}/> }
                     <Card>
                         <CardHeader>
                             <CardTitle>{userRole === 'contractor' ? 'Metadata' : 'Info'}</CardTitle>
@@ -173,6 +165,18 @@ export default function TicketDetailPage() {
                                         : (ticket.assigned_to ? (assigneeName || 'Contractor Assigned') : 'Unassigned')}
                                 </p>
                             </div>
+                            {userRole === 'admin' && ticket.team_lead_id && (
+                                <div>
+                                    <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Team Lead</span>
+                                    <p className="font-semibold">{teamLeadName || 'Assigned team lead'}</p>
+                                </div>
+                            )}
+                            {userRole === 'admin' && ticket.crew_id && (
+                                <div>
+                                    <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Crew</span>
+                                    <p className="font-semibold">{crewName || 'Assigned crew'}</p>
+                                </div>
+                            )}
                             <div>
                                 <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Created</span>
                                 <p>{formatDate(ticket.created_at)}</p>
@@ -181,6 +185,15 @@ export default function TicketDetailPage() {
                                 <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Geofence</span>
                                 <p>{ticket.geofence_radius_meters}m</p>
                             </div>
+                            {userRole === 'admin' && can('admin.tickets.edit') && ['DRAFT', 'ASSIGNED', 'NEEDS_REWORK'].includes(ticket.status) && (
+                                <div className="pt-2 border-t">
+                                    <Button variant="outline" size="sm" className="w-full text-xs font-semibold" asChild>
+                                        <Link href={`/admin/dashboard?dispatchTicketId=${ticket.id}#dispatch`}>
+                                            Manage dispatch on dashboard
+                                        </Link>
+                                    </Button>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

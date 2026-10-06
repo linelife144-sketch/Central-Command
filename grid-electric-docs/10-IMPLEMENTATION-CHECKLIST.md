@@ -883,6 +883,33 @@ See `docs/testing/contractor-onboarding-verification.json` for the observed Auth
 - [x] Verify typecheck, scoped lint, production webpack build, focused tests, desktop/phone component interactions, draft restore, and no horizontal overflow. — Codex /root
 - [x] Apply live assessment migration `20261006120830_top_down_ticket_assessments` to Central Command Supabase after the user authorized activation; confirm structured columns, trigger installation, and retained RLS policy set. — Codex /root (2026-10-06)
 - [x] Remove standalone assessment links from admin and contractor sidebars; add ticket-filtered assessment review controls to ticket detail, route the former admin review URL to `/tickets`, and route dashboard entry points through tickets. — Codex /root (2026-10-06)
-- [ ] Verify authenticated live RLS/trigger rollback behavior and complete a real contractor submission, staff readback, GPS/photo upload, and reconnect on the same ticket. — Codex /root
+- [x] Verify live RLS/trigger workflow with rollback-only records and simulated request claims; all 14 scenario groups pass with matching fixture counts. — Codex /root (2026-10-06)
+- [ ] Complete real contractor sign-in/submission, staff readback, physical GPS/photo upload, and reconnect on the same ticket. — Codex /root
 
 Evidence and approval scope: `docs/testing/field-assessments-validation.md`. Full regression run leaves four unrelated TicketAssign mock failures (stormRosterService.listOptions absent).
+
+
+### Phase 4 — Ticket drafts, crew dispatch, and approval hierarchy (2026-10-06, Codex /root)
+
+- [x] Open the assessment form directly from an on-site ticket; Save persists a draft and returns to ticket readback, with explicit Submit afterward. — Codex /root
+- [x] Persist driver/assessor crew membership and ticket-owned Admin team lead assignment; validate contractor roles, active eligibility, storm roster and team scope. — Codex /root
+- [x] Enforce assigned team lead review then CEO/Super Admin final approval; corrections preserve prior immutable submissions and create new revisions. — Codex /root
+- [x] Install private assessment photo Storage and linked media policies; require uploaded GPS evidence for submission; preserve immutable submitted evidence. — Codex /root
+- [x] Add per-user in-app notifications for dispatch, submission, correction, and final approval; preserve explicit submission intent through offline sync. — Codex /root
+- [x] Record utility handoff after final approval and ticket/assessment PDF export; include both review notes and handoff details in the printable record. — Codex /root
+- [x] Apply live workflow, intake-scope and fieldwork-guard migrations; regenerate Supabase types; pass 36 local DB checks, 14 live rollback groups, 57 focused tests, TypeScript, scoped ESLint, production webpack build, and Graphify refresh. — Codex /root
+- [ ] User will handle the Admin team lead account at the office; current live directory has no Admin accounts. People & access edits existing staff and has no creation form. — Codex /root
+- [ ] Authenticated visual/device/reconnect acceptance and hosted frontend deployment. Local preview is running at http://127.0.0.1:3000. — Codex /root
+
+Evidence: `docs/testing/ticket-workflow-validation.md`, `ticket-workflow-local.json`, and `ticket-workflow-live.json`. Live SQL uses simulated request claims and rollback-only object metadata; it does not establish real authentication or file-upload acceptance.
+
+- [x] Guard legacy single-contractor tickets against starting fieldwork before team lead and driver/assessor crew dispatch. — Codex /root (2026-10-06)
+
+### Damage section photos and completed ticket Print / Save PDF — 2026-10-06 (Codex /root)
+
+- [x] Require a GPS-validated damage photo beside every active damage/hazard description, including independent cross arm and insulator evidence. Preserve section keys and stable photo IDs through durable files, saved drafts, submission, and ticket/staff readback. — Codex /root
+- [x] Add completed-ticket Print / Save PDF with one record containing ticket/location/utility fields, attached assessment revisions, section photos, final notes, both review stages, and utility handoff information. Browser print supports paper or Save as PDF; incomplete or inaccessible evidence prevents export. Exclude abandoned draft uploads. — Codex /root
+- [x] Preserve the newer live crew/draft/review workflow discovered during continuation. Verify the private assessment bucket and deployed section validator; three live validator checks pass without writing rows. An extra locally generated storage migration was removed because the deployed workflow already supplies the bucket and access rules. — Codex /root
+- [x] Pass 98 focused tests across 11 files, 36 isolated exact-workflow database checks, TypeScript, scoped ESLint, and production webpack compilation/static generation of 50 pages. Generate and inspect a three-page Letter PDF from labeled sample data. Refresh Graphify with AST extraction. — Codex /root
+- [ ] Resolve the broader suite's eight ticket assignment/status test failures (558 tests pass); these files are outside this photo/report change. — Codex /root
+- [ ] Complete real signed-in physical GPS/photo upload, offline/cross-device readback, and completed-ticket print-dialog acceptance. Sample rendering and SQL validator checks do not establish device acceptance or hosted deployment. — Codex /root

@@ -474,31 +474,15 @@ export function composeReviewNotes(decision: AssessmentReviewDecision, reviewNot
 }
 
 async function reviewRemoteAssessment(input: ReviewAssessmentInput): Promise<ReviewedAssessment> {
-  const { supabase } = await import('../supabase/client');
-  const nowIso = new Date().toISOString();
-
-  const composedNotes = composeReviewNotes(input.decision, input.reviewNotes);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('damage_assessments') as any)
-    .update({
-      reviewed_by: input.reviewerId,
-      reviewed_at: nowIso,
-      review_notes: composedNotes,
-      updated_at: nowIso,
-    })
-    .eq('id', input.assessmentId)
-    .select('id, reviewed_by, reviewed_at, review_notes')
-    .single();
-
-  if (error) {
-    throw error;
-  }
+  const {ticketAssessmentWorkflow}=await import('./ticketAssessmentWorkflow');
+  const data=await ticketAssessmentWorkflow.review(input.assessmentId,input.decision,input.reviewNotes??'');
+  const nowIso=new Date().toISOString();
+  const composedNotes=composeReviewNotes(input.decision,input.reviewNotes);
 
   return {
     assessmentId: (data?.id as string) ?? input.assessmentId,
-    reviewedBy: (data?.reviewed_by as string) ?? input.reviewerId,
-    reviewedAt: (data?.reviewed_at as string) ?? nowIso,
+    reviewedBy: ((data as unknown as {reviewed_by?:string;team_reviewed_by?:string}).reviewed_by??(data as unknown as {team_reviewed_by?:string}).team_reviewed_by as string) ?? input.reviewerId,
+    reviewedAt: ((data as unknown as {reviewed_at?:string;team_reviewed_at?:string}).reviewed_at??(data as unknown as {team_reviewed_at?:string}).team_reviewed_at as string) ?? nowIso,
     reviewNotes: (data?.review_notes as string) ?? composedNotes,
     decision: input.decision,
   };

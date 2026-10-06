@@ -1,0 +1,21 @@
+{
+  "scope": "Live Postgres with simulated request claims; fixtures rolled back. Browser and Storage API uploads not tested.",
+  "checks": [
+    "chief creates draft and assigns active Admin team lead",
+    "other team lead cannot see or dispatch this ticket",
+    "Admin ticket/assessment edits allowed; finance and full contractor records denied",
+    "driver/assessor role validation and atomic crew assignment",
+    "assigned driver reads ticket but cannot author assessor draft",
+    "server rejects poor GPS and distant arrival; valid field progress persists",
+    "draft saves/readback without assessment submission or review notification",
+    "submission waits for uploaded linked GPS photo evidence",
+    "submission binds identity, retry idempotent, submitted revision/evidence immutable",
+    "driver can read submitted assessment and private linked photo objects",
+    "assigned lead receives submission and returns it with correction notes",
+    "correction creates new revision and retains prior answers/evidence",
+    "team lead approves for final review and cannot grant final approval",
+    "chief receives final notification; approval gates recorded PDF handoff"
+  ],
+  "passed": 14,
+  "rollback_counts_match": true
+}

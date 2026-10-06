@@ -1,5 +1,5 @@
 import { TicketStatus, UserRole } from "@/types";
-import { isValidTransition } from "./statusTransitions";
+import { getNextPossibleStatuses, isValidTransition } from "./statusTransitions";
 
 describe("statusTransitions", () => {
   describe("isValidTransition", () => {
@@ -8,8 +8,8 @@ describe("statusTransitions", () => {
       expect(isValidTransition("DRAFT", "ASSIGNED", "ADMIN")).toBe(true);
     });
 
-    it("should allow Admin to move from ASSIGNED to REJECTED", () => {
-        expect(isValidTransition("ASSIGNED", "REJECTED", "ADMIN")).toBe(true);
+    it("should NOT allow Admin to move from ASSIGNED to a rejected state", () => {
+        expect(getNextPossibleStatuses("ASSIGNED", "ADMIN")).toEqual(["CLOSED"]);
     });
 
     it("should allow Admin to move from PENDING_REVIEW to APPROVED", () => {
@@ -20,8 +20,8 @@ describe("statusTransitions", () => {
       expect(isValidTransition("PENDING_REVIEW", "NEEDS_REWORK", "ADMIN")).toBe(true);
     });
 
-    it("should allow Admin to move from PENDING_REVIEW to REJECTED", () => {
-        expect(isValidTransition("PENDING_REVIEW", "REJECTED", "ADMIN")).toBe(true);
+    it("should NOT offer REJECTED from PENDING_REVIEW", () => {
+        expect(getNextPossibleStatuses("PENDING_REVIEW", "ADMIN")).not.toContain("REJECTED");
     });
 
     it("should allow Admin to move from any status to CLOSED", () => {

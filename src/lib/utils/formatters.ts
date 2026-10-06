@@ -161,7 +161,6 @@ export function getStatusColor(status: string): string {
     // Ticket statuses
     DRAFT: 'gray',
     ASSIGNED: 'blue',
-    REJECTED: 'red',
     IN_ROUTE: 'cyan',
     ON_SITE: 'green',
     IN_PROGRESS: 'yellow',
@@ -173,6 +172,7 @@ export function getStatusColor(status: string): string {
     EXPIRED: 'red',
     
     // Expense/Invoice statuses
+    REJECTED: 'red',
     SUBMITTED: 'blue',
     UNDER_REVIEW: 'yellow',
     PAID: 'green',

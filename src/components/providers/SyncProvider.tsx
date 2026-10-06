@@ -14,6 +14,8 @@ import {
   type LocalSyncConflict,
   type SyncQueueItem,
 } from '@/lib/db/dexie';
+import { ticketAssessmentWorkflow } from '@/lib/services/ticketAssessmentWorkflow';
+import { db } from '@/lib/db/dexie';
 import { assessmentUploadQueue } from '@/lib/sync/assessmentUploadQueue';
 import { photoUploadQueue } from '@/lib/sync/photoUploadQueue';
 import { timeEntryUploadQueue } from '@/lib/sync/timeEntryUploadQueue';
@@ -66,6 +68,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [conflicts, setConflicts] = useState<LocalSyncConflict[]>([]);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
   const [pendingTimeEntryCount, setPendingTimeEntryCount] = useState(0);
+  const [pendingTicketDrafts,setPendingTicketDrafts]=useState(0);
+  const [failedTicketDrafts,setFailedTicketDrafts]=useState(0);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [lastError, setLastError] = useState<string | undefined>(undefined);
 
@@ -77,11 +81,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       getPendingTimeEntryCount(),
     ]);
 
+    const drafts=profile?.id?await db.ticketDraftQueue.where('actor_profile_id').equals(profile.id).toArray():[];
+    setPendingTicketDrafts(drafts.filter(d=>d.dirty||d.submit_requested).length);
+    setFailedTicketDrafts(drafts.filter(d=>d.last_error).length);
     setQueueItems(pendingItems);
     setConflicts(unresolvedConflicts);
     setPendingPhotoCount(pendingPhotos);
     setPendingTimeEntryCount(pendingTimeEntries);
-  }, []);
+  }, [profile]);
 
   const syncNow = useCallback(async () => {
     if (!readOnlineStatus()) {
@@ -97,8 +104,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       const timeResult = await timeEntryUploadQueue.process();
       const assessmentResult = await assessmentUploadQueue.process();
 
-      if (result.failed > 0 || timeResult.failed > 0 || assessmentResult.failed > 0) {
-        setLastError(`${result.failed} photo upload(s) and ${timeResult.failed} time entry sync(s) and ${assessmentResult.failed} assessment sync(s) failed. Review queue items for retry.`);
+      const draftResult = profile?.id ? await ticketAssessmentWorkflow.process(profile.id) : {failed:0,errors:[]};
+      if (draftResult.failed) setLastError(draftResult.errors[0]);
+      if (draftResult.failed > 0 || result.failed > 0 || timeResult.failed > 0 || assessmentResult.failed > 0) {
+        setLastError(`${result.failed} photo upload(s) and ${timeResult.failed} time entry sync(s) and ${assessmentResult.failed + draftResult.failed} assessment sync(s) failed. Review queue items for retry.`);
       } else {
         setLastSyncedAt(new Date().toISOString());
       }
@@ -109,7 +118,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncState('idle');
     }
-  }, [refresh]);
+  }, [refresh,profile]);
 
   useEffect(() => {
     if (isOnline && profile?.id) void Promise.resolve().then(syncNow);
@@ -193,8 +202,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh, syncNow]);
 
-  const pendingCount = queueItems.filter((item) => item.status === 'pending').length;
-  const failedCount = queueItems.filter((item) => item.status === 'failed').length;
+  const pendingCount = queueItems.filter((item) => item.status === 'pending').length + pendingTicketDrafts;
+  const failedCount = queueItems.filter((item) => item.status === 'failed').length + failedTicketDrafts;
 
   const snapshot = useMemo<SyncSnapshot>(
     () => ({

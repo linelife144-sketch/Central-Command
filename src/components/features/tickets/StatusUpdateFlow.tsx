@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -42,9 +43,49 @@ export function StatusUpdateFlow({ ticket, userId, userRole, onStatusUpdated }: 
     minAccuracyMeters: APP_CONFIG.MIN_GPS_ACCURACY_METERS,
   });
 
+  const isEnRoute = ticket.status === 'IN_ROUTE';
+  // IN_ROUTE → ON_SITE is automatic (GPS proximity), so no manual step is offered.
+  const manualTransition = isEnRoute ? null : transition;
+  const autoCheckInFlight = useRef(false);
+  const { refreshAndValidate } = gpsValidation;
+
+  const checkArrival = useCallback(async () => {
+    if (autoCheckInFlight.current || !geofenceTarget) return;
+    autoCheckInFlight.current = true;
+    try {
+      const snapshot = await refreshAndValidate();
+      if (
+        snapshot.status === 'ready'
+        && snapshot.validation.gpsValid
+        && snapshot.validation.withinGeofence === true
+        && snapshot.reading.latitude !== null
+        && snapshot.reading.longitude !== null
+      ) {
+        await ticketService.updateTicketStatus(ticket.id, 'ON_SITE', userId, userRole, undefined, {
+          latitude: snapshot.reading.latitude,
+          longitude: snapshot.reading.longitude,
+          accuracy: snapshot.reading.accuracy ?? APP_CONFIG.MAX_GPS_ACCURACY_METERS,
+        });
+        await onStatusUpdated?.('ON_SITE');
+      }
+    } catch {
+      // Silent: the next poll retries; the contractor never sees a status error here.
+    } finally {
+      autoCheckInFlight.current = false;
+    }
+  }, [geofenceTarget, onStatusUpdated, refreshAndValidate, ticket.id, userId, userRole]);
+
+  useEffect(() => {
+    if (!isEnRoute || !geofenceTarget) return;
+    void checkArrival();
+    const interval = window.setInterval(() => void checkArrival(), 30000);
+    return () => window.clearInterval(interval);
+  }, [checkArrival, geofenceTarget, isEnRoute]);
+
   const canAttemptTransition = Boolean(
-    transition
-    && (!transition.requiresGeofence || geofenceTarget),
+    manualTransition
+    && ticket.crew_id && ticket.team_lead_id && ticket.assigned_driver_id
+    && (!manualTransition.requiresGeofence || geofenceTarget),
   );
 
   const handleStatusUpdate = async () => {
@@ -90,7 +131,7 @@ export function StatusUpdateFlow({ ticket, userId, userRole, onStatusUpdated }: 
         },
       );
 
-      toast.success(`Ticket status updated to ${formatWorkflowStatus(transition.nextStatus).toLowerCase()}.`);
+      toast.success(transition.nextStatus === 'IN_ROUTE' ? 'Ticket started.' : `Ticket status updated to ${formatWorkflowStatus(transition.nextStatus).toLowerCase()}.`);
       await onStatusUpdated?.(transition.nextStatus);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update ticket status.');
@@ -105,22 +146,22 @@ export function StatusUpdateFlow({ ticket, userId, userRole, onStatusUpdated }: 
         <CardTitle className="text-lg">Field Status Flow</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        {!transition ? (
+        {!ticket.crew_id && <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">A storm manager must assign the team lead and driver/assessor crew before fieldwork starts.</p>}
+        {isEnRoute ? (
+          <p className="text-slate-600">
+            Ticket started. Your status updates automatically when you arrive at the site.
+          </p>
+        ) : !manualTransition ? (
           <p className="text-slate-500">
-            Current status has no remaining field transition.
+            Review or complete the assessment from the ticket.
           </p>
         ) : (
           <>
-            <p>
-              <span className="font-medium">{formatWorkflowStatus(transition.currentStatus)}</span>
-              {' '}to{' '}
-              <span className="font-medium">{formatWorkflowStatus(transition.nextStatus)}</span>
-            </p>
             <p className="text-slate-600">
               GPS validation is required before status updates.
-              {transition.requiresGeofence ? ' Geofence check is required for this step.' : ''}
+              {manualTransition.requiresGeofence ? ' Geofence check is required for this step.' : ''}
             </p>
-            {transition.requiresGeofence && !geofenceTarget && (
+            {manualTransition.requiresGeofence && !geofenceTarget && (
               <p className="text-amber-700">
                 Ticket coordinates are required to validate geofence for this status change.
               </p>
@@ -133,11 +174,12 @@ export function StatusUpdateFlow({ ticket, userId, userRole, onStatusUpdated }: 
               {(isSubmitting || gpsValidation.status === 'loading') && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {transition.actionLabel}
+              {manualTransition.actionLabel}
             </Button>
           </>
         )}
 
+        {['ON_SITE','IN_PROGRESS','NEEDS_REWORK'].includes(ticket.status) && <Button asChild variant="accent"><Link href={`/tickets/${ticket.id}#assessment`}>Open ticket assessment</Link></Button>}
         {gpsValidation.status === 'ready' && (
           <p className="text-slate-600">
             Latest GPS check:{' '}

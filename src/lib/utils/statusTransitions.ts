@@ -22,9 +22,9 @@ export function isValidTransition(
       case 'DRAFT':
         return ['ASSIGNED', 'CLOSED'].includes(next);
       case 'ASSIGNED':
-        return ['REJECTED', 'CLOSED'].includes(next);
+        return ['CLOSED'].includes(next);
       case 'PENDING_REVIEW':
-        return ['APPROVED', 'NEEDS_REWORK', 'REJECTED', 'CLOSED'].includes(next);
+        return ['APPROVED', 'NEEDS_REWORK', 'CLOSED'].includes(next);
       case 'APPROVED':
         return ['CLOSED', 'ARCHIVED'].includes(next);
       case 'CLOSED':
@@ -68,7 +68,7 @@ export function getNextPossibleStatuses(
   role: UserRole
 ): TicketStatus[] {
   const allStatuses: TicketStatus[] = [
-    'DRAFT', 'ASSIGNED', 'REJECTED', 'IN_ROUTE', 'ON_SITE', 
+    'DRAFT', 'ASSIGNED', 'IN_ROUTE', 'ON_SITE', 
     'IN_PROGRESS', 'COMPLETE', 'PENDING_REVIEW', 'APPROVED', 
     'NEEDS_REWORK', 'CLOSED', 'ARCHIVED', 'EXPIRED'
   ];

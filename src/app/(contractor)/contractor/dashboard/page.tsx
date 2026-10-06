@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { StatusBadge } from '@/components/common/data-display/StatusBadge';
+import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { SignalField } from '@/components/common/brand/SignalField';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { formatCurrency, formatDateTime, formatDuration } from '@/lib/utils/formatters';
@@ -122,7 +123,7 @@ export default function ContractorDashboardPage() {
           {loading ? <LoadingPanel /> : !data?.tickets ? <p className="py-8 text-sm text-muted-foreground">Your assigned work could not be loaded.</p> : data.tickets.recent.length ? <div className="divide-y divide-border">
             {data.tickets.recent.map(ticket => <Link key={ticket.id} href={`/tickets/${ticket.id}`} className={styles.ticket}>
               <span className={styles.ticketIcon}><Ticket className="size-4" /></span>
-              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm text-grid-navy">#{ticket.ticket_number}</strong>{ticket.is_important && <span className={styles.important}>Important</span>}<StatusBadge status={ticket.status} size="sm" /></div><p className="mt-1.5 text-sm text-grid-navy">{[ticket.address, ticket.city, ticket.state].filter(Boolean).join(', ') || 'Location not provided'}</p><p className="mt-1 text-xs text-muted-foreground">{ticket.utility_client}{ticket.due_date ? ` · Due ${formatDateTime(ticket.due_date)}` : ' · No due date set'}</p></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm text-grid-navy">#{ticket.ticket_number}</strong>{ticket.is_important && <span className={styles.important}>Important</span>}<TicketStatusBadge status={ticket.status} size="sm" /></div><p className="mt-1.5 text-sm text-grid-navy">{[ticket.address, ticket.city, ticket.state].filter(Boolean).join(', ') || 'Location not provided'}</p><p className="mt-1 text-xs text-muted-foreground">{ticket.utility_client}{ticket.due_date ? ` · Due ${formatDateTime(ticket.due_date)}` : ' · No due date set'}</p></div>
               <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
             </Link>)}
           </div> : <div className={styles.empty}><div className={styles.emptyIcon}><CircleCheck className="size-7" /></div><h3>No open assignments.</h3><p>{data.tickets.completed ? 'Your assigned work is complete. New tickets will appear here when dispatched to you.' : 'You’re set up and ready. Tickets will appear here when your team assigns work to you.'}</p><Button asChild variant="outline" size="sm"><Link href="/tickets">View my tickets<ArrowRight className="size-4" /></Link></Button></div>}

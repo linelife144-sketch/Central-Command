@@ -6,7 +6,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
 import { DataTable, Column } from '@/components/common/data-display/DataTable';
-import { StatusBadge } from '@/components/common/data-display/StatusBadge';
+import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { TicketImportanceBadge } from './TicketImportanceBadge';
 import { formatAddress, formatDateTime } from '@/lib/utils/formatters';
 import Link from 'next/link';
@@ -15,7 +15,6 @@ import { Plus, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TicketFilters, TicketFiltersState } from './TicketFilters';
 import { TicketCard } from './TicketCard';
-import { TicketAssign } from './TicketAssign';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
 import { contractorService } from '@/lib/services/contractorService';
@@ -27,7 +26,8 @@ interface TicketListProps {
 }
 
 export function TicketList({ userRole, userId }: TicketListProps) {
-    const { can } = useAuth();
+    const { can, profile } = useAuth();
+    const canCreate = ['CEO','SUPER_ADMIN'].includes(profile?.role??'') && can('admin.tickets.edit');
     const canEdit = userRole === 'admin' && can('admin.tickets.edit');
     const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -38,7 +38,6 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         status: "ALL",
         importance: "ALL",
     });
-    const [assignRequest, setAssignRequest] = useState<{ ticketId: string, ticketNumber: string, currentAssigneeId?: string, stormEventId?: string } | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -52,7 +51,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                     data = await ticketService.getTickets();
                 }
                 setTickets(Array.isArray(data) ? data : []);
-                if (userRole === 'admin') {
+                if (userRole === 'admin' && profile?.role !== 'ADMIN') {
                     try {
                         const contractors = await contractorService.listContractors();
                         setAssigneeNames(Object.fromEntries(contractors.map(c => [c.id, c.fullName])));
@@ -77,7 +76,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             }
         }
         loadTickets();
-    }, [userRole, userId]);
+    }, [userRole, userId, profile?.role]);
 
     const filteredTickets = useMemo(() => {
         const search = filters.search.trim().toLowerCase();
@@ -98,13 +97,6 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             return matchesSearch && matchesStatus && matchesImportance;
         });
     }, [tickets, filters, assigneeNames]);
-
-    const handleAssignTicket = async (contractorId: string) => {
-        if (!assignRequest) return;
-        const updated = await ticketService.assignTicket(assignRequest.ticketId, contractorId);
-        setTickets(previous => previous.map(ticket => ticket.id === updated.id ? updated : ticket));
-        toast.success(`Ticket ${assignRequest.ticketNumber} assigned successfully`);
-    };
 
     const columns: Column<Ticket>[] = [
         {
@@ -143,7 +135,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         {
             key: 'status',
             header: 'Status',
-            cell: (ticket) => <StatusBadge status={ticket.status} />,
+            cell: (ticket) => <TicketStatusBadge status={ticket.status} />,
         },
         {
             key: 'location',
@@ -165,8 +157,8 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             cell: (ticket) => (
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/tickets/${ticket.id}`}>
-                            View
+                        <Link href={`/tickets/${ticket.id}#assessment`}>
+                            Assessment
                         </Link>
                     </Button>
                     {canEdit && (
@@ -176,12 +168,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                             title="Assign Ticket"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setAssignRequest({
-                                    ticketId: ticket.id,
-                                    ticketNumber: ticket.ticket_number,
-                                    currentAssigneeId: ticket.assigned_to,
-                                    stormEventId: ticket.storm_event_id ?? undefined
-                                });
+                                router.push(`/admin/dashboard?dispatchTicketId=${ticket.id}#dispatch`);
                             }}
                         >
                             <UserPlus className="h-4 w-4" />
@@ -200,7 +187,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div><h2 className="cc-section-heading">Ticket queue</h2><p className="mt-1 text-xs text-muted-foreground">{isLoading ? 'Loading your workload…' : `${filteredTickets.length} ${filteredTickets.length === 1 ? 'ticket' : 'tickets'} in this view`}</p></div>
-                {canEdit && (
+                {canCreate && (
                     <Button asChild>
                         <Link href="/tickets/create">
                             <Plus className="mr-2 h-4 w-4" /> Create Ticket
@@ -241,14 +228,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                 )}
             </div>
 
-            <TicketAssign
-                isOpen={!!assignRequest}
-                onClose={() => setAssignRequest(null)}
-                onAssign={handleAssignTicket}
-                currentAssigneeId={assignRequest?.currentAssigneeId}
-                stormEventId={assignRequest?.stormEventId}
-                ticketNumber={assignRequest?.ticketNumber || ''}
-            />
+
         </div>
     );
 }

@@ -28,3 +28,18 @@ Post-activation verification: the current exact migration passes 34 isolated dat
 Still pending: authenticated live RLS/trigger tests with rollback fixtures and a real contractor submission plus staff readback, GPS/photo upload, and reconnect against the same ticket. No user credentials were entered. Device GPS/photo acquisition and upload persistence are not proven by component tests or client-supplied photo metadata. Frontend code is implemented in this checkout but has not been deployed to a hosted app.
 
 Full regression result: 523 passing tests; four failures in the existing TicketAssign tests due to their stormRosterService mock missing listOptions. No TicketAssign source or test files were modified.
+
+## Photo/report continuation — 2026-10-06 (Codex /root)
+
+The earlier activation-pending section is superseded by the newer live ticket workflow described in `ticket-workflow-validation.md`. During this continuation, live readback confirmed the private `assessment-photos` bucket and `private.assert_ticket_evidence` enforcing section-key photos and persisted evidence linkage. Three direct validator checks passed without writing rows. No new migration was deployed by this continuation.
+
+The completed ticket includes a Print / Save PDF button. It reloads the same ticket and attached assessments under the authenticated RLS session, downloads original linked images privately, excludes abandoned draft photos, rejects unavailable required images, escapes all printable content, and prepares a separate Letter-size print document after images/fonts are ready. The browser print dialog supplies printer selection or Save as PDF. Review notes, revisions and utility handoff metadata are included once.
+
+- Focused validation: 98 tests across 11 files pass.
+- Exact current workflow fixture: 36 isolated PGlite checks pass.
+- TypeScript, scoped ESLint and isolated webpack production build (50 pages) pass. Final report markup and local-photo actor filtering also pass TypeScript/scoped ESLint.
+- A labeled `QA-REPORT-001` fixture generated a three-page Letter PDF via Chromium. Rendered pages were inspected; complete text, section association and caption layout were checked. This uses a placeholder image, not real damage evidence. Temporary files reside under `/private/tmp/cc-ticket-report*`.
+- Wider regression: 558 pass, eight fail in `TicketAssign.test.tsx`, `ticketService.test.ts`, and `statusUpdateFlow.test.ts`. Failures concern the existing picker mocks, changed dispatch/status behavior and IndexedDB mocks; photo/report tests pass.
+- Graphify AST update completes (no semantic-document rebuild).
+
+Operational acceptance remains: real signed-in capture and Storage API upload, actor-isolated offline/reconnect and cross-device readback, and completed-ticket native print dialog. No credentials were entered and no real assessment/photo fixtures were retained.

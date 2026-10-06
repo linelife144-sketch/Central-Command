@@ -13,6 +13,7 @@ export type ConflictResolutionStrategy = 'LOCAL' | 'SERVER' | 'MERGED';
 
 // Types for local database
 export interface LocalTicket {
+  assigned_driver_id?: string | null;
   id: string;
   ticket_number: string;
   status: string;
@@ -152,7 +153,24 @@ export interface LocalAssessment {
   updated_at?: string;
 }
 
+export interface TicketDraftSnapshot {
+  id: string;
+  actor_profile_id: string;
+  ticket_id: string;
+  contractor_id: string;
+  assessment_id: string;
+  field_assessment: import('@/lib/schemas/fieldAssessment').FieldAssessment;
+  photo_evidence: import('@/lib/schemas/fieldAssessment').AssessmentPhotoEvidence[];
+  photos?: import('@/types').CapturedAssessmentPhoto[];
+  version: number | null;
+  dirty: boolean;
+  submit_requested: boolean;
+  last_error?: string;
+  saved_at: string;
+}
+
 export interface LocalPhoto {
+  actor_profile_id?: string;
   id: string;
   file: Blob;
   preview: string;
@@ -313,7 +331,10 @@ export class GridElectricDatabase extends Dexie {
   expenseReports!: Table<LocalExpenseReport>;
   expenseItems!: Table<LocalExpenseItem>;
   assessments!: Table<LocalAssessment>;
-  assessmentDrafts!: Table<{ id: string; ticket_id: string; contractor_id: string; answers: import('@/lib/schemas/fieldAssessment').FieldAnswers; photos?: import('@/types').CapturedAssessmentPhoto[]; updated_at: string }>;
+  contractorIdentities!: Table<{profile_id:string;contractor_id:string}>;
+  ticketDraftQueue!: Table<TicketDraftSnapshot>;
+  ticketAssessmentHistory!: Table<import('@/lib/services/ticketAssessmentWorkflow').SubmittedTicketAssessment>;
+  assessmentDrafts!: Table<{ id: string; ticket_id: string; contractor_id: string; answers: import('@/lib/schemas/fieldAssessment').FieldAnswers; photos?: import('@/types').CapturedAssessmentPhoto[]; assessment_id?: string; version?: number | null; updated_at: string }>;
   photos!: Table<LocalPhoto>;
   syncQueue!: Table<SyncQueueItem>;
   conflicts!: Table<LocalSyncConflict>;
@@ -450,6 +471,7 @@ export class GridElectricDatabase extends Dexie {
     });
     this.version(6).stores({ payAgreements: '&id, contractor_id, viewer_profile_id, [viewer_profile_id+contractor_id]' });
     this.version(7).stores({ assessmentDrafts: '&id, ticket_id, contractor_id' });
+    this.version(8).stores({ contractorIdentities:'&profile_id',ticketDraftQueue: '&id, actor_profile_id, ticket_id', ticketAssessmentHistory: '&id, ticket_id' });
 
   }
 }

@@ -9,7 +9,7 @@ export type PersonalTime = Pick<Row<'time_entries'>, 'id' | 'clock_in_at' | 'clo
 export type PersonalExpense = Pick<Row<'expense_reports'>, 'id' | 'status' | 'total_amount' | 'item_count'>;
 export type PersonalStorm = Pick<Row<'storm_events'>, 'id' | 'name' | 'utility_client' | 'region' | 'status'>;
 
-const CLOSED_TICKET_STATUSES = new Set(['COMPLETE', 'APPROVED', 'CLOSED', 'ARCHIVED', 'EXPIRED', 'REJECTED']);
+const CLOSED_TICKET_STATUSES = new Set(['COMPLETE', 'APPROVED', 'CLOSED', 'ARCHIVED', 'EXPIRED']);
 export function summarizeTickets(rows: PersonalTicket[]) {
   const open = rows.filter(row => !CLOSED_TICKET_STATUSES.has(row.status));
   const recent = [...open].sort((a, b) =>
@@ -83,7 +83,7 @@ export async function loadContractorDashboard(client: SupabaseClient<Database>, 
   const [tickets, time, expenses] = await Promise.allSettled([
     readDashboardRows<PersonalTicket>((start, end) => client.from('tickets')
       .select('id,ticket_number,status,address,city,state,utility_client,due_date,updated_at,is_important,storm_event_id')
-      .eq('assigned_to', contractorId).eq('is_deleted', false).order('id').range(start, end)),
+      .or(`assigned_to.eq.${contractorId},assigned_driver_id.eq.${contractorId}`).eq('is_deleted', false).order('id').range(start, end)),
     readDashboardRows<PersonalTime>((start, end) => client.from('time_entries')
       .select('id,clock_in_at,clock_out_at,status,total_minutes,break_minutes,paid_minutes_exact,billable_minutes,payroll_amount,billable_amount,sync_status')
       .eq('contractor_id', contractorId).eq('is_deleted', false)

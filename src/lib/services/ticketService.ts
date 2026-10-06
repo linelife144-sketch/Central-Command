@@ -45,6 +45,12 @@ export const ticketService = {
 
     async getTicketById(id: string) {
         if (isSuperAdminTestingEnabled()) return localTestStore.getTicketById(id);
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            const {db}=await import('@/lib/db/dexie');
+            const cached=await db.tickets.get(id);
+            if (!cached) throw new Error('This ticket is not stored on this device. Reconnect to load it.');
+            return cached as unknown as Ticket;
+        }
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
@@ -52,6 +58,8 @@ export const ticketService = {
             .single();
 
         if (error) throw error;
+        const {db}=await import('@/lib/db/dexie');
+        await db.tickets.put({...data,assigned_to:data.assigned_to??undefined,storm_event_id:data.storm_event_id??undefined,work_description:data.work_description??undefined,latitude:data.latitude??undefined,longitude:data.longitude??undefined,updated_at:data.updated_at??data.created_at??new Date().toISOString(),synced:true,sync_status:'synced'});
         return data as Ticket;
     },
 
@@ -103,11 +111,11 @@ export const ticketService = {
             return localTestStore.getTickets().filter((ticket) => ticket.assigned_to === assigneeId);
         }
         const { db } = await import('@/lib/db/dexie');
-        if (typeof navigator !== 'undefined' && !navigator.onLine) return await db.tickets.where('assigned_to').equals(assigneeId).toArray() as unknown as Ticket[];
+        if (typeof navigator !== 'undefined' && !navigator.onLine) return await db.tickets.filter(t=>t.assigned_to===assigneeId||t.assigned_driver_id===assigneeId).toArray() as unknown as Ticket[];
         const { data, error } = await supabase
             .from('tickets')
             .select('*')
-            .eq('assigned_to', assigneeId)
+            .or(`assigned_to.eq.${assigneeId},assigned_driver_id.eq.${assigneeId}`)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -141,27 +149,9 @@ export const ticketService = {
             return true;
         }
 
-        // 3. Start transaction-like update
-        // Note: Supabase doesn't support multi-table transactions in a simple client call, 
-        // but we can use an Edge Function or just sequential calls for this MVP.
-
-        // Update ticket
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: updatedTicket, error: updateError } = await (supabase.from('tickets') as any)
-            .update({
-                status: newStatus,
-                updated_at: new Date().toISOString(),
-                updated_by: userId
-            })
-            .eq('id', id)
-            .eq('status', currentStatus)
-            .select('id, status')
-            .maybeSingle();
-
-        if (updateError) throw updateError;
-        if (!updatedTicket || updatedTicket.status !== newStatus) {
-            throw new Error('Ticket status was not saved. Your account may not have permission, or the ticket changed. Refresh and try again.');
-        }
+        if (!location) throw new Error('GPS validation is required before changing field status.');
+        const {ticketWorkflowRpc}=await import('./ticketAssessmentWorkflow');
+        await ticketWorkflowRpc<Ticket>('update_ticket_field_status',{p_ticket_id:id,p_status:newStatus,p_latitude:location.latitude,p_longitude:location.longitude,p_accuracy:location.accuracy});
 
         // Database trigger writes the status history atomically with this update.
         notifyTicketsChanged();

@@ -29,6 +29,7 @@ interface ContractorsTableClient {
 type UploadStatusValue = UploadStatus | 'PENDING' | 'COMPLETED' | 'FAILED';
 
 interface MediaAssetsTableClient {
+  select: (columns: string) => { eq: (column: string, value: string) => { maybeSingle: () => Promise<{data: {storage_path:string; entity_id:string; checksum_sha256:string|null; upload_status:string; uploaded_by:string}|null; error:unknown}> } };
   insert: (
     values: Array<{
       id?: string;
@@ -149,7 +150,14 @@ export async function uploadPhotoPipeline(
   const activeClient = client ?? await getDefaultClient();
   const context = await resolveUploadContext(activeClient);
 
+  const {data:existing,error:lookupError}=await activeClient.from('media_assets').select('storage_path,entity_id,checksum_sha256,upload_status,uploaded_by').eq('id',input.photoId).maybeSingle();
+  if(lookupError) throw new Error('Unable to verify existing photo metadata.');
+  if(existing) {
+    if(existing.entity_id!==input.ticketId || existing.uploaded_by!==context.userId || existing.checksum_sha256!==(input.checksumSha256??null)) throw new Error('Photo identity conflict. Capture a new photo.');
+    if(existing.upload_status==='COMPLETED') return {storagePath:existing.storage_path,thumbnailPath:existing.storage_path.replace('-original.','-thumbnail.'),publicUrl:'',thumbnailUrl:''};
+  }
   const originalFile = toFile(
+
     input.file,
     `${input.photoId}.${getFileExtension((input.file as File).name || 'photo.jpg')}`,
     'image/jpeg',
@@ -176,18 +184,19 @@ export async function uploadPhotoPipeline(
   });
 
   const storageBucket = activeClient.storage.from(PHOTO_STORAGE_BUCKET);
-  const originalUpload = await storageBucket.upload(storagePath, originalFile, { upsert: false });
+  const originalUpload = await storageBucket.upload(storagePath, originalFile, { upsert: true });
   if (originalUpload.error) {
     throw new Error(PHOTO_STORAGE_UPLOAD_ERROR);
   }
 
-  const thumbnailUpload = await storageBucket.upload(thumbnailPath, thumbnailFile, { upsert: false });
+  const thumbnailUpload = await storageBucket.upload(thumbnailPath, thumbnailFile, { upsert: true });
   if (thumbnailUpload.error) {
     throw new Error(PHOTO_STORAGE_UPLOAD_ERROR);
   }
 
-  const publicUrl = storageBucket.getPublicUrl(storagePath).data.publicUrl;
-  const thumbnailUrl = storageBucket.getPublicUrl(thumbnailPath).data.publicUrl;
+  // Evidence is private. Readers download the linked storage path with their authenticated session.
+  const publicUrl = '';
+  const thumbnailUrl = '';
 
   const insertResult = await activeClient
     .from('media_assets')
@@ -203,8 +212,6 @@ export async function uploadPhotoPipeline(
         file_size_bytes: originalFile.size,
         storage_bucket: PHOTO_STORAGE_BUCKET,
         storage_path: storagePath,
-        public_url: publicUrl,
-        thumbnail_url: thumbnailUrl,
         exif_data: input.metadata
           ? {
             capturedAt: input.metadata.capturedAt,

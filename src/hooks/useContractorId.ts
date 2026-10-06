@@ -28,14 +28,14 @@ export function useContractorId(profileId?: string): UseContractorIdResult {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !sessionData.session) {
           if (active) {
-            setResolved({ profileId, id: profileId });
+            setResolved({ profileId, id: undefined });
           }
           return;
         }
 
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           const { db } = await import('@/lib/db/dexie');
-          const cached = await db.payAgreements.where('viewer_profile_id').equals(profileId).first();
+          const cached = await db.contractorIdentities.get(profileId) ?? await db.payAgreements.where('viewer_profile_id').equals(profileId).first();
           if (active) setResolved({ profileId, id: cached?.contractor_id });
           return;
         }
@@ -54,6 +54,7 @@ export function useContractorId(profileId?: string): UseContractorIdResult {
 
         if (active) {
           const resolvedId = Array.isArray(data) && data.length > 0 ? (data[0]?.id as string | undefined) : undefined;
+          if(resolvedId){const {db}=await import('@/lib/db/dexie');await db.contractorIdentities.put({profile_id:profileId,contractor_id:resolvedId});}
           setResolved({ profileId, id: resolvedId });
         }
       } catch (error) {
@@ -61,7 +62,7 @@ export function useContractorId(profileId?: string): UseContractorIdResult {
           console.warn('Failed to resolve contractor ID:', getErrorLogContext(error));
         }
         if (active) {
-          setResolved({ profileId, id: profileId });
+          setResolved({ profileId, id: undefined });
         }
       } finally {
         if (active) {

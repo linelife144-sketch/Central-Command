@@ -6,7 +6,7 @@ describe('getFieldStatusTransition', () => {
     expect(getFieldStatusTransition('ASSIGNED')).toEqual({
       currentStatus: 'ASSIGNED',
       nextStatus: 'IN_ROUTE',
-      actionLabel: 'Start Route',
+      actionLabel: 'Start Ticket',
       requiresGeofence: false,
     });
   });
@@ -20,11 +20,20 @@ describe('getFieldStatusTransition', () => {
     });
   });
 
-  it('returns ON_SITE -> COMPLETE transition with geofence requirement', () => {
+  it('starts the assessment on site with a geofence requirement', () => {
     expect(getFieldStatusTransition('ON_SITE')).toEqual({
       currentStatus: 'ON_SITE',
-      nextStatus: 'COMPLETE',
-      actionLabel: 'Mark Complete',
+      nextStatus: 'IN_PROGRESS',
+      actionLabel: 'Begin assessment',
+      requiresGeofence: true,
+    });
+  });
+
+  it('starts returned corrections with a geofence requirement', () => {
+    expect(getFieldStatusTransition('NEEDS_REWORK')).toEqual({
+      currentStatus: 'NEEDS_REWORK',
+      nextStatus: 'IN_PROGRESS',
+      actionLabel: 'Begin corrections',
       requiresGeofence: true,
     });
   });
@@ -32,6 +41,7 @@ describe('getFieldStatusTransition', () => {
   it('returns null when no field transition is available', () => {
     expect(getFieldStatusTransition('COMPLETE')).toBeNull();
     expect(getFieldStatusTransition('PENDING_REVIEW')).toBeNull();
+    expect(getFieldStatusTransition('IN_PROGRESS')).toBeNull();
   });
 });
 

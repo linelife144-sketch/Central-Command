@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { CalendarDays, MapPin, User } from "lucide-react";
 import { formatDate } from "@/lib/utils/formatters";
 import { TicketImportanceBadge } from "./TicketImportanceBadge";
-import { StatusBadge } from "@/components/common/data-display/StatusBadge";
+import { TicketStatusBadge } from "@/components/features/tickets/TicketStatusBadge";
 import { cn } from "@/lib/utils";
 
 interface TicketCardProps {
@@ -64,7 +64,7 @@ export function TicketCard({ ticket, onClick, className, assigneeName }: TicketC
                 )}
             </CardContent>
             <CardFooter className="p-4 pt-2 flex justify-between items-center">
-                <StatusBadge status={ticket.status} />
+                <TicketStatusBadge status={ticket.status} />
             </CardFooter>
         </Card>
     );

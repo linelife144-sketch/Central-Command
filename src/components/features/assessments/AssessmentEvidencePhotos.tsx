@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { db } from '@/lib/db/dexie';
 import type { AssessmentPhotoEvidence } from '@/lib/schemas/fieldAssessment';
 
 export function AssessmentEvidencePhotos({ ticketId, evidence }: { ticketId: string; evidence: AssessmentPhotoEvidence[] }) {
@@ -12,7 +12,15 @@ export function AssessmentEvidencePhotos({ ticketId, evidence }: { ticketId: str
     const urls: string[] = [];
     void (async () => {
       try {
+        const { supabase } = await import('@/lib/supabase/client');
         const ids = evidenceIds.split(',').filter(Boolean);
+        const { data: sessionData } = await supabase.auth.getSession();
+        const actor = sessionData.session?.user.id;
+        const local = await db.photos.bulkGet(ids);
+        if (actor && local.every(p=>p?.entity_id===ticketId && p.actor_profile_id===actor)) {
+          const images=local.map(p=>{const url=URL.createObjectURL(p!.file);urls.push(url);return {id:p!.id,url};});
+          if(active){setPhotos(images);setError('');}return;
+        }
         const { data, error } = await supabase.from('media_assets').select('id, storage_bucket, storage_path').eq('entity_type', 'ticket').eq('entity_id', ticketId).in('id', ids).eq('upload_status', 'COMPLETED');
         if (error) throw error;
         if ((data ?? []).length !== ids.length) throw new Error('Photo upload is pending. Sync this ticket to view all evidence.');
@@ -28,5 +36,7 @@ export function AssessmentEvidencePhotos({ ticketId, evidence }: { ticketId: str
     })();
     return () => { active = false; urls.forEach(url => URL.revokeObjectURL(url)); };
   }, [ticketId, evidenceIds]);
+  /* Original evidence is displayed without an optimization proxy. */
+  /* eslint-disable @next/next/no-img-element */
   return <div className="mt-3">{error ? <p role="status" className="text-sm text-muted-foreground">{error}</p> : !photos.length ? <p className="text-sm text-muted-foreground">Loading photo evidence…</p> : <div className="grid gap-3 sm:grid-cols-2">{photos.map(photo => <a key={photo.id} href={photo.url} target="_blank" rel="noopener noreferrer" aria-label="Open damage evidence photo"><img src={photo.url} alt="Attached assessment evidence" className="max-h-64 w-full rounded-lg border object-contain" /></a>)}</div>}</div>;
 }

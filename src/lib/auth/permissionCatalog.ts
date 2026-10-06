@@ -9,7 +9,7 @@ export const PERMISSION_MODULES = [
   { id: 'map', label: 'Map', description: 'Open the field map. Ticket visibility follows ticket access.', group: 'Operations', path: '/admin/map', editable: false },
   { id: 'time', label: 'Time review', description: 'View timesheets; approve or reject submitted time.', group: 'Review & reporting', path: '/admin/time-review', editable: true },
   { id: 'expenses', label: 'Expenses', description: 'View expense reports; approve or reject expenses.', group: 'Review & reporting', path: '/admin/expense-review', editable: true },
-  { id: 'assessments', label: 'Assessments', description: 'View damage assessments; approve or request rework.', group: 'Review & reporting', path: '/admin/assessment-review', editable: true },
+  { id: 'assessments', label: 'Assessments', description: 'View damage assessments; approve or request rework.', group: 'Review & reporting', path: '/tickets', editable: true },
   { id: 'payroll', label: 'Payroll & profit', description: 'View payroll, vehicle reimbursements, billing, and margins; manage rates and review claims.', group: 'Review & reporting', path: '/admin/payroll', editable: true },
   { id: 'reports', label: 'Reports', description: 'Open reports. Results include only modules this person can view.', group: 'Review & reporting', path: '/admin/reports', editable: false },
   { id: 'users', label: 'User administration', description: 'View staff access; change permissions and account access. Super Admin only.', group: 'Administration', path: '/admin/users', editable: true },
@@ -31,13 +31,12 @@ export function roleDefault(role: string | null | undefined, key: PermissionKey)
   if (!isAdminClassRole(role)) return false;
   if (key.startsWith('admin.users.')) return isSuperAdminClassRole(role);
   if (isSuperAdminClassRole(role)) return true;
-  if (key.endsWith('.view')) return true;
-  return false;
+  return ['admin.tickets.view','admin.tickets.edit','admin.assessments.view','admin.assessments.edit'].includes(key);
 }
 export function resolvePermissions(role: string | null | undefined, overrides: PermissionOverrides = {}, active = true): PermissionMap {
   const result: PermissionMap = {};
   for (const key of PERMISSION_KEYS) {
-    result[key] = active && isAdminClassRole(role) && (key.startsWith('admin.users.') ? isSuperAdminClassRole(role) : true) && (!key.endsWith('.edit') || isSuperAdminClassRole(role))
+    result[key] = active && isAdminClassRole(role) && (key.startsWith('admin.users.') ? isSuperAdminClassRole(role) : true) && (role !== 'ADMIN' || ['admin.tickets.view','admin.tickets.edit','admin.assessments.view','admin.assessments.edit'].includes(key))
       && (overrides[key] ? overrides[key] === 'allow' : roleDefault(role, key));
   }
   for (const key of PERMISSION_KEYS.filter(key => key.endsWith('.edit'))) {
@@ -56,7 +55,8 @@ export function permissionForPath(pathname: string): PermissionKey | null {
   const area = PERMISSION_MODULES.find(module => module.id !== 'assignments' && (pathname === module.path || pathname.startsWith(`${module.path}/`)));
   return area ? `admin.${area.id}.view` : null;
 }
-export function mayOpenPath(path: string, permissions: PermissionMap): boolean {
+export function mayOpenPath(path: string, permissions: PermissionMap, role?: string): boolean {
+  if(role==='ADMIN'&&(path==='/tickets/create'||/^\/storms\/[^/]+\/tickets\/new/.test(path)))return false;
   const key = permissionForPath(path);
   return key === null || permissions[key] === true;
 }
