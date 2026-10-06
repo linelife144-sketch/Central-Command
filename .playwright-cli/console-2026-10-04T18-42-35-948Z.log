@@ -766,3 +766,22 @@ Fast Refresh requires at least one parent function component in your React tree.
 [20946406ms] [LOG] [HMR] connected @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/shared/forward-logs-shared.js:44
 [20949690ms] [WARNING] The resource http://localhost:3000/_next/static/media/a49e261c6f63a539-s.p.ttf?v=1791160300585 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/login:0
 [20949690ms] [WARNING] The resource http://localhost:3000/_next/static/media/6e77e2e2b1683d57-s.p.ttf?v=1791160300585 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/login:0
+[171729977ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/shared/forward-logs-shared.js:44
+[171730262ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3000/login?_rsc=U1ZwpAVLXLxkcIho:0
+[171730266ms] [ERROR] Failed to fetch RSC payload for http://localhost:3000/login. Falling back to browser navigation. TypeError: Failed to fetch
+    at fetchInternal (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/segment-cache/fetch.js:28:12)
+    at createFetch (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/fetch-server-response.js:402:38)
+    at async fetchServerResponse (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/fetch-server-response.js:99:21)
+    at async fetchMissingDynamicData (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/ppr-navigations.js:1085:24) @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:57
+[171730271ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/login?_rsc=U1ZwpAVLXLxkcIho:0
+[171730271ms] [ERROR] Failed to fetch RSC payload for http://localhost:3000/login. Falling back to browser navigation. TypeError: Failed to fetch
+    at fetchInternal (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/segment-cache/fetch.js:28:12)
+    at createFetch (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/fetch-server-response.js:402:38)
+    at async fetchServerResponse (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/fetch-server-response.js:99:21)
+    at async fetchMissingDynamicData (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/ppr-navigations.js:1085:24) @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:57
+[171730293ms] [ERROR] WebSocket is already in CLOSING or CLOSED state. @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/forward-logs.js:93
+[171730314ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/__nextjs_original-stack-frames:0
+[171745804ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/shared/forward-logs-shared.js:44
+[171745903ms] [LOG] [HMR] connected @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/shared/forward-logs-shared.js:44
+[171749234ms] [WARNING] The resource http://localhost:3000/_next/static/media/6e77e2e2b1683d57-s.p.ttf?v=1791311099536 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/login:0
+[171749234ms] [WARNING] The resource http://localhost:3000/_next/static/media/a49e261c6f63a539-s.p.ttf?v=1791311099536 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/login:0
