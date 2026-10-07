@@ -1028,3 +1028,7 @@ Detailed work and evidence are tracked in the implementation plan's dated comple
 
 - [x] Repair assessor/driver time-clock membership and require two distinct uploaded objects for new vehicle claims; preserve historical claim review and saved amounts. Verify 29 composed checks, 21 earlier configurable suites, 16 integrity checks, 50 focused application tests, types/lint, independent spec/quality reviews, and additive live activation `20261007092206` with exact-body/privilege readback and no new security finding. Live rollback functional SQL was cancelled and skipped per user direction; record counts unchanged (6 tickets, 10 shifts, 1 claim, 10 Storage objects). Device/upload proof remains open. — Codex /root
 - User steering 2026-10-07: skip SQL with destructive actions. Continue additive, reviewed changes where authorized, read-only live checks and isolated local verification; do not execute the destructive live rollback fixture. — Codex /root
+
+### Payroll dashboard corrections — 2026-10-07 (Pseudocoder /root)
+
+- [x] Payroll dashboard corrections: active-roster contractor count, role-keyed utility bill rates, Emergency Response rate column removed. Migration `20261007130000` written, not applied. Tests not run (macOS node_modules on Linux host). — Pseudocoder /root

@@ -61,6 +61,59 @@ describe('RoleRateEditor', () => {
         hourlyRate: 70,
       }),
     );
+    // Saving the Rate also persists the derived columns so stored
+    // role_rate_defaults match the displayed formulas.
+    await waitFor(() =>
+      expect(mocks.updateRoleRateDefault).toHaveBeenCalledWith({
+        role: 'DRIVER',
+        workType: 'TRAVEL',
+        hourlyRate: 105,
+      }),
+    );
+    await waitFor(() =>
+      expect(mocks.updateRoleRateDefault).toHaveBeenCalledWith({
+        role: 'DRIVER',
+        workType: 'STANDBY',
+        hourlyRate: 140,
+      }),
+    );
+  });
+
+  it('renders DE-MOB and Standby as static computed values with no editors', async () => {
+    mocks.getRoleRateDefaults.mockResolvedValue([
+      { role: 'DRIVER', workType: 'STANDARD_ASSESSMENT', hourlyRate: 65, currency: 'USD' },
+    ]);
+
+    render(<RoleRateEditor canEdit />);
+    await waitFor(() => expect(screen.queryByText(/loading role rates/i)).toBeNull());
+
+    const driverRow = screen.getByText('Driver').closest('tr') as HTMLElement;
+    // 1.5 × 65 = 97.50 (DE-MOB), 2 × 65 = 130.00 (Standby).
+    expect(driverRow.textContent).toContain('97.50');
+    expect(driverRow.textContent).toContain('130.00');
+    // Only the Rate column keeps an input and a Save button.
+    expect(driverRow.querySelectorAll('input').length).toBe(1);
+    expect(driverRow.querySelectorAll('button').length).toBe(1);
+  });
+
+  it('tracks the live Rate input in the derived columns, falling back to the saved rate', async () => {
+    mocks.getRoleRateDefaults.mockResolvedValue([
+      { role: 'DRIVER', workType: 'STANDARD_ASSESSMENT', hourlyRate: 65, currency: 'USD' },
+    ]);
+
+    render(<RoleRateEditor canEdit />);
+    await waitFor(() => expect(screen.queryByText(/loading role rates/i)).toBeNull());
+
+    const driverRow = screen.getByText('Driver').closest('tr') as HTMLElement;
+    const input = driverRow.querySelector('input') as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: '100' } });
+    await waitFor(() => expect(driverRow.textContent).toContain('150.00'));
+    expect(driverRow.textContent).toContain('200.00');
+
+    fireEvent.change(input, { target: { value: '' } });
+    await waitFor(() => expect(driverRow.textContent).toContain('97.50'));
+    expect(driverRow.textContent).toContain('130.00');
   });
 });
 
