@@ -24,6 +24,7 @@
 /graphify-out/
 /.worktrees/
 /.pi/agent-sessions/
+/private/
 
 # production
 /build
