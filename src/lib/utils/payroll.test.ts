@@ -86,34 +86,44 @@ describe('resolveContractorHourlyRate', () => {
 });
 
 describe('resolveUtilityBillRate', () => {
-  it('prefers a storm-scoped rate over the global fallback', () => {
+  it('prefers a storm-scoped role rate over the global role fallback', () => {
     const rate = resolveUtilityBillRate({
       rates: [
-        { stormEventId: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 },
-        { stormEventId: 'storm-1', workType: 'STANDARD_ASSESSMENT', hourlyRate: 175 },
+        { stormEventId: null, role: 'DAMAGE_ASSESSER', workType: null, hourlyRate: 150 },
+        { stormEventId: 'storm-1', role: 'DAMAGE_ASSESSER', workType: null, hourlyRate: 175 },
       ],
       stormEventId: 'storm-1',
-      workType: 'STANDARD_ASSESSMENT',
+      role: 'DAMAGE_ASSESSER',
     });
 
     expect(rate).toBe(175);
   });
 
-  it('uses the global fallback when no storm-scoped rate exists', () => {
+  it('uses the global role fallback when no storm-scoped rate exists', () => {
     const rate = resolveUtilityBillRate({
-      rates: [{ stormEventId: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 }],
+      rates: [{ stormEventId: null, role: 'DAMAGE_ASSESSER', workType: null, hourlyRate: 150 }],
       stormEventId: 'storm-2',
-      workType: 'STANDARD_ASSESSMENT',
+      role: 'DAMAGE_ASSESSER',
     });
 
     expect(rate).toBe(150);
   });
 
-  it('returns null for an unconfigured work type', () => {
+  it('returns null for a role with no stored rate — never a guessed number', () => {
     const rate = resolveUtilityBillRate({
-      rates: [{ stormEventId: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 }],
+      rates: [{ stormEventId: null, role: 'DAMAGE_ASSESSER', workType: null, hourlyRate: 150 }],
       stormEventId: null,
-      workType: 'TRAVEL',
+      role: 'DRIVER',
+    });
+
+    expect(rate).toBeNull();
+  });
+
+  it('does not copy a preserved work-type rate onto a role', () => {
+    const rate = resolveUtilityBillRate({
+      rates: [{ stormEventId: null, role: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 }],
+      stormEventId: null,
+      role: 'DAMAGE_ASSESSER',
     });
 
     expect(rate).toBeNull();

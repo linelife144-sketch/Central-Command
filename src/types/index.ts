@@ -562,7 +562,10 @@ export interface RoleRateDefault {
 
 export interface UtilityBillingRate {
   stormEventId: string | null;
-  workType: WorkType;
+  /** Role this rate bills. Null on preserved pre-migration work-type rows. */
+  role: ContractorRole | null;
+  /** Set only on preserved pre-migration rows; new rates are role-keyed. */
+  workType: WorkType | null;
   hourlyRate: number;
   currency: string;
 }

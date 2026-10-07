@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   listVehicleClaims: vi.fn(),
   listStormEvents: vi.fn(),
   createPayrollCsvExport: vi.fn(),
+  listContractors: vi.fn(),
 }));
 
 vi.mock('@/lib/services/payrollService', () => ({
@@ -27,6 +28,9 @@ vi.mock('@/lib/services/payrollService', () => ({
 vi.mock('@/lib/services/stormEventService', () => ({
   stormEventService: { listStormEvents: mocks.listStormEvents },
 }));
+vi.mock('@/lib/services/contractorService', () => ({
+  contractorService: { listContractors: mocks.listContractors },
+}));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 import { PayrollDashboard } from './PayrollDashboard';
@@ -39,6 +43,7 @@ afterEach(() => {
 describe('PayrollDashboard', () => {
   it('loads and renders the payroll summary, contractor table, and sub-editors', async () => {
     mocks.listStormEvents.mockResolvedValue([]);
+    mocks.listContractors.mockResolvedValue([{ id: 'c-1' }, { id: 'c-2' }, { id: 'c-3' }, { id: 'c-4' }]);
     mocks.getRoleRateDefaults.mockResolvedValue([]);
     mocks.getUtilityBillingRates.mockResolvedValue([]);
     mocks.listVehicleClaims.mockResolvedValue([]);
@@ -87,10 +92,14 @@ describe('PayrollDashboard', () => {
     expect(screen.getByText('Role Wage Defaults')).not.toBeNull();
     expect(screen.getAllByText(/utility bill rates/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/no pending vehicle reimbursement/i)).not.toBeNull();
+    // Active roster count, not the period row count (totals.contractorCount is 1).
+    expect(screen.getByText('4')).not.toBeNull();
+    expect(mocks.listContractors).toHaveBeenCalledWith({ activeOnly: true });
   });
 
   it('surfaces a load error without crashing', async () => {
     mocks.listStormEvents.mockResolvedValue([]);
+    mocks.listContractors.mockResolvedValue([]);
     mocks.getRoleRateDefaults.mockResolvedValue([]);
     mocks.getUtilityBillingRates.mockResolvedValue([]);
     mocks.listVehicleClaims.mockResolvedValue([]);

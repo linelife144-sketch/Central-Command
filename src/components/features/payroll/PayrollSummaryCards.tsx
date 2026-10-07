@@ -8,6 +8,8 @@ export interface PayrollSummaryCardsProps {
   totals: PayrollTotals | null;
   isLoading?: boolean;
   includeFinancial?: boolean;
+  /** Active contractors on the roster. Independent of the payroll period. */
+  activeContractorCount?: number | null;
 }
 
 function CardValue({ children }: { children: React.ReactNode }) {
@@ -19,7 +21,7 @@ function CardValue({ children }: { children: React.ReactNode }) {
  * payroll, vehicle reimbursements, total payout, utility billing, and
  * margin — mirrors ReportsDashboard's metric-card row pattern.
  */
-export function PayrollSummaryCards({ totals, isLoading = false, includeFinancial = false }: PayrollSummaryCardsProps) {
+export function PayrollSummaryCards({ totals, isLoading = false, includeFinancial = false, activeContractorCount = null }: PayrollSummaryCardsProps) {
   const placeholder = isLoading ? '…' : '—';
 
   return (
@@ -78,7 +80,7 @@ export function PayrollSummaryCards({ totals, isLoading = false, includeFinancia
       <Card>
         <CardContent className="p-3">
           <p className="text-xs text-muted-foreground">Contractors</p>
-          <CardValue>{totals ? formatNumber(totals.contractorCount) : placeholder}</CardValue>
+          <CardValue>{activeContractorCount !== null ? formatNumber(activeContractorCount) : placeholder}</CardValue>
         </CardContent>
       </Card>
     </div>

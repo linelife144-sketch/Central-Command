@@ -47,6 +47,20 @@ describe('PayrollSummaryCards', () => {
     expect(screen.getByText('47.5%')).not.toBeNull();
   });
 
+  it('renders the active roster count, not the period contractor count', () => {
+    render(<PayrollSummaryCards includeFinancial totals={buildTotals({ contractorCount: 2 })} activeContractorCount={7} />);
+
+    expect(screen.getByText('7')).not.toBeNull();
+    expect(screen.queryByText('2')).toBeNull();
+  });
+
+  it('keeps the contractors card empty until the roster count loads', () => {
+    render(<PayrollSummaryCards includeFinancial totals={buildTotals()} activeContractorCount={null} />);
+
+    const contractorsCard = screen.getByText('Contractors').closest('div');
+    expect(contractorsCard?.textContent).toContain('—');
+  });
+
   it('renders a negative margin in the danger color class', () => {
     render(<PayrollSummaryCards includeFinancial totals={buildTotals({ marginAmount: -50, marginPercent: -10 })} />);
 

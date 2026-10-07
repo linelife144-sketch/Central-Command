@@ -14,8 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ROLE_LABELS } from '@/lib/config/appConfig';
 import { payrollService } from '@/lib/services/payrollService';
-import type { UtilityBillingRate, WorkType } from '@/types';
+import type { ContractorRole, UtilityBillingRate } from '@/types';
 
 export interface UtilityBillingRateEditorProps {
   canEdit?: boolean;
@@ -24,32 +25,27 @@ export interface UtilityBillingRateEditorProps {
   title?: string;
 }
 
-const WORK_TYPES_ORDER: WorkType[] = [
-  'STANDARD_ASSESSMENT',
-  'EMERGENCY_RESPONSE',
-  'TRAVEL',
-  'STANDBY',
+// Same role order and labels as RoleRateEditor. Bill rates are keyed by
+// contractor role; a role with no stored rate renders empty.
+const ROLES_ORDER: ContractorRole[] = [
+  'STORM_MANAGER',
+  'TEAM_LEAD',
+  'SR_DAMAGE_ASSESSER',
+  'DAMAGE_ASSESSER',
+  'DRIVER',
 ];
-
-function toWorkTypeLabel(workType: WorkType): string {
-  return workType
-    .toLowerCase()
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
 /**
  * Admin editor for utility bill rates — what Central Command charges the
- * utility per work type. When stormEventId is provided, edits a
- * storm-scoped rate card; a storm-scoped rate always wins over the global
- * fallback (resolveUtilityBillRate in payroll.ts), so this same component
- * edits either tier depending on the prop.
+ * utility per contractor role. When stormEventId is provided, edits a
+ * storm-scoped rate card; a storm-scoped role rate always wins over the
+ * global role fallback (resolveUtilityBillRate in payroll.ts). A role with
+ * no stored rate stays empty — nothing is guessed or copied from a work type.
  */
 export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title }: UtilityBillingRateEditorProps) {
-  const [inputs, setInputs] = useState<Map<WorkType, string>>(new Map());
+  const [inputs, setInputs] = useState<Map<ContractorRole, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
-  const [savingWorkType, setSavingWorkType] = useState<WorkType | null>(null);
+  const [savingRole, setSavingRole] = useState<ContractorRole | null>(null);
 
   const loadRates = useCallback(async () => {
     setIsLoading(true);
@@ -59,9 +55,11 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
         stormEventId ? rate.stormEventId === stormEventId : rate.stormEventId === null,
       );
 
-      const nextInputs = new Map<WorkType, string>();
+      const nextInputs = new Map<ContractorRole, string>();
       for (const rate of scopedRates) {
-        nextInputs.set(rate.workType, rate.hourlyRate.toFixed(2));
+        if (rate.role) {
+          nextInputs.set(rate.role, rate.hourlyRate.toFixed(2));
+        }
       }
       setInputs(nextInputs);
     } catch (error) {
@@ -75,9 +73,9 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
     void Promise.resolve().then(loadRates);
   }, [loadRates]);
 
-  const handleSave = async (workType: WorkType) => {
+  const handleSave = async (role: ContractorRole) => {
     if (!canEdit) return;
-    const rawValue = inputs.get(workType);
+    const rawValue = inputs.get(role);
     const hourlyRate = Number(rawValue);
 
     if (!rawValue || Number.isNaN(hourlyRate) || hourlyRate < 0) {
@@ -85,19 +83,19 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
       return;
     }
 
-    setSavingWorkType(workType);
+    setSavingRole(role);
     try {
       await payrollService.updateUtilityBillingRate({
         stormEventId: stormEventId ?? null,
-        workType,
+        role,
         hourlyRate,
       });
-      toast.success(`${toWorkTypeLabel(workType)} bill rate updated.`);
+      toast.success(`${ROLE_LABELS[role]} bill rate updated.`);
       await loadRates();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update bill rate.');
     } finally {
-      setSavingWorkType(null);
+      setSavingRole(null);
     }
   };
 
@@ -113,15 +111,15 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Work Type</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Bill Rate ($/hr)</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {WORK_TYPES_ORDER.map((workType) => (
-                <TableRow key={workType}>
-                  <TableCell>{toWorkTypeLabel(workType)}</TableCell>
+              {ROLES_ORDER.map((role) => (
+                <TableRow key={role}>
+                  <TableCell>{ROLE_LABELS[role]}</TableCell>
                   <TableCell>
                     <Input
                       readOnly={!canEdit}
@@ -129,11 +127,11 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
                       min={0}
                       step={0.01}
                       className="w-28"
-                      value={inputs.get(workType) ?? ''}
-                      disabled={!canEdit || (savingWorkType === workType)}
+                      value={inputs.get(role) ?? ''}
+                      disabled={!canEdit || (savingRole === role)}
                       placeholder="Not configured"
                       onChange={(event) =>
-                        setInputs((previous) => new Map(previous).set(workType, event.target.value))
+                        setInputs((previous) => new Map(previous).set(role, event.target.value))
                       }
                     />
                   </TableCell>
@@ -141,8 +139,8 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={!canEdit || (savingWorkType === workType)}
-                      onClick={() => void handleSave(workType)}
+                      disabled={!canEdit || (savingRole === role)}
+                      onClick={() => void handleSave(role)}
                     >
                       Save
                     </Button>

@@ -29,7 +29,8 @@ export interface RoleRateDefaultLike {
 
 export interface UtilityBillingRateLike {
   stormEventId: string | null;
-  workType: WorkType;
+  role: ContractorRole | null;
+  workType: WorkType | null;
   hourlyRate: number;
 }
 
@@ -66,16 +67,18 @@ export function resolveContractorHourlyRate(input: {
 }
 
 /**
- * Resolves the utility bill rate for a work type. A storm-scoped rate wins
- * over the global (stormEventId === null) fallback. Returns null when
- * neither is configured.
+ * Resolves the utility bill rate for a contractor role. A storm-scoped role
+ * rate wins over the global (stormEventId === null) fallback. Returns null
+ * when neither is configured — a named unresolved case, never a guessed
+ * number and never a work-type rate copied onto a role. Work-type keyed rows
+ * (role === null) are preserved history and are not consulted.
  */
 export function resolveUtilityBillRate(input: {
   rates: UtilityBillingRateLike[];
   stormEventId: string | null;
-  workType: WorkType;
+  role: ContractorRole;
 }): number | null {
-  const candidates = input.rates.filter((rate) => rate.workType === input.workType);
+  const candidates = input.rates.filter((rate) => rate.role === input.role);
 
   if (input.stormEventId) {
     const stormScoped = candidates.find((rate) => rate.stormEventId === input.stormEventId);

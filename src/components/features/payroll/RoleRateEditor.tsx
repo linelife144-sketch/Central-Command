@@ -28,7 +28,6 @@ const ROLES_ORDER: ContractorRole[] = [
 
 const WORK_TYPES_ORDER: WorkType[] = [
   'STANDARD_ASSESSMENT',
-  'EMERGENCY_RESPONSE',
   'TRAVEL',
   'STANDBY',
 ];

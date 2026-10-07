@@ -86,7 +86,8 @@ interface RemoteRoleRateDefaultRow {
 interface RemoteUtilityBillingRateRow {
   id: string;
   storm_event_id: string | null;
-  work_type: string;
+  role: string | null;
+  work_type: string | null;
   hourly_rate: number;
   currency: string | null;
 }
@@ -173,7 +174,7 @@ interface PayrollDependencies {
   fetchUtilityBillingRates: (stormEventId?: string) => Promise<UtilityBillingRate[]>;
   writeUtilityBillingRate: (input: {
     stormEventId: string | null;
-    workType: WorkType;
+    role: ContractorRole;
     hourlyRate: number;
   }) => Promise<UtilityBillingRate>;
   fetchContractorRateProfile: (contractorId: string) => Promise<ContractorRateProfile>;
@@ -215,7 +216,7 @@ export interface PayrollService {
   getUtilityBillingRates: (stormEventId?: string) => Promise<UtilityBillingRate[]>;
   updateUtilityBillingRate: (input: {
     stormEventId: string | null;
-    workType: WorkType;
+    role: ContractorRole;
     hourlyRate: number;
   }) => Promise<UtilityBillingRate>;
   getContractorRateProfile: (contractorId: string) => Promise<ContractorRateProfile>;
@@ -293,7 +294,7 @@ async function defaultFetchUtilityBillingRates(stormEventId?: string): Promise<U
   const client = await getDefaultClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (client.from('utility_billing_rates') as any).select(
-    'id, storm_event_id, work_type, hourly_rate, currency',
+    'id, storm_event_id, role, work_type, hourly_rate, currency',
   );
 
   if (stormEventId) {
@@ -310,7 +311,8 @@ async function defaultFetchUtilityBillingRates(stormEventId?: string): Promise<U
 
   return ((data ?? []) as RemoteUtilityBillingRateRow[]).map((row) => ({
     stormEventId: row.storm_event_id,
-    workType: row.work_type as WorkType,
+    role: (row.role as ContractorRole | null) ?? null,
+    workType: (row.work_type as WorkType | null) ?? null,
     hourlyRate: row.hourly_rate,
     currency: row.currency ?? 'USD',
   }));
@@ -318,15 +320,17 @@ async function defaultFetchUtilityBillingRates(stormEventId?: string): Promise<U
 
 async function defaultWriteUtilityBillingRate(input: {
   stormEventId: string | null;
-  workType: WorkType;
+  role: ContractorRole;
   hourlyRate: number;
 }): Promise<UtilityBillingRate> {
   const client = await getDefaultClient();
 
+  // Role-keyed rows only. Preserved work-type rows (role IS NULL) are never
+  // matched or overwritten here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const existingQuery = (client.from('utility_billing_rates') as any)
     .select('id')
-    .eq('work_type', input.workType);
+    .eq('role', input.role);
 
   const { data: existingRows, error: existingError } = input.stormEventId
     ? await existingQuery.eq('storm_event_id', input.stormEventId)
@@ -340,7 +344,8 @@ async function defaultWriteUtilityBillingRate(input: {
 
   const payload = {
     storm_event_id: input.stormEventId,
-    work_type: input.workType,
+    role: input.role,
+    work_type: null,
     hourly_rate: input.hourlyRate,
     updated_at: new Date().toISOString(),
   };
@@ -348,8 +353,8 @@ async function defaultWriteUtilityBillingRate(input: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const table = client.from('utility_billing_rates') as any;
   const { data, error } = existingId
-    ? await table.update(payload).eq('id', existingId).select('id, storm_event_id, work_type, hourly_rate, currency').single()
-    : await table.insert(payload).select('id, storm_event_id, work_type, hourly_rate, currency').single();
+    ? await table.update(payload).eq('id', existingId).select('id, storm_event_id, role, work_type, hourly_rate, currency').single()
+    : await table.insert(payload).select('id, storm_event_id, role, work_type, hourly_rate, currency').single();
 
   if (error) {
     throw error;
@@ -358,7 +363,8 @@ async function defaultWriteUtilityBillingRate(input: {
   const row = data as RemoteUtilityBillingRateRow;
   return {
     stormEventId: row.storm_event_id,
-    workType: row.work_type as WorkType,
+    role: (row.role as ContractorRole | null) ?? null,
+    workType: (row.work_type as WorkType | null) ?? null,
     hourlyRate: row.hourly_rate,
     currency: row.currency ?? 'USD',
   };

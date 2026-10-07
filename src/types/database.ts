@@ -3482,28 +3482,31 @@ export type Database = {
           currency: string
           hourly_rate: number
           id: string
+          role: Database["public"]["Enums"]["contractor_role"] | null
           storm_event_id: string | null
           updated_at: string
           updated_by: string | null
-          work_type: Database["public"]["Enums"]["work_type"]
+          work_type: Database["public"]["Enums"]["work_type"] | null
         }
         Insert: {
           currency?: string
           hourly_rate: number
           id?: string
+          role?: Database["public"]["Enums"]["contractor_role"] | null
           storm_event_id?: string | null
           updated_at?: string
           updated_by?: string | null
-          work_type: Database["public"]["Enums"]["work_type"]
+          work_type?: Database["public"]["Enums"]["work_type"] | null
         }
         Update: {
           currency?: string
           hourly_rate?: number
           id?: string
+          role?: Database["public"]["Enums"]["contractor_role"] | null
           storm_event_id?: string | null
           updated_at?: string
           updated_by?: string | null
-          work_type?: Database["public"]["Enums"]["work_type"]
+          work_type?: Database["public"]["Enums"]["work_type"] | null
         }
         Relationships: [
           {

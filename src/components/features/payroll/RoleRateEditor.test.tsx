@@ -65,6 +65,13 @@ describe('RoleRateEditor', () => {
 });
 
 
+it('does not offer an emergency response rate', async () => {
+  mocks.getRoleRateDefaults.mockResolvedValue([]);
+  render(<RoleRateEditor canEdit />);
+  await waitFor(() => expect(screen.getByText('Role Wage Defaults')).not.toBeNull());
+  expect(screen.queryByText(/emergency response/i)).toBeNull();
+});
+
 it('keeps rate changes disabled for a viewer', async () => {
   mocks.getRoleRateDefaults.mockResolvedValue([]);
   render(<RoleRateEditor />);

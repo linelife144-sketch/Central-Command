@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { APP_CONFIG } from '@/lib/config/appConfig';
 import { payrollService } from '@/lib/services/payrollService';
+import { contractorService } from '@/lib/services/contractorService';
 import { stormEventService, type StormEventSummary } from '@/lib/services/stormEventService';
 import { ContractorPayrollTable } from './ContractorPayrollTable';
 import { PayrollSummaryCards } from './PayrollSummaryCards';
@@ -89,6 +90,8 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
   const [stormEvents, setStormEvents] = useState<StormEventSummary[]>([]);
 
   const [summary, setSummary] = useState<PayrollSummary | null>(null);
+  // Active contractors on the roster — independent of the payroll period.
+  const [activeContractorCount, setActiveContractorCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +100,12 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
     if (!canViewStorms) return;
     void stormEventService.listStormEvents().then(setStormEvents).catch(() => setStormEvents([]));
   }, [canViewStorms]);
+
+  useEffect(() => {
+    void contractorService.listContractors({ activeOnly: true })
+      .then((contractors) => setActiveContractorCount(contractors.length))
+      .catch(() => setActiveContractorCount(null));
+  }, []);
 
   const loadSummary = useCallback(async () => {
     setIsLoading(true);
@@ -194,7 +203,7 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
       ) : null}
 
       <p className="text-sm text-muted-foreground">Totals include completed shifts awaiting review. Rejected shifts are excluded; vehicle reimbursement counts after approval.</p>
-      <PayrollSummaryCards includeFinancial={includeFinancial} totals={summary?.totals ?? null} isLoading={isLoading} />
+      <PayrollSummaryCards includeFinancial={includeFinancial} totals={summary?.totals ?? null} isLoading={isLoading} activeContractorCount={activeContractorCount} />
 
       <Card>
         <CardHeader>
