@@ -1,0 +1,29 @@
+{
+  "verifiedAt": "2026-10-07 09:26:44 UTC",
+  "project": "xcvacmreerrypygpritq",
+  "migration": {
+    "version": "20261007092206",
+    "name": "crew_time_tracking_and_vehicle_evidence_guards"
+  },
+  "reviews": {
+    "spec": "Codex /root/phase3_audit - pass",
+    "quality": "Codex /root/phase4_inventory - approved"
+  },
+  "liveVerification": {
+    "exactReviewedBodies": true,
+    "securityDefiner": true,
+    "emptySearchPath": true,
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "securityAdvisorNewFindings": 0
+  },
+  "localChecks": 29,
+  "liveFunctionalCheck": "Not completed. Two connector attempts were cancelled. User directed skipping SQL with destructive actions, so rollback fixture was skipped.",
+  "recordCountsAfterCancelledChecks": {
+    "tickets": 6,
+    "shifts": 10,
+    "claims": 1,
+    "storageObjects": 10
+  },
+  "physicalDeviceAndStorageAPIProof": false
+}

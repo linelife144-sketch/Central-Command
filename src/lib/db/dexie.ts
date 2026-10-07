@@ -4,7 +4,18 @@ import type { TimeInterval, PaySegment, PayAgreement } from '../compensation/val
 // Central Command - Dexie.js IndexedDB Configuration
 
 import Dexie, { Table } from 'dexie';
-import type { ContractorRole } from '@/types';
+import type { ContractorRole, TimeEntry } from '@/types';
+
+/** Eligibility and capture metadata only; wages, billing and photo blobs stay out of this cache. */
+export type VehicleClaimShift = Pick<TimeEntry,
+  'id' | 'contractor_id' | 'clock_in_at' | 'clock_out_at' | 'contractor_role' |
+  'calculation_version' | 'vehicle_minutes' | 'vehicle_allowance_amount' | 'billable_minutes' | 'sync_status'>;
+export interface VehicleShiftCache {
+  viewer_profile_id: string;
+  contractor_id: string;
+  entries: VehicleClaimShift[];
+  claimed_shift_ids: string[];
+}
 
 export type LocalSyncStatus = 'pending' | 'synced' | 'failed';
 export type SyncQueueOperation = 'CREATE' | 'UPDATE' | 'DELETE';
@@ -65,6 +76,7 @@ export interface TicketFieldProgressSnapshot {
 export interface LocalTimeEntry {
   id: string;
   contractor_id: string;
+  is_deleted?: boolean;
   ticket_id?: string;
   storm_event_id?: string;
   clock_in_at: string;
@@ -375,6 +387,7 @@ export class GridElectricDatabase extends Dexie {
   conflicts!: Table<LocalSyncConflict>;
   gpsLocations!: Table<GPSLocation>;
   payAgreements!: Table<PayAgreement & { viewer_profile_id: string }>;
+  vehicleShiftQueues!: Table<VehicleShiftCache, [string, string]>;
 
   constructor() {
     super('GridElectricDB');
@@ -510,6 +523,7 @@ export class GridElectricDatabase extends Dexie {
     this.version(9).stores({ ticketFieldProgressQueue: '&id, actor_profile_id, ticket_id, captured_at, [actor_profile_id+ticket_id]' });
     this.version(10).stores({ entergyForms: '&id, actor_profile_id', entergyEditing: '&id, actor_profile_id, ticket_id' });
     this.version(11).stores({ ticketWorkNotes: '&id, actor_profile_id, ticket_id' });
+    this.version(12).stores({ vehicleShiftQueues: '&[viewer_profile_id+contractor_id]' });
 
   }
 }

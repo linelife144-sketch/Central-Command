@@ -1,0 +1,15 @@
+{
+  "extensions": [
+    "../third_party/pi-vs-claude-code/extensions/*.ts",
+    "!../third_party/pi-vs-claude-code/extensions/themeMap.ts"
+  ],
+  "skills": [
+    "../third_party/pi-vs-claude-code/.pi/skills"
+  ],
+  "prompts": [
+    "../third_party/pi-vs-claude-code/.claude/commands"
+  ],
+  "themes": [
+    "../third_party/pi-vs-claude-code/.pi/themes"
+  ]
+}

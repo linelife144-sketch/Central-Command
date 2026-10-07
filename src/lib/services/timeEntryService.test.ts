@@ -1,6 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTimeEntryService } from './timeEntryService';
+const completedRead = vi.hoisted(() => ({ rows: [] as unknown[], claims: [] as unknown[], projections: [] as string[], pages: [] as number[] }));
+vi.mock('../supabase/client', () => ({ supabase: { from: (table: string) => {
+  const query = {
+    select: (columns: string) => { completedRead.projections.push(columns); return query; }, eq: () => query, not: () => query, order: () => query,
+    range: (from: number, to: number) => { completedRead.pages.push(from); return Promise.resolve({ data: (table === 'time_entries' ? completedRead.rows : completedRead.claims).slice(from, to + 1), error: null }); },
+    limit: () => Promise.resolve({ data: completedRead.rows, error: null }),
+    maybeSingle: () => Promise.resolve({ data: completedRead.claims[0] ?? null, error: null }),
+  };
+  return query;
+} } }));
+
+import { createTimeEntryService, getLastCompletedEntry, createVehicleShiftQueue } from './timeEntryService';
+import { db } from '../db/dexie';
 import type { LocalTimeEntry } from '../db/dexie';
 import type { TimeEntry } from '../../types';
 
@@ -256,5 +268,44 @@ describe('createTimeEntryService', () => {
 
     expect(activeEntry?.id).toBe('time-local-1');
     expect(fetchRemoteActiveEntry).not.toHaveBeenCalled();
+  });
+});
+
+describe('completed shift wage summary', () => {
+  it('retains the latest wage snapshot even when the shift already has a vehicle claim', async () => {
+    const closed = buildTimeEntry({ clock_out_at: '2026-02-12T18:00:00.000Z', payroll_amount: 600 });
+    completedRead.rows = [closed];
+    completedRead.claims = [{ id: 'claim-existing' }];
+    const local = vi.spyOn(db.timeEntries, 'where').mockReturnValue({ equals: () => ({ toArray: async () => [] }) } as never);
+    try {
+      const result = await getLastCompletedEntry('sub-1');
+      expect(result?.id).toBe('time-1');
+      expect(result?.payroll_amount).toBe(600);
+    } finally { local.mockRestore(); }
+  });
+});
+
+describe('default vehicle shift read boundaries', () => {
+  it('requires the viewer identity mapping before reading pending local shifts', async () => {
+    const identity = vi.spyOn(db.contractorIdentities, 'get').mockResolvedValue({ profile_id: 'profile-1', contractor_id: 'different-contractor' });
+    const local = vi.spyOn(db.timeEntries, 'where');
+    try {
+      const service = createVehicleShiftQueue({ isOnline: () => false, readCache: async () => undefined });
+      expect((await service.load({ profileId: 'profile-1', contractorId: 'sub-1' })).entries).toEqual([]);
+      expect(local).not.toHaveBeenCalled();
+    } finally { identity.mockRestore(); local.mockRestore(); }
+  });
+  it('reaches older rows beyond PostgREST pagination using capture-only reads', async () => {
+    completedRead.rows = Array.from({ length: 1001 }, (_, index) => buildTimeEntry({ id: `shift-${index}`, clock_out_at: '2026-02-12T18:00:00Z', calculation_version: 'AGREEMENT', vehicle_minutes: 120, vehicle_allowance_amount: 10 }));
+    completedRead.claims = Array.from({ length: 1000 }, (_, index) => ({ id: `claim-${index}`, time_entry_id: `shift-${index}` }));
+    completedRead.projections = []; completedRead.pages = [];
+    const base = { isOnline: () => true, readLocalShifts: async () => [], readCache: async () => undefined, writeCache: async () => undefined };
+    const service = createVehicleShiftQueue({ ...base, fetchClaimedShiftIds: async () => Array.from({ length: 1000 }, (_, index) => `shift-${index}`) });
+    const result = await service.load({ profileId: 'profile-1', contractorId: 'sub-1' });
+    expect(result.entries.map(row => row.id)).toEqual(['shift-1000']);
+    const claimReader = createVehicleShiftQueue({ ...base, fetchClosedShifts: async () => [buildTimeEntry({ id: 'shift-1000', clock_out_at: '2026-02-12T18:00:00Z', calculation_version: 'AGREEMENT', vehicle_minutes: 120 })] });
+    expect((await claimReader.load({ profileId: 'profile-1', contractorId: 'sub-1' })).entries.map(row => row.id)).toEqual(['shift-1000']);
+    expect(completedRead.pages.filter(from => from === 1000)).toHaveLength(2);
+    for (const projection of completedRead.projections) expect(projection).not.toMatch(/payroll_amount|pay_segments|work_type_rate|utility_bill|photo/);
   });
 });

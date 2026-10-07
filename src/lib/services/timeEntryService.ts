@@ -7,6 +7,8 @@ import {
   queueTimeEntry,
   type LocalSyncStatus,
   type LocalTimeEntry,
+  type VehicleClaimShift,
+  type VehicleShiftCache,
   type SyncQueueOperation,
 } from '../db/dexie';
 import { APP_CONFIG } from '../config/appConfig';
@@ -525,7 +527,145 @@ export async function getLastCompletedEntry(contractorId: string): Promise<TimeE
   if (error) throw error;
   if (cached && cached.sync_status !== 'synced' && (!data?.[0] || Date.parse(cached.clock_out_at!) >= Date.parse(data[0].clock_out_at!))) return mapLocalEntryToTimeEntry(cached);
   if (!data?.[0]) return null;
-  const { data: claim, error: claimError } = await supabase.from('time_entry_vehicle_claims').select('id').eq('time_entry_id',data[0].id).maybeSingle();
-  if (claimError) throw claimError;
-  return claim ? null : mapRemoteRowToTimeEntry(data[0]);
+  return mapRemoteRowToTimeEntry(data[0]);
 }
+
+export interface VehicleShiftScope { profileId: string; contractorId: string }
+interface VehicleShiftQueueDependencies {
+  isOnline: () => boolean;
+  fetchClosedShifts: (contractorId: string) => Promise<Array<VehicleClaimShift & { is_deleted?: boolean }>>;
+  fetchClaimedShiftIds: (contractorId: string) => Promise<string[]>;
+  readLocalShifts: (scope: VehicleShiftScope) => Promise<LocalTimeEntry[]>;
+  readCache: (scope: VehicleShiftScope) => Promise<VehicleShiftCache | undefined>;
+  writeCache: (snapshot: VehicleShiftCache) => Promise<void>;
+}
+
+const VEHICLE_SHIFT_COLUMNS = 'id,contractor_id,clock_in_at,clock_out_at,contractor_role,calculation_version,vehicle_minutes,vehicle_allowance_amount,billable_minutes,sync_status' as const;
+
+function captureShift(row: VehicleClaimShift): VehicleClaimShift {
+  return {
+    id: row.id, contractor_id: row.contractor_id, clock_in_at: row.clock_in_at,
+    clock_out_at: row.clock_out_at, contractor_role: row.contractor_role,
+    calculation_version: row.calculation_version, vehicle_minutes: row.vehicle_minutes,
+    vehicle_allowance_amount: row.vehicle_allowance_amount, billable_minutes: row.billable_minutes,
+    sync_status: row.sync_status,
+  };
+}
+
+function hasVehicleEligibility(row: VehicleClaimShift): boolean {
+  return row.calculation_version === 'LEGACY'
+    ? row.contractor_role === 'DRIVER'
+    : (row.vehicle_minutes ?? 0) > 0;
+}
+
+const vehicleQueueDependencies: VehicleShiftQueueDependencies = {
+  isOnline: defaultIsOnline,
+  async fetchClosedShifts(contractorId) {
+    const { supabase } = await import('../supabase/client');
+    const rows: VehicleClaimShift[] = [];
+    // PostgREST caps each response. Read every page so old unclaimed shifts remain reachable.
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase.from('time_entries').select(VEHICLE_SHIFT_COLUMNS)
+        .eq('contractor_id', contractorId).eq('is_deleted', false).not('clock_out_at', 'is', null)
+        .order('clock_out_at', { ascending: false }).order('id').range(from, from + 999);
+      if (error) throw error;
+      for (const row of data ?? []) rows.push(captureShift({ ...row,
+        clock_out_at: row.clock_out_at ?? undefined, contractor_role: row.contractor_role ?? undefined,
+        vehicle_minutes: row.vehicle_minutes ?? undefined, vehicle_allowance_amount: row.vehicle_allowance_amount ?? undefined,
+        billable_minutes: row.billable_minutes ?? undefined, sync_status: row.sync_status as SyncStatus,
+      }));
+      if ((data?.length ?? 0) < 1000) return rows;
+    }
+  },
+  async fetchClaimedShiftIds(contractorId) {
+    const { supabase } = await import('../supabase/client');
+    const ids: string[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase.from('time_entry_vehicle_claims').select('time_entry_id')
+        .eq('contractor_id', contractorId).order('id').range(from, from + 999);
+      if (error) throw error;
+      ids.push(...(data ?? []).map(row => row.time_entry_id));
+      if ((data?.length ?? 0) < 1000) return ids;
+    }
+  },
+  async readLocalShifts(scope) {
+    const identity = await db.contractorIdentities.get(scope.profileId);
+    if (identity?.contractor_id !== scope.contractorId) return [];
+    return db.timeEntries.where('contractor_id').equals(scope.contractorId).toArray();
+  },
+  readCache: scope => db.vehicleShiftQueues.get([scope.profileId, scope.contractorId]),
+  async writeCache(snapshot) { await db.vehicleShiftQueues.put(snapshot); },
+};
+
+export function createVehicleShiftQueue(overrides: Partial<VehicleShiftQueueDependencies> = {}) {
+  const dependencies = { ...vehicleQueueDependencies, ...overrides };
+  const revisions = new Map<string, number>();
+  const cacheWrites = new Map<string, Promise<void>>();
+  const submittedShifts = new Map<string, Set<string>>();
+  const scopeKey = (scope: VehicleShiftScope) => JSON.stringify([scope.profileId, scope.contractorId]);
+  const nextRevision = (scope: VehicleShiftScope) => {
+    const key = scopeKey(scope);
+    const value = (revisions.get(key) ?? 0) + 1;
+    revisions.set(key, value);
+    return value;
+  };
+  const validCache = (cache: VehicleShiftCache | undefined, scope: VehicleShiftScope) =>
+    cache?.viewer_profile_id === scope.profileId && cache.contractor_id === scope.contractorId ? cache : undefined;
+  const writeSnapshot = (scope: VehicleShiftScope, revision: number, snapshot: VehicleShiftCache) => {
+    const key = scopeKey(scope);
+    // IndexedDB writes can finish after another refresh starts. Serialize them per actor
+    // so the newer snapshot is always the last persisted state.
+    const pending = (cacheWrites.get(key) ?? Promise.resolve()).catch(() => undefined).then(async () => {
+      if (revisions.get(key) === revision) await dependencies.writeCache(snapshot);
+    });
+    cacheWrites.set(key, pending);
+    return pending.finally(() => { if (cacheWrites.get(key) === pending) cacheWrites.delete(key); });
+  };
+
+  return {
+    async load(scope: VehicleShiftScope): Promise<{ entries: VehicleClaimShift[]; online: boolean }> {
+      if (!scope.profileId || !scope.contractorId) throw new Error('A verified contractor profile is required.');
+      const revision = nextRevision(scope);
+      const online = dependencies.isOnline();
+      const [local, stored] = await Promise.all([dependencies.readLocalShifts(scope), dependencies.readCache(scope)]);
+      const cached = validCache(stored, scope);
+      let source = cached?.entries ?? [];
+      const claimed = new Set([...(cached?.claimed_shift_ids ?? []), ...(submittedShifts.get(scopeKey(scope)) ?? [])]);
+      if (online) {
+        const [remote, claimIds] = await Promise.all([
+          dependencies.fetchClosedShifts(scope.contractorId), dependencies.fetchClaimedShiftIds(scope.contractorId),
+        ]);
+        claimIds.forEach(id => claimed.add(id));
+        source = remote.filter(row => !row.is_deleted);
+      }
+      const entries = new Map<string, VehicleClaimShift>();
+      for (const row of source) {
+        if (row.contractor_id === scope.contractorId && row.clock_out_at && !claimed.has(row.id) && hasVehicleEligibility(row)) entries.set(row.id, captureShift(row));
+      }
+      for (const row of local) {
+        if (row.contractor_id !== scope.contractorId || !row.clock_out_at || row.is_deleted || row.sync_status === 'synced' || claimed.has(row.id)) continue;
+        const pending = captureShift({ ...row, sync_status: toSyncStatus(row.sync_status) });
+        const recordedUse = row.calculation_version !== 'LEGACY' && row.activity_intervals?.some(interval => interval.kind === 'VEHICLE_USE');
+        if (hasVehicleEligibility(pending) || recordedUse) entries.set(row.id, pending);
+      }
+      const result = [...entries.values()].sort((a, b) => Date.parse(b.clock_out_at!) - Date.parse(a.clock_out_at!));
+      if (online && revisions.get(scopeKey(scope)) === revision) {
+        await writeSnapshot(scope, revision, { viewer_profile_id: scope.profileId, contractor_id: scope.contractorId,
+          entries: result.filter(row => row.sync_status === 'SYNCED'), claimed_shift_ids: [...claimed] });
+      }
+      return { entries: result, online };
+    },
+    async markSubmitted(scope: VehicleShiftScope, shiftId: string): Promise<void> {
+      const revision = nextRevision(scope);
+      const submitted = submittedShifts.get(scopeKey(scope)) ?? new Set<string>();
+      submitted.add(shiftId); submittedShifts.set(scopeKey(scope), submitted);
+      await cacheWrites.get(scopeKey(scope))?.catch(() => undefined);
+      const cached = validCache(await dependencies.readCache(scope), scope);
+      await writeSnapshot(scope, revision, { viewer_profile_id: scope.profileId, contractor_id: scope.contractorId,
+        entries: (cached?.entries ?? []).filter(row => row.id !== shiftId),
+        claimed_shift_ids: [...new Set([...(cached?.claimed_shift_ids ?? []), shiftId])] });
+    },
+  };
+}
+
+export const vehicleShiftQueue = createVehicleShiftQueue();

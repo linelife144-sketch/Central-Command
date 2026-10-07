@@ -22,6 +22,8 @@
 .DS_Store
 *.pem
 /graphify-out/
+/.worktrees/
+/.pi/agent-sessions/
 
 # production
 /build

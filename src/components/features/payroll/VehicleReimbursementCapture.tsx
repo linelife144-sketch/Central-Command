@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Car } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,13 +14,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { VEHICLE_TYPE_LABELS } from '@/lib/config/appConfig';
 import { payrollService } from '@/lib/services/payrollService';
 
-import type { TimeEntry, VehicleType } from '@/types';
+import type { VehicleType } from '@/types';
+import type { VehicleClaimShift } from '@/lib/db/dexie';
 
 export interface VehicleReimbursementCaptureProps {
   /** A closed (clocked-out) time entry — the claim can only be finalized once billableMinutes is known. */
-  entry: TimeEntry;
+  entry: VehicleClaimShift;
   contractorId: string;
   onSubmitted?: () => void;
+  enabled?: boolean;
 }
 
 /**
@@ -30,7 +32,14 @@ export interface VehicleReimbursementCaptureProps {
  * once time_entries.clock_out_at is set, so this is deliberately a
  * post-shift action rather than a clock-in gate.
  */
-export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted }: VehicleReimbursementCaptureProps) {
+export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted, enabled = true }: VehicleReimbursementCaptureProps) {
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
+  useEffect(() => {
+    const connected = () => setOnline(true);
+    const disconnected = () => setOnline(false);
+    window.addEventListener('online', connected); window.addEventListener('offline', disconnected);
+    return () => { window.removeEventListener('online', connected); window.removeEventListener('offline', disconnected); };
+  }, []);
   const [vehicleType, setVehicleType] = useState<VehicleType>('PERSONAL');
   const [declaredHours, setDeclaredHours] = useState<string>(entry.vehicle_minutes === undefined ? '' : String(Number((entry.vehicle_minutes / 60).toFixed(4))));
   const [notes, setNotes] = useState('');
@@ -52,6 +61,7 @@ export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted }
   }, [declaredHours, entry.vehicle_allowance_amount]);
 
   const canSubmit =
+    enabled && online && entry.sync_status === 'SYNCED' && Boolean(entry.clock_out_at) && entry.contractor_id === contractorId &&
     Boolean(declaredHours) &&
     Number(declaredHours) > 0 &&
     notes.trim().length >= 3 &&
@@ -61,6 +71,10 @@ export function VehicleReimbursementCapture({ entry, contractorId, onSubmitted }
     !submitted;
 
   const handleSubmit = async () => {
+    if (!enabled || !navigator.onLine || entry.sync_status !== 'SYNCED' || !entry.clock_out_at || entry.contractor_id !== contractorId) {
+      toast.error('Connect to the internet and synchronize this shift before submitting vehicle evidence.');
+      return;
+    }
     if (!vehiclePhoto || !licensePlatePhoto) {
       toast.error('A vehicle photo and a license plate photo are both required.');
       return;

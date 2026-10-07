@@ -998,6 +998,33 @@ Evidence: `docs/testing/ticket-workflow-local.json` and `docs/testing/click-driv
 - [x] Add permission-gated Disable / Restore actions to the admin `/tickets` list, with confirmation, an explicit Disabled tickets view, pending state, and preserved ticket/assessment history. Contractors do not receive these controls. — Codex /root
 - [x] Apply the guarded `set_ticket_disabled` RPC migration to Central Command Supabase. It validates active staff permission, serializes changes with a row lock, records server actor/time and an audit log, and grants execution only to authenticated users. Live metadata verification confirms the security-definer function uses an empty `search_path`; anon cannot execute it. — Codex /root
 - [x] Pass 55 local ticket workflow database checks, 10 focused ticket UI/service tests, TypeScript, and scoped ESLint. No live ticket rows were modified. — Codex /root
-- [ ] Refresh Graphify AST output. `graphify update .` remains blocked on a repository lock held by another process; the graph outputs have not changed. — Codex /root
+- [x] Add permission-gated Disable / Restore actions to the ticket detail header, with confirmation for disabling, immediate restore, pending state, and preserved history. Focused detail-page tests and scoped ESLint pass. — Codex /root
+- [x] On successful Disable from ticket details, navigate to `/tickets` after the guarded reversible disable finishes; canceled confirmation does not mutate or navigate. Focused page tests (5) pass. — Cline
+- [ ] Re-run full typecheck after refreshing stale `.next/types` output; current run fails resolving the generated contractor-team route, with no diagnostic reported in the edited ticket page files. — Codex /root
+- [x] Fix disabled-ticket detail refresh returning Page not found: add a separate staff-only historical read guard while keeping contractor access and workflow mutations restricted to active tickets. Focused detail regression, 59 isolated PGlite checks, scoped ESLint, and Graphify pass. — Codex /root
+- [ ] Apply and verify migration `20261007042455_ticket_disabled_staff_history_read.sql` in Supabase; prior linked CLI access returned 401 Unauthorized. — Codex /root
+- [x] Refresh Graphify AST output after ticket-detail and disabled-ticket read-policy updates. The earlier refresh attempt was blocked by a repository lock; the later refresh completed. — Codex /root
 - [ ] Complete an isolated production webpack build. The command remained in compilation without output for over six minutes and was interrupted; build status is unverified. — Codex /root
 - [ ] Verify Disable and Restore in a real signed-in admin browser session and confirm the same ticket appears in Disabled tickets and returns to the active list. — Codex /root
+
+### Project-local Pi tooling integration — 2026-10-07 (Codex)
+
+- [x] Clone `https://github.com/disler/pi-vs-claude-code.git` into `third_party/pi-vs-claude-code/`; install its `yaml` dependency with Bun. — Codex
+- [x] Register the clone's extensions, `bowser` skill, Claude command prompt templates, and themes in `.pi/settings.json`; link agent/team definitions and damage-control rules into project `.pi/`; ignore generated agent sessions. — Codex
+- [x] Document trust, safety, and extension-mode caveats in `docs/agent-tooling.md`; verify all 18 extension modules load individually through Pi's CLI help path and validate settings JSON/resource paths. — Codex
+- [x] Repair default Pi startup: move the local `themeMap.ts` helper outside auto-discovered extensions, remove duplicate coms identity-flag registrations, and verify all 18 discovered factories load with zero errors/flag collisions; each shared CLI flag appears once. — Codex
+
+### Phase 3 onward completion execution — 2026-10-07 (Codex /root)
+
+- [x] Read the full active implementation plan/checklist and audit canonical payroll plus active roster requirements with subagents and live metadata; preserve superseded historical decisions and existing records. — Codex /root
+- [x] Pass the current baseline 21 configurable-payroll suites, 16 integrity checks, and 19 permission checks in isolated PGlite. These fixtures require extension for later crew/onboarding regressions. — Codex /root
+- [x] Finish spec/quality review of test and TypeScript scope repair: 667 canonical tests across 119 files, typecheck, and config lint pass; strict flags, canonical source/script inputs, active development types, and `next-env.d.ts` are preserved. — Codex /root
+- [ ] Repair crew-driver clock rejection, enforce uploaded vehicle/plate evidence, and recover earlier unclaimed vehicle shifts with current-schema coverage. — Codex /root
+- [ ] Deliver reusable operational contractor teams/crews, contractor assignment column, confirmed scratchpad cleanup, and fail-closed profile recovery in the canonical checkout. — Codex /root
+- [ ] Reconcile and activate progressive draft and disabled-ticket history repairs without undoing click-driven field actions; finish final build/regressions and Graphify. — Codex /root
+- [ ] Complete same-record contractor/staff/browser/device/reconnect/private-upload/print acceptance and hosted deployment. Live metadata confirms no Admin reviewer and no dispatched Assigned ticket; requested hosted HTTPS/provider/session prerequisites remain open. — Codex /root
+
+Detailed work and evidence are tracked in the implementation plan's dated completion execution ledger. No Git operations or production row mutations were performed during this audit.
+
+- [x] Repair assessor/driver time-clock membership and require two distinct uploaded objects for new vehicle claims; preserve historical claim review and saved amounts. Verify 29 composed checks, 21 earlier configurable suites, 16 integrity checks, 50 focused application tests, types/lint, independent spec/quality reviews, and additive live activation `20261007092206` with exact-body/privilege readback and no new security finding. Live rollback functional SQL was cancelled and skipped per user direction; record counts unchanged (6 tickets, 10 shifts, 1 claim, 10 Storage objects). Device/upload proof remains open. — Codex /root
+- User steering 2026-10-07: skip SQL with destructive actions. Continue additive, reviewed changes where authorized, read-only live checks and isolated local verification; do not execute the destructive live rollback fixture. — Codex /root

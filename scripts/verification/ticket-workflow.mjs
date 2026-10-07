@@ -149,6 +149,7 @@ await pass('history records exact actor, action reason, server time and no fabri
 await pass('legacy GPS status RPC is retired for contractors',async()=>assert.rejects(()=>rpc('update_ticket_field_status',[actionTicket,'IN_ROUTE',30,-90,25]),/permission denied/));
 await db.exec('RESET ROLE');
 await db.exec(await readFile('supabase/migrations/20261007001048_admin_ticket_disable_restore.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20261007042455_ticket_disabled_staff_history_read.sql','utf8'));
 await actor(lead);
 await pass('ticket team lead cannot bypass guarded workflow with a direct delete flag update',async()=>assert.rejects(()=>db.query('UPDATE tickets SET is_deleted=true WHERE id=$1',[actionTicket]),/Use ticket crew assignment and review actions/));
 await pass('admin disables ticket with server-owned actor and timestamp while retaining its workflow state',async()=>{
@@ -157,11 +158,25 @@ await pass('admin disables ticket with server-owned actor and timestamp while re
  const audit=(await db.query("SELECT * FROM audit_logs WHERE entity_id=$1 AND action='TICKET_DISABLED'",[actionTicket])).rows;
  assert.equal(audit.length,1);assert.equal(audit[0].user_id,lead);assert.equal(audit[0].user_role,'ADMIN');
 });
+await pass('authorized staff can still read disabled ticket details and status history',async()=>{
+ const rows=(await db.query('SELECT * FROM tickets WHERE id=$1',[actionTicket])).rows;
+ assert.equal(rows.length,1);assert.equal(rows[0].is_deleted,true);
+ assert.equal((await db.query('SELECT * FROM ticket_status_history WHERE ticket_id=$1',[actionTicket])).rows.length,2);
+});
+await actor(other);
+await pass('disabled ticket read scope still excludes an unassigned Admin',async()=>assert.equal((await db.query('SELECT * FROM tickets WHERE id=$1',[actionTicket])).rows.length,0));
+await actor(chief);
+await pass('authorized CEO can read the disabled ticket for oversight',async()=>assert.equal((await db.query('SELECT * FROM tickets WHERE id=$1',[actionTicket])).rows.length,1));
+await actor(lead);
 await pass('repeated disable is idempotent and does not duplicate the audit record',async()=>{
  await rpc('set_ticket_disabled',[actionTicket,true]);
  assert.equal((await db.query("SELECT count(*)::int AS count FROM audit_logs WHERE entity_id=$1 AND action='TICKET_DISABLED'",[actionTicket])).rows[0].count,1);
 });
 await actor(driver);
+await pass('contractor cannot read a disabled ticket or use active-ticket access',async()=>{
+ assert.equal((await db.query('SELECT * FROM tickets WHERE id=$1',[actionTicket])).rows.length,0);
+ assert.equal((await db.query('SELECT private.can_access_ticket($1) allowed',[actionTicket])).rows[0].allowed,false);
+});
 await pass('contractor cannot disable or restore a ticket',async()=>assert.rejects(()=>rpc('set_ticket_disabled',[actionTicket,false]),/permission/));
 await db.exec('RESET ROLE; SET ROLE anon');
 await pass('anonymous role cannot execute ticket disable RPC',async()=>assert.rejects(()=>rpc('set_ticket_disabled',[actionTicket,false]),/permission denied/));

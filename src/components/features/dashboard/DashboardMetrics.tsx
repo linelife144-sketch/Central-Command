@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Clock, Loader2, RefreshCw, Ticket, Users } from 'lucide-react';
 
 import { MetricCard } from '@/components/common/data-display/MetricCard';
+import { contractorService } from '@/lib/services/contractorService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +33,7 @@ function toErrorMessage(error: unknown): string {
 export function DashboardMetrics({ className }: DashboardMetricsProps) {
   const { can } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetricsData | null>(null);
+  const [activeContractors, setActiveContractors] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -46,8 +48,12 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
     setError(null);
 
     try {
-      const nextMetrics = await dashboardReportingService.getDashboardMetrics();
+      const [nextMetrics, contractors] = await Promise.all([
+        dashboardReportingService.getDashboardMetrics(),
+        contractorService.listContractors({ activeOnly: true }).catch(() => null),
+      ]);
       setMetrics(nextMetrics);
+      setActiveContractors(contractors ? contractors.length : null);
     } catch (loadError) {
       setMetrics(null);
       setError(toErrorMessage(loadError));
@@ -103,7 +109,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
   }, [loadMetrics]);
 
   const activeTicketsValue = metrics?.active_tickets ?? (isLoading ? '...' : 'Unavailable');
-  const fieldCrewsValue = metrics?.field_crews ?? (isLoading ? '...' : 'Unavailable');
+  const fieldCrewsValue = activeContractors ?? (isLoading ? '...' : 'Unavailable');
   const reviewsUnavailable = Boolean(metrics?.unavailable_metrics?.length);
   const pendingReviewValue = reviewsUnavailable ? 'Unavailable' : metrics?.pending_reviews_total ?? (isLoading ? '...' : 'Unavailable');
 
@@ -144,7 +150,6 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
           value={fieldCrewsValue}
           icon={<Users className="h-4 w-4 text-grid-lightning" />}
           description={metrics ? `${metrics.on_site_crews} on site · assigned to active tickets` : 'Active assignments'}
-          variant="accent"
         />}
 
         <MetricCard

@@ -96,3 +96,31 @@ describe('VehicleReimbursementCapture', () => {
     );
   });
 });
+
+describe('vehicle claim online/sync gate', () => {
+  function fillEvidence() {
+    fireEvent.change(screen.getByLabelText(/hours vehicle was used/i), { target: { value: '5' } });
+    fireEvent.change(screen.getByLabelText(/notes/i), { target: { value: 'Drove to every site today.' } });
+    const inputs = document.querySelectorAll('input[type="file"]');
+    fireEvent.change(inputs[0], { target: { files: [buildFile('vehicle.jpg')] } });
+    fireEvent.change(inputs[1], { target: { files: [buildFile('plate.jpg')] } });
+  }
+  it('cannot submit evidence for an unsynced closed shift', () => {
+    render(<VehicleReimbursementCapture entry={buildEntry({ sync_status: 'PENDING' })} contractorId="c-1" />);
+    fillEvidence();
+    expect((screen.getByRole('button', { name: /submit vehicle reimbursement/i }) as HTMLButtonElement).disabled).toBe(true);
+    expect(mocks.submitVehicleClaim).not.toHaveBeenCalled();
+  });
+  it('cannot submit while disconnected and becomes available again on reconnect', () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: false });
+    try {
+      render(<VehicleReimbursementCapture entry={buildEntry()} contractorId="c-1" />);
+      fillEvidence();
+      const submit = screen.getByRole('button', { name: /submit vehicle reimbursement/i }) as HTMLButtonElement;
+      expect(submit.disabled).toBe(true);
+      Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+      fireEvent(window, new Event('online'));
+      expect(submit.disabled).toBe(false);
+    } finally { Object.defineProperty(navigator, 'onLine', { configurable: true, value: true }); }
+  });
+});

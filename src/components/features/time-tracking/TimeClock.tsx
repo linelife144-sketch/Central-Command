@@ -1,7 +1,7 @@
 'use client';
 import { PhotoCapture } from '@/components/common/forms/PhotoCapture';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, MapPin, TimerReset } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,7 +19,8 @@ import { useGPSValidation } from '@/hooks/useGPSValidation';
 import { useContractorId } from '@/hooks/useContractorId';
 import { ticketService } from '@/lib/services/ticketService';
 import { payrollService, type ContractorRateProfile } from '@/lib/services/payrollService';
-import { timeEntryService, getLastCompletedEntry } from '@/lib/services/timeEntryService';
+import { timeEntryService, getLastCompletedEntry, vehicleShiftQueue } from '@/lib/services/timeEntryService';
+import type { VehicleClaimShift } from '@/lib/db/dexie';
 import { formatDateTime, formatDuration } from '@/lib/utils/formatters';
 import type { Ticket, TimeEntry, WorkType } from '@/types';
 
@@ -37,7 +38,19 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
     contractorId: resolvedContractorId,
     isLoading: isResolvingContractorId,
   } = useContractorId(profile?.id);
-  const contractorId = resolvedContractorId ?? undefined;
+  // Actor changes discard form state and prevent earlier account reads from entering the new view.
+  return <ContractorTimeClock key={JSON.stringify([profile?.id, resolvedContractorId])}
+    profileId={profile?.id} contractorId={resolvedContractorId}
+    isResolvingContractorId={isResolvingContractorId} onEntriesChanged={onEntriesChanged} />;
+}
+
+function ContractorTimeClock({ profileId, contractorId, isResolvingContractorId, onEntriesChanged }: {
+  profileId?: string; contractorId?: string; isResolvingContractorId: boolean; onEntriesChanged?: () => void;
+}) {
+  const mounted = useRef(false);
+  const activeRead = useRef(0);
+  const vehicleRead = useRef(0);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [assignedTickets, setAssignedTickets] = useState<Ticket[]>([]);
   const [ticketId, setTicketId] = useState('');
   const [ticketsLoading, setTicketsLoading] = useState(true);
@@ -46,6 +59,12 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [lastEntry, setLastEntry] = useState<TimeEntry | null>(null);
+  const [vehicleShifts, setVehicleShifts] = useState<VehicleClaimShift[]>([]);
+  const [vehicleShiftId, setVehicleShiftId] = useState('');
+  const [vehicleLoading, setVehicleLoading] = useState(true);
+  const [vehicleError, setVehicleError] = useState(false);
+  const [vehicleOnline, setVehicleOnline] = useState(false);
+  const selectedVehicleShift = vehicleShifts.find(entry => entry.id === vehicleShiftId);
   const [workType, setWorkType] = useState<WorkType>(WORK_TYPES.STANDARD_ASSESSMENT);
   const [clockPhoto, setClockPhoto] = useState<File | null>(null);
   const [breakMinutes, setBreakMinutes] = useState<number>(0);
@@ -110,14 +129,20 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
   const usingVehicle = activeEntry?.activity_intervals?.some(interval => interval.kind === 'VEHICLE_USE' && !interval.end_at) ?? false;
 
   const loadActiveEntry = useCallback(async () => {
+    const read = ++activeRead.current;
     if (!contractorId) {
       setActiveEntry(null);
       return;
     }
 
     const entry = await timeEntryService.getActiveEntry(contractorId);
+    if (!mounted.current || read !== activeRead.current) return;
     setActiveEntry(entry);
-    if (!entry) setLastEntry(await getLastCompletedEntry(contractorId));
+    if (!entry) {
+      const completed = await getLastCompletedEntry(contractorId);
+      if (!mounted.current || read !== activeRead.current) return;
+      setLastEntry(completed);
+    }
 
     if (entry) {
       setTicketId(entry.ticket_id ?? '');
@@ -126,15 +151,54 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
     }
   }, [contractorId]);
 
-  useEffect(() => {
-    void Promise.resolve().then(loadActiveEntry).catch(() => undefined);
-  }, [loadActiveEntry]);
+  const loadVehicleShifts = useCallback(async () => {
+    const read = ++vehicleRead.current;
+    if (!profileId || !contractorId) {
+      setVehicleShifts([]); setVehicleLoading(false); return;
+    }
+    setVehicleLoading(true); setVehicleError(false);
+    try {
+      const result = await vehicleShiftQueue.load({ profileId, contractorId });
+      if (!mounted.current || read !== vehicleRead.current) return;
+      setVehicleShifts(result.entries);
+      setVehicleOnline(result.online);
+      setVehicleShiftId(current => result.entries.some(entry => entry.id === current) ? current : result.entries[0]?.id ?? '');
+    } catch {
+      if (!mounted.current || read !== vehicleRead.current) return;
+      setVehicleShifts([]); setVehicleShiftId(''); setVehicleError(true);
+    } finally {
+      if (mounted.current && read === vehicleRead.current) setVehicleLoading(false);
+    }
+  }, [profileId, contractorId]);
+
+  const handleVehicleSubmitted = async (shiftId: string) => {
+    if (!profileId || !contractorId || !mounted.current) return;
+    ++vehicleRead.current;
+    setVehicleShifts(current => current.filter(entry => entry.id !== shiftId));
+    try { await vehicleShiftQueue.markSubmitted({ profileId, contractorId }, shiftId); }
+    catch { if (mounted.current) setVehicleError(true); }
+    if (!mounted.current) return;
+    onEntriesChanged?.();
+    await loadVehicleShifts();
+  };
 
   useEffect(() => {
-    const handleSync = () => { void loadActiveEntry().catch(() => undefined); onEntriesChanged?.(); };
+    void Promise.resolve().then(loadActiveEntry).catch(() => undefined);
+    void Promise.resolve().then(loadVehicleShifts);
+  }, [loadActiveEntry, loadVehicleShifts]);
+
+  useEffect(() => {
+    const handleSync = () => { void loadActiveEntry().catch(() => undefined); void loadVehicleShifts(); onEntriesChanged?.(); };
+    const handleConnection = () => { void loadActiveEntry().catch(() => undefined); void loadVehicleShifts(); };
     window.addEventListener('time-entries-synced', handleSync);
-    return () => window.removeEventListener('time-entries-synced', handleSync);
-  }, [loadActiveEntry, onEntriesChanged]);
+    window.addEventListener('online', handleConnection);
+    window.addEventListener('offline', handleConnection);
+    return () => {
+      window.removeEventListener('time-entries-synced', handleSync);
+      window.removeEventListener('online', handleConnection);
+      window.removeEventListener('offline', handleConnection);
+    };
+  }, [loadActiveEntry, loadVehicleShifts, onEntriesChanged]);
 
   const canClockIn = useMemo(
     () => !activeEntry && !ticketsLoading && !isResolvingContractorId && Boolean(contractorId) && Boolean(stormEventId) && typeof workTypeRate === 'number',
@@ -182,7 +246,8 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
           accuracy: gpsSnapshot.reading.accuracy ?? undefined,
         },
       });
-
+      if (!mounted.current) return;
+      ++activeRead.current;
       setActiveEntry(entry);
       setClockPhoto(null);
       setLastEntry(null);
@@ -225,10 +290,12 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
           accuracy: gpsSnapshot.reading.accuracy ?? undefined,
         },
       });
-
+      if (!mounted.current) return;
+      ++activeRead.current;
       setActiveEntry(null);
       setLastEntry(entry);
       setClockPhoto(null);
+      void loadVehicleShifts();
       onEntriesChanged?.();
       toast.success(
         entry.sync_status === 'PENDING'
@@ -245,7 +312,10 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
   const recordActivity = async (kind: 'BREAK' | 'VEHICLE_USE', action: 'START' | 'STOP') => {
     if (!activeEntry) return;
     setIsSubmitting(true);
-    try { setActiveEntry(await timeEntryService.recordActivity(activeEntry, kind, action)); }
+    try {
+      const updated = await timeEntryService.recordActivity(activeEntry, kind, action);
+      if (mounted.current) { ++activeRead.current; setActiveEntry(updated); }
+    }
     catch (failure) { toast.error(failure instanceof Error ? failure.message : 'Unable to record activity.'); }
     finally { setIsSubmitting(false); }
   };
@@ -395,8 +465,36 @@ export function TimeClock({ onEntriesChanged }: { onEntriesChanged?: () => void 
         </Card>
       ) : null}
 
-      {!activeEntry && lastEntry && (lastEntry.calculation_version === 'LEGACY' ? lastEntry.contractor_role === 'DRIVER' : (lastEntry.vehicle_minutes ?? 0) > 0) && contractorId ? (
-        <VehicleReimbursementCapture key={`${lastEntry.id}:${lastEntry.sync_status}`} entry={lastEntry} contractorId={contractorId} onSubmitted={() => { setLastEntry(null); onEntriesChanged?.(); }} />
+      {!activeEntry && profileId && contractorId ? (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Unclaimed Vehicle Shifts</CardTitle></CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {vehicleLoading ? <p role="status">Loading reimbursement shifts…</p> : vehicleError ? (
+                <div role="alert"><p>Unable to load reimbursement shifts. Try again.</p>
+                  <Button variant="outline" onClick={() => void loadVehicleShifts()}>Retry reimbursement shifts</Button>
+                </div>
+              ) : vehicleShifts.length === 0 ? <p>No unclaimed vehicle shifts.</p> : (
+                <>
+                  <Label htmlFor="vehicle-shift">Reimbursement shift</Label>
+                  <Select value={vehicleShiftId} onValueChange={setVehicleShiftId}>
+                    <SelectTrigger id="vehicle-shift"><SelectValue /></SelectTrigger>
+                    <SelectContent>{vehicleShifts.map(entry => <SelectItem key={entry.id} value={entry.id}>
+                      {formatDateTime(entry.clock_in_at)} — {formatDateTime(entry.clock_out_at ?? null)}{entry.sync_status !== 'SYNCED' ? ' · queued for sync' : ''}
+                    </SelectItem>)}</SelectContent>
+                  </Select>
+                  {selectedVehicleShift?.sync_status !== 'SYNCED' ? <p role="status">This shift is queued for sync. Reimbursement is available after the shift synchronizes.</p>
+                    : !vehicleOnline ? <p role="status">Connect to the internet to submit vehicle evidence and refresh claim eligibility.</p> : null}
+                </>
+              )}
+            </CardContent>
+          </Card>
+          {!vehicleError && vehicleOnline && selectedVehicleShift?.sync_status === 'SYNCED' ? (
+            <VehicleReimbursementCapture key={selectedVehicleShift.id} entry={selectedVehicleShift} contractorId={contractorId}
+              enabled={!vehicleLoading}
+              onSubmitted={() => { void handleVehicleSubmitted(selectedVehicleShift.id); }} />
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

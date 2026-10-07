@@ -1,0 +1,50 @@
+{
+  "verifiedAt": "2026-10-07T09:17:22.790Z",
+  "environment": "isolated PGlite composed current time guard, crew access and payroll costing; simulated Storage rows and request identities; not live or physical device evidence",
+  "baseline": [
+    {
+      "name": "assigned driver may clock in to the shared crew ticket",
+      "error": "Select an assigned ticket in this storm"
+    },
+    {
+      "name": "new claim rejects nonexistent uploaded objects",
+      "error": "Missing expected rejection."
+    },
+    {
+      "name": "new claim rejects a single path used for both photos",
+      "error": "Missing expected rejection."
+    }
+  ],
+  "tests": [
+    "assigned driver may clock in to the shared crew ticket",
+    "new claim rejects nonexistent uploaded objects",
+    "new claim rejects a single path used for both photos",
+    "migration preserves historical pending claim and shift byte-for-byte",
+    "current crew read and assessor-only assessment semantics are unchanged",
+    "assessor clock-in, activity save and clock-out retain crew ticket and costing",
+    "driver clock-in, vehicle activity saves and clock-out use assigned_driver_id",
+    "legacy assessor-only assignment remains valid without a crew driver",
+    "unrelated contractor cannot clock into another crew ticket",
+    "same actor with mismatched storm is rejected",
+    "deleted assigned ticket is rejected",
+    "null assignment cannot authorize an unrelated contractor",
+    "contractor identity is checked independently of ticket membership",
+    "inactive account remains fail-closed",
+    "clock-in retains GPS bounds and accuracy validation",
+    "clock-in requires an uploaded object under the owned shift path",
+    "activity overlap and driver eligibility remain enforced",
+    "activity history, clock-out GPS and clock-out object validation remain enforced",
+    "contractors cannot reassign or review their shifts",
+    "closed snapshots and evidence remain immutable even for privileged callers",
+    "new claim rejects either null photo path explicitly",
+    "new claim rejects wrong-owner and wrong-shift paths even when uploaded",
+    "one uploaded claim photo or objects in a different bucket are insufficient",
+    "two distinct uploaded claim photos retain agreement wage and allowance amounts",
+    "claim ownership and assessor-only shifts cannot be substituted",
+    "contractor and Admin reviewers cannot approve vehicle claims",
+    "historical claim with missing objects remains reviewable at its immutable saved amount",
+    "claim review binds privileged actor and preserves amounts and submitted details",
+    "private trigger functions retain definer isolation, empty search path and execute denial"
+  ],
+  "passed": 29
+}

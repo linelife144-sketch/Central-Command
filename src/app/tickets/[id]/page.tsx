@@ -2,7 +2,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
 import { PageHeader } from '@/components/common/layout/PageHeader';
@@ -23,6 +23,8 @@ import { TicketEntergyForms } from '@/components/features/tickets/TicketEntergyF
 import { AssignedTicketsPanel } from '@/components/features/tickets/AssignedTicketsPanel';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Archive, ArchiveRestore } from 'lucide-react';
+import { toast } from 'sonner';
 import { useContractorId } from '@/hooks/useContractorId';
 import { ticketAssessmentWorkflow } from '@/lib/services/ticketAssessmentWorkflow';
 import { getErrorLogContext, getErrorMessage } from '@/lib/utils/errorHandling';
@@ -31,7 +33,8 @@ import { supabase } from '@/lib/supabase/client';
 
 export default function TicketDetailPage() {
     const params = useParams();
-    const { profile: user } = useAuth();
+    const router = useRouter();
+    const { profile: user, can } = useAuth();
     const {contractorId}=useContractorId(user?.role==='CONTRACTOR'?user.id:undefined);
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +45,7 @@ export default function TicketDetailPage() {
     const [crewName, setCrewName] = useState('');
     const [tab,setTab]=useState('details');
     const [refreshKey, setRefreshKey] = useState(0);
+    const [isChangingDisabled, setIsChangingDisabled] = useState(false);
 
     const userRole: 'admin' | 'contractor' =
         isAdminClassRole(user?.role) || user?.role === 'TEAM_LEAD'
@@ -121,6 +125,24 @@ export default function TicketDetailPage() {
         setRefreshKey(prev => prev + 1);
     };
 
+    const handleTicketDisabledChange = async () => {
+        if (!ticket || !user?.id || isChangingDisabled) return;
+        const disabled = !ticket.is_deleted;
+        if (disabled && !window.confirm(`Disable ticket ${ticket.ticket_number}? Its ticket and assessment history will be retained, and it can be restored later.`)) return;
+
+        setIsChangingDisabled(true);
+        try {
+            const updated = await ticketService.setTicketDisabled(ticket.id, disabled);
+            setTicket(current => current ? { ...current, ...updated } : current);
+            toast.success(disabled ? 'Ticket disabled. Its history is retained.' : 'Ticket restored to the active queue.');
+            if (disabled) router.replace('/tickets');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Unable to update this ticket.');
+        } finally {
+            setIsChangingDisabled(false);
+        }
+    };
+
     if (isLoading) {
         return <TicketDetailSkeleton />;
     }
@@ -158,7 +180,18 @@ export default function TicketDetailPage() {
                         <TicketStatusBadge status={ticket.status} audienceRole={user?.role === 'CONTRACTOR' ? 'CONTRACTOR' : 'STAFF'} reviewStage={ticket.review_stage} utilitySubmittedAt={ticket.utility_submitted_at} />
                     </div>
                     {user?.role !== 'CONTRACTOR' && <TicketPrintButton ticket={ticket} assigneeName={assigneeName || `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim()} />}
-
+                    {isAdminClassRole(user?.role) && user?.id && can('admin.tickets.edit') && (
+                        <Button
+                            type="button"
+                            variant={ticket.is_deleted ? 'outline' : 'ghost'}
+                            disabled={isChangingDisabled}
+                            aria-label={ticket.is_deleted ? 'Restore ticket' : 'Disable ticket'}
+                            onClick={() => void handleTicketDisabledChange()}
+                        >
+                            {ticket.is_deleted ? <ArchiveRestore className="mr-2 size-4" /> : <Archive className="mr-2 size-4" />}
+                            {ticket.is_deleted ? 'Restore ticket' : 'Disable ticket'}
+                        </Button>
+                    )}
                 </div>
             </PageHeader>
 
