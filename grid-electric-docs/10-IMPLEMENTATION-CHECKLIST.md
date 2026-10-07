@@ -992,3 +992,12 @@ Evidence: `docs/testing/ticket-workspace-validation.md`, `docs/testing/ticket-wo
 - [ ] Validate the transition readback across real contractor and staff sessions using the same dispatched Assigned ticket, including location-denied/device/offline acceptance. Current live data has zero dispatched Assigned tickets; target 2026100102 is legacy REJECTED without team lead, crew, or driver and remains unchanged. — Codex /root
 
 Evidence: `docs/testing/ticket-workflow-local.json` and `docs/testing/click-driven-ticket-progress-validation.md`. Supabase advisors currently report the existing Auth leaked-password-protection warning and general existing index/RLS findings; no finding names the new field-action RPC. Advisor remediation should be triaged separately from this workflow.
+
+### Admin ticket disable and restore — 2026-10-07 (Codex /root)
+
+- [x] Add permission-gated Disable / Restore actions to the admin `/tickets` list, with confirmation, an explicit Disabled tickets view, pending state, and preserved ticket/assessment history. Contractors do not receive these controls. — Codex /root
+- [x] Apply the guarded `set_ticket_disabled` RPC migration to Central Command Supabase. It validates active staff permission, serializes changes with a row lock, records server actor/time and an audit log, and grants execution only to authenticated users. Live metadata verification confirms the security-definer function uses an empty `search_path`; anon cannot execute it. — Codex /root
+- [x] Pass 55 local ticket workflow database checks, 10 focused ticket UI/service tests, TypeScript, and scoped ESLint. No live ticket rows were modified. — Codex /root
+- [ ] Refresh Graphify AST output. `graphify update .` remains blocked on a repository lock held by another process; the graph outputs have not changed. — Codex /root
+- [ ] Complete an isolated production webpack build. The command remained in compilation without output for over six minutes and was interrupted; build status is unverified. — Codex /root
+- [ ] Verify Disable and Restore in a real signed-in admin browser session and confirm the same ticket appears in Disabled tickets and returns to the active list. — Codex /root

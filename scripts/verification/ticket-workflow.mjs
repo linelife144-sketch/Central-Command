@@ -16,7 +16,7 @@ CREATE TABLE private.permission_catalog(permission_key text,admin_default boolea
 CREATE TABLE storm_events(id uuid PRIMARY KEY,is_deleted boolean DEFAULT false);
 CREATE TABLE storm_event_roster_revisions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),storm_event_id uuid,revision_number integer,revision_label text,created_by uuid,is_locked boolean DEFAULT false);
 CREATE TABLE storm_event_roster_members(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),roster_revision_id uuid,contractor_id uuid,member_status text,created_by uuid);
-CREATE TABLE tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_number text,storm_event_id uuid,assigned_to uuid,status ticket_status DEFAULT 'DRAFT',is_deleted boolean DEFAULT false,severity text,is_important boolean DEFAULT false,updated_by uuid,updated_at timestamptz DEFAULT now(),assigned_at timestamptz,assigned_by uuid,completed_at timestamptz,latitude numeric DEFAULT 30,longitude numeric DEFAULT -90,geofence_radius_meters integer DEFAULT 500);
+CREATE TABLE tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_number text,storm_event_id uuid,assigned_to uuid,status ticket_status DEFAULT 'DRAFT',is_deleted boolean DEFAULT false,deleted_at timestamptz,deleted_by uuid,severity text,is_important boolean DEFAULT false,updated_by uuid,updated_at timestamptz DEFAULT now(),assigned_at timestamptz,assigned_by uuid,completed_at timestamptz,latitude numeric DEFAULT 30,longitude numeric DEFAULT -90,geofence_radius_meters integer DEFAULT 500);
 CREATE TABLE damage_assessments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_id uuid UNIQUE,contractor_id uuid,assessed_by uuid,assessed_at timestamptz,created_by uuid,created_at timestamptz DEFAULT now(),updated_by uuid,updated_at timestamptz,reviewed_by uuid,reviewed_at timestamptz,review_notes text,priority priority_level,sync_status text,safety_observations jsonb);
 CREATE TABLE audit_logs(action text,entity_type text,entity_id uuid,user_id uuid,user_role user_role,old_values jsonb,new_values jsonb,change_summary text);
 CREATE TABLE ticket_payloads(ticket_id uuid,payload jsonb); CREATE TABLE ticket_status_history(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_id uuid,from_status ticket_status,to_status ticket_status,changed_by uuid,changed_at timestamptz,gps_latitude numeric,gps_longitude numeric,gps_accuracy numeric,change_reason text);
@@ -147,4 +147,28 @@ await pass('history records exact actor, action reason, server time and no fabri
  assert.ok(rows.every(row=>row.changed_at&&row.gps_latitude===null&&row.gps_longitude===null&&row.gps_accuracy===null));
 });
 await pass('legacy GPS status RPC is retired for contractors',async()=>assert.rejects(()=>rpc('update_ticket_field_status',[actionTicket,'IN_ROUTE',30,-90,25]),/permission denied/));
+await db.exec('RESET ROLE');
+await db.exec(await readFile('supabase/migrations/20261007001048_admin_ticket_disable_restore.sql','utf8'));
+await actor(lead);
+await pass('ticket team lead cannot bypass guarded workflow with a direct delete flag update',async()=>assert.rejects(()=>db.query('UPDATE tickets SET is_deleted=true WHERE id=$1',[actionTicket]),/Use ticket crew assignment and review actions/));
+await pass('admin disables ticket with server-owned actor and timestamp while retaining its workflow state',async()=>{
+ const ticket=await rpc('set_ticket_disabled',[actionTicket,true]);
+ assert.equal(ticket.is_deleted,true);assert.equal(ticket.deleted_by,lead);assert.ok(ticket.deleted_at);assert.equal(ticket.updated_by,lead);assert.equal(ticket.status,'ON_SITE');
+ const audit=(await db.query("SELECT * FROM audit_logs WHERE entity_id=$1 AND action='TICKET_DISABLED'",[actionTicket])).rows;
+ assert.equal(audit.length,1);assert.equal(audit[0].user_id,lead);assert.equal(audit[0].user_role,'ADMIN');
+});
+await pass('repeated disable is idempotent and does not duplicate the audit record',async()=>{
+ await rpc('set_ticket_disabled',[actionTicket,true]);
+ assert.equal((await db.query("SELECT count(*)::int AS count FROM audit_logs WHERE entity_id=$1 AND action='TICKET_DISABLED'",[actionTicket])).rows[0].count,1);
+});
+await actor(driver);
+await pass('contractor cannot disable or restore a ticket',async()=>assert.rejects(()=>rpc('set_ticket_disabled',[actionTicket,false]),/permission/));
+await db.exec('RESET ROLE; SET ROLE anon');
+await pass('anonymous role cannot execute ticket disable RPC',async()=>assert.rejects(()=>rpc('set_ticket_disabled',[actionTicket,false]),/permission denied/));
+await actor(lead);
+await pass('admin restores ticket while preserving status and clearing disable metadata',async()=>{
+ const ticket=await rpc('set_ticket_disabled',[actionTicket,false]);
+ assert.equal(ticket.is_deleted,false);assert.equal(ticket.deleted_at,null);assert.equal(ticket.deleted_by,null);assert.equal(ticket.status,'ON_SITE');
+ assert.equal((await db.query("SELECT count(*)::int AS count FROM audit_logs WHERE entity_id=$1 AND action IN ('TICKET_DISABLED','TICKET_RESTORED')",[actionTicket])).rows[0].count,2);
+});
 await db.close();await writeFile('docs/testing/ticket-workflow-local.json',json({scope:'Exact migrations in isolated PGlite fixtures. Not live browser or Storage API proof.',passed:checks.length,checks})+'\n');console.log(`${checks.length} ticket workflow database checks passed`);

@@ -1458,7 +1458,7 @@ exists; `Sidebar.tsx`/`BottomNav.tsx` duplicate `navigationConfig.ts` arrays.
    - Full suite regression check: `npx vitest run` → **401/401 pass, 76
      files**.
 10. ✅ **`VehicleReimbursementCapture`** + `TimeClock.tsx` rate-input removal
-    + storm-event resolution.
+    - storm-event resolution.
     - **New `src/hooks/useActiveStormEventId.ts`**: resolves the storm
       event a contractor should clock against from their most recently
       updated, non-closed assigned ticket (`ticketService
@@ -1690,7 +1690,6 @@ consumed by the next.
    `payroll_amount` and 1099 wages, and requires admin approval before
    counting toward payout or margin.
 
-
 # Phase 4 — Test workers and weekly overtime (2026-10-03, Codex /root)
 
 Requested acceptance: create four real Supabase Auth/profile/contractor accounts for Storm Manager, Team Lead, Senior Damage Assessor, and Driver; retain existing QA Damage Assessor to cover all five pay classes. Use the existing dummy pilot rates. Link clock actions to selected assigned tickets, validate work types and break choices, persist GPS accuracy, accept a full 16-hour day, and test payroll versus billing end to end.
@@ -1708,8 +1707,6 @@ Continuation progress: two QA Driver shifts completed offline and uploaded exact
 Completion audit: live query confirms all four profiles active and approved, real Auth sign-ins, one assigned QA ticket each, six persisted shifts, 65.75 paid hours, $6,193.75 wages, and $11,506.25 billing. Live weekly migration remains absent; all six reviews remain pending and none are approved. The same approval condition has persisted across three consecutive goal turns. Remaining live overtime, isolation, ticket transitions, staff review, and linked payroll acceptance require the explicitly requested migration and staff-session approvals. Full goal acceptance is not achieved. — Codex /root (2026-10-03)
 
 Dashboard feedback (`/admin/dashboard`): the status strip tracked In Route, On Site, Pending Review, and Unassigned, all derived from currently-active tickets in `dashboardReportingService.buildDashboardMetrics`. Added a matching `completed` count of active `COMPLETE` tickets to `status_breakdown`, rendered as a fifth `Completed` tile in `DashboardMetrics.tsx`. Widened the strip to `md:grid-cols-5` and generalized the mobile `cc-status-stat` border rules (fixed 2x2 to `nth-child(2n)` / `:last-child`) since a fifth cell breaks the old `nth-child(2)` / `nth-child(n+3)` assumptions. Replaced the duplicated super-admin local-test breakdown with a direct `buildDashboardMetrics` call so both paths share one implementation. Extended the reporting and navigation-signal test fixtures; 452 tests across 86 files and `tsc --noEmit` pass. — Cline (2026-10-04)
-
-
 
 # Phase 4 — Configurable contractor time and payroll (2026-10-04, Codex /root)
 
@@ -1755,7 +1752,7 @@ Delivered ticket-owned editable drafts and an obvious Assessment action, validat
 
 Applied live migrations ticket_draft_crew_review_workflow, fix_ticket_intake_scope, and require_ticket_crew_before_fieldwork to xcvacmreerrypygpritq. Live rollback checks exposed an INSERT RETURNING policy issue; the corrective migration checks new-row scope directly and is included in the local regression fixture. Regenerated database types from the verified live project.
 
-Validation: 36 isolated exact-migration database checks; 14 live Postgres/RLS rollback groups covering the full correction/approval/handoff workflow with simulated request claims and matching before/after fixture counts, rerun after the fieldwork guard; 57 focused UI/service/middleware/status-flow tests; TypeScript and scoped ESLint; production webpack compilation/static generation of 50 pages; Graphify AST refresh. Local application runs at http://127.0.0.1:3000 and the in-app browser verifies /tickets redirects anonymous users to real sign-in. No user credentials were entered. Supabase security advisors report only the existing Auth leaked-password-protection warning, with no new workflow finding.
+Validation: 36 isolated exact-migration database checks; 14 live Postgres/RLS rollback groups covering the full correction/approval/handoff workflow with simulated request claims and matching before/after fixture counts, rerun after the fieldwork guard; 57 focused UI/service/middleware/status-flow tests; TypeScript and scoped ESLint; production webpack compilation/static generation of 50 pages; Graphify AST refresh. Local application runs at <http://127.0.0.1:3000> and the in-app browser verifies /tickets redirects anonymous users to real sign-in. No user credentials were entered. Supabase security advisors report only the existing Auth leaked-password-protection warning, with no new workflow finding.
 
 Operational acceptance remains open: no active Admin team lead accounts exist yet; a named staff account must be provisioned before real dispatch. Real authenticated UI use across assessor/driver/team lead/chief, physical GPS/photo upload via Storage API, cross-device/reconnect acceptance, and hosted frontend deployment have not been demonstrated. SQL object/metadata fixtures are not actual uploaded image files. Detailed evidence: docs/testing/ticket-workflow-validation.md.
 
@@ -1800,3 +1797,9 @@ Validation: `npm test` passes 598 tests across 110 files; `npm run typecheck` pa
 ## Ticket work page cleanup — 2026-10-06 (Codex /root)
 
 Removed the same-crew Assigned tickets panel from `/tickets/[id]/work` at the user's request. The Assigned tickets row on ticket details remains the sole Start entrypoint; Site reference and Time clock remain on the work page.
+
+## Admin ticket disable and restore — 2026-10-07 (Codex /root)
+
+Implemented the requested admin ticket-removal control as reversible Disable / Restore so ticket and assessment history remains available. The `/tickets` admin list confirms before disabling, shows a Disabled tickets view with Restore actions, prevents duplicate in-flight actions, and refreshes local and realtime ticket views. The authenticated `set_ticket_disabled` RPC checks active staff role and `admin.tickets.edit`, locks the ticket row, records server-owned actor/timestamps, and writes an audit log. No ticket records were changed during implementation.
+
+Applied the additive migration to Central Command Supabase (`xcvacmreerrypygpritq`). Live metadata confirms `SECURITY DEFINER`, an empty `search_path`, no anon execute privilege, and authenticated execute privilege. The local ticket database harness passes 55 checks; the focused ticket UI/service suite passes 10 tests; TypeScript and scoped ESLint pass. Graphify refresh was attempted but could not acquire a repository lock held by another process; graph output remains unchanged. The isolated webpack production build remained in compilation without output for over six minutes and was interrupted, so its result is unverified. Real signed-in admin browser acceptance remains unverified. — Codex /root

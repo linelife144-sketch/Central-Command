@@ -11,7 +11,7 @@ import { TicketImportanceBadge } from './TicketImportanceBadge';
 import { formatAddress, formatDateTime } from '@/lib/utils/formatters';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus, Users } from 'lucide-react';
+import { Archive, ArchiveRestore, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TicketFilters, TicketFiltersState } from './TicketFilters';
 import { TicketCard } from './TicketCard';
@@ -32,10 +32,13 @@ export function TicketList({ userRole, userId }: TicketListProps) {
     const { can, profile } = useAuth();
     const profileRole = profile?.role;
     const canCreate = ['CEO','SUPER_ADMIN'].includes(profile?.role??'') && can('admin.tickets.edit');
+    const canManageTickets = userRole === 'admin' && Boolean(profile?.id) && can('admin.tickets.edit');
     const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [feedersByTicketId, setFeedersByTicketId] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(true);
+    const [showDisabled, setShowDisabled] = useState(false);
+    const [pendingTicketId, setPendingTicketId] = useState<string | null>(null);
     const [filters, setFilters] = useState<TicketFiltersState>({
         search: "",
         status: "ALL",
@@ -94,6 +97,8 @@ export function TicketList({ userRole, userId }: TicketListProps) {
     const filteredTickets = useMemo(() => {
         const search = filters.search.trim().toLowerCase();
         return tickets.filter(ticket => {
+            if (userRole === 'admin' && Boolean(ticket.is_deleted) !== showDisabled) return false;
+            if (userRole === 'contractor' && ticket.is_deleted) return false;
             const matchesSearch = !search || [
                 ticket.ticket_number,
                 ticket.utility_client,
@@ -113,7 +118,25 @@ export function TicketList({ userRole, userId }: TicketListProps) {
 
             return matchesSearch && matchesStatus && matchesImportance;
         });
-    }, [tickets, filters, assigneeNames, userRole]);
+    }, [tickets, filters, assigneeNames, userRole, showDisabled]);
+
+    const disabledTicketCount = tickets.filter(ticket => ticket.is_deleted).length;
+
+    const handleTicketDisabledChange = async (ticket: Ticket, disabled: boolean) => {
+        if (!canManageTickets || !profile?.id || pendingTicketId) return;
+        if (disabled && !window.confirm(`Disable ticket ${ticket.ticket_number}? It will leave active ticket lists, while its ticket and assessment history are retained. You can restore it from Disabled tickets.`)) return;
+
+        setPendingTicketId(ticket.id);
+        try {
+            const updated = await ticketService.setTicketDisabled(ticket.id, disabled);
+            setTickets(current => current.map(item => item.id === ticket.id ? { ...item, ...updated } : item));
+            toast.success(disabled ? 'Ticket disabled. Its history is retained.' : 'Ticket restored to the active queue.');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Unable to update this ticket.');
+        } finally {
+            setPendingTicketId(null);
+        }
+    };
 
     const columns: Column<Ticket>[] = [
         {
@@ -152,7 +175,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
         {
             key: 'status',
             header: 'Status',
-            cell: (ticket) => <TicketStatusBadge status={ticket.status} audienceRole={userRole === 'contractor' ? 'CONTRACTOR' : 'STAFF'} reviewStage={ticket.review_stage} utilitySubmittedAt={ticket.utility_submitted_at} />,
+            cell: (ticket) => <div className="flex items-center gap-2"><TicketStatusBadge status={ticket.status} audienceRole={userRole === 'contractor' ? 'CONTRACTOR' : 'STAFF'} reviewStage={ticket.review_stage} utilitySubmittedAt={ticket.utility_submitted_at} />{ticket.is_deleted && <span className="rounded-full border border-grid-lightning/40 bg-grid-lightning/15 px-2 py-0.5 text-[10px] font-semibold text-grid-navy">Disabled</span>}</div>,
         },
         {
             key: 'location',
@@ -197,6 +220,10 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                             </Button>
                         ) : null
                     )}
+                    {canManageTickets && <Button type="button" variant={ticket.is_deleted ? 'outline' : 'ghost'} size="sm" disabled={pendingTicketId !== null} aria-label={`${ticket.is_deleted ? 'Restore' : 'Disable'} ticket ${ticket.ticket_number}`} title={ticket.is_deleted ? 'Restore ticket' : 'Disable ticket'} onClick={event => { event.stopPropagation(); void handleTicketDisabledChange(ticket, !ticket.is_deleted); }}>
+                        {ticket.is_deleted ? <ArchiveRestore className="mr-2 size-4" /> : <Archive className="mr-2 size-4" />}
+                        {ticket.is_deleted ? 'Restore' : 'Disable'}
+                    </Button>}
                 </div>
             ),
         },
@@ -209,7 +236,12 @@ export function TicketList({ userRole, userId }: TicketListProps) {
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <div><h2 className="cc-section-heading">Ticket queue</h2><p className="mt-1 text-xs text-muted-foreground">{isLoading ? 'Loading your workload…' : `${filteredTickets.length} ${filteredTickets.length === 1 ? 'ticket' : 'tickets'} in this view`}</p></div>
+                <div><h2 className="cc-section-heading">{showDisabled ? 'Disabled tickets' : 'Ticket queue'}</h2><p className="mt-1 text-xs text-muted-foreground">{isLoading ? 'Loading your workload…' : `${filteredTickets.length} ${filteredTickets.length === 1 ? 'ticket' : 'tickets'} in this view`}</p></div>
+                <div className="flex flex-wrap items-center gap-2">
+                {userRole === 'admin' && <Button type="button" variant="outline" onClick={() => setShowDisabled(value => !value)}>
+                    {showDisabled ? <ArchiveRestore className="mr-2 size-4" /> : <Archive className="mr-2 size-4" />}
+                    {showDisabled ? 'Active tickets' : `Disabled tickets${disabledTicketCount ? ` (${disabledTicketCount})` : ''}`}
+                </Button>}
                 {canCreate && (
                     <Button asChild>
                         <Link href="/tickets/create">
@@ -217,6 +249,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                         </Link>
                     </Button>
                 )}
+                </div>
             </div>
 
             <TicketFilters onFilterChange={setFilters} userRole={userRole} />
@@ -229,7 +262,7 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                     keyExtractor={(ticket) => ticket.id}
                     isLoading={isLoading}
                     onRowClick={handleRowClick}
-                    emptyMessage="No tickets found matching your filters."
+                    emptyMessage={showDisabled ? 'No disabled tickets.' : 'No tickets found matching your filters.'}
                 />
             </div>
 
@@ -238,16 +271,23 @@ export function TicketList({ userRole, userId }: TicketListProps) {
                 {isLoading ? (
                     <div className="text-center py-8 text-muted-foreground">Loading tickets...</div>
                 ) : filteredTickets.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">No tickets found matching your filters.</div>
+                    <div className="text-center py-8 text-muted-foreground">{showDisabled ? 'No disabled tickets.' : 'No tickets found matching your filters.'}</div>
                 ) : (
                     filteredTickets.map(ticket => (
-                        <TicketCard
-                            key={ticket.id}
-                            ticket={ticket}
-                            audienceRole={userRole === 'contractor' ? 'CONTRACTOR' : 'STAFF'}
-                            assigneeName={ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : undefined) : undefined}
-                            onClick={handleRowClick}
-                        />
+                        <div key={ticket.id} className="space-y-2">
+                            <TicketCard
+                                ticket={ticket}
+                                audienceRole={userRole === 'contractor' ? 'CONTRACTOR' : 'STAFF'}
+                                assigneeName={ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : undefined) : undefined}
+                                onClick={handleRowClick}
+                            />
+                            {canManageTickets && <div className="flex justify-end">
+                                <Button type="button" size="sm" variant={ticket.is_deleted ? 'outline' : 'ghost'} disabled={pendingTicketId !== null} aria-label={`${ticket.is_deleted ? 'Restore' : 'Disable'} ticket ${ticket.ticket_number}`} onClick={() => void handleTicketDisabledChange(ticket, !ticket.is_deleted)}>
+                                    {ticket.is_deleted ? <ArchiveRestore className="mr-2 size-4" /> : <Archive className="mr-2 size-4" />}
+                                    {ticket.is_deleted ? 'Restore ticket' : 'Disable ticket'}
+                                </Button>
+                            </div>}
+                        </div>
                     ))
                 )}
             </div>

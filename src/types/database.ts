@@ -3812,6 +3812,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_ticket_field_action: {
+        Args: { p_action: string; p_ticket_id: string }
+        Returns: Database["public"]["Tables"]["tickets"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_ticket_utility_handoff: {
         Args: { p_reference: string; p_ticket_id: string }
         Returns: {
@@ -3968,6 +3978,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_ticket_disabled: {
+        Args: { p_disabled: boolean; p_ticket_id: string }
+        Returns: Database["public"]["Tables"]["tickets"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_user_permissions: {
         Args: { p_overrides: Json; p_profile_id: string; p_version?: string }
         Returns: Json
@@ -4014,10 +4034,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      record_ticket_field_action: {
-        Args: { p_action: string; p_ticket_id: string }
-        Returns: Database["public"]["Tables"]["tickets"]["Row"]
       }
       ticket_dispatch_options: { Args: { p_ticket_id: string }; Returns: Json }
       update_ticket_field_status: {

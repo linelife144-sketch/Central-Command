@@ -123,6 +123,10 @@ export interface Ticket {
   severity?: DamageSeverity;
   created_by: string;
   updated_at: string;
+  updated_by?: string | null;
+  is_deleted?: boolean | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 }
 
 export type TicketStatus =

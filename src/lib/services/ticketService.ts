@@ -124,6 +124,17 @@ export const ticketService = {
         return data as Ticket;
     },
 
+    async setTicketDisabled(id: string, disabled: boolean): Promise<Ticket> {
+        const { data, error } = await supabase.rpc('set_ticket_disabled', {
+            p_ticket_id: id,
+            p_disabled: disabled,
+        });
+        if (error) throw error;
+        if (!data) throw new Error('Ticket was not returned after the update.');
+        notifyTicketsChanged();
+        return data as Ticket;
+    },
+
     async assignTicket(id: string, contractorId: string): Promise<Ticket> {
         if (!contractorId) throw new Error('Select a contractor.');
         if (isSuperAdminTestingEnabled()) { const updated = localTestStore.assignTicket(id, contractorId); notifyTicketsChanged(); return updated; }

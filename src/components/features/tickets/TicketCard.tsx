@@ -65,7 +65,10 @@ export function TicketCard({ ticket, onClick, className, assigneeName, audienceR
                 )}
             </CardContent>
             <CardFooter className="p-4 pt-2 flex justify-between items-center">
-                <TicketStatusBadge status={ticket.status} audienceRole={audienceRole} reviewStage={ticket.review_stage} utilitySubmittedAt={ticket.utility_submitted_at} />
+                <div className="flex items-center gap-2">
+                    <TicketStatusBadge status={ticket.status} audienceRole={audienceRole} reviewStage={ticket.review_stage} utilitySubmittedAt={ticket.utility_submitted_at} />
+                    {ticket.is_deleted && <span className="rounded-full border border-grid-lightning/40 bg-grid-lightning/15 px-2 py-0.5 text-[10px] font-semibold text-grid-navy">Disabled</span>}
+                </div>
             </CardFooter>
         </Card>
     );
