@@ -478,7 +478,3 @@ Quick actions stay as they are. Do not add Payroll, Expenses, or Access rows the
 - [ ] Access section links to `/admin/users` only
 - [ ] `tsc --noEmit` and `npm run lint` pass
 - [ ] No change to existing MetricCard fields
-
----
-
-rsync -avP ~/Users/davidmccarty/Desktop/GRID/Projects/Central Command/.pi/skills copy.zip jeaniecampbell004@192.168.1.40:~/Desktop/
