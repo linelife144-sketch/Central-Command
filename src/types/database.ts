@@ -1618,6 +1618,55 @@ export type Database = {
           },
         ]
       }
+      storm_contractor_compensation: {
+        Row: {
+          contractor_id: string
+          pay_rate_override: number | null
+          storm_event_id: string
+          updated_at: string
+          updated_by: string | null
+          vehicle_hourly_rate: number | null
+        }
+        Insert: {
+          contractor_id: string
+          pay_rate_override?: number | null
+          storm_event_id: string
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_hourly_rate?: number | null
+        }
+        Update: {
+          contractor_id?: string
+          pay_rate_override?: number | null
+          storm_event_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_hourly_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storm_contractor_compensation_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storm_contractor_compensation_storm_event_id_fkey"
+            columns: ["storm_event_id"]
+            isOneToOne: false
+            referencedRelation: "storm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storm_contractor_compensation_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storm_event_authorization_logs: {
         Row: {
           authorization_type: string
@@ -2085,6 +2134,45 @@ export type Database = {
           },
           {
             foreignKeyName: "storm_event_roster_revisions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      storm_role_pay_rates: {
+        Row: {
+          hourly_rate: number
+          role: Database["public"]["Enums"]["contractor_role"]
+          storm_event_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          hourly_rate: number
+          role: Database["public"]["Enums"]["contractor_role"]
+          storm_event_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          hourly_rate?: number
+          role?: Database["public"]["Enums"]["contractor_role"]
+          storm_event_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storm_role_pay_rates_storm_event_id_fkey"
+            columns: ["storm_event_id"]
+            isOneToOne: false
+            referencedRelation: "storm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storm_role_pay_rates_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -3130,6 +3218,7 @@ export type Database = {
           updated_by: string | null
           utility_bill_amount: number | null
           utility_bill_rate_applied: number | null
+          vehicle_hourly_rate_applied: number | null
           vehicle_allowance_amount: number | null
           vehicle_minutes: number | null
           weekly_allocations: Json
@@ -3187,6 +3276,7 @@ export type Database = {
           updated_by?: string | null
           utility_bill_amount?: number | null
           utility_bill_rate_applied?: number | null
+          vehicle_hourly_rate_applied?: number | null
           vehicle_allowance_amount?: number | null
           vehicle_minutes?: number | null
           weekly_allocations?: Json
@@ -3244,6 +3334,7 @@ export type Database = {
           updated_by?: string | null
           utility_bill_amount?: number | null
           utility_bill_rate_applied?: number | null
+          vehicle_hourly_rate_applied?: number | null
           vehicle_allowance_amount?: number | null
           vehicle_minutes?: number | null
           weekly_allocations?: Json
@@ -3575,6 +3666,15 @@ export type Database = {
         Args: { p_contractor_id: string; p_storm_id: string }
         Returns: undefined
       }
+      assign_contractor_to_storm_with_compensation: {
+        Args: {
+          p_contractor_id: string
+          p_pay_rate_override: number | null
+          p_storm_id: string
+          p_vehicle_hourly_rate: number | null
+        }
+        Returns: undefined
+      }
       assign_ticket_crew: {
         Args: { p_crew_id: string; p_ticket_id: string }
         Returns: {
@@ -3738,6 +3838,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_storm_event_with_rates: {
+        Args: { p_event: Json; p_role_rates: Json }
+        Returns: Json
+      }
+      get_storm_compensation_rates: {
+        Args: { p_storm_id: string }
+        Returns: Json
+      }
+      save_storm_compensation_rates: {
+        Args: { p_role_rates: Json; p_storm_id: string }
+        Returns: undefined
       }
       create_storm_ticket: {
         Args: {

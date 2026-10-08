@@ -3,7 +3,6 @@ import { Ticket, TicketStatus, UserRole } from '@/types';
 import { isValidTransition } from '@/lib/utils/statusTransitions';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { localTestStore } from '@/lib/testing/localTestStore';
-import { stormRosterService } from './stormRosterService';
 import { notifyTicketsChanged } from '@/lib/tickets/events';
 import type { LocalTicket } from '@/lib/db/dexie';
 
@@ -139,11 +138,7 @@ export const ticketService = {
         if (!contractorId) throw new Error('Select a contractor.');
         if (isSuperAdminTestingEnabled()) { const updated = localTestStore.assignTicket(id, contractorId); notifyTicketsChanged(); return updated; }
         const ticket = await this.getTicketById(id);
-        const options = await stormRosterService.listOptions();
-        if (!options.some(option => option.id === contractorId)) throw new Error('Select an active contractor.');
-        // The database requires assignees to be on the storm roster; add them if needed (idempotent).
-        if (ticket.storm_event_id) await stormRosterService.assign(ticket.storm_event_id, contractorId);
-        // One UPDATE saves the assignee and status together; the database trigger records history.
+        // Roster membership and storm compensation must be saved before ticket assignment.
         return this.updateTicket(id, {
             assigned_to: contractorId,
             status: ticket.status === 'DRAFT' ? 'ASSIGNED' : ticket.status,

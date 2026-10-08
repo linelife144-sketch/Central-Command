@@ -22,8 +22,7 @@ import { contractorService } from '@/lib/services/contractorService';
 import { stormEventService, type StormEventSummary } from '@/lib/services/stormEventService';
 import { ContractorPayrollTable } from './ContractorPayrollTable';
 import { PayrollSummaryCards } from './PayrollSummaryCards';
-import { RoleRateEditor } from './RoleRateEditor';
-import { UtilityBillingRateEditor } from './UtilityBillingRateEditor';
+import { StormCompensationRateEditor } from './StormCompensationRateEditor';
 import { VehicleReimbursementReview } from './VehicleReimbursementReview';
 import type { PayrollSummary } from '@/types';
 
@@ -223,14 +222,20 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <RoleRateEditor canEdit={canEdit} />
-        {includeFinancial && <UtilityBillingRateEditor
+      {stormEventId === ALL_STORMS_VALUE ? (
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Select a storm to view or edit its compensation rates. Rates are stored separately for each storm.
+          </CardContent>
+        </Card>
+      ) : (
+        <StormCompensationRateEditor
+          key={stormEventId}
+          stormEventId={stormEventId}
           canEdit={canEdit}
-          stormEventId={stormEventId === ALL_STORMS_VALUE ? null : stormEventId}
-          title={stormEventId === ALL_STORMS_VALUE ? 'Global Utility Bill Rates' : 'Storm Utility Bill Rates'}
-        />}
-      </div>
+          isClosed={stormEvents.find((storm) => storm.id === stormEventId)?.status === 'CLOSED'}
+        />
+      )}
     </div>
   );
 }

@@ -1032,3 +1032,14 @@ Detailed work and evidence are tracked in the implementation plan's dated comple
 ### Payroll dashboard corrections — 2026-10-07 (Pseudocoder /root)
 
 - [x] Payroll dashboard corrections: active-roster contractor count, role-keyed utility bill rates, Emergency Response rate column removed. Migration `20261007130000` written, not applied. Tests not run (macOS node_modules on Linux host). — Pseudocoder /root
+
+### Phase 4 — Storm-specific compensation — 2026-10-08 (Codex /root)
+
+- [x] Require five role wages and five utility bill rates during storm creation; validate nonnegative cent precision and persist storm plus complete rate card atomically. — Codex /root
+- [x] Add per-selected-storm rate read/edit in Payroll. Preserve started/completed snapshots and reject edits after storm closure. — Codex /root
+- [x] Add storm-only contractor wage overrides and require hourly vehicle allowance for Drivers during roster assignment; prohibit allowances for other roles. — Codex /root
+- [x] Resolve server-side clock-in wage/bill/allowance from storm role defaults and contractor exceptions; calculate Driver allowance from recorded vehicle-use intervals and retain saved snapshots. — Codex /root
+- [x] Require ticket assignment to use the selected storm roster. — Codex /root
+- [x] Validate with 36 focused application tests across 10 files, focused TypeScript/ESLint, six isolated PGlite database groups, and completed Graphify AST update. — Codex /root
+- [ ] Apply `supabase/migrations/20261008220000_storm_compensation.sql` and verify live metadata and authenticated browser acceptance after explicit authorization. Migration remains local; no live database writes were made. — Codex /root
+- [ ] Resolve repository-wide TypeScript failures in duplicate archival Payroll copies (` 2` and ` 3` filenames); the feature-scoped check passes. — Codex /root

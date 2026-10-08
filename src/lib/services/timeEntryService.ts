@@ -120,6 +120,7 @@ function mapRemoteRowToTimeEntry(row: RemoteTimeEntryRow): TimeEntry {
     paid_minutes_exact: row.paid_minutes_exact ?? undefined,
     vehicle_minutes: row.vehicle_minutes ?? undefined,
     vehicle_allowance_amount: row.vehicle_allowance_amount ?? undefined,
+    vehicle_hourly_rate_applied: row.vehicle_hourly_rate_applied ?? undefined,
     calculation_version: row.calculation_version,
     regular_minutes: row.regular_minutes ?? undefined,
     overtime_minutes: row.overtime_minutes ?? undefined,

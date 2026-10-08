@@ -6,6 +6,9 @@ import { getTicketTemplateByUtilityClient } from '@/lib/tickets/templates';
 import { stormEventService } from '@/lib/services/stormEventService';
 import { ticketIntakeService } from '@/lib/services/ticketIntakeService';
 import { localTestStore } from '@/lib/testing/localTestStore';
+import { CONTRACTOR_ROLES } from '@/lib/compensation/stormRates';
+
+const TEST_ROLE_RATES = Object.fromEntries(CONTRACTOR_ROLES.map((role) => [role, { payRate: 25, billRate: 50 }])) as never;
 
 const remote = vi.hoisted(() => ({ from: vi.fn(), getUser: vi.fn(), rpc: vi.fn() }));
 vi.mock('@/lib/supabase/client', () => ({ supabase: { from: remote.from, rpc: remote.rpc, auth: { getUser: remote.getUser } } }));
@@ -46,7 +49,7 @@ describe('storm utility ticket workflow', () => {
   });
 
   it('saves utility payloads locally and rejects templates from another utility', async () => {
-    const storm = await stormEventService.createStormEvent({ name: 'Entergy storm', utilityClient: 'Entergy' });
+    const storm = await stormEventService.createStormEvent({ name: 'Entergy storm', utilityClient: 'Entergy', roleRates: TEST_ROLE_RATES });
     const common = { status: 'DRAFT', is_important: true, source_type: 'MANUAL' } as const;
     const payload = { incident_number: '1234567890', incident_type: 'XFMR', address_line: '100 Test Street' };
     const created = await ticketIntakeService.createUtilityTicket({ stormEventId: storm.id, stormUtilityClient: 'Entergy', template: getTicketTemplateByUtilityClient('ENTERGY'), common, payload });

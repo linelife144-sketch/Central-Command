@@ -206,6 +206,7 @@ export interface TimeEntry {
   paid_minutes_exact?: number;
   vehicle_minutes?: number;
   vehicle_allowance_amount?: number;
+  vehicle_hourly_rate_applied?: number;
   calculation_version?: string;
 }
 

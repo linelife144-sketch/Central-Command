@@ -71,6 +71,7 @@ export interface ContractorListFilters {
 export interface AssignableContractor {
   id: string;
   displayName: string;
+  role: ContractorRole;
 }
 
 export interface ContractorDetail {
@@ -330,6 +331,7 @@ export const contractorService = {
       .map((contractor) => ({
         id: contractor.id,
         displayName: `${contractor.fullName} (${contractor.businessName})`,
+        role: contractor.role,
       }))
       .sort((left, right) => left.displayName.localeCompare(right.displayName));
   },

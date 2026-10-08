@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   listStormEvents: vi.fn(),
   createPayrollCsvExport: vi.fn(),
   listContractors: vi.fn(),
+  getStormRates: vi.fn(),
+  saveStormRates: vi.fn(),
 }));
 
 vi.mock('@/lib/services/payrollService', () => ({
@@ -31,6 +33,9 @@ vi.mock('@/lib/services/stormEventService', () => ({
 vi.mock('@/lib/services/contractorService', () => ({
   contractorService: { listContractors: mocks.listContractors },
 }));
+vi.mock('@/lib/services/stormCompensationService', () => ({
+  stormCompensationService: { getRates: mocks.getStormRates, saveRates: mocks.saveStormRates },
+}));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 import { PayrollDashboard } from './PayrollDashboard';
@@ -44,8 +49,6 @@ describe('PayrollDashboard', () => {
   it('loads and renders the payroll summary, contractor table, and sub-editors', async () => {
     mocks.listStormEvents.mockResolvedValue([]);
     mocks.listContractors.mockResolvedValue([{ id: 'c-1' }, { id: 'c-2' }, { id: 'c-3' }, { id: 'c-4' }]);
-    mocks.getRoleRateDefaults.mockResolvedValue([]);
-    mocks.getUtilityBillingRates.mockResolvedValue([]);
     mocks.listVehicleClaims.mockResolvedValue([]);
     mocks.getPayrollSummary.mockResolvedValue({
       periodStart: '2026-01-01',
@@ -89,8 +92,8 @@ describe('PayrollDashboard', () => {
     await waitFor(() => expect(mocks.getPayrollSummary).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getByText('Jane Doe')).not.toBeNull());
 
-    expect(screen.getByText('Role Wage Defaults')).not.toBeNull();
-    expect(screen.getAllByText(/utility bill rates/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Role Wage Defaults')).toBeNull();
+    expect(screen.getByText(/select a storm to view or edit its compensation rates/i)).not.toBeNull();
     expect(screen.getByText(/no pending vehicle reimbursement/i)).not.toBeNull();
     // Active roster count, not the period row count (totals.contractorCount is 1).
     expect(screen.getByText('4')).not.toBeNull();
@@ -100,8 +103,6 @@ describe('PayrollDashboard', () => {
   it('surfaces a load error without crashing', async () => {
     mocks.listStormEvents.mockResolvedValue([]);
     mocks.listContractors.mockResolvedValue([]);
-    mocks.getRoleRateDefaults.mockResolvedValue([]);
-    mocks.getUtilityBillingRates.mockResolvedValue([]);
     mocks.listVehicleClaims.mockResolvedValue([]);
     mocks.getPayrollSummary.mockRejectedValue(new Error('Unable to load payroll time entries.'));
 

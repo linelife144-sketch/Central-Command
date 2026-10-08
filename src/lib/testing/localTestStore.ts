@@ -1,6 +1,7 @@
 import { normalizeUtilityClient } from '@/lib/tickets/templates';
-import type { Ticket, TicketStatus, TicketStatusHistory } from '@/types';
+import type { ContractorRole, Ticket, TicketStatus, TicketStatusHistory } from '@/types';
 import type { StormEventSummary } from '@/lib/services/stormEventService';
+import type { StormRoleRates } from '@/lib/compensation/stormRates';
 import { isSuperAdminTestingEnabled, SUPER_ADMIN_TEST_PROFILE } from './superAdminTesting';
 
 export const LOCAL_TEST_STORAGE_KEY = 'central-command-super-admin-test-data-v1';
@@ -12,11 +13,12 @@ type LocalHistoryEntry = TicketStatusHistory & {
 interface LocalTestData {
   version: 1;
   stormEvents: StormEventSummary[];
+  stormRoleRates?: Record<string, StormRoleRates>;
   tickets: Ticket[];
   history: LocalHistoryEntry[];
   payloads?: Record<string, Record<string, unknown>>;
-  roster?: Array<{ stormId: string; contractorId: string; displayName: string }>;
-  contractors?: Array<{ id: string; displayName: string }>;
+  roster?: Array<{ stormId: string; contractorId: string; displayName: string; role: ContractorRole; payRateOverride: number | null; vehicleHourlyRate: number | null }>;
+  contractors?: Array<{ id: string; displayName: string; role: ContractorRole }>;
 }
 
 function requireLocalTesting(): void {
@@ -106,19 +108,23 @@ function historyEntry(
 export const localTestStore = {
   getPayload(ticketId: string): Record<string, unknown> | null { return readData().payloads?.[ticketId] ?? null; },
   listContractors() { return readData().contractors ?? []; },
-  createContractor(displayName: string) {
+  createContractor(displayName: string, role: ContractorRole = 'DAMAGE_ASSESSER') {
     if (!displayName.trim()) throw new Error('Contractor name is required.');
-    const data = readData(); const contractor = { id: crypto.randomUUID(), displayName: displayName.trim() };
+    const data = readData(); const contractor = { id: crypto.randomUUID(), displayName: displayName.trim(), role };
     data.contractors = [...(data.contractors ?? []), contractor]; saveData(data); return contractor;
   },
   listRoster(stormId: string) { return (readData().roster ?? []).filter(item => item.stormId === stormId); },
-  assignContractor(stormId: string, contractorId: string) {
+  assignContractor(stormId: string, contractorId: string, compensation: { payRateOverride: number | null; vehicleHourlyRate: number | null } = { payRateOverride: null, vehicleHourlyRate: null }) {
     const data = readData();
     if (!data.stormEvents.some(item => item.id === stormId)) throw new Error('Create a storm first.');
     const contractor = data.contractors?.find(item => item.id === contractorId);
     if (!contractor) throw new Error('Select an existing contractor.');
-    if ((data.roster ?? []).some(item => item.stormId === stormId && item.contractorId === contractorId)) return;
-    data.roster = [...(data.roster ?? []), { stormId, contractorId, displayName: contractor.displayName }]; saveData(data);
+    if (contractor.role === 'DRIVER' && compensation.vehicleHourlyRate === null) throw new Error('Every Driver requires a storm hourly vehicle allowance.');
+    if (contractor.role !== 'DRIVER' && compensation.vehicleHourlyRate !== null) throw new Error('Only Drivers can receive a vehicle allowance.');
+    if (compensation.payRateOverride !== null && (!Number.isFinite(compensation.payRateOverride) || compensation.payRateOverride < 0 || Math.round(compensation.payRateOverride * 100) !== compensation.payRateOverride * 100)) throw new Error('Pay override must be nonnegative with cent precision.');
+    if (compensation.vehicleHourlyRate !== null && (!Number.isFinite(compensation.vehicleHourlyRate) || compensation.vehicleHourlyRate < 0 || Math.round(compensation.vehicleHourlyRate * 100) !== compensation.vehicleHourlyRate * 100)) throw new Error('Vehicle allowance must be nonnegative with cent precision.');
+    const member = { stormId, contractorId, displayName: contractor.displayName, role: contractor.role, ...compensation };
+    data.roster = [...(data.roster ?? []).filter(item => item.stormId !== stormId || item.contractorId !== contractorId), member]; saveData(data);
   },
   listStormEvents(): StormEventSummary[] {
     const data = readData();
@@ -135,7 +141,7 @@ export const localTestStore = {
     return this.listStormEvents().find((event) => event.id === id) ?? null;
   },
 
-  createStormEvent(input: Omit<StormEventSummary, 'id' | 'createdAt' | 'activeTickets'>): StormEventSummary {
+  createStormEvent(input: Omit<StormEventSummary, 'id' | 'createdAt' | 'activeTickets'> & { roleRates: StormRoleRates }): StormEventSummary {
     const data = readData();
     if (!input.name.trim()) throw new Error('Storm event name is required.');
     if (!input.utilityClient.trim()) throw new Error('Utility client is required.');
@@ -150,8 +156,25 @@ export const localTestStore = {
       activeTickets: 0,
     };
     data.stormEvents.push(event);
+    data.stormRoleRates = { ...(data.stormRoleRates ?? {}), [event.id]: input.roleRates };
     saveData(data);
     return event;
+  },
+
+  getStormRoleRateDrafts(stormId: string) {
+    return Object.fromEntries(Object.entries(readData().stormRoleRates?.[stormId] ?? {}).map(([role, rates]) => [role, {
+      payRate: rates.payRate.toFixed(2),
+      billRate: rates.billRate.toFixed(2),
+    }]));
+  },
+
+  saveStormRoleRates(stormId: string, rates: StormRoleRates) {
+    const data = readData();
+    const storm = data.stormEvents.find((event) => event.id === stormId);
+    if (!storm) throw new Error('Storm event not found.');
+    if (storm.status === 'CLOSED') throw new Error('Closed storm compensation cannot be changed.');
+    data.stormRoleRates = { ...(data.stormRoleRates ?? {}), [stormId]: rates };
+    saveData(data);
   },
 
   getTickets(): Ticket[] {

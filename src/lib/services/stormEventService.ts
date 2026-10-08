@@ -3,6 +3,7 @@ import { createTemplateSnapshot, getTicketTemplateByUtilityClient, normalizeUtil
 import { isAuthOrPermissionError, isMissingDatabaseObjectError } from '@/lib/utils/errorHandling';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { localTestStore } from '@/lib/testing/localTestStore';
+import { CONTRACTOR_ROLES, type StormRoleRates } from '@/lib/compensation/stormRates';
 
 const CLOSED_TICKET_STATUSES = new Set(['CLOSED', 'ARCHIVED', 'EXPIRED']);
 
@@ -60,6 +61,7 @@ export interface CreateStormEventInput {
   startDate?: string | null;
   endDate?: string | null;
   notes?: string | null;
+  roleRates: StormRoleRates;
 }
 
 function normalizeStormEventStatus(value: string | null | undefined): StormEventStatus {
@@ -105,16 +107,6 @@ function normalizeOptional(value: string | null | undefined): string | null {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
-}
-
-function buildEventCode(utilityClient: string): string {
-  const utilityPrefix = utilityClient
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '')
-    .slice(0, 4) || 'GRID';
-  const dateFragment = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const timeFragment = Date.now().toString().slice(-4);
-  return `SE-${utilityPrefix}-${dateFragment}-${timeFragment}`;
 }
 
 function isActiveTicketStatus(status: string): boolean {
@@ -352,6 +344,7 @@ export const stormEventService = {
         notes: normalizeOptional(input.notes),
         ticketTemplateKey: getTicketTemplateByUtilityClient(normalizeUtilityClient(utilityClient)).templateKey,
         configSnapshot: createTemplateSnapshot(normalizeUtilityClient(utilityClient)),
+        roleRates: input.roleRates,
       });
     }
 
@@ -362,30 +355,37 @@ export const stormEventService = {
     const normalizedUtilityClient = normalizeUtilityClientValue(input.utilityClient);
     const eventCode = normalizeOptional(input.eventCode)?.toUpperCase() ?? `${normalizedUtilityClient}-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from('storm_events') as any)
-      .insert({
-        event_code: eventCode,
-        name: input.name.trim(),
-        utility_client: normalizedUtilityClient,
-        status: normalizeStormEventStatus(input.status ?? 'MOB'),
-        region: normalizeOptional(input.region),
-        contract_reference: normalizeOptional(input.contractReference),
-        start_date: normalizeOptional(input.startDate),
-        end_date: normalizeOptional(input.endDate),
-        notes: normalizeOptional(input.notes),
-        created_by: user?.id ?? null,
-        updated_by: user?.id ?? null,
-      })
-      .select(
-        'id, event_code, name, utility_client, ticket_template_key, config_snapshot, status, region, contract_reference, start_date, end_date, notes, created_at',
-      )
-      .single();
+    const pEvent = {
+      event_code: eventCode,
+      name: input.name.trim(),
+      utility_client: normalizedUtilityClient,
+      status: normalizeStormEventStatus(input.status ?? 'MOB'),
+      region: normalizeOptional(input.region),
+      contract_reference: normalizeOptional(input.contractReference),
+      start_date: normalizeOptional(input.startDate),
+      end_date: normalizeOptional(input.endDate),
+      notes: normalizeOptional(input.notes),
+      created_by: user?.id ?? null,
+      updated_by: user?.id ?? null,
+    };
+    const pRoleRates = CONTRACTOR_ROLES.map((role) => ({
+      role,
+      pay_rate: input.roleRates[role].payRate,
+      bill_rate: input.roleRates[role].billRate,
+    }));
+
+    const { data, error } = await supabase.rpc('create_storm_event_with_rates' as never, {
+      p_event: pEvent,
+      p_role_rates: pRoleRates,
+    } as never);
 
     if (error) {
       throw error;
     }
 
-    return mapStormEventRow(data as RemoteStormEventRow, new Map());
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('Storm creation returned an invalid response.');
+    }
+    return mapStormEventRow(data as unknown as RemoteStormEventRow, new Map());
   },
 };

@@ -19,7 +19,9 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { canPerformManagementAction } from '@/lib/auth/authorization';
+import { parseStormRoleRates, type StormRoleRateDrafts } from '@/lib/compensation/stormRates';
 import { UTILITY_CLIENTS } from '@/lib/constants/utilityClients';
+import { StormRoleRateFields } from '@/components/features/storms/StormRoleRateFields';
 import { stormEventService, type StormEventStatus } from '@/lib/services/stormEventService';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { toast } from 'sonner';
@@ -94,7 +96,8 @@ const UTILITY_CLIENT_OPTIONS = [
 export default function CreateStormEventPage() {
   const router = useRouter();
   const { profile, isLoading, permissions } = useAuth();
-  const canCreateStormEvent = canPerformManagementAction(profile?.role, 'storm_event_write', permissions);
+  const canCreateStormEvent = canPerformManagementAction(profile?.role, 'storm_event_write', permissions)
+    && permissions['admin.payroll.edit'];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventCode, setEventCode] = useState('');
   const [name, setName] = useState('');
@@ -102,6 +105,7 @@ export default function CreateStormEventPage() {
   const [status, setStatus] = useState<StormEventStatus>('MOB');
   const [region, setRegion] = useState('');
   const [notes, setNotes] = useState('');
+  const [roleRates, setRoleRates] = useState<StormRoleRateDrafts>({});
 
   useEffect(() => {
     if (!isLoading && !canCreateStormEvent) {
@@ -123,6 +127,14 @@ export default function CreateStormEventPage() {
       return;
     }
 
+    let parsedRoleRates: ReturnType<typeof parseStormRoleRates>;
+    try {
+      parsedRoleRates = parseStormRoleRates(roleRates);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Enter a wage and bill rate for every role.'));
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const createdEvent = await stormEventService.createStormEvent({
@@ -132,6 +144,7 @@ export default function CreateStormEventPage() {
         status,
         region,
         notes,
+        roleRates: parsedRoleRates,
       });
 
       if (typeof window !== 'undefined') {
@@ -231,6 +244,11 @@ export default function CreateStormEventPage() {
                 </Select>
               </div>
             </div>
+
+            <StormRoleRateFields
+              rates={roleRates}
+              onChange={(role, value) => setRoleRates((current) => ({ ...current, [role]: value }))}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="storm-event-notes">Notes</Label>

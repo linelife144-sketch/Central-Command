@@ -26,18 +26,27 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, sto
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
-    setAssigneeId('');
-    setContractors([]);
-    setError('');
-    setIsLoading(true);
-    stormRosterService.listOptions().then((options) => {
+    void Promise.resolve().then(async () => {
       if (cancelled) return;
-      const members: StormRosterMember[] = options.map(option => ({ contractorId: option.id, displayName: option.displayName }));
-      setContractors(members);
-      if (members.some(member => member.contractorId === currentAssigneeId)) setAssigneeId(currentAssigneeId!);
-    }).catch((cause) => {
-      if (!cancelled) setError(cause instanceof Error ? cause.message : 'Unable to load contractors. Close and try again.');
-    }).finally(() => { if (!cancelled) setIsLoading(false); });
+      setAssigneeId('');
+      setContractors([]);
+      setError('');
+      setIsLoading(true);
+      if (!stormEventId) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const options = await stormRosterService.list(stormEventId);
+        if (cancelled) return;
+        setContractors(options);
+        if (options.some(member => member.contractorId === currentAssigneeId)) setAssigneeId(currentAssigneeId!);
+      } catch (cause) {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : 'Unable to load contractors. Close and try again.');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    });
     return () => { cancelled = true; };
   }, [isOpen, stormEventId, currentAssigneeId]);
 
@@ -71,7 +80,7 @@ export function TicketAssign({ isOpen, onClose, onAssign, currentAssigneeId, sto
           </Select>
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           {!isLoading && !error && contractors.length === 0 && (
-            <p className="text-sm text-muted-foreground">No active contractors are available.</p>
+            <p className="text-sm text-muted-foreground">No contractors assigned to this storm.</p>
           )}
         </div>
         <DialogFooter>

@@ -15,6 +15,9 @@ import { stormEventService } from '@/lib/services/stormEventService';
 import { ticketService } from '@/lib/services/ticketService';
 import { LOCAL_TEST_STORAGE_KEY, localTestStore } from './localTestStore';
 import { isSuperAdminTestingEnabled, SUPER_ADMIN_TEST_PROFILE } from './superAdminTesting';
+import { CONTRACTOR_ROLES } from '@/lib/compensation/stormRates';
+
+const TEST_ROLE_RATES = Object.fromEntries(CONTRACTOR_ROLES.map((role) => [role, { payRate: 25, billRate: 50 }])) as never;
 
 beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'development');
@@ -30,7 +33,7 @@ afterEach(() => {
 });
 
 async function createStorm() {
-  return stormEventService.createStormEvent({ name: 'Local test storm', eventCode: 'LOCAL-001', utilityClient: 'Entergy' });
+  return stormEventService.createStormEvent({ name: 'Local test storm', eventCode: 'LOCAL-001', utilityClient: 'Entergy', roleRates: TEST_ROLE_RATES });
 }
 
 function ticketInput(stormId: string): Partial<Ticket> {
@@ -139,7 +142,7 @@ describe('storm ticket assignment', () => {
   });
   it('rejects a contractor from another storm without changing the ticket', async () => {
     const storm = await createStorm();
-    const other = await stormEventService.createStormEvent({ name: 'Other', eventCode: 'OTHER', utilityClient: 'Entergy' });
+    const other = await stormEventService.createStormEvent({ name: 'Other', eventCode: 'OTHER', utilityClient: 'Entergy', roleRates: TEST_ROLE_RATES });
     const ticket = await ticketService.createTicket(ticketInput(storm.id));
     const crew = localTestStore.createContractor('Other Crew');
     localTestStore.assignContractor(other.id, crew.id);
