@@ -83,7 +83,7 @@ function parseCommandOptions(input: string): ParsedCommand {
 		}
 
 		const flag = flagMatch[1];
-		let value = flagMatch[2];
+		let value: string | undefined = flagMatch[2];
 		rest = rest.slice(flagMatch[0].length);
 		if (!value) {
 			const parsed = readCommandValue(rest);
@@ -267,7 +267,7 @@ export default function (pi: ExtensionAPI) {
 				}
 			});
 
-			proc.on("close", (code) => {
+			proc.on("close", (code: number | null) => {
 				if (buffer.trim()) processLine(state, buffer);
 				clearInterval(timer);
 				state.elapsed = Date.now() - startTime;
@@ -290,7 +290,7 @@ export default function (pi: ExtensionAPI) {
 				resolve();
 			});
 
-			proc.on("error", (err) => {
+			proc.on("error", (err: Error) => {
 				clearInterval(timer);
 				state.status = "error";
 				state.proc = undefined;

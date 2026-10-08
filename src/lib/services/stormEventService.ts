@@ -121,6 +121,45 @@ function isActiveTicketStatus(status: string): boolean {
   return !CLOSED_TICKET_STATUSES.has(status.toUpperCase());
 }
 
+const ADMIN_OPERATIONAL_STORM_RANK: Record<StormEventStatus, number> = {
+  CLOSED: 5,
+  MOB: 0,
+  ACTIVE: 1,
+  'DE-MOB': 2,
+  RELEASED: 3,
+  BILLING: 4,
+};
+
+export function resolveAdminActiveStormEvent(
+  events: StormEventSummary[],
+): StormEventSummary | null {
+  const operational = events
+    .filter((event) => event.status !== 'CLOSED')
+    .sort((a, b) => {
+      const rankA = ADMIN_OPERATIONAL_STORM_RANK[a.status];
+      const rankB = ADMIN_OPERATIONAL_STORM_RANK[b.status];
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+
+      const startA = a.startDate ? Date.parse(a.startDate) : Number.NaN;
+      const startB = b.startDate ? Date.parse(b.startDate) : Number.NaN;
+      if (Number.isNaN(startA) !== Number.isNaN(startB)) {
+        return Number.isNaN(startA) ? 1 : -1; // null/invalid startDate sorts after a dated event
+      }
+      if (Number.isNaN(startA) !== Number.isNaN(startB)) {
+        return Number.isNaN(startA) ? 1 : -1; // null/invalid startDate sorts after a dated event
+      }
+      if (!Number.isNaN(startA) && !Number.isNaN(startB) && startA !== startB) {
+        return startB - startA; // newer startDate first
+      }
+
+      return Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    });
+
+  return operational[0] ?? null;
+}
+
 function mapStormEventRow(
   row: RemoteStormEventRow,
   activeTicketCountByEventId: Map<string, number>,
@@ -174,6 +213,10 @@ async function getActiveTicketCountByEventId(eventIds: string[]): Promise<Map<st
 }
 
 export const stormEventService = {
+  async getAdminActiveStormEvent(): Promise<StormEventSummary | null> {
+    return resolveAdminActiveStormEvent(await stormEventService.listStormEvents());
+  },
+
   async listStormEvents(): Promise<StormEventSummary[]> {
     if (isSuperAdminTestingEnabled()) return localTestStore.listStormEvents();
 

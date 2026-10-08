@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Clock, CloudLightning, FileCheck2, Plus, Route, Zap } from 'lucide-react';
 import { DashboardMetrics } from '@/components/features/dashboard/DashboardMetrics';
 import { DashboardRecentTickets } from '@/components/features/dashboard/DashboardRecentTickets';
+import { StormEventBanner } from '@/components/features/dashboard/StormEventBanner';
+import { PayrollSummaryCard } from '@/components/features/dashboard/PayrollSummaryCard';
+import { ExpensesSummaryCard } from '@/components/features/dashboard/ExpensesSummaryCard';
+import { AccessLevelsSection } from '@/components/features/dashboard/AccessLevelsSection';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -20,6 +24,7 @@ const quickActions = [
 export default function AdminDashboardPage() {
   const { can, permissions } = useAuth();
   return <div className="space-y-7">
+    <StormEventBanner />
     <section className="cc-dashboard-hero" aria-labelledby="dashboard-title">
       <SignalField />
       <div className="relative z-10 max-w-xl">
@@ -47,5 +52,10 @@ export default function AdminDashboardPage() {
         </CardContent>
       </Card>
     </div>
+    <section className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Payroll, expenses, and access">
+      <PayrollSummaryCard />
+      <ExpensesSummaryCard />
+      <AccessLevelsSection />
+    </section>
   </div>;
 }

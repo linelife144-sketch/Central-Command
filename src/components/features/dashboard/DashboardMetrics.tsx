@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Clock, Loader2, RefreshCw, Ticket, Users } from 'lucide-react';
+import { CheckCircle2, Clock, ListChecks, Loader2, RefreshCw, Ticket, Users } from 'lucide-react';
 
 import { MetricCard } from '@/components/common/data-display/MetricCard';
 import { contractorService } from '@/lib/services/contractorService';
@@ -143,6 +143,20 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
           value={activeTicketsValue}
           icon={<Ticket className="h-4 w-4 text-grid-lightning" />}
           description="Open lifecycle workload"
+        />}
+
+        {can('admin.tickets.view') && <MetricCard
+          title="Total Tickets"
+          value={metrics?.total_tickets ?? (isLoading ? '...' : 'Unavailable')}
+          icon={<ListChecks className="h-4 w-4 text-grid-lightning" />}
+          description="All non-archived tickets"
+        />}
+
+        {can('admin.tickets.view') && <MetricCard
+          title="Completed Tickets"
+          value={metrics?.status_breakdown.completed ?? (isLoading ? '...' : 'Unavailable')}
+          icon={<CheckCircle2 className="h-4 w-4 text-grid-lightning" />}
+          description="Completed in the current set"
         />}
 
         {can('admin.contractors.view') && <MetricCard

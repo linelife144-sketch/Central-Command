@@ -7,9 +7,8 @@
 **BEFORE TAKING ANY ACTION ON THIS PROJECT, YOU MUST:**
 
 1. **Read `implementation_plan.md`** — Review the current implementation plan for the requested task
-2. **Check `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md`** — Verify what has already been completed
-3. **Follow the phase order** — Do not skip phases or jump ahead
-4. **Update the Progress Tracker** — Mark tasks complete and add your agent identifier after finishing ANY work
+2. **Follow the phase order** — Do not skip phases or jump ahead
+3. **Update the Progress Tracker** — Mark tasks complete and add your agent identifier after finishing ANY work
 
 **FAILURE TO FOLLOW THESE STEPS WILL RESULT IN DUPLICATED WORK AND PROJECT CONFUSION.**
 

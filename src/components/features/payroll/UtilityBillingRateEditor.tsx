@@ -51,6 +51,24 @@ function multiplierFactor(multiplier: RateMultiplier): number {
   return Number(multiplier.slice(0, -1));
 }
 
+// Supabase throws plain PostgrestError objects ({ message, code, details, hint }),
+// not Error instances — `instanceof Error` drops the real API message and code.
+// Prefer an Error's message, then a PostgrestError-shaped message (+ code), then fallback.
+function describeError(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (error && typeof error === 'object') {
+    const candidate = error as { message?: unknown; code?: unknown };
+    if (typeof candidate.message === 'string' && candidate.message) {
+      return typeof candidate.code === 'string' && candidate.code
+        ? `${candidate.message} (${candidate.code})`
+        : candidate.message;
+    }
+  }
+  return fallback;
+}
+
 /**
  * Admin editor for utility bill rates — what Central Command charges the
  * utility per contractor role. When stormEventId is provided, edits a
@@ -91,7 +109,7 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
       setMultipliers(new Map());
       lastCommitted.current = nextCommitted;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to load utility billing rates.');
+      toast.error(describeError(error, 'Unable to load utility billing rates.'));
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +145,7 @@ export function UtilityBillingRateEditor({ canEdit = false, stormEventId, title 
         lastCommitted.current.set(role, { input: rawValue, hourlyRate });
         toast.success(`${ROLE_LABELS[role]} bill rate updated.`);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Unable to update bill rate.');
+        toast.error(describeError(error, 'Unable to update bill rate.'));
       } finally {
         setSavingRole(null);
       }

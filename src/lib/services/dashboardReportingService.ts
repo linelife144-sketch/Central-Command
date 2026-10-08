@@ -66,6 +66,7 @@ interface DashboardReportBuildInput {
 export interface DashboardMetricsData {
   unavailable_metrics?: string[];
   generated_at: string;
+  total_tickets: number;
   active_tickets: number;
   field_crews: number;
   on_site_crews: number;
@@ -257,6 +258,7 @@ export function buildDashboardMetrics(input: DashboardMetricsBuildInput): Dashbo
 
   return {
     generated_at: input.now.toISOString(),
+    total_tickets: input.tickets.filter((ticket) => !ticket.is_deleted).length,
     active_tickets: activeTickets.length,
     field_crews: fieldCrewIds.size,
     on_site_crews: onSiteCrewIds.size,

@@ -16,7 +16,7 @@ import {
 describe('useNavigationSignals helpers', () => {
   it('builds admin signal counts from dashboard metrics', () => {
     const counts = buildAdminRoleSignalCounts({
-      generated_at: new Date().toISOString(),
+      total_tickets: 0, generated_at: new Date().toISOString(),
       active_tickets: 12,
       field_crews: 4,
       on_site_crews: 2,

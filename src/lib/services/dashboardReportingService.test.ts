@@ -53,6 +53,7 @@ describe('dashboardReportingService', () => {
       pendingAssessments: 2,
     });
 
+    expect(metrics.total_tickets).toBe(5);
     expect(metrics.active_tickets).toBe(4);
     expect(metrics.field_crews).toBe(3);
     expect(metrics.on_site_crews).toBe(1);
