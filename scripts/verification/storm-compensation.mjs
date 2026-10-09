@@ -60,6 +60,7 @@ await db.exec(await readFile(new URL('../../supabase/migrations/20261004174918_c
 await db.exec(await readFile(new URL('../../supabase/migrations/20261004185253_protect_closed_shift_evidence_and_agreement_boundaries.sql', import.meta.url), 'utf8'));
 await db.exec(await readFile(new URL('../../supabase/migrations/20261007130000_role_keyed_utility_billing_rates.sql', import.meta.url), 'utf8'));
 await db.exec(await readFile(new URL('../../supabase/migrations/20261008220000_storm_compensation.sql', import.meta.url), 'utf8'));
+await db.exec(await readFile(new URL('../../supabase/migrations/20261008234600_storm_compensation_fk_indexes.sql', import.meta.url), 'utf8'));
 // Mirror the currently deployed permission helper: standard ADMIN accounts
 // can access ticket permissions only; payroll and storm editing remain
 // restricted to the privileged roles, even if stale override rows exist.
@@ -146,6 +147,11 @@ await test('new storms save separate complete pay and bill rates per role', asyn
   assert.notEqual(Number((await db.query("SELECT hourly_rate FROM utility_billing_rates WHERE storm_event_id=$1 AND role='DRIVER'", [stormA.id])).rows[0].hourly_rate), Number(b.rows.find(row => row.role === 'DRIVER').hourly_rate));
   const billAudit = await db.query("SELECT count(*)::int AS count FROM audit_logs WHERE action='STORM_ROLE_BILL_RATE_SAVED' AND entity_id=$1", [stormA.id]);
   assert.equal(billAudit.rows[0].count, 5);
+});
+
+await test('storm compensation foreign keys have covering indexes', async () => {
+  const { rows } = await db.query("SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname IN ('storm_role_pay_rates_updated_by_idx','storm_contractor_compensation_contractor_id_idx','storm_contractor_compensation_updated_by_idx')");
+  assert.equal(rows.length, 3);
 });
 
 await test('database guards prevent incomplete storm rate cards outside the atomic RPC', async () => {

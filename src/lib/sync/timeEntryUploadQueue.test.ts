@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createTimeEntryUploadQueue } from './timeEntryUploadQueue';
 import type { LocalTimeEntry } from '../db/dexie';
 const entry = (id: string, start: string, owner = 'worker'): LocalTimeEntry => ({ id, contractor_id: owner, clock_in_at: start,
-  work_type: 'TRAVEL', work_type_rate: 65, break_minutes: 0, status: 'PENDING', synced: false, sync_status: 'pending' });
+  work_type: 'DE-MOB', work_type_rate: 65, break_minutes: 0, status: 'PENDING', synced: false, sync_status: 'pending' });
 describe('time-entry sync', () => {
   it('syncs only the signed-in worker, in chronological order, with persisted snapshots', async () => {
     const saveRemote = vi.fn().mockResolvedValue({ payroll_amount: 1300, overtime_minutes: 480 });

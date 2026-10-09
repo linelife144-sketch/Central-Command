@@ -16,7 +16,7 @@ function buildEntry(overrides: Record<string, unknown> = {}) {
     contractor_id: 'c-1',
     clock_in_at: '2026-02-12T08:00:00.000Z',
     clock_out_at: '2026-02-12T14:00:00.000Z',
-    work_type: 'STANDARD_ASSESSMENT',
+    work_type: 'Working',
     work_type_rate: 85,
     break_minutes: 0,
     billable_minutes: 360,

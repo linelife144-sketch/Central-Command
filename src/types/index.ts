@@ -211,10 +211,10 @@ export interface TimeEntry {
 }
 
 export type WorkType =
-  | 'STANDARD_ASSESSMENT'
-  | 'EMERGENCY_RESPONSE'
-  | 'TRAVEL'
-  | 'STANDBY';
+  | 'Working'
+  | 'MOB'
+  | 'DE-MOB'
+  | 'Stand-by';
 
 export type TimeEntryStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 

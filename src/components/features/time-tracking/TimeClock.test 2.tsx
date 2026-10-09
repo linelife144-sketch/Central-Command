@@ -30,7 +30,7 @@ import { TimeClock } from './TimeClock';
 function shift(id: string, overrides: Partial<VehicleClaimShift> = {}): VehicleClaimShift {
   return { id, contractor_id: mocks.contractorId, clock_in_at: '2026-10-01T08:00:00Z', clock_out_at: '2026-10-01T16:00:00Z', calculation_version: 'AGREEMENT', vehicle_minutes: 120, billable_minutes: 480, vehicle_allowance_amount: 10, sync_status: 'SYNCED', ...overrides };
 }
-function completed(): TimeEntry { return { ...shift('latest'), payroll_amount: 600, total_minutes: 480, work_type: 'TRAVEL', work_type_rate: 75, break_minutes: 0, status: 'PENDING', created_at: '', updated_at: '' }; }
+function completed(): TimeEntry { return { ...shift('latest'), payroll_amount: 600, total_minutes: 480, work_type: 'DE-MOB', work_type_rate: 75, break_minutes: 0, status: 'PENDING', created_at: '', updated_at: '' }; }
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { resolve, promise }; }
 
 beforeEach(() => {

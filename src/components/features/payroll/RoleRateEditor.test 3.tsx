@@ -18,7 +18,7 @@ afterEach(() => {
 describe('RoleRateEditor', () => {
   it('renders all five roles', async () => {
     mocks.getRoleRateDefaults.mockResolvedValue([
-      { role: 'DAMAGE_ASSESSER', workType: 'STANDARD_ASSESSMENT', hourlyRate: 85, currency: 'USD' },
+      { role: 'DAMAGE_ASSESSER', workType: 'Working', hourlyRate: 85, currency: 'USD' },
     ]);
 
     render(<RoleRateEditor canEdit />);
@@ -34,11 +34,11 @@ describe('RoleRateEditor', () => {
 
   it('calls updateRoleRateDefault when a cell is saved', async () => {
     mocks.getRoleRateDefaults.mockResolvedValue([
-      { role: 'DRIVER', workType: 'STANDARD_ASSESSMENT', hourlyRate: 65, currency: 'USD' },
+      { role: 'DRIVER', workType: 'Working', hourlyRate: 65, currency: 'USD' },
     ]);
     mocks.updateRoleRateDefault.mockResolvedValue({
       role: 'DRIVER',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
       hourlyRate: 70,
       currency: 'USD',
     });
@@ -57,7 +57,7 @@ describe('RoleRateEditor', () => {
     await waitFor(() =>
       expect(mocks.updateRoleRateDefault).toHaveBeenCalledWith({
         role: 'DRIVER',
-        workType: 'STANDARD_ASSESSMENT',
+        workType: 'Working',
         hourlyRate: 70,
       }),
     );

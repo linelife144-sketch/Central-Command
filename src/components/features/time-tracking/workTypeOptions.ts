@@ -7,8 +7,8 @@ export interface WorkTypeOption {
 }
 
 export const WORK_TYPE_OPTIONS: WorkTypeOption[] = [
-  { value: WORK_TYPES.STANDARD_ASSESSMENT, label: 'Standard Assessment' },
-  { value: WORK_TYPES.EMERGENCY_RESPONSE, label: 'Emergency Response' },
-  { value: WORK_TYPES.TRAVEL, label: 'Travel' },
-  { value: WORK_TYPES.STANDBY, label: 'Standby' },
+  { value: WORK_TYPES.WORKING, label: 'Working' },
+  { value: WORK_TYPES.MOB, label: 'MOB' },
+  { value: WORK_TYPES.DE_MOB, label: 'DE-MOB' },
+  { value: WORK_TYPES.STAND_BY, label: 'Stand-by' },
 ];

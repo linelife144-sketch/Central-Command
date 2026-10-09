@@ -40,7 +40,7 @@ function buildLocalTimeEntry(overrides: Partial<LocalTimeEntry> = {}): LocalTime
     contractor_id: 'sub-1',
     ticket_id: 'ticket-1',
     clock_in_at: '2026-02-12T08:00:00.000Z',
-    work_type: 'STANDARD_ASSESSMENT',
+    work_type: 'Working',
     work_type_rate: 95,
     break_minutes: 0,
     status: 'PENDING',

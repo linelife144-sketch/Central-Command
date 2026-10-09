@@ -27,28 +27,14 @@ const ROLES_ORDER: ContractorRole[] = [
 ];
 
 const WORK_TYPES_ORDER: WorkType[] = [
-  'STANDARD_ASSESSMENT',
-  'EMERGENCY_RESPONSE',
-  'TRAVEL',
-  'STANDBY',
+  'Working',
+  'MOB',
+  'DE-MOB',
+  'Stand-by',
 ];
 
-// Display overrides for work types whose column header differs from the
-// auto-derived label. STANDARD_ASSESSMENT is shown as "Rate" and TRAVEL as
-// "DE-MOB" in the payroll grid.
-const WORK_TYPE_LABEL_OVERRIDES: Partial<Record<WorkType, string>> = {
-  STANDARD_ASSESSMENT: 'Rate',
-  TRAVEL: 'DE-MOB',
-};
-
 function toWorkTypeLabel(workType: WorkType): string {
-  const override = WORK_TYPE_LABEL_OVERRIDES[workType];
-  if (override) return override;
-  return workType
-    .toLowerCase()
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  return workType;
 }
 
 function cellKey(role: ContractorRole, workType: WorkType): string {

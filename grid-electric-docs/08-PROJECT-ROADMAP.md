@@ -1,5 +1,17 @@
 # Central Command — PROJECT ROADMAP
 
+## Current roadmap direction — 2026-10-08
+
+The application remains in Phase 4 refinement and acceptance. Read the [project brief](../PROJECT_BRIEF.md), [current scope](01-TECHNICAL-PRD.md), [implementation plan](../implementation_plan.md), and [detailed workflow master plan](../docs/plans/2026-10-08-central-command-workflow-master-plan.md). Do not restart completed foundation phases or use the original week numbers below as current deadlines.
+
+The current dependency order is: audit/decomposition → management authority and selected-storm context → contractor participation, rates, teams/crews → crew dispatch and preserved fieldwork → management-controlled official time → Payroll/Expenses → reconciled dashboards/reports/exports → reviewed batch intake → connected acceptance and launch preparation. The implementation plan specifies dependency exceptions for independent workstreams.
+
+The operating model is CEO plus full-access Storm Manager, crew-assigned tickets, and normal 16-hour days until release with management exceptions. Personal clocks remain references. Preserve existing pages/capabilities and treat the test-data reset as a separate launch activity. Full invoice issuance requires its own defined workstream; billing-source/export readiness is included.
+
+## Historical initial roadmap
+
+The original schedule below is retained as project history and design context. Its old role, assignment, time, invoicing, and completion assumptions do not override current scope or fresh implementation evidence.
+
 ## Development Timeline & Milestones
 
 **Version:** 1.0  

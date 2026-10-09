@@ -70,10 +70,10 @@ export interface ReviewVehicleClaimInput {
 }
 
 const WORK_TYPES_LIST: WorkType[] = [
-  'STANDARD_ASSESSMENT',
-  'EMERGENCY_RESPONSE',
-  'TRAVEL',
-  'STANDBY',
+  'Working',
+  'MOB',
+  'DE-MOB',
+  'Stand-by',
 ];
 
 interface RemoteRoleRateDefaultRow {

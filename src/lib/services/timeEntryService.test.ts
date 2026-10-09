@@ -22,7 +22,7 @@ function buildTimeEntry(overrides: Partial<TimeEntry> = {}): TimeEntry {
     contractor_id: 'sub-1',
     ticket_id: undefined,
     clock_in_at: '2026-02-12T12:00:00.000Z',
-    work_type: 'STANDARD_ASSESSMENT',
+    work_type: 'Working',
     work_type_rate: 100,
     break_minutes: 0,
     status: 'PENDING',
@@ -38,7 +38,7 @@ function buildLocalTimeEntry(overrides: Partial<LocalTimeEntry> = {}): LocalTime
     id: 'time-local-1',
     contractor_id: 'sub-1',
     clock_in_at: '2026-02-12T12:00:00.000Z',
-    work_type: 'STANDARD_ASSESSMENT',
+    work_type: 'Working',
     work_type_rate: 100,
     break_minutes: 0,
     status: 'PENDING',
@@ -65,7 +65,7 @@ describe('createTimeEntryService', () => {
     const entry = await service.clockIn({
       contractorId: 'sub-1',
       stormEventId: 'storm-1',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
       workTypeRate: 100,
       breakMinutes: 15,
       location: {
@@ -97,7 +97,7 @@ describe('createTimeEntryService', () => {
     const entry = await service.clockIn({
       contractorId: 'sub-1',
       stormEventId: 'storm-1',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
       workTypeRate: 100,
       breakMinutes: 0,
       location: {
@@ -210,7 +210,7 @@ describe('createTimeEntryService', () => {
 
     await service.clockIn({
       contractorId: 'sub-1',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
       workTypeRate: 100,
       breakMinutes: 0,
       stormEventId: 'storm-123',
@@ -228,7 +228,7 @@ describe('createTimeEntryService', () => {
 
   it('refuses clock-in without a storm instead of queuing an invalid shift', async () => {
     const service = createTimeEntryService();
-    await expect(service.clockIn({ contractorId: 'sub-1', workType: 'STANDARD_ASSESSMENT', workTypeRate: 100,
+    await expect(service.clockIn({ contractorId: 'sub-1', workType: 'Working', workTypeRate: 100,
       breakMinutes: 0, location: { latitude: 27.95, longitude: -82.46, accuracy: 20 } })).rejects.toThrow('assigned ticket');
   });
 
@@ -246,7 +246,7 @@ describe('createTimeEntryService', () => {
   it('does not disguise a backend validation rejection as an offline success', async () => {
     const queueLocalEntry = vi.fn();
     const service = createTimeEntryService({ isOnline: () => true, insertRemoteEntry: vi.fn().mockRejectedValue({ code: '23514', message: 'Invalid ticket' }), queueLocalEntry });
-    await expect(service.clockIn({ contractorId: 'sub-1', stormEventId: 'storm-1', workType: 'STANDARD_ASSESSMENT', workTypeRate: 100,
+    await expect(service.clockIn({ contractorId: 'sub-1', stormEventId: 'storm-1', workType: 'Working', workTypeRate: 100,
       breakMinutes: 0, location: { latitude: 27.95, longitude: -82.46, accuracy: 20 } })).rejects.toMatchObject({ code: '23514' });
     expect(queueLocalEntry).not.toHaveBeenCalled();
   });

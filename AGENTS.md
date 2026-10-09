@@ -1,12 +1,22 @@
 # Central Command — AI Agent Guide
 
+## Current product direction — 2026-10-08
+
+Read the current [implementation plan](implementation_plan.md) and [progress checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md), then [PROJECT_BRIEF.md](PROJECT_BRIEF.md) and the [updated scope / PRD](grid-electric-docs/01-TECHNICAL-PRD.md). The [workflow master plan](docs/plans/2026-10-08-central-command-workflow-master-plan.md) supplies requirement IDs, dependency/impact mapping, and acceptance scenarios for task decomposition.
+
+The CEO runs the company. One responsible Storm Manager runs each storm with full management access beneath the CEO, replacing the Super Admin business role. Tickets are assigned to Driver/Assessor crews within teams. Management's official time normally allocates 16 hours per day, every day, from mobilization until release, with individual exceptions; contractor clocks remain personal reference/dispute evidence. No fixed pay period, predetermined release date, or daily attendance reconfirmation is required. Rates are set in storm setup, with optional contractor overrides and separate Driver allowance; controlled edits belong in storm setup/detail.
+
+These are product requirements, not a statement that the current code already implements them. Preserve existing dashboards, navigation, useful controls, alerts, fieldwork, maps, forms, review, account setup, exports, and offline behavior. Omission or wording cleanup is not removal authority. Keep current click-driven field status actions and the GPS/photo protections that apply to other captures; do not restore a superseded status workflow from older documentation.
+
+Current operational records are test data intended for a separately controlled launch reset. Do not erase them during ordinary implementation or preserve artificial test history at the expense of the intended design. All product assumptions and historical completion summaries below must be interpreted through the current brief/scope. Historical plans are evidence, not authority to rerun completed work or revive old removal instructions.
+
 ---
 
 ## ⚠️ CRITICAL: MANDATORY PRE-WORK CHECKLIST
 
 **BEFORE TAKING ANY ACTION ON THIS PROJECT, YOU MUST:**
 
-1. **Read `implementation_plan.md`** — Review the current implementation plan for the requested task
+1. **Read `implementation_plan.md`, the progress checklist, `PROJECT_BRIEF.md`, and the current PRD scope** — Review the current task and product direction before consulting historical plans
 2. **Follow the phase order** — Do not skip phases or jump ahead
 3. **Update the Progress Tracker** — Mark tasks complete and add your agent identifier after finishing ANY work
 
@@ -15,6 +25,8 @@
 ---
 
 ## Quick Status Overview
+
+The percentages and completed-feature inventory below are historical migration summaries. They do not measure acceptance of the 2026-10-08 operating model; use dated progress and current evidence.
 
 | Metric | Value |
 |--------|-------|
@@ -209,10 +221,12 @@ Grid2/
 
 | Role | Permissions |
 |------|-------------|
-| SUPER_ADMIN | Full system access |
-| ADMIN | Tickets, assignments, approvals |
-| TEAM_LEAD | Own tickets, time, expenses only |
-| CONTRACTOR | Read-only access to all data |
+| CEO | Company leadership and highest management authority |
+| STORM_MANAGER (target authority) | Full existing Super Admin management access beneath the CEO; one responsible manager per storm |
+| Existing reviewer roles | Preserve permitted review capabilities; keep reviewer profile identity distinct from operational Team Lead identity |
+| TEAM_LEAD / field contractors | Operational/pay roles with actor- and crew-scoped access; no administrative access implied by pay role |
+
+Current application authority still includes `SUPER_ADMIN`; coordinate the compatibility transition rather than changing labels alone. Contractor access is not read-only access to all company data.
 
 ### 2. Ticket Lifecycle (13 Statuses)
 
@@ -240,11 +254,10 @@ PENDING_REVIEW → APPROVED/NEEDS_REWORK → CLOSED
 
 ### 5. Time Tracking Rules
 
-- **Max duration:** 12 hours per entry
-- **Warning threshold:** 8 hours
-- **GPS verification:** Required at clock in/out
-- **Photo verification:** Required at clock in/out
-- **Work types:** STANDARD_ASSESSMENT, EMERGENCY_RESPONSE, TRAVEL, STANDBY, ADMIN, TRAINING
+- **Official time target:** Management-controlled 16-hour days from mobilization until release, with explicit individual exceptions; no required payroll period or daily attendance reconfirmation.
+- **Personal clocks:** Reference/dispute evidence only under the target model; preserve applicable current GPS/photo capture requirements.
+- **Authority:** Official time, including approved exceptions, drives payroll and hourly billing. Do not infer official hours from a personal clock or ticket assignment.
+- **Work types and personal-clock limits:** Inspect current configuration/schema; historical ADMIN/TRAINING work types and old 12-hour defaults are not instructions to reintroduce them.
 
 ---
 
@@ -434,7 +447,8 @@ All actions logged with:
 | Contractor clocks in outside geofence | Error: "Must be within 500m of site" |
 | Photo without GPS | Error: "Enable location services" |
 | Submit assessment with 3 photos | Error: "Minimum 4 photos required" |
-| Time entry > 12 hours | Auto-clock out + admin flag |
+| Normal official storm day | 16 hours for mobilized participants; management exceptions and release apply |
+| Personal time differs from official time | Preserve both; official payroll/billing changes only through management correction |
 | Duplicate photo uploaded | Flag for admin review |
 | GPS spoofing detected | Flag for admin review |
 | Offline assessment submission | Queued for sync |
@@ -476,7 +490,7 @@ All actions logged with:
 
 ## Summary
 
-**This is a documentation package, not a working application.** The actual code needs to be implemented following these specifications.
+**This is an existing working application with documentation and implementation gaps.** Preserve compliant capabilities and complete the current Phase 4 plan; do not rebuild the old scaffold from these historical specifications.
 
 **Compliance is critical.** All changes must maintain FISMA/FedRAMP moderate compliance requirements, especially:
 
@@ -487,7 +501,7 @@ All actions logged with:
 
 **Offline-first is a core requirement.** Field contractors work in areas with poor cellular coverage. Always implement features with offline capability in mind.
 
-**GPS validation is mandatory.** All time entries and photos require GPS verification. Never disable or bypass GPS checks.
+**Preserve required GPS validation.** Keep the existing GPS/photo protections on personal clock and evidence-capture workflows that require them. Management's official-time records are a separate authority, not fabricated field clock captures. Current click-driven ticket status actions must not be changed back to historical GPS-gated transitions merely because an older document describes them.
 
 ---
 

@@ -1,5 +1,13 @@
 # Central Command — IMPLEMENTATION CHECKLIST
 
+## Current tracking direction — 2026-10-08
+
+Use the [project brief](../PROJECT_BRIEF.md), [current scope / PRD](01-TECHNICAL-PRD.md), and current opening section of [implementation_plan.md](../implementation_plan.md) before acting on this checklist. The [workflow master plan](../docs/plans/2026-10-08-central-command-workflow-master-plan.md) defines CC-01–CC-11 requirements and AC-01–AC-19 acceptance scenarios.
+
+Earlier checklists and dated entries remain historical evidence. They do not certify the revised Storm Manager/crew/official-time model, reinstate removal instructions, or require preserving artificial test records as production history. Continue Phase 4 in the current dependency order. Mark documentation, code, local checks, applied migrations/readback, browser/device acceptance, and launch work distinctly with an agent identifier.
+
+- [x] Database: live `work_type` enum on Central Command is Working, MOB, DE-MOB, and Stand-by. Migration `20261009152535_align_owner_work_types` remapped existing rates and shifts; emergency rows were archived and removed. App constants updated to the same labels. — Pi
+
 ## Complete Build-Out Guide Based on Field Forms Analysis
 
 **Version:** 2.0  
@@ -1031,7 +1039,7 @@ Detailed work and evidence are tracked in the implementation plan's dated comple
 
 ### Payroll dashboard corrections — 2026-10-07 (Pseudocoder /root)
 
-- [x] Payroll dashboard corrections: active-roster contractor count, role-keyed utility bill rates, Emergency Response rate column removed. Migration `20261007130000` written, not applied. Tests not run (macOS node_modules on Linux host). — Pseudocoder /root
+- [x] Payroll dashboard corrections: active-roster contractor count, role-keyed utility bill rates, Emergency Response rate column removed. Migration `20261007130000` was later applied as the schema-only prerequisite for storm compensation; the costing replacement was applied with the follow-up storm migration. — Pseudocoder /root
 
 ### Phase 4 — Storm-specific compensation — 2026-10-08 (Codex /root)
 
@@ -1040,6 +1048,23 @@ Detailed work and evidence are tracked in the implementation plan's dated comple
 - [x] Add storm-only contractor wage overrides and require hourly vehicle allowance for Drivers during roster assignment; prohibit allowances for other roles. — Codex /root
 - [x] Resolve server-side clock-in wage/bill/allowance from storm role defaults and contractor exceptions; calculate Driver allowance from recorded vehicle-use intervals and retain saved snapshots. — Codex /root
 - [x] Require ticket assignment to use the selected storm roster. — Codex /root
-- [x] Validate with 36 focused application tests across 10 files, focused TypeScript/ESLint, six isolated PGlite database groups, and completed Graphify AST update. — Codex /root
-- [ ] Apply `supabase/migrations/20261008220000_storm_compensation.sql` and verify live metadata and authenticated browser acceptance after explicit authorization. Migration remains local; no live database writes were made. — Codex /root
+- [x] Validate with 48 focused application tests across 11 files, scoped ESLint, nine isolated PGlite database groups, and live schema/RLS/function readback. — Codex /root
+- [x] Apply and read back the role-key schema prerequisite, storm compensation migration, and foreign-key index follow-up on Central Command (`xcvacmreerrypygpritq`). Four legacy utility work-type billing rows and all time-entry snapshots remain preserved; there were zero open shifts during rollout. — Codex /root
+- [ ] Configure role rates and Driver allowance for the three existing storms, then verify authorized storm creation, rate edits, roster compensation, and Payroll readback in a signed-in browser. No production rates were inferred or seeded. Hosted frontend deployment remains open because the checkout has no configured hosting target/provider. — Codex /root
 - [ ] Resolve repository-wide TypeScript failures in duplicate archival Payroll copies (` 2` and ` 3` filenames); the feature-scoped check passes. — Codex /root
+
+
+### Phase 4 — Project brief, scope, and general build guidance — 2026-10-08 (Codex /root)
+
+- [x] Read the owner's workflow scratchpad and current source/project records; inspect Graphify dependencies and read-only Central Command schema/role/migration metadata. Record source/schema findings separately from runtime acceptance. — Codex /root
+- [x] Create `PROJECT_BRIEF.md` to explain the project, operating model, dashboards, relationships, preservation rules, and general build sequence to coding agents. — Codex /root
+- [x] Save `docs/plans/2026-10-08-central-command-workflow-master-plan.md` with CC-01–CC-11 requirements, current-state dispositions, interface/dependency mapping, and AC-01–AC-19 scenarios. — Codex /root
+- [x] Update the existing implementation plan and project scope/PRD, plus README/index/agent/roadmap entry points; label conflicting older plans and examples as historical while preserving their evidence. — Codex /root
+- [ ] Verify documentation links, coverage, consistency, and retained historical execution records. — Codex /root
+- [ ] Decompose the current workstreams against fresh canonical source/schema/runtime evidence before implementation. — Codex /root
+- [ ] Implement and verify the revised management authority, storm context, participation/crew integration, official time, financial readback, company expenses, and reviewed intake as bounded tasks. — Codex /root
+- [ ] Complete same-record management/contractor/browser/device/offline/print acceptance and the separately controlled launch reset. — Codex /root
+
+Owner clarification: all current operational records are test data; normal work is 16 hours every day until release, and Storm Manager replaces Super Admin with full management authority beneath the CEO. Controlled rate edits remain in storm setup/detail. Existing dashboards and capabilities are to be preserved. Earlier instructions to populate every existing test storm with production rates are not prerequisites for this design; earlier removal directions must be reconciled with the current preservation requirement.
+
+This delivery changes documentation only. No product requirement above is marked implemented by this entry. No application code, schema, accounts, stored business records, or test data were changed.

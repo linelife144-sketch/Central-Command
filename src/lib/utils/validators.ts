@@ -60,7 +60,7 @@ export const ticketSchema = z.object({
 
 // Time entry validation
 export const timeEntrySchema = z.object({
-  work_type: z.enum(['STANDARD_ASSESSMENT', 'EMERGENCY_RESPONSE', 'TRAVEL', 'STANDBY']),
+  work_type: z.enum(['Working', 'MOB', 'DE-MOB', 'Stand-by']),
   break_minutes: z.number().int().min(0).max(120).multipleOf(5).default(0),
 });
 

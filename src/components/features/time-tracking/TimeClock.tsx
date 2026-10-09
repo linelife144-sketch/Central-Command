@@ -65,7 +65,7 @@ function ContractorTimeClock({ profileId, contractorId, isResolvingContractorId,
   const [vehicleError, setVehicleError] = useState(false);
   const [vehicleOnline, setVehicleOnline] = useState(false);
   const selectedVehicleShift = vehicleShifts.find(entry => entry.id === vehicleShiftId);
-  const [workType, setWorkType] = useState<WorkType>(WORK_TYPES.STANDARD_ASSESSMENT);
+  const [workType, setWorkType] = useState<WorkType>(WORK_TYPES.WORKING);
   const [clockPhoto, setClockPhoto] = useState<File | null>(null);
   const [breakMinutes, setBreakMinutes] = useState<number>(0);
   const [rateProfile, setRateProfile] = useState<ContractorRateProfile | null>(null);

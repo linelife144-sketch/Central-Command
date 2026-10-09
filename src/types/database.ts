@@ -4302,10 +4302,10 @@ export type Database = {
         | "556"
         | "795"
       work_type:
-        | "STANDARD_ASSESSMENT"
-        | "EMERGENCY_RESPONSE"
-        | "TRAVEL"
-        | "STANDBY"
+        | "Working"
+        | "MOB"
+        | "DE-MOB"
+        | "Stand-by"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4519,10 +4519,10 @@ export const Constants = {
         "795",
       ],
       work_type: [
-        "STANDARD_ASSESSMENT",
-        "EMERGENCY_RESPONSE",
-        "TRAVEL",
-        "STANDBY",
+        "Working",
+        "MOB",
+        "DE-MOB",
+        "Stand-by",
       ],
     },
   },

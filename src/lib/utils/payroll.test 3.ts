@@ -15,12 +15,12 @@ import {
 describe('resolveContractorHourlyRate', () => {
   it('prefers an active contractor override over the role default', () => {
     const rate = resolveContractorHourlyRate({
-      roleDefaults: [{ role: 'DAMAGE_ASSESSER', workType: 'STANDARD_ASSESSMENT', hourlyRate: 85 }],
+      roleDefaults: [{ role: 'DAMAGE_ASSESSER', workType: 'Working', hourlyRate: 85 }],
       contractorRates: [
-        { workType: 'STANDARD_ASSESSMENT', hourlyRate: 100, effectiveFrom: '2026-01-01' },
+        { workType: 'Working', hourlyRate: 100, effectiveFrom: '2026-01-01' },
       ],
       role: 'DAMAGE_ASSESSER',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
       asOf: '2026-06-01',
     });
 
@@ -29,12 +29,12 @@ describe('resolveContractorHourlyRate', () => {
 
   it('ignores a future-dated contractor override', () => {
     const rate = resolveContractorHourlyRate({
-      roleDefaults: [{ role: 'DAMAGE_ASSESSER', workType: 'STANDARD_ASSESSMENT', hourlyRate: 85 }],
+      roleDefaults: [{ role: 'DAMAGE_ASSESSER', workType: 'Working', hourlyRate: 85 }],
       contractorRates: [
-        { workType: 'STANDARD_ASSESSMENT', hourlyRate: 100, effectiveFrom: '2027-01-01' },
+        { workType: 'Working', hourlyRate: 100, effectiveFrom: '2027-01-01' },
       ],
       role: 'DAMAGE_ASSESSER',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
       asOf: '2026-06-01',
     });
 
@@ -43,17 +43,17 @@ describe('resolveContractorHourlyRate', () => {
 
   it('ignores an expired contractor override', () => {
     const rate = resolveContractorHourlyRate({
-      roleDefaults: [{ role: 'DAMAGE_ASSESSER', workType: 'STANDARD_ASSESSMENT', hourlyRate: 85 }],
+      roleDefaults: [{ role: 'DAMAGE_ASSESSER', workType: 'Working', hourlyRate: 85 }],
       contractorRates: [
         {
-          workType: 'STANDARD_ASSESSMENT',
+          workType: 'Working',
           hourlyRate: 100,
           effectiveFrom: '2025-01-01',
           effectiveTo: '2025-12-31',
         },
       ],
       role: 'DAMAGE_ASSESSER',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
       asOf: '2026-06-01',
     });
 
@@ -62,10 +62,10 @@ describe('resolveContractorHourlyRate', () => {
 
   it('falls back to the role default when no contractor override exists', () => {
     const rate = resolveContractorHourlyRate({
-      roleDefaults: [{ role: 'TEAM_LEAD', workType: 'TRAVEL', hourlyRate: 60 }],
+      roleDefaults: [{ role: 'TEAM_LEAD', workType: 'DE-MOB', hourlyRate: 60 }],
       contractorRates: [],
       role: 'TEAM_LEAD',
-      workType: 'TRAVEL',
+      workType: 'DE-MOB',
       asOf: '2026-06-01',
     });
 
@@ -77,7 +77,7 @@ describe('resolveContractorHourlyRate', () => {
       roleDefaults: [],
       contractorRates: [],
       role: 'DRIVER',
-      workType: 'STANDBY',
+      workType: 'Stand-by',
       asOf: '2026-06-01',
     });
 
@@ -89,11 +89,11 @@ describe('resolveUtilityBillRate', () => {
   it('prefers a storm-scoped rate over the global fallback', () => {
     const rate = resolveUtilityBillRate({
       rates: [
-        { stormEventId: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 },
-        { stormEventId: 'storm-1', workType: 'STANDARD_ASSESSMENT', hourlyRate: 175 },
+        { stormEventId: null, workType: 'Working', hourlyRate: 150 },
+        { stormEventId: 'storm-1', workType: 'Working', hourlyRate: 175 },
       ],
       stormEventId: 'storm-1',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
     });
 
     expect(rate).toBe(175);
@@ -101,9 +101,9 @@ describe('resolveUtilityBillRate', () => {
 
   it('uses the global fallback when no storm-scoped rate exists', () => {
     const rate = resolveUtilityBillRate({
-      rates: [{ stormEventId: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 }],
+      rates: [{ stormEventId: null, workType: 'Working', hourlyRate: 150 }],
       stormEventId: 'storm-2',
-      workType: 'STANDARD_ASSESSMENT',
+      workType: 'Working',
     });
 
     expect(rate).toBe(150);
@@ -111,9 +111,9 @@ describe('resolveUtilityBillRate', () => {
 
   it('returns null for an unconfigured work type', () => {
     const rate = resolveUtilityBillRate({
-      rates: [{ stormEventId: null, workType: 'STANDARD_ASSESSMENT', hourlyRate: 150 }],
+      rates: [{ stormEventId: null, workType: 'Working', hourlyRate: 150 }],
       stormEventId: null,
-      workType: 'TRAVEL',
+      workType: 'DE-MOB',
     });
 
     expect(rate).toBeNull();

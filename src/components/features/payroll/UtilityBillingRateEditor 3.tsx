@@ -25,10 +25,9 @@ export interface UtilityBillingRateEditorProps {
 }
 
 const WORK_TYPES_ORDER: WorkType[] = [
-  'STANDARD_ASSESSMENT',
-  'EMERGENCY_RESPONSE',
-  'TRAVEL',
-  'STANDBY',
+  'Working',
+  'DE-MOB',
+  'Stand-by',
 ];
 
 function toWorkTypeLabel(workType: WorkType): string {

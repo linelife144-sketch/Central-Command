@@ -39,7 +39,7 @@ export function CompensationFields({ value, onChange, disabled = false }: { valu
   const applyRoleDefaults = async () => {
     try {
       const rates = (await payrollService.getRoleRateDefaults()).filter(rate => rate.role === value.role);
-      const base = rates.find(rate => rate.workType === 'STANDARD_ASSESSMENT')?.hourlyRate;
+      const base = rates.find(rate => rate.workType === 'Working')?.hourlyRate;
       if (!base) throw new Error('No role wage is configured. Enter a base wage.');
       update({ base_hourly_rate: base, work_type_rates: Object.fromEntries(rates.filter(rate => rate.hourlyRate !== base).map(rate => [rate.workType, rate.hourlyRate])) });
       setError('');

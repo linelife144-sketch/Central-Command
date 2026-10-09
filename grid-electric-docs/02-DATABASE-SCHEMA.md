@@ -124,12 +124,10 @@ CREATE TYPE priority_level AS ENUM ('A', 'B', 'C', 'X');
 
 -- Work Types
 CREATE TYPE work_type AS ENUM (
-  'STANDARD_ASSESSMENT',
-  'EMERGENCY_RESPONSE',
-  'TRAVEL',
-  'STANDBY',
-  'ADMIN',
-  'TRAINING'
+  'Working',
+  'MOB',
+  'DE-MOB',
+  'Stand-by'
 );
 
 -- Expense Categories

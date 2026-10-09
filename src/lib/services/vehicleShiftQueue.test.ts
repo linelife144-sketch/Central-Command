@@ -9,7 +9,7 @@ function shift(id: string, overrides: Record<string, unknown> = {}): VehicleClai
 }
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; }
 function localShift(id: string, overrides: Partial<LocalTimeEntry> = {}): LocalTimeEntry {
-  return { ...shift(id), work_type: 'TRAVEL', work_type_rate: 75, break_minutes: 0, status: 'PENDING', synced: false, sync_status: 'pending', ...overrides };
+  return { ...shift(id), work_type: 'DE-MOB', work_type_rate: 75, break_minutes: 0, status: 'PENDING', synced: false, sync_status: 'pending', ...overrides };
 }
 function setup(overrides: NonNullable<Parameters<typeof module.createVehicleShiftQueue>[0]> = {}) {
   const cache = new Map<string, import('../db/dexie').VehicleShiftCache>();
@@ -52,7 +52,7 @@ describe('vehicle reimbursement shift queue', () => {
   });
   it('keeps offline cached rows scoped to the viewer and contractor and includes unsynced vehicle-use rows without rewriting them', async () => {
     let online = true;
-    const pending = localShift('queued', { clock_out_at: '2026-10-02T16:00:00Z', sync_status: 'pending', synced: false, vehicle_minutes: undefined, activity_intervals: [{ id: 'interval-1', kind: 'VEHICLE_USE', start_at: '2026-10-01T09:00:00Z', end_at: '2026-10-01T11:00:00Z' }], clock_out_photo_file: new Blob(['photo']), work_type: 'TRAVEL', work_type_rate: 500, break_minutes: 0, status: 'PENDING' });
+    const pending = localShift('queued', { clock_out_at: '2026-10-02T16:00:00Z', sync_status: 'pending', synced: false, vehicle_minutes: undefined, activity_intervals: [{ id: 'interval-1', kind: 'VEHICLE_USE', start_at: '2026-10-01T09:00:00Z', end_at: '2026-10-01T11:00:00Z' }], clock_out_photo_file: new Blob(['photo']), work_type: 'DE-MOB', work_type_rate: 500, break_minutes: 0, status: 'PENDING' });
     const { service, dependencies } = setup({ isOnline: () => online, readLocalShifts: async (actor: typeof scope) => actor.profileId === scope.profileId ? [pending] : [] });
     await service.load(scope);
     online = false;

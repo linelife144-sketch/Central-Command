@@ -71,10 +71,10 @@ export const TICKET_STATUSES = {
 
 // Work types
 export const WORK_TYPES = {
-  STANDARD_ASSESSMENT: 'STANDARD_ASSESSMENT',
-  EMERGENCY_RESPONSE: 'EMERGENCY_RESPONSE',
-  TRAVEL: 'TRAVEL',
-  STANDBY: 'STANDBY',
+  WORKING: 'Working',
+  MOB: 'MOB',
+  DE_MOB: 'DE-MOB',
+  STAND_BY: 'Stand-by',
 } as const;
 
 // Contractor payroll roles — one per contractor, separate from

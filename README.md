@@ -1,86 +1,54 @@
-# Central Command — Damage Assessment Platform
+# Central Command — Storm Operations
 
-Welcome! This is the workspace directory for the **Central Command Damage Assessment Platform**, a Progressive Web Application (PWA) designed for managing independent 1099 contractor crews performing utility damage assessments under government contracts.
+Central Command is GRID's existing application for managing utility storm-response work: contractor teams and crews, tickets, field assessments, official time, payroll, expenses, and operational/financial reporting. The task is to finish and align the existing application while preserving its pages and capabilities.
 
-This README serves as the primary entry point and operational guide for **AI Coding Assistants** and human developers working in this codebase.
+## Start here
 
----
+Agents must read the current [implementation plan](implementation_plan.md) and [progress checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md), then the project brief and scope before changing the app.
 
-## ⚠️ CRITICAL: MANDATORY AGENT INSTRUCTIONS
+| Document | Use it for |
+|---|---|
+| [Project brief](PROJECT_BRIEF.md) | What the project is, how the operation works, relationships, preservation rules, and general build approach |
+| [Project scope / PRD](grid-electric-docs/01-TECHNICAL-PRD.md) | Current scope and operating requirements; labeled historical technical references |
+| [Implementation plan](implementation_plan.md) | Current Phase 4 build order, dependencies, documentation progress, and preserved implementation history |
+| [Detailed workflow master plan](docs/plans/2026-10-08-central-command-workflow-master-plan.md) | CC-01–CC-11 requirements, existing-app findings, impact map, and AC-01–AC-19 acceptance scenarios for later decomposition |
+| [Progress checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md) | Dated completed work and outstanding verification; documentation completion is not feature completion |
+| [Agent guide](AGENTS.md) | Project workflow, code conventions, tools, and change constraints |
+| [Technical documentation index](grid-electric-docs/README.md) | Existing schema, API, component, design, offline, and workflow references |
 
-Before taking any action or writing any code in this directory, you **MUST** follow this protocol:
+## Operating model
 
-1. **Review the Implementation Plan**: Read [implementation_plan.md](implementation_plan.md) for the current task scope and implementation order.
-2. **Check Progress**: Review [the implementation checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md) to see what is complete or in progress.
-3. **Review the Agent Guidelines**: Read the rules defined in [AGENTS.md](file:///Users/davidmccarty/Desktop/Grid2/AGENTS.md). It outlines code style, security requirements, and offline-first/GPS validation rules.
-4. **Document Your Work**: 
-   - Use the [scratchpad.md](file:///Users/davidmccarty/Desktop/Grid2/scratchpad.md) file in this directory to track your current context, notes, and checklist during your session.
-   - Update [the implementation checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md) when finishing a task.
+- The CEO runs the company. Each storm has one responsible Storm Manager with full management access beneath the CEO, replacing the Super Admin business role.
+- A storm owns operational participation and activity. Utility configuration determines the relevant ticket formats and forms.
+- Tickets are assigned to crews: one Driver and one Assessor/Senior Assessor. A team contains a Team Lead, the lead's Driver, and working crews.
+- Normal work is 16 hours per day, every day, from mobilization until release. Management records individual exceptions; no fixed pay period or daily roster reconfirmation is required.
+- Management's official time controls payroll and hourly utility billing. Contractor clocks remain personal references and dispute evidence.
+- Storm setup establishes role wages/bill rates; individual overrides and Driver allowance belong to the storm participation. Saved values appear on ordinary dashboards, with controlled editing in storm setup/detail.
+- Keep existing dashboards, navigation, useful controls, forms, maps, reviews, evidence, account setup, reports, and offline work. Omission is not a removal request.
+- Existing operational records are test data. A controlled reset is a separate launch task, not an instruction to delete records during ordinary development.
 
----
+These are the target requirements. The current code still has gaps, particularly management-role mapping, full operational teams, and official time. See the master plan's baseline before claiming anything implemented.
 
-## 📂 Project Structure
+## Workspace and stack
 
-```
-Grid2/
-├── app/                          # Next.js 14 App Router application
-│   ├── (auth)/                   # Authentication routes (Login, Magic Link, etc.)
-│   ├── (onboarding)/             # 12-step contractor onboarding flow
-│   ├── (admin)/                  # Admin portal & dashboard (18 screens)
-│   ├── (contractor)/          # Field contractor portal (16 screens)
-│   └── api/                      # Backend API routes
-├── components/                   # React components
-│   ├── ui/                       # shadcn/ui components (do not recreate existing ones!)
-│   ├── common/                   # Shared layouts, feedback banners, data tables
-│   └── features/                 # Feature-specific components (auth, map, tickets, etc.)
-├── hooks/                        # Custom React hooks (geolocation, sync, offline)
-├── lib/                          # Configurations, utility functions, database clients
-│   ├── config/appConfig.ts       # Central application configuration & enums
-│   ├── supabase/                 # Supabase server & browser clients
-│   ├── db/dexie.ts               # Dexie.js (IndexedDB) offline-first database
-│   └── utils/                    # Shared validation schemas & formatting utilities
-├── stores/                       # Zustand global stores (auth, sync state)
-├── sql/                          # Supabase PostgreSQL schema migrations and seed data
-├── public/                       # Service worker (sw.ts/sw.js) and static assets
-├── grid-electric-docs/           # 📚 Technical specifications, wireframes, and design specs
-└── scratchpad.md                 # 📝 Active workspace for your notes, tasks, and code plans
-```
+The canonical checkout is `/Users/davidmccarty/Desktop/GRID/Projects/Central Command`. Active application code is under `src/`; schema changes are under `supabase/migrations/`. This is a working app, not the older documentation-only Grid2 scaffold.
 
----
+| Area | Foundation |
+|---|---|
+| App | Next.js 16 App Router, React 19, TypeScript |
+| UI | Tailwind CSS 4, existing shadcn/ui and GRID shared components |
+| Data/state | Supabase, TanStack Query, Zustand |
+| Field offline work | Dexie.js, existing sync queues, service worker |
+| Maps | Existing Mapbox/routing integration |
 
-## 🛠️ Technology Stack & Key Libraries
+Check `package.json`, current schema, and installed Next.js guides for exact versions/APIs. Extend the current blue/navy and gold/lightning design system rather than replacing it from an older design sample.
 
-- **Frontend**: Next.js 14 (App Router), React 19, TypeScript, Tailwind CSS (4.x), shadcn/ui
-- **State & Server State**: Zustand, TanStack Query (React Query)
-- **Offline Storage & PWA**: Dexie.js (IndexedDB), Service Workers, Web Push API
-- **Backend & Auth**: Supabase (PostgreSQL 15+, Auth, Storage, RLS, Realtime)
-- **Maps & Routing**: Mapbox GL JS, Self-hosted OSRM
+## Development and evidence
 
----
+Common commands are `npm run dev`, `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`. Inspect current scripts and task-specific verification requirements before execution. Read-only documentation work does not require running the app's full test suite.
 
-## 🔒 Crucial Development Constraints
+Preserve actor/storm isolation, private uploads, relevant GPS/photo capture, and offline draft recovery. Current ticket field-status actions are click-driven; historical GPS-gated status diagrams are not instructions to restore that behavior. Do not cache authenticated financial responses in a shared service-worker cache.
 
-- **Offline-First**: Field users work in areas with poor cellular coverage. All data operations must go to Dexie.js first, queueing up background synchronization via the Service Worker when online.
-- **GPS Validation**: Photos and time tracking require GPS accuracy thresholds (<100m) and geofence verification (500m radius). Do not bypass location checks.
-- **RLS & Security**: Row-Level Security (RLS) is strictly enforced in Supabase. Check [02-DATABASE-SCHEMA.md](file:///Users/davidmccarty/Desktop/Grid2/grid-electric-docs/02-DATABASE-SCHEMA.md) and [sql/08_rls_policies.sql](file:///Users/davidmccarty/Desktop/Grid2/sql/08_rls_policies.sql) before writing queries.
-- **Aesthetic Excellence**: Follow the color palettes, fonts, and component structures in the design guidelines ([04-DESIGN-SYSTEM.md](file:///Users/davidmccarty/Desktop/Grid2/grid-electric-docs/04-DESIGN-SYSTEM.md)). UI should feel modern, clean, and professional.
+For implementation, verify the same linked records across every affected dashboard and role. Record local tests, applied schema/readback, authenticated browser evidence, and actual device/offline/print acceptance separately. Update the progress tracker with the agent identifier. Follow the repository's Git-operation rules.
 
----
-
-## ⚙️ Development Commands
-
-Use the following commands inside this directory to manage the application:
-
-```bash
-# Start the Next.js development server
-npm run dev
-
-# Run TypeScript compilation check
-npx tsc --noEmit
-
-# Lint the codebase
-npm run lint
-
-# Build for production
-npm run build
-```
+The original [scratchpad](scratchpad.md) is source material containing dictation and superseded wording; agents should use the current brief/scope as their guide. Historical plans remain for evidence and must not revive conflicting rules or old removal instructions.

@@ -27,43 +27,25 @@ const ROLES_ORDER: ContractorRole[] = [
 ];
 
 const WORK_TYPES_ORDER: WorkType[] = [
-  'STANDARD_ASSESSMENT',
-  'TRAVEL',
-  'STANDBY',
+  'Working',
+  'MOB',
+  'DE-MOB',
+  'Stand-by',
 ];
 
-// Display overrides for work types whose column header differs from the
-// auto-derived label. STANDARD_ASSESSMENT is shown as "Rate" and TRAVEL as
-// "DE-MOB" in the payroll grid.
-const WORK_TYPE_LABEL_OVERRIDES: Partial<Record<WorkType, string>> = {
-  STANDARD_ASSESSMENT: 'Rate',
-  TRAVEL: 'DE-MOB',
+const WORK_TYPE_LABELS: Record<WorkType, string> = {
+  Working: 'Working',
+  MOB: 'MOB',
+  'DE-MOB': 'DE-MOB',
+  'Stand-by': 'Stand-by',
 };
 
 function toWorkTypeLabel(workType: WorkType): string {
-  const override = WORK_TYPE_LABEL_OVERRIDES[workType];
-  if (override) return override;
-  return workType
-    .toLowerCase()
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  return WORK_TYPE_LABELS[workType];
 }
 
 function cellKey(role: ContractorRole, workType: WorkType): string {
   return `${role}:${workType}`;
-}
-
-// DE-MOB (TRAVEL) and Standby are computed columns: fixed multiples of the
-// row's Rate (STANDARD_ASSESSMENT). They are displayed and persisted, never
-// edited directly.
-const DERIVED_RATE_MULTIPLIERS: Partial<Record<WorkType, number>> = {
-  TRAVEL: 1.5,
-  STANDBY: 2,
-};
-
-function derivedRate(baseRate: number, multiplier: number): number {
-  return Number((baseRate * multiplier).toFixed(2));
 }
 
 /**
@@ -74,7 +56,6 @@ function derivedRate(baseRate: number, multiplier: number): number {
  */
 export function RoleRateEditor({ canEdit = false }: { canEdit?: boolean } = {}) {
   const [inputs, setInputs] = useState<Map<string, string>>(new Map());
-  const [savedRates, setSavedRates] = useState<Map<ContractorRole, number>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [savingCell, setSavingCell] = useState<string | null>(null);
 
@@ -83,16 +64,10 @@ export function RoleRateEditor({ canEdit = false }: { canEdit?: boolean } = {}) 
     try {
       const defaults: RoleRateDefault[] = await payrollService.getRoleRateDefaults();
       const nextInputs = new Map<string, string>();
-      const nextSavedRates = new Map<ContractorRole, number>();
       for (const entry of defaults) {
-        const key = cellKey(entry.role, entry.workType);
-        nextInputs.set(key, entry.hourlyRate.toFixed(2));
-        if (entry.workType === 'STANDARD_ASSESSMENT') {
-          nextSavedRates.set(entry.role, entry.hourlyRate);
-        }
+        nextInputs.set(cellKey(entry.role, entry.workType), entry.hourlyRate.toFixed(2));
       }
       setInputs(nextInputs);
-      setSavedRates(nextSavedRates);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to load role rate defaults.');
     } finally {
@@ -103,17 +78,6 @@ export function RoleRateEditor({ canEdit = false }: { canEdit?: boolean } = {}) 
   useEffect(() => {
     void Promise.resolve().then(loadRates);
   }, [loadRates]);
-
-  // Derived columns track the live Rate input as the admin types, falling
-  // back to the loaded/saved Rate when the input is empty or invalid.
-  const currentBaseRate = (role: ContractorRole): number | null => {
-    const rawValue = inputs.get(cellKey(role, 'STANDARD_ASSESSMENT'));
-    const parsed = Number(rawValue);
-    if (rawValue && !Number.isNaN(parsed) && parsed >= 0) {
-      return parsed;
-    }
-    return savedRates.get(role) ?? null;
-  };
 
   const handleSave = async (role: ContractorRole, workType: WorkType) => {
     const key = cellKey(role, workType);
@@ -129,19 +93,6 @@ export function RoleRateEditor({ canEdit = false }: { canEdit?: boolean } = {}) 
     setSavingCell(key);
     try {
       await payrollService.updateRoleRateDefault({ role, workType, hourlyRate });
-      if (workType === 'STANDARD_ASSESSMENT') {
-        // Keep stored derived rates (DE-MOB, Standby) in sync with the
-        // displayed formulas so payroll math always matches this grid.
-        for (const [derivedWorkType, multiplier] of Object.entries(
-          DERIVED_RATE_MULTIPLIERS,
-        ) as [WorkType, number][]) {
-          await payrollService.updateRoleRateDefault({
-            role,
-            workType: derivedWorkType,
-            hourlyRate: derivedRate(hourlyRate, multiplier),
-          });
-        }
-      }
       toast.success(`${ROLE_LABELS[role]} / ${toWorkTypeLabel(workType)} rate updated.`);
       await loadRates();
     } catch (error) {
@@ -180,24 +131,16 @@ export function RoleRateEditor({ canEdit = false }: { canEdit?: boolean } = {}) 
                 <TableCell className="font-medium">{ROLE_LABELS[role]}</TableCell>
                 {WORK_TYPES_ORDER.map((workType) => {
                   const key = cellKey(role, workType);
-                  const multiplier = DERIVED_RATE_MULTIPLIERS[workType];
-                  if (multiplier !== undefined) {
-                    const baseRate = currentBaseRate(role);
-                    return (
-                      <TableCell key={key}>
-                        {baseRate === null ? '—' : derivedRate(baseRate, multiplier).toFixed(2)}
-                      </TableCell>
-                    );
-                  }
                   return (
                     <TableCell key={key}>
                       <div className="flex items-center gap-1">
                         <Input
-                      readOnly={!canEdit}
+                          readOnly={!canEdit}
                           type="number"
                           min={0}
                           step={0.01}
                           className="w-20"
+                          aria-label={`${ROLE_LABELS[role]} ${toWorkTypeLabel(workType)} rate`}
                           value={inputs.get(key) ?? ''}
                           disabled={!canEdit || (savingCell === key)}
                           onChange={(event) =>

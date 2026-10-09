@@ -1,230 +1,152 @@
-# Central Command — TECHNICAL PRODUCT REQUIREMENTS DOCUMENT
+# Central Command — Project Scope and Technical Product Requirements
 
-## Internal Damage Assessment Platform for Utility Contractors
-
-**Version:** 1.0  
-**Date:** February 4, 2026  
-**Status:** MVP Development Phase  
+**Version:** 2.0  
+**Updated:** 2026-10-08  
+**Status:** Existing application; Phase 4 operating-model refinement and acceptance  
+**Audience:** AI coding agents and developers  
 **Classification:** Internal Use Only
 
----
+This is the existing project scope document, updated from the owner's workflow notes and direct clarifications. Read the [project brief](../PROJECT_BRIEF.md) to understand the operation, the [current implementation plan](../implementation_plan.md) for general build order, and the [workflow master plan](../docs/plans/2026-10-08-central-command-workflow-master-plan.md) for CC-01–CC-11 requirements and AC-01–AC-19 acceptance scenarios.
+
+**Interpretation rule:** Current owner instructions and the updated scope control product intent. Source/schema inspection controls claims about what exists. Historical diagrams, sample interfaces, and rollout reports are references, not instructions to rebuild features, copy obsolete rules, or remove anything not mentioned here. This update is documentation; it does not claim the new official-time or management-role behavior has been implemented.
 
 ## TABLE OF CONTENTS
 
-1. [Executive Summary](#1-executive-summary)
-2. [MVP Scope Definition](#2-mvp-scope-definition)
-3. [Technical Architecture](#3-technical-architecture)
-4. [User Personas & Roles](#4-user-personas--roles)
-5. [Feature Specifications](#5-feature-specifications)
-6. [Data Models & Schema](#6-data-models--schema)
-7. [Security & Compliance](#7-security--compliance)
-8. [Integration Requirements](#8-integration-requirements)
-9. [Performance Requirements](#9-performance-requirements)
-10. [Success Metrics](#10-success-metrics)
+1. [Project purpose and operating model](#1-project-purpose-and-operating-model)
+2. [Current scope and acceptance](#2-current-scope-and-acceptance)
+3. [Technical architecture](#3-technical-architecture)
+4. [User personas and roles](#4-user-personas--roles)
+5. [Feature specifications](#5-feature-specifications)
+6. [Data models and schema](#6-data-models--schema)
+7. [Security and compliance requirements](#7-security--compliance)
+8. [Integration requirements](#8-integration-requirements)
+9. [Performance requirements](#9-performance-requirements)
+10. [Success metrics](#10-success-metrics)
 
----
-
-## 1. EXECUTIVE SUMMARY
+## 1. PROJECT PURPOSE AND OPERATING MODEL
 
 ### 1.1 Purpose
 
-This document defines the technical requirements for the Central Command Damage Assessment Platform — a Progressive Web Application (PWA) designed to manage independent contractor crews performing utility damage assessments for government contracts.
+Central Command is GRID's existing storm-response application for coordinating utility damage-assessment work performed by independent contractor teams and crews. Management uses operational dashboards; contractors use the mobile-friendly field portal with offline support. Finish the existing application by making its workflows, relationships, and totals consistent. Preserve its pages, useful capabilities, and established visual organization.
 
-### 1.2 Business Context
+### 1.2 Business organization
 
-- **Prime Contractor:** Central Command
-- **Workforce Model:** Independent 1099 contractors (not employees)
-- **Client Base:** Power utility companies with government contracts
-- **Compliance Level:** FISMA/FedRAMP moderate (government contract requirements)
+The CEO runs the company. Each storm has one responsible Storm Manager who runs the storm and replaces the Super Admin business role with full management access beneath the CEO. Pay roles are separate from application permissions. A team contains a Team Lead, that lead's Driver, and working crews. A working crew contains one Driver and one Damage Assessor or Senior Damage Assessor. Tickets are assigned to crews, with individual actors retained for permissions and evidence.
 
-### 1.3 Core Value Proposition
+### 1.3 Storm workflow
 
-Enable efficient dispatch, tracking, and billing of damage assessment crews while maintaining strict compliance with government contract standards and independent contractor legal requirements.
+Management creates the storm, selects its utility/template configuration, sets role wages and utility billing rates, and assigns the responsible manager. Contractors are added to its roster with inherited role wages, optional individual overrides, and separate Driver allowance. Existing account setup verifies email, establishes a password, and completes onboarding. Management organizes teams/crews, reviews utility documents or enters tickets manually, and dispatches tickets to eligible crews. Crews perform the existing field, assessment, evidence, review, correction, and utility-handoff workflow.
 
----
+A storm owns operational activity and financial context. Contractor accounts and utility definitions remain reusable company identities. Selected-storm context must reach all related dashboards, records, service calls, caches, and exports; explicit company-wide views remain available.
 
-## 2. MVP SCOPE DEFINITION
+### 1.4 Time and financial authority
 
-### 2.1 In-Scope (MVP)
+Normal work is **16 hours per day, every day, from mobilization until release**, with management-controlled individual exceptions. There is no required predetermined ending date, payroll period, or daily attendance reconfirmation. Management sets official hours for payroll and hourly utility billing. Contractor clocks remain personal references and dispute evidence; they do not establish official financial hours.
 
-#### Phase 1: Foundation (Weeks 1-4)
+Storm setup owns rates. A blank individual override inherits the role wage for that storm. Controlled rate edits belong in storm setup/detail; operational dashboards display saved values. Recorded official work retains its inputs, with separate audited corrections when needed. A 16-hour day does not itself introduce an overtime rule, multiplier, deduction, or weekly payroll cycle.
 
-| Feature | Priority | Complexity |
-|---------|----------|------------|
-| User Authentication & Role Management | P0 | Medium |
-| Contractor Onboarding Flow | P0 | Medium |
-| Basic Ticket Management (CRUD) | P0 | High |
-| GPS-Verified Time Tracking | P0 | High |
-| Simple Expense Submission | P0 | Medium |
-| Offline Form Capability | P0 | High |
+Payroll, allowances, expenses, billing estimates, and margins must reconcile to shared records. Keep company spending, contractor reimbursements, wages, and allowances distinct and count each cost once. Estimates, approved amounts, invoices, and payments are separate states.
 
-#### Phase 2: Operations (Weeks 5-8)
+### 1.5 Preservation and test data
 
-| Feature | Priority | Complexity |
-|---------|----------|------------|
-| 3-Status Field Workflow (In Route/On Site/Complete) | P0 | High |
-| Photo Capture with GPS/EXIF | P0 | Medium |
-| Route Optimization (Basic) | P1 | Medium |
-| Damage Assessment Forms | P0 | High |
-| Admin Dashboard & Reporting | P1 | Medium |
+This is a working application, not a documentation-only scaffold. Keep the current dashboards, navigation, forms, maps, field tools, evidence, alerts, account setup, review, reports, and exports. A missing mention or terminology change does not authorize feature removal. Preserve applicable GPS/photo capture and offline protections while retaining current click-driven field-status behavior.
 
-#### Phase 3: Financial (Weeks 9-12)
+The owner identifies all current operational records as test data intended for a controlled launch reset. Do not make preserving artificial test history the basis of production design. Maintain correct history for future real operations. Reset preparation is a separate launch task with a reviewed manifest and recovery plan; this document authorizes no immediate deletion.
 
-| Feature | Priority | Complexity |
-|---------|----------|------------|
-| Automated Invoice Generation | P1 | High |
-| 1099 Tracking & Reporting | P1 | Medium |
-| Expense Policy Enforcement | P1 | Medium |
-| Payment Workflow | P2 | Medium |
+## 2. CURRENT SCOPE AND ACCEPTANCE
 
-### 2.2 Out-of-Scope (Post-MVP)
+### 2.1 In scope for Phase 4 refinement
 
-- Real-time live tracking (dots on map)
-- Advanced AI-powered route optimization
-- Integration with specific utility systems (Duke, FPL)
-- Advanced analytics/ML predictions
-- Mobile native apps (iOS/Android stores)
-- Multi-language support
+| Area | Required result | Requirement |
+|---|---|---|
+| Shared storm workspace | Explicit storm context and consistent IDs through dashboards, records, caches, and exports | CC-01 |
+| Management authority | CEO and full-access Storm Manager, with one responsible manager per storm and coordinated legacy-role compatibility | CC-02 |
+| Storm compensation | Reuse existing role wage/bill rates, optional per-contractor storm overrides, separate Driver allowance, controlled effective edits | CC-03 |
+| Workforce | Existing add/setup flow integrated with participation, mobilization/release, operational teams, crews, workload, and availability | CC-04 |
+| Ticket intake/dispatch | Manual and reviewed multi-ticket document intake; optional crew assignment; utility-correct templates and duplicate-safe retries | CC-05 |
+| Field execution | Preserve work pages, assessments, notes, photos, safety escalation, review/rework, handoff, print, and offline behavior | CC-06 |
+| Official Time | Management-authorized normal 16-hour days and exceptions, distinct from personal clocks | CC-07 |
+| Payroll | Official-time-based individual/team/crew/role totals and billing/margin readback with retained exports and review | CC-08 |
+| Expenses | Storm-owned company spending and contractor reimbursement, receipts, categories, billability, review, and statistics | CC-09 |
+| Dashboards/reporting | Reconciled operational/financial summaries and useful graphs while retaining supporting pages | CC-10 |
+| Billing preparation | Traceable official labor and approved billable expense inputs/exports | CC-11 |
+| Launch readiness | Connected acceptance plus separate test-data reset and real-account/storm bootstrap | Master plan section 5 |
 
-### 2.3 MVP Success Criteria
+Treat all these as refinement workstreams within the existing Phase 4. Do not restart historical foundation phases or infer new release dates from the old week-based roadmap.
 
-- [ ] Contractor can onboard in < 10 minutes
-- [ ] Ticket creation to assignment < 2 minutes
-- [ ] Time tracking accuracy within 50m GPS radius
-- [ ] Offline form submission with < 5 min sync delay
-- [ ] Invoice generation from approved entries < 1 hour
+### 2.2 Deferred product design and non-goals
+
+The owner has not finalized the invoice product. Preserve existing invoice-related capabilities/records and prepare reliable billing/export inputs. Final invoice layout, numbering, issuance/correction lifecycle, custom invoice composition, automatic email delivery, and external billing integration need their own defined workstream. Do not claim dormant contractor-invoice tables provide utility invoicing.
+
+A wholesale UI rewrite, merged dashboards, speculative feature deletion, new utility forms without source material, and production-data reset during ordinary implementation are outside this request. Existing capabilities remain even when not covered by this scope; deferral is not removal authority.
+
+### 2.3 Success criteria
+
+- Management can run the same storm across every dashboard without mismatched context or totals.
+- Teams/crews, ticket assignments, member access, and operational statistics use the same stable relationships.
+- A mobilized contractor can receive 16 official hours without a personal clock or ticket assignment; approved exceptions update only the intended official record.
+- Personal time, official time, wage/bill rates, allowances, reimbursement, and company costs remain distinguishable and reconcile across readback/exports.
+- Existing fieldwork, evidence, review, maps, account setup, and offline workflows remain available.
+- Document OCR creates reviewed candidates and avoids duplicates; unsupported extraction is reported honestly.
+- Source checks, local tests, migration readback, authenticated browser acceptance, and device/offline/print evidence are recorded separately.
+
+Use AC-01–AC-19 in the [master plan](../docs/plans/2026-10-08-central-command-workflow-master-plan.md) as the connected acceptance checklist. Documentation completion is not product acceptance.
 
 ---
 
 ## 3. TECHNICAL ARCHITECTURE
 
-### 3.1 Stack Overview
+### 3.1 Existing stack
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        PRESENTATION LAYER                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   React 18  │  │  Tailwind   │  │    shadcn/ui Components │  │
-│  │  TypeScript │  │    CSS 3    │  │    (40+ pre-installed)  │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│                      STATE & DATA LAYER                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Zustand    │  │ React Query │  │    IndexedDB (offline)  │  │
-│  │   (store)   │  │  (server state)│  │    (Dexie.js)          │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│                      BACKEND SERVICES                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Supabase   │  │  PostgreSQL │  │    Row-Level Security   │  │
-│  │   (BaaS)    │  │    (RLS)    │  │    (Auth/Permissions)   │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│                      EXTERNAL SERVICES                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Mapbox    │  │    AWS S3   │  │    Push Notifications   │  │
-│  │ (maps/routing)│  │  (storage)  │  │    (OneSignal/FCM)      │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Layer | Current implementation foundation |
+|---|---|
+| Application | Next.js 16 App Router, React 19, TypeScript, `src/app` |
+| Interface | Tailwind CSS 4, existing shadcn/ui and shared GRID components |
+| State | TanStack Query, Zustand, React state |
+| Backend | Supabase PostgreSQL, Auth, RLS, Storage, Realtime |
+| Offline fieldwork | Dexie.js/IndexedDB, existing queues, service worker |
+| Maps | Existing Mapbox/routing integration |
 
-### 3.2 Technology Decisions
+Check `package.json`, the lockfile, current schema, and applicable installed Next.js guides before implementation. Reuse the established stack; this scope does not require a framework or hosting migration.
 
-| Component | Choice | Rationale |
-|-----------|--------|-----------|
-| **Framework** | Next.js 14 (App Router) | SSR for SEO, API routes, PWA support |
-| **Language** | TypeScript 5.x | Type safety, better DX |
-| **Styling** | Tailwind CSS 3.4 | Rapid development, consistent design |
-| **UI Components** | shadcn/ui | Accessible, customizable, 40+ components |
-| **State Management** | Zustand | Lightweight, TypeScript-friendly |
-| **Server State** | TanStack Query | Caching, synchronization, offline support |
-| **Database** | Supabase PostgreSQL | Real-time, RLS, auth, GovCloud option |
-| **Offline Storage** | Dexie.js (IndexedDB) | Form queuing, background sync |
-| **Maps** | Mapbox GL JS | Cost-effective, custom styling |
-| **Routing** | OSRM (self-hosted) | Free, unlimited routing |
-| **File Storage** | Supabase Storage | Encrypted, CDN delivery |
-| **Push Notifications** | Web Push API | PWA-native, no third-party |
+### 3.2 Data boundaries
 
-### 3.3 PWA Specifications
+The server is authoritative for permissions, validated business mutations, official-time calculations, financial snapshots, and audit identity. Shared services provide the same scoped records to all dashboards. New logical contracts cover management authority, operational membership, crew assignment, official-time allocations/exceptions, company-expense ownership, batch extraction, and reporting scope. The master plan defines their dependency and impact boundaries without prescribing an unverified database replacement.
 
-```javascript
-// manifest.json
-{
-  "name": "Central Command - Damage Assessment",
-  "short_name": "GridElectric",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0F172A",
-  "theme_color": "#1E40AF",
-  "orientation": "portrait-primary",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192" },
-    { "src": "/icon-512.png", "sizes": "512x512" }
-  ]
-}
-```
+### 3.3 PWA and offline behavior
 
-**Service Worker Features:**
+Preserve field drafts, personal-time observations, photo/receipt queues, and explicit sync/conflict states. Cache keys and queued records must carry the correct actor and storm/parent identity. Revalidate membership and authorization during reconnect. Do not call a rejected server write a successful offline save.
 
-- Static asset caching (Cache First)
-- API response caching (Stale While Revalidate)
-- Background sync for form submissions
-- Push notification handling
+Keep static asset caching. Do not cache authenticated API/financial responses in shared service-worker caches or leak prior-account data after account switching. Official financial authority remains server-controlled; personal/offline observations cannot publish official hours by synchronization alone.
 
 ---
 
 ## 4. USER PERSONAS & ROLES
 
-### 4.1 Role Matrix
+### 4.1 Management and field roles
 
-| Feature | Super Admin | Operations Manager | Field Contractor | Auditor |
-|---------|-------------|-------------------|---------------------|---------|
-| User Management | ✅ Full | ❌ No | ❌ No | ❌ No |
-| Contractor Onboarding | ✅ Full | ✅ Full | ❌ No | ❌ No |
-| Ticket Creation | ✅ Full | ✅ Full | ❌ No | ❌ No |
-| Ticket Assignment | ✅ Full | ✅ Full | ❌ No | ❌ No |
-| Field Work (Time/Photos) | ❌ No | ❌ No | ✅ Own Only | ❌ No |
-| Expense Submission | ❌ No | ❌ No | ✅ Own Only | ❌ No |
-| Approval Workflows | ✅ Full | ✅ Full | ❌ No | ✅ Read |
-| Invoice Generation | ✅ Full | ✅ Full | ❌ No | ✅ Read |
-| Reports & Analytics | ✅ Full | ✅ Full | ✅ Own Only | ✅ Full |
-| Audit Logs | ✅ Full | ❌ No | ❌ No | ✅ Full |
+| Actor | Intended responsibility and authority |
+|---|---|
+| CEO | Runs the company; highest management authority and full oversight |
+| Storm Manager | One responsible manager per storm; full existing Super Admin management access beneath the CEO, including operations, official time, finances, and access-management capabilities |
+| Team Lead | Operational leadership of a team; separate pay/operational identity from staff reviewer and app authority |
+| Driver | Crew or leadership-pair Driver; own permitted field/personal records and configured allowance |
+| Damage Assessor / Senior Damage Assessor | Assigned crew assessment work and permitted evidence/actions |
+| Existing reviewer/read-only capabilities | Preserve current useful review and reporting capabilities; do not infer new access or delete them because the management titles changed |
 
-### 4.2 Persona Definitions
+### 4.2 Authorization versus operational/pay role
 
-#### Super Admin (Grid Electric Internal)
+STORM_MANAGER currently exists as a contractor pay role while the application uses SUPER_ADMIN for full management authority. Update the authority model across UI, services, database policies/functions, and sessions; retain compatibility where needed. Selecting a pay role must never grant admin access. Preserve the CEO's higher authority and keep one explicit responsible manager relationship per storm.
 
-- **Goals:** System configuration, financial oversight, compliance monitoring
-- **Tech Savvy:** High
-- **Device:** Desktop primarily
-- **Frequency:** Daily
-
-#### Operations Manager
-
-- **Goals:** Dispatch crews, monitor progress, approve time/expenses
-- **Tech Savvy:** Medium-High
-- **Device:** Desktop + Tablet
-- **Frequency:** Continuous during operations
-
-#### Field Contractor
-
-- **Goals:** Receive assignments, track time, submit assessments, get paid
-- **Tech Savvy:** Variable (training required)
-- **Device:** Smartphone (primary)
-- **Frequency:** During active work only
-
-#### Auditor (Government/Client)
-
-- **Goals:** Verify compliance, review audit trails, generate reports
-- **Tech Savvy:** Medium
-- **Device:** Desktop
-- **Frequency:** Periodic (monthly/quarterly)
+The selected storm defines operational context, not an unrequested restriction of Storm Manager's full access. Contractor access remains scoped to the actor's permitted crew/work/records. Crew membership does not authorize a Driver to perform Assessor-only actions. Existing staff-review profile IDs and operational contractor IDs must remain distinct.
 
 ---
 
 ## 5. FEATURE SPECIFICATIONS
 
 ### 5.1 Authentication & Onboarding
+
+**Current scope (CC-04):** Management adds a pending contractor and storm participation with inherited wage/optional override and Driver allowance. Retain the existing self-service email verification, password setup, and onboarding implementation. Account readiness and operational participation are separate. The older screen-by-screen inventory below is reference material, not authorization to restore removed onboarding steps, let contractors set official storm wages, or require a new invitation workflow.
 
 #### 5.1.1 Authentication Flow
 
@@ -266,6 +188,8 @@ Enable efficient dispatch, tracking, and billing of damage assessment crews whil
 - Admin approval required before ticket assignment eligibility
 
 ### 5.2 Ticket Management System
+
+**Current scope (CC-05/CC-06):** Each ticket belongs to its utility-configured storm and may remain unassigned. Dispatch selects a complete eligible crew on that storm; member IDs support actor permissions, not separate individual assignments. Keep operational Team Lead and staff reviewer identities distinct. Extend current intake to reviewed multi-ticket extraction, retaining manual intake and source linkage. Preserve the current click-driven Start/checklist field progression and assessment/review/evidence workflow. The state diagram and sample types below are historical design references; use current code/schema and the master plan to determine exact transitions and fields.
 
 #### 5.2.1 Ticket Lifecycle State Machine
 
@@ -388,9 +312,21 @@ interface StatusChange {
 }
 ```
 
-### 5.3 GPS-Verified Time Tracking
+### 5.3 Official Time and Personal Reference Time
 
-#### 5.3.1 Time Entry Flow
+#### 5.3.1 Current requirements (CC-07/CC-08)
+
+Management establishes official time for mobilized participants: normally 16 hours per day, every day, until release. Record shorter/longer days, arrivals, absences, and releases as explicit exceptions with actor, reason, affected date, and revision history. Do not impose a fixed payroll period, planned release date, or daily attendance reconfirmation.
+
+Official hours determine wages and hourly utility billing. A personal clock, assigned ticket, completed assessment, or device capture is not a prerequisite for management-authorized work. Keep the contractor's personal time, estimates, GPS/photo evidence, and offline observations as references and dispute evidence. Show official readback separately; personal synchronization/approval must not duplicate official records or alter official totals.
+
+Use saved storm wage/bill terms and optional contractor overrides; keep recorded inputs stable through rate changes. Preserve existing compensation capabilities without introducing hidden multipliers, overtime assumptions, or period resets. Driver allowance uses management-approved eligible vehicle hours bounded by official hours and retains required evidence/review.
+
+The following legacy clock illustration describes supporting personal capture only. Its `billable_amount` example and ticket requirement are not the new official-time contract. Preserve applicable current GPS/photo protections; do not treat the historical fallback wording as permission to bypass them.
+
+#### 5.3.2 Historical personal-clock design reference
+
+##### Personal clock flow (historical example)
 
 ```typescript
 ┌─────────────────────────────────────────────────────────────────┐
@@ -414,7 +350,7 @@ interface StatusChange {
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-#### 5.3.2 Time Entry Data Model
+##### Personal clock model (historical example)
 
 ```typescript
 interface TimeEntry {
@@ -474,7 +410,7 @@ type WorkType =
   | 'ADMIN';
 ```
 
-#### 5.3.3 GPS Requirements
+##### Capture requirements (verify against current implementation)
 
 | Requirement | Specification |
 |-------------|---------------|
@@ -486,6 +422,8 @@ type WorkType =
 | Fallback behavior | Require manual confirmation if GPS unavailable |
 
 ### 5.4 Expense Management
+
+**Current scope (CC-09):** Extend the existing dashboard to storm-owned company spending and contractor reimbursements, with payer/payment method, receipts, categories, review, and explicit client billability. The database already has an expense-report storm link; complete its service/UI/cache use. Company spending must not require a fictitious contractor. Keep existing categories and add vehicle rental, towing, repairs/fleet and other needed coverage. Reimbursement/card settlement must not duplicate expense cost. The policy amounts in the historical table below require current configuration verification; they are not new approved production values.
 
 #### 5.4.1 Expense Categories & Rules
 
@@ -581,6 +519,8 @@ type PolicyFlag =
 ```
 
 ### 5.5 Damage Assessment Forms
+
+**Preservation requirement (CC-06):** Keep the existing ticket work pages, utility forms, section-linked photos, drafts, notes/escalation, review/rework, and reports. Use current form schemas and source-coverage records to resolve differences with the early field inventory below; do not create duplicate forms or remove fields because an older sample omits them.
 
 #### 5.5.1 Assessment Form Structure
 
@@ -681,9 +621,13 @@ interface AssessmentPhoto {
 | Format | JPEG (quality: 85%) |
 | Checksum verification | SHA-256 on upload |
 
-### 5.6 Invoice Generation
+### 5.6 Invoice Preparation and Deferred Issuance Design
 
-#### 5.6.1 Invoice Workflow
+**Current scope (CC-11):** Prepare traceable official labor and approved billable expense inputs/exports. The owner has not finalized the invoice product, and current invoice routes redirect. Preserve existing records/capabilities. Define final utility invoice format, numbering, issuance/correction, automatic delivery, and external billing integration in a separate workstream. A generated PDF is not evidence of issuance, payment, or collection; no automatic email is authorized here.
+
+The contractor-invoice workflow/model below is a **historical reference**, not a complete utility-invoicing requirement or a current tax/payment specification. It must not impose a payroll period on continuous storm work or make contractor personal clocks the billing authority.
+
+#### 5.6.1 Historical Contractor-Invoice Workflow
 
 ```
 ┌─────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
@@ -693,7 +637,7 @@ interface AssessmentPhoto {
 └─────────┘     └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-#### 5.6.2 Invoice Data Model
+#### 5.6.2 Historical Contractor-Invoice Data Model
 
 ```typescript
 interface ContractorInvoice {
@@ -740,7 +684,9 @@ interface ContractorInvoice {
 
 ## 6. DATA MODELS & SCHEMA
 
-### 6.1 Entity Relationship Diagram
+**Current relationship contract:** Storm → participation/compensation, teams/crews, tickets, official days/individual exceptions, expenses, and financial readback. Company identities remain reusable. Personal time is a distinct supporting source. Ticket members and authenticated reviewers use distinct stable IDs. Reuse compatible tables, including the existing expense storm link and compensation structures; inspect live/local schema before designing additive changes. The initial diagram below is historical and does not enumerate the newer or planned contracts.
+
+### 6.1 Historical Initial Entity Relationship Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -805,6 +751,8 @@ See `02-DATABASE-SCHEMA.md` for complete SQL definitions including:
 ---
 
 ## 7. SECURITY & COMPLIANCE
+
+These are requirements and verification topics, not a statement of certification. Apply current role/ownership checks, private storage, audit history, and relevant capture protections across the revised workflows. The management-authorized official-time model is separate from personal device-capture evidence.
 
 ### 7.1 Authentication Security
 
@@ -975,6 +923,7 @@ All actions logged with:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.0 | 2026-10-08 | Codex /root | Reconcile scope with project brief, CEO/Storm Manager authority, storm-owned workflows, crew assignment, official 16-hour time, preservation, and current general build plan |
 | 1.0 | 2026-02-04 | Technical Team | Initial MVP specification |
 
 ---

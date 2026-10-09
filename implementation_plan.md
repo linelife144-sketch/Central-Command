@@ -1,6 +1,66 @@
 # Implementation Plan
 
-## Active Phase 4 plan — Contractor team/crew roster and scratchpad UI feedback (2026-10-06, Cline)
+## Current Phase 4 direction — Project brief and general build plan (2026-10-08, Codex /root)
+
+**Purpose:** Guide agents completing the existing application, then support audit and decomposition into individual implementation tasks. This is a general build plan, not a restart of completed phases or a claim that the new operating model is already implemented.
+
+Read the [project brief](PROJECT_BRIEF.md) for the business purpose and operating model, the [project scope / PRD](grid-electric-docs/01-TECHNICAL-PRD.md) for current scope, and the [workflow master plan](docs/plans/2026-10-08-central-command-workflow-master-plan.md) for CC-01–CC-11 requirements, dependencies, implementation anchors, and AC-01–AC-19 acceptance scenarios. Check the [progress tracker](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md) before starting work.
+
+### Operating model to build toward
+
+- The CEO runs the company. Each storm has one responsible Storm Manager, replacing the Super Admin business role with full management access beneath the CEO.
+- A storm owns operational participation, teams/crews, tickets, official time, relevant expenses, and financial configuration. Reusable company identities remain shared.
+- A crew is one Driver and one Assessor/Senior Assessor. A team has a Team Lead, that lead's Driver, and working crews. Tickets are assigned to crews; member and reviewer identities remain distinct.
+- Work normally continues 16 hours per day, every day, from mobilization until release. No predetermined pay period, ending date, or daily attendance reconfirmation is required.
+- Management's official time drives payroll and hourly utility billing. Personal clocks remain reference/dispute evidence and do not create official hours.
+- Storm setup owns role wage/bill rates. An optional contractor override replaces the inherited wage on that storm; Driver allowance is separate. Controlled edits belong in storm setup/detail and do not silently reprice recorded work.
+- All operational pages are dashboards. Keep the existing page organization and useful capabilities while making their shared records and totals consistent.
+- Current operational records are test data. Their eventual reset is a separate launch activity, not a requirement to preserve artificial test history or an instruction to delete anything now.
+
+### Preservation and conflict rules
+
+Keep existing pages, navigation, controls, alerts, forms, field evidence, review, maps, account setup, offline work, and exports unless a specific current requirement changes the behavior. Omission from a brief is not a removal request. Classify each finding as KEEP, MODIFY, ADD, VERIFY, or DEFER and describe the smallest justified change.
+
+The current brief/scope and this section supersede conflicting product assumptions in the historical material below. In particular: do not repeat old instructions to replace the Alerts column, remove ticket tools, use individual contractors as the assignment unit, impose 12-hour official days or payroll periods, grant Storm Manager only limited access, or treat personal clocks as the official financial source. Existing click-driven field status actions remain; applicable GPS/photo capture requirements remain separate. Historical reviewer IDs must not be reinterpreted as operational Team Lead IDs.
+
+Source and schema prove what exists; a product document states what should exist. Neither old completion percentages nor a passing historical test report proves acceptance of the revised workflow. Recheck active entry points and read back the same linked records.
+
+### General build order within Phase 4
+
+| Order | Workstream | Required outcome / dependency |
+|---|---|---|
+| A | Baseline and decomposition | Map CC requirements to active source/schema/runtime evidence; retain compliant features; identify bounded gaps and conflicts before implementation. |
+| B | Management authority and storm context | Coordinate Storm Manager authorization and one responsible manager per storm; pass selected-storm context through services, dashboards, caches, and exports. Depends on A. |
+| C | Contractor participation and staffing | Integrate existing add/setup flow, storm wage defaults/overrides, Driver allowance, mobilization/release, operational teams, and crews. Depends on B. |
+| D | Crew dispatch and field integration | Use one crew-based assignment operation across Tickets/Contractors; preserve assessment, evidence, review, and offline behavior. Depends on C. |
+| E | Official time | Add management-controlled 16-hour days, exceptions, history, and authoritative calculations; separate personal observations. Depends on B/C; coordinate field references with D. |
+| F | Payroll and Expenses | Connect official time and storm-owned company/reimbursement costs to existing dashboards with separate allowance and consistent totals. Depends on E for money; expense ownership work can start after B. |
+| G | Summaries, reports, and exports | Reconcile main/contractor dashboards, graphs, crew statistics, financial readback, and billing-source exports. Depends on D/E/F. |
+| H | Reviewed batch intake | Extend existing OCR/templates to multiple candidates with source review and duplicate-safe creation. Requires B/D contracts and can be decomposed independently once fixed. |
+| I | Connected acceptance and launch | Prove the same records across roles/screens/devices; prepare the separately approved test-data reset and real bootstrap configuration. Depends on required workstreams. |
+
+Invoice preparation uses reliable official labor and approved billable expense data. A complete invoice-issuance dashboard, final format/numbering, automatic delivery, and external billing integration remain a separately defined workstream; do not infer them from dormant contractor-invoice tables or remove existing functionality under this deferral.
+
+### Task-decomposition and verification contract
+
+Every implementation task must identify its CC requirement and AC scenarios, current evidence, before/after behavior, exact source anchors, interfaces/records/permissions affected, dependencies, offline consequences, capabilities to preserve, and the evidence required to close it. Use existing services/components where their meaning fits. Check the actual migration ledger and definitions before applying schema changes; several local compensation filenames differ from applied versions.
+
+Verify local tests, schema/permissions, authenticated browser behavior, same-record dashboard readback, and physical device/private-upload/offline/print behavior separately. Use isolated database tests and read-only live verification within existing authorization. A future launch reset needs its own reviewed manifest. Do not run destructive live rollback fixtures as a routine verification shortcut.
+
+### Documentation delivery and remaining work
+
+- [x] Write the agent-facing project brief and save the detailed workflow master plan, including current-state findings, relationships, dependency order, preservation rules, and connected acceptance scenarios. — Codex /root, 2026-10-08
+- [x] Reconcile the current project scope and agent/document entry points with the owner's CEO/Storm Manager, crew assignment, 16-hour official-time, and test-data clarification. — Codex /root, 2026-10-08
+- [ ] Verify documentation links, requirement coverage, historical preservation, and consistency; record the result in the progress tracker. — Codex /root
+- [ ] Audit and decompose A–I into implementation tasks against the then-current canonical app. This documentation update does not mark any of those product changes complete. — Codex /root
+
+---
+
+## Historical plans and implementation evidence
+
+The following material is retained for provenance, implemented behavior, and prior verification evidence. Earlier active-task headings and product decisions are historical; the current Phase 4 direction above controls conflicts. Do not rerun completed changes or revive removal instructions without reconciling the present requirement and app.
+
+## Historical Phase 4 plan — Contractor team/crew roster and scratchpad UI feedback (2026-10-06, Cline)
 
 ### Overview
 
@@ -93,7 +153,7 @@ The scratchpad’s page-feedback snapshots may describe controls already removed
 9. Run focused tests, full test suite, typecheck, scoped lint, database validation, and production build; review diffs and verify no unintended UI/backend behavior changed.
 10. Update the progress tracker in `grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md`, append implementation evidence/status to this plan, and run `graphify update .` after source modifications. Report any live/device/deployment acceptance still outstanding.
 
-## Active Phase 4 task — Click-driven contractor field status (2026-10-06, Codex /root)
+## Historical Phase 4 task — Click-driven contractor field status (2026-10-06, Codex /root)
 
 User authorized: Start changes Assigned → En Route; opening the assigned assessor's field checklist changes En Route → On Site. Both are explicit click actions; no GPS permission, reading or geofence may be used for these status changes. Contractors see Assigned / En Route / On Site and Closed after submission; admins retain their detailed review labels.
 
@@ -107,7 +167,7 @@ Order: inspect current status/crew RPC, auth guards, Realtime and existing actor
 
 Evidence: `docs/testing/ticket-workflow-local.json` and `docs/testing/click-driven-ticket-progress-validation.md`. Live migration is applied and Supabase confirms authenticated can execute `record_ticket_field_action` while anon/authenticated cannot execute the retired GPS RPC. Live contractor/admin transition readback remains pending an eligible dispatched ticket.
 
-## Active Phase 4 task — Contractor ticket work page (2026-10-06, Codex /root)
+## Historical Phase 4 task — Contractor ticket work page (2026-10-06, Codex /root)
 
 User goal: add Start to each assigned-ticket row; open a dedicated screen containing clickable Entergy Clean-up and Damage assessment forms, extra notes, environmental/public-safety escalation, and all ticket assessment/completion tools. Move contractor form tools out of ticket details. Keep the same ticket identity and existing crew, GPS, photo, immutable submission and two-stage staff review gates.
 
@@ -120,7 +180,7 @@ Order: inspect current routes/workflow and live permissions; implement ticket-li
 
 Evidence: `docs/testing/ticket-workspace-validation.md`, `docs/testing/ticket-work-notes-local.json`, `docs/testing/ticket-work-notes-live.json`, and `docs/testing/ticket-workspace/`. The user approved one permanent QA note on ticket 2026100102; it saved through the actual signed-in contractor account and survived reload. No travel, arrival, hazard or assessment submission was performed on that workflow-only ticket. Physical GPS/camera, reconnect on real devices, and staff approval acceptance remain tracked in the earlier workflow sections.
 
-## Active Phase 4 task — Official Entergy forms (2026-10-06, Codex /root)
+## Historical Phase 4 task — Official Entergy forms (2026-10-06, Codex /root)
 
 Create independent ticket-linked Clean-up and Damage assessment forms from the supplied scanned Entergy Clean-up Form and Distribution Change Order (revision 02-25-2019). Preserve every printed input and option, including six equipment rows and three customer-transfer rows, with room for additional rows. Printed operational instructions are reference content, not authority to contact anyone or perform fieldwork.
 
@@ -929,21 +989,22 @@ CREATE UNIQUE INDEX utility_billing_rates_storm_uk
   ON public.utility_billing_rates (storm_event_id, work_type) WHERE storm_event_id IS NOT NULL;
 
 -- Starting placeholder rates — admin is expected to overwrite via RoleRateEditor.
+-- Operational work types are only Working, MOB, DE-MOB, and Stand-by.
+-- Dollars are carried forward, not repriced: Working keeps the former
+-- standard-assessment placeholder; MOB and DE-MOB share the former travel
+-- placeholder because no distinct mobilization rate existed; Stand-by keeps
+-- the former standby placeholder. Emergency, admin, and training are not
+-- work types and are not seeded.
 INSERT INTO public.role_rate_defaults (role, work_type, hourly_rate) VALUES
-  ('STORM_MANAGER','STANDARD_ASSESSMENT',115),('STORM_MANAGER','EMERGENCY_RESPONSE',150),
-  ('STORM_MANAGER','TRAVEL',65),('STORM_MANAGER','STANDBY',55),('STORM_MANAGER','ADMIN',75),('STORM_MANAGER','TRAINING',50),
-  ('TEAM_LEAD','STANDARD_ASSESSMENT',105),('TEAM_LEAD','EMERGENCY_RESPONSE',140),
-  ('TEAM_LEAD','TRAVEL',60),('TEAM_LEAD','STANDBY',50),('TEAM_LEAD','ADMIN',70),('TEAM_LEAD','TRAINING',45),
-  ('SR_DAMAGE_ASSESSER','STANDARD_ASSESSMENT',95),('SR_DAMAGE_ASSESSER','EMERGENCY_RESPONSE',135),
-  ('SR_DAMAGE_ASSESSER','TRAVEL',55),('SR_DAMAGE_ASSESSER','STANDBY',45),('SR_DAMAGE_ASSESSER','ADMIN',65),('SR_DAMAGE_ASSESSER','TRAINING',40),
-  ('DAMAGE_ASSESSER','STANDARD_ASSESSMENT',85),('DAMAGE_ASSESSER','EMERGENCY_RESPONSE',120),
-  ('DAMAGE_ASSESSER','TRAVEL',50),('DAMAGE_ASSESSER','STANDBY',40),('DAMAGE_ASSESSER','ADMIN',55),('DAMAGE_ASSESSER','TRAINING',35),
-  ('DRIVER','STANDARD_ASSESSMENT',65),('DRIVER','EMERGENCY_RESPONSE',90),
-  ('DRIVER','TRAVEL',45),('DRIVER','STANDBY',35),('DRIVER','ADMIN',45),('DRIVER','TRAINING',30)
+  ('STORM_MANAGER','Working',115),('STORM_MANAGER','MOB',65),('STORM_MANAGER','DE-MOB',65),('STORM_MANAGER','Stand-by',55),
+  ('TEAM_LEAD','Working',105),('TEAM_LEAD','MOB',60),('TEAM_LEAD','DE-MOB',60),('TEAM_LEAD','Stand-by',50),
+  ('SR_DAMAGE_ASSESSER','Working',95),('SR_DAMAGE_ASSESSER','MOB',55),('SR_DAMAGE_ASSESSER','DE-MOB',55),('SR_DAMAGE_ASSESSER','Stand-by',45),
+  ('DAMAGE_ASSESSER','Working',85),('DAMAGE_ASSESSER','MOB',50),('DAMAGE_ASSESSER','DE-MOB',50),('DAMAGE_ASSESSER','Stand-by',40),
+  ('DRIVER','Working',65),('DRIVER','MOB',45),('DRIVER','DE-MOB',45),('DRIVER','Stand-by',35)
 ON CONFLICT DO NOTHING;
 
 ALTER TABLE public.time_entries
-  ADD COLUMN contractor_role contractor_role,
+  ADD COLUMN contractor_role contractor_role,send
   ADD COLUMN pay_rate_applied numeric(10,2),
   ADD COLUMN payroll_amount numeric(12,2),
   ADD COLUMN utility_bill_rate_applied numeric(10,2),
@@ -953,6 +1014,14 @@ CREATE INDEX idx_time_entries_role ON public.time_entries(contractor_role);
 CREATE INDEX idx_time_entries_payroll ON public.time_entries(clock_in_at, contractor_id)
   WHERE is_deleted IS NOT TRUE;
 ```
+
+**Work-type correction — applied (2026-10-09, Pi).** Live project
+`xcvacmreerrypygpritq` now has `work_type` values `Working`, `MOB`,
+`DE-MOB`, and `Stand-by` via `20261009152535_align_owner_work_types`.
+Existing standard-assessment rows are Working, travel rows are DE-MOB,
+standby rows are Stand-by, and MOB copies the former travel amount.
+Emergency rows had no shifts and were archived, then removed. Stored
+dollars were not repriced. Do not re-run the historical six-type insert.
 
 **Trigger — recomputes wages inline.** PostgreSQL evaluates `GENERATED`
 columns *after* `BEFORE` triggers, so `NEW.billable_minutes` is `NULL`
@@ -1841,9 +1910,10 @@ Audit findings: the current time guard checks only `tickets.assigned_to`, while 
 
 Implemented storm-owned compensation locally. Storm creation requires hourly wage and utility bill rates for each of the five contractor roles and sends storm creation plus the complete rate card through one atomic operation. The Payroll storm selector loads and edits the selected storm's rate card; edits affect later clock-ins only and closed storms reject edits. Roster assignment supports an optional storm-only wage override and requires an hourly vehicle allowance for Drivers while forbidding allowances for other roles. Ticket assignment selects contractors already on that storm's roster.
 
-Server-side clock-in costing reads the storm/role default and per-contractor override, and snapshots wage, utility billing, and vehicle allowance on the time entry. Driver allowance is calculated only from recorded vehicle-use intervals. Existing started/completed entries keep their snapshots. The new additive migration is `supabase/migrations/20261008220000_storm_compensation.sql`. The previously inspected migration ledger ends at `20261007092206`, so this migration remains local and unapplied. No live Supabase mutation or authenticated-browser acceptance was performed.
+Server-side clock-in costing reads the storm/role default and per-contractor override, and snapshots wage, utility billing, and vehicle allowance on the time entry. Driver allowance is calculated only from recorded vehicle-use intervals. Existing started/completed entries keep their snapshots. Applied and read back three additive migrations on the verified Central Command Supabase project: `20261007130000_role_keyed_utility_billing_rates.sql` (schema-only prerequisite), `20261008220000_storm_compensation.sql`, and `20261008234600_storm_compensation_fk_indexes.sql`. Live postflight found three storms, four preserved legacy work-type billing rows, zero open shifts, and zero new role-rate/contractor-exception rows. Existing storms therefore need an authorized rate card and Driver allowance before they can accept new clock-ins; no rates were guessed or copied. The currently deployed permission helper restricts ordinary `ADMIN` accounts to ticket permissions, so storm/payroll editing remains with roles that actually receive those permissions. Hosted frontend deployment and signed-in browser acceptance remain open because this checkout has no configured hosting target/provider.
 
 - [x] Verify the database migration/schema baseline and prepare the additive migration with scoped RLS, authorization checks, audit, atomic creation/assignment, closed-storm guard, and clock-in snapshots. — Codex /root
-- [x] Pass 36 focused application tests across 10 files, focused TypeScript and ESLint, six isolated PGlite compensation groups, and Graphify AST update. — Codex /root
-- [ ] Apply and read back the migration after explicit deployment authorization; verify authorized staff storm creation, rate edits, contractor assignment, and payroll readback in a signed-in browser. — Codex /root
+- [x] Pass 48 focused application tests across 11 files, scoped ESLint, nine isolated PGlite compensation groups, and post-deploy schema/RLS/function readback. — Codex /root
+- [x] Apply and read back the role-key schema prerequisite, storm compensation migration, and foreign-key index follow-up on Central Command (`xcvacmreerrypygpritq`); preserve legacy billing rows and existing shift snapshots. — Codex /root
+- [ ] Configure rates for the three existing storms and verify storm creation, rate edits, contractor assignment, and Payroll readback in an authorized signed-in browser. No production values were inferred; hosted frontend target/provider remains unconfigured in this checkout. — Codex /root
 - [ ] Reconcile the repository-wide TypeScript errors in duplicate archival Payroll files named with ` 2` and ` 3` suffixes; focused feature TypeScript passes. — Codex /root

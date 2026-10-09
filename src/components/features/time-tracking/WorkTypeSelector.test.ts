@@ -7,10 +7,10 @@ describe('WORK_TYPE_OPTIONS', () => {
     const values = WORK_TYPE_OPTIONS.map((option) => option.value);
 
     expect(values).toEqual([
-      'STANDARD_ASSESSMENT',
-      'EMERGENCY_RESPONSE',
-      'TRAVEL',
-      'STANDBY',
+      'Working',
+      'MOB',
+      'DE-MOB',
+      'Stand-by',
     ]);
   });
 });
