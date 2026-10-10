@@ -37,6 +37,7 @@ Earlier checklists and dated entries remain historical evidence. They do not cer
 - [x] Prepare the owner-selected Hostinger VPS development deployment, protected build/runtime configuration and verified additive Supabase redirect allowlist entry. — Codex /root
 - [x] Publish/read back all saved code on `origin/admin`; clean VPS build passes strict types/50 pages and the final development container is healthy at `https://srv1969199.hstgr.cloud`. Trusted HTTPS, public assets, signed-out access and 793 source checksums verify; existing Hermes/proxy services remain running. — Codex /root, 2026-10-09
 - [x] Resolve the production source-map-js advisory with the single 1.2.2 patch; post-patch checks cover 829 tests/143 files, strict repository types and zero known production audit findings. Save final deployment record, screenshot and [deployment instructions](../docs/deployment/hostinger-development.md). — Codex /root
+- [x] Reapply/reverify the owner-requested live publication: application source is unchanged and all 793 release checksums match; Compose confirms the running image is healthy; trusted HTTPS login/assets/manifest return 200, signed-out dashboard redirects to login and profile API returns 401. GitHub was already current; save the fresh publication readback without repeating unchanged code tests/build. — Codex /root, 2026-10-09
 - [ ] Full B5/C–I, authenticated/device acceptance and controlled production launch/reset remain open. — Codex /root
 
 ### Other recorded changes — Pi

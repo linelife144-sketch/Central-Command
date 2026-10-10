@@ -162,5 +162,23 @@
       "status": "running",
       "started_at": "2026-09-29T23:26:35.855846896Z"
     }
-  ]
+  ],
+  "latest_publication_check": {
+    "origin": "https://srv1969199.hstgr.cloud",
+    "verified_at": "2026-10-10T02:05:15.937Z",
+    "login_status": 200,
+    "asset_status": 200,
+    "manifest_status": 200,
+    "signed_out_dashboard_status": 307,
+    "signed_out_dashboard_location": "/login?redirect=%2Fadmin%2Fdashboard",
+    "signed_out_profile_status": 401,
+    "certificate_validation_bypassed": false,
+    "repository_revision_checked": "11759a8fa341645999c8e4f663e93c533eb414b4",
+    "application_code_unchanged": true,
+    "source_files_verified": 793,
+    "compose_apply_exit": 0,
+    "container_health": "healthy",
+    "image_id": "sha256:3cb24d744414128d67a43355600f98364c0d0069a0d13ec0f038bef48c26f5cb",
+    "tests_or_build_repeated": false
+  }
 }
