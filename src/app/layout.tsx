@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { StormContextProvider } from "@/components/providers/StormContextProvider";
 import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 import { SyncProvider } from "@/components/providers/SyncProvider";
 import { OfflineBanner } from "@/components/common/feedback/OfflineBanner";
@@ -44,6 +45,7 @@ export default function RootLayout({
     <html lang="en" className={`${manrope.variable} ${barlow.variable}`}>
       <body className="bg-grid-shell antialiased">
         <AuthProvider>
+          <StormContextProvider>
           <ServiceWorkerProvider>
             <SyncProvider>
               <OfflineBanner />
@@ -52,6 +54,7 @@ export default function RootLayout({
               <Toaster />
             </SyncProvider>
           </ServiceWorkerProvider>
+          </StormContextProvider>
         </AuthProvider>
       </body>
     </html>

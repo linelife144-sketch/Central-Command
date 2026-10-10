@@ -39,6 +39,17 @@ function buildTimeEntry(overrides: Partial<TimeEntry> = {}): TimeEntry {
 }
 
 describe('createTimeEntryManagementService', () => {
+  it('keeps offline personal entries in their persisted storm and contractor scope', async () => {
+    const service = createTimeEntryManagementService({ isOnline: () => false, getLocalEntries: vi.fn().mockResolvedValue([
+      buildLocalTimeEntry({ id: 'alpha', storm_event_id: 'storm-a' }),
+      buildLocalTimeEntry({ id: 'bravo', storm_event_id: 'storm-b' }),
+    ]) });
+    expect((await service.listEntries({ contractorId: 'sub-1', stormEventId: 'storm-a' })).map(row => row.id)).toEqual(['alpha']);
+  });
+  it('reports unavailable management time offline instead of an empty successful list', async () => {
+    const service = createTimeEntryManagementService({ isOnline: () => false });
+    await expect(service.listEntries({ stormEventId: 'storm-a' })).rejects.toThrow(/connection/i);
+  });
   it('caches worker snapshots and keeps a queued clock-out visible over an open server shift', async () => {
     const cacheRemoteEntries = vi.fn().mockResolvedValue(undefined);
     const remote = buildTimeEntry({ id: 'queued', clock_out_at: undefined });

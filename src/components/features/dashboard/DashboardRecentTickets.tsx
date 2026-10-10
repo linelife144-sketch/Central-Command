@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable, type Column } from '@/components/common/data-display/DataTable';
@@ -21,17 +23,22 @@ const columns: Column<DashboardTicketRow>[] = [
 ];
 
 export function DashboardRecentTickets() {
+  const { stormEventId } = useStormContext();
+  const request = useRef(0);
+  const cancelRequests = useCallback(() => { request.current++; }, []);
   const [tickets, setTickets] = useState<DashboardTicketRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
   const load = useCallback(async () => {
-    try { setError(''); setTickets(await dashboardTicketService.getRecentTickets()); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load recent tickets.'); }
-    finally { setIsLoading(false); }
-  }, []);
+    const version = ++request.current;
+    setIsLoading(true);
+    try { setError(''); const rows = await dashboardTicketService.getRecentTickets(8, { stormEventId }); if (version === request.current) setTickets(rows); }
+    catch (cause) { if (version === request.current) { setTickets([]); setError(cause instanceof Error ? cause.message : 'Unable to load recent tickets.'); } }
+    finally { if (version === request.current) setIsLoading(false); }
+  }, [stormEventId]);
 
-  useEffect(() => { void Promise.resolve().then(load); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); return () => { cancelRequests(); }; }, [load, cancelRequests]);
   useEffect(() => {
     let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const scheduleLoad = () => {
@@ -55,7 +62,7 @@ export function DashboardRecentTickets() {
       if (refreshTimer) clearTimeout(refreshTimer);
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, [load, cancelRequests]);
 
   return <Card className="min-w-0 xl:col-span-2">
     <CardHeader className="flex flex-wrap items-center justify-between gap-3 sm:flex-row">

@@ -1,3 +1,4 @@
+import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isPasswordResetAllowedPath, shouldEnforcePasswordReset } from '@/lib/auth/passwordResetGate';
@@ -131,7 +132,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   const role = profile.role;
-  const isAdminRole = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'CEO';
+  const isAdminRole = isAdminClassRole(role);
   const isContractorRole = role === 'CONTRACTOR';
   let permissions: PermissionMap = {};
   if (isAdminRole) {

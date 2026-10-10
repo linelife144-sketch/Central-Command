@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { Fragment, ReactNode, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
@@ -8,6 +8,9 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
 import { usePathname } from 'next/navigation';
 import { mayOpenPath } from '@/lib/auth/permissionCatalog';
+import { useCurrentStormName } from '@/hooks/useCurrentStormName';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+import { StormScopeSelector } from '@/components/features/storms/StormScopeSelector';
 
 interface AppShellProps {
   children: ReactNode;
@@ -16,8 +19,11 @@ interface AppShellProps {
 
 export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile, signOut, permissions, isLoading } = useAuth();
+  const { profile, signOut, permissions, isLoading, can } = useAuth();
   const pathname = usePathname();
+  const stormName = useCurrentStormName(userRole, profile?.id);
+  const stormContext = useStormContext();
+  const isScopedDashboard = userRole === 'admin' && ['/admin/dashboard', '/admin/payroll', '/admin/reports'].includes(pathname ?? '') && can('admin.storms.view');
   const allowed = userRole === 'contractor' || mayOpenPath(pathname, permissions, profile?.role);
 
   return (
@@ -30,6 +36,7 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
         userRole={profile?.role || 'USER'}
         onSignOut={signOut}
         portal={userRole}
+        stormName={isScopedDashboard ? stormContext.selectedStorm?.name ?? (stormContext.ready ? 'Company-wide' : null) : stormName}
       />
 
       <div className="cc-shell-body flex">
@@ -49,7 +56,8 @@ export function AppShell({ children, userRole = 'admin' }: AppShellProps) {
                 <strong>Super Admin test session.</strong> Tickets and storm events save in this browser.
               </div>
             )}
-            {isLoading ? <p role="status" className="p-6 text-grid-body">Loading your workspace…</p> : allowed ? children : <div role="alert" className="cc-work-panel p-6 text-grid-navy">You do not have access to this module. Choose an available page from navigation.</div>}
+            {isScopedDashboard && allowed && !isLoading && <StormScopeSelector />}
+            {isLoading ? <p role="status" className="p-6 text-grid-body">Loading your workspace…</p> : allowed ? isScopedDashboard && !stormContext.ready ? <p role="status" className="p-6 text-grid-body">{stormContext.error ? 'Dashboard data is unavailable until its storm context is verified.' : 'Loading dashboard context…'}</p> : <Fragment key={isScopedDashboard ? `${profile?.id}:${stormContext.selection}` : 'page'}>{children}</Fragment> : <div role="alert" className="cc-work-panel p-6 text-grid-navy">You do not have access to this module. Choose an available page from navigation.</div>}
           </div>
         </main>
       </div>

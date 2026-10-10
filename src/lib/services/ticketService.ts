@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { readAllRows, readRowsByIds, type PagedRead } from '@/lib/supabase/readRows';
 import { Ticket, TicketStatus, UserRole } from '@/types';
 import { isValidTransition } from '@/lib/utils/statusTransitions';
 import { isSuperAdminTestingEnabled } from '@/lib/testing/superAdminTesting';
@@ -19,13 +20,8 @@ async function getTicketsForAssignment(column: TicketAssignmentColumn, assignmen
         return (await db.tickets.toArray()).filter(ticket => ticket[column] === assignmentId) as unknown as Ticket[];
     }
 
-    const query = supabase.from('tickets').select('*');
-    const result = column === 'crew_id'
-        ? await query.eq('crew_id', assignmentId).order('created_at', { ascending: false })
-        : await query.eq('team_lead_id', assignmentId).order('created_at', { ascending: false });
-
-    if (result.error) throw result.error;
-    const rows = (result.data ?? []) as unknown as Ticket[];
+    const rows = await readAllRows<Ticket>(() => supabase.from('tickets').select('*')
+        .eq(column, assignmentId).order('created_at', { ascending: false }) as unknown as PagedRead<Ticket>);
     const { cacheTickets } = await import('@/lib/db/dexie');
     await cacheTickets(rows as unknown as LocalTicket[]);
     return rows;
@@ -51,21 +47,19 @@ export const ticketService = {
                 ids.map((id) => [id, localTestStore.getPayload(id)]).filter(([, payload]) => payload !== null) as [string, Record<string, unknown>][]
             );
         }
-        const { data, error } = await supabase.from('ticket_payloads').select('ticket_id, payload').in('ticket_id', ids);
-        if (error) throw error;
+        const data = await readRowsByIds<{ ticket_id: string; payload: Record<string, unknown> }>(ids, batch =>
+            supabase.from('ticket_payloads').select('ticket_id, payload').in('ticket_id', batch) as unknown as PagedRead<{ ticket_id: string; payload: Record<string, unknown> }>, 'ticket_id');
         return Object.fromEntries(
             (data as { ticket_id: string; payload: Record<string, unknown> }[]).map((row) => [row.ticket_id, row.payload])
         );
     },
-    async getTickets() {
-        if (isSuperAdminTestingEnabled()) return localTestStore.getTickets();
-        const { data, error } = await supabase
-            .from('tickets')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data as Ticket[];
+    async getTickets(filters: { stormEventId?: string } = {}) {
+        if (isSuperAdminTestingEnabled()) return localTestStore.getTickets().filter(ticket => !filters.stormEventId || ticket.storm_event_id === filters.stormEventId);
+        return readAllRows<Ticket>(() => {
+            let query = supabase.from('tickets').select('*').order('created_at', { ascending: false });
+            if (filters.stormEventId) query = query.eq('storm_event_id', filters.stormEventId);
+            return query as unknown as PagedRead<Ticket>;
+        });
     },
 
     async getTicketsByCrew(crewId: string) {
@@ -152,13 +146,9 @@ export const ticketService = {
         }
         const { db } = await import('@/lib/db/dexie');
         if (typeof navigator !== 'undefined' && !navigator.onLine) return await db.tickets.filter(t=>t.assigned_to===assigneeId||t.assigned_driver_id===assigneeId).toArray() as unknown as Ticket[];
-        const { data, error } = await supabase
-            .from('tickets')
-            .select('*')
+        const data = await readAllRows<Ticket>(() => supabase.from('tickets').select('*')
             .or(`assigned_to.eq.${assigneeId},assigned_driver_id.eq.${assigneeId}`)
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
+            .order('created_at', { ascending: false }) as unknown as PagedRead<Ticket>);
         await db.tickets.bulkPut((data??[]).map(ticket=>({...ticket,updated_at:ticket.updated_at??ticket.created_at??new Date().toISOString(),assigned_to:ticket.assigned_to??undefined,storm_event_id:ticket.storm_event_id??undefined,work_description:ticket.work_description??undefined,latitude:ticket.latitude??undefined,longitude:ticket.longitude??undefined,synced:true,sync_status:'synced' as const})));
         return data as Ticket[];
     },

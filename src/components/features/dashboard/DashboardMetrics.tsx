@@ -1,9 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Clock, ListChecks, Loader2, RefreshCw, Ticket, Users } from 'lucide-react';
 
 import { MetricCard } from '@/components/common/data-display/MetricCard';
+import { stormRosterService } from '@/lib/services/stormRosterService';
 import { contractorService } from '@/lib/services/contractorService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -32,6 +35,9 @@ function toErrorMessage(error: unknown): string {
 
 export function DashboardMetrics({ className }: DashboardMetricsProps) {
   const { can } = useAuth();
+  const { stormEventId } = useStormContext();
+  const request = useRef(0);
+  const cancelRequests = useCallback(() => { request.current++; }, []);
   const [metrics, setMetrics] = useState<DashboardMetricsData | null>(null);
   const [activeContractors, setActiveContractors] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,30 +51,35 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
       setIsLoading(true);
     }
 
+    const version = ++request.current;
     setError(null);
 
     try {
       const [nextMetrics, contractors] = await Promise.all([
-        dashboardReportingService.getDashboardMetrics(),
-        contractorService.listContractors({ activeOnly: true }).catch(() => null),
+        dashboardReportingService.getDashboardMetrics({ stormEventId }),
+        (stormEventId ? stormRosterService.list(stormEventId) : contractorService.listContractors({ activeOnly: true })).catch(() => null),
       ]);
+      if (version !== request.current) return;
       setMetrics(nextMetrics);
       setActiveContractors(contractors ? contractors.length : null);
     } catch (loadError) {
+      if (version !== request.current) return;
       setMetrics(null);
       setError(toErrorMessage(loadError));
     } finally {
+      if (version !== request.current) return;
       if (mode === 'refresh') {
         setIsRefreshing(false);
       } else {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [stormEventId]);
 
   useEffect(() => {
-    void loadMetrics('initial');
-  }, [loadMetrics]);
+    void Promise.resolve().then(() => loadMetrics('initial'));
+    return () => { cancelRequests(); };
+  }, [loadMetrics, cancelRequests]);
 
   useEffect(() => {
     const handleTicketsChanged = () => {
@@ -106,7 +117,7 @@ export function DashboardMetrics({ className }: DashboardMetricsProps) {
       window.removeEventListener(GRID_TICKETS_CHANGED_EVENT, handleTicketsChanged);
       window.removeEventListener('storage', handleStorageSync);
     };
-  }, [loadMetrics]);
+  }, [loadMetrics, cancelRequests]);
 
   const activeTicketsValue = metrics?.active_tickets ?? (isLoading ? '...' : 'Unavailable');
   const fieldCrewsValue = activeContractors ?? (isLoading ? '...' : 'Unavailable');

@@ -5,14 +5,12 @@ import {
   eachMonthOfInterval,
   eachWeekOfInterval,
   endOfDay,
-  endOfMonth,
   format,
   isWithinInterval,
   parseISO,
   startOfDay,
   startOfMonth,
   startOfWeek,
-  subMonths,
 } from 'date-fns';
 
 export type ReportGroupBy = 'day' | 'week' | 'month';
@@ -22,6 +20,7 @@ interface DashboardTicketRow {
   id: string;
   status: string;
   assigned_to: string | null;
+  crew_id?: string | null;
   created_at: string;
   is_deleted: boolean | null;
 }
@@ -101,6 +100,7 @@ export interface DashboardReportContractorRow {
 }
 
 export interface DashboardReportData {
+  storm_event_id?: string | null;
   generated_at: string;
   start_date: string;
   end_date: string;
@@ -116,6 +116,7 @@ export interface DashboardReportData {
 }
 
 export interface DashboardReportInput {
+  stormEventId?: string;
   startDate: string;
   endDate: string;
   groupBy: ReportGroupBy;
@@ -128,7 +129,7 @@ export interface ReportExportArtifact {
 }
 
 export interface DashboardReportingService {
-  getDashboardMetrics: () => Promise<DashboardMetricsData>;
+  getDashboardMetrics: (input?: { stormEventId?: string }) => Promise<DashboardMetricsData>;
   getReport: (input: DashboardReportInput) => Promise<DashboardReportData>;
   createReportExport: (
     report: DashboardReportData,
@@ -233,14 +234,14 @@ export function buildDashboardMetrics(input: DashboardMetricsBuildInput): Dashbo
 
   const fieldCrewIds = new Set(
     activeTickets
-      .map((ticket) => ticket.assigned_to)
+      .map((ticket) => ticket.crew_id)
       .filter((assignedTo): assignedTo is string => Boolean(assignedTo)),
   );
 
   const onSiteCrewIds = new Set(
     activeTickets
       .filter((ticket) => ticket.status.toUpperCase() === 'ON_SITE')
-      .map((ticket) => ticket.assigned_to)
+      .map((ticket) => ticket.crew_id)
       .filter((assignedTo): assignedTo is string => Boolean(assignedTo)),
   );
 
@@ -485,6 +486,7 @@ export function buildReportExportArtifact(
   const summaryRows: string[][] = [
     ['Grid Electric Services - Operations Report'],
     ['Generated At', report.generated_at],
+    ['Storm Scope', report.storm_event_id ?? 'Company-wide'],
     ['Range', `${report.start_date} to ${report.end_date}`],
     ['Grouping', report.group_by],
     [],
@@ -533,6 +535,7 @@ export function buildReportExportArtifact(
   const pdfLines = [
     'Grid Electric Services - Operations Report',
     `Generated At: ${report.generated_at}`,
+    `Storm Scope: ${report.storm_event_id ?? 'Company-wide'}`,
     `Range: ${report.start_date} to ${report.end_date}`,
     `Grouping: ${report.group_by}`,
     '',
@@ -568,65 +571,30 @@ interface SelectInClient<Row> {
   };
 }
 
-interface CountEqClient {
-  select: (
-    columns: string,
-    options: { head: true; count: 'exact' },
-  ) => {
-    eq: (column: string, value: string) => Promise<{ count: number | null; error: unknown }>;
-  };
+interface DashboardReadQuery<Row> extends PromiseLike<{ data: Row[] | null; error: unknown; count?: number | null }> {
+  eq: (column: string, value: string | boolean) => DashboardReadQuery<Row>;
+  in: (column: string, values: readonly string[]) => DashboardReadQuery<Row>;
+  is: (column: string, value: null) => DashboardReadQuery<Row>;
+  not: (column: string, operator: string, value: null) => DashboardReadQuery<Row>;
+  gte: (column: string, value: string) => DashboardReadQuery<Row>;
+  lte: (column: string, value: string) => DashboardReadQuery<Row>;
+  order: (column: string) => DashboardReadQuery<Row>;
+  range: (from: number, to: number) => DashboardReadQuery<Row>;
 }
 
-interface CountInClient {
-  select: (
-    columns: string,
-    options: { head: true; count: 'exact' },
-  ) => {
-    in: (column: string, values: readonly string[]) => Promise<{ count: number | null; error: unknown }>;
-  };
+function selectRows<Row>(client: SupabaseClient, table: string, columns: string, options?: { head: true; count: 'exact' }): DashboardReadQuery<Row> {
+  return (client.from(table as 'tickets') as unknown as { select: (columns: string, options?: { head: true; count: 'exact' }) => DashboardReadQuery<Row> }).select(columns, options);
 }
 
-interface CountIsNotClient {
-  select: (
-    columns: string,
-    options: { head: true; count: 'exact' },
-  ) => {
-    is: (column: string, value: null) => {
-      not: (column: string, operator: 'is', value: null) => Promise<{ count: number | null; error: unknown }>;
-    };
-  };
-}
-
-interface SelectEqClient<Row> {
-  select: (columns: string) => {
-    eq: (column: string, value: string | boolean) => Promise<{ data: Row[] | null; error: unknown }>;
-  };
-}
-
-interface SelectEqDateRangeClient<Row> {
-  select: (columns: string) => {
-    eq: (column: string, value: string | boolean) => {
-      gte: (column: string, value: string) => {
-        lte: (column: string, value: string) => Promise<{ data: Row[] | null; error: unknown }>;
-      };
-    };
-  };
-}
-
-interface SelectDateRangeClient<Row> {
-  select: (columns: string) => {
-    gte: (column: string, value: string) => {
-      lte: (column: string, value: string) => Promise<{ data: Row[] | null; error: unknown }>;
-    };
-  };
-}
-
-interface SelectOverlapDateClient<Row> {
-  select: (columns: string) => {
-    lte: (column: string, value: string) => {
-      gte: (column: string, value: string) => Promise<{ data: Row[] | null; error: unknown }>;
-    };
-  };
+async function readAllRows<Row>(createQuery: () => DashboardReadQuery<Row>, message: string): Promise<Row[]> {
+  const rows: Row[] = [];
+  const pageSize = 500;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await createQuery().order('id').range(offset, offset + pageSize - 1);
+    if (error) throw new Error(message);
+    rows.push(...(data ?? []));
+    if (!data || data.length < pageSize) return rows;
+  }
 }
 
 async function getDefaultClient() {
@@ -697,190 +665,148 @@ async function fetchContractorNames(
   return nameByContractorId;
 }
 
-async function fetchPendingTimeEntries(client: Awaited<ReturnType<typeof getDefaultClient>>): Promise<number> {
-  const timeEntriesTable = client.from('time_entries') as unknown as CountEqClient;
-  const { count, error } = await timeEntriesTable.select('id', { head: true, count: 'exact' }).eq('status', 'PENDING');
-
-  if (error) {
-    throw new Error('Unable to load pending time entry metrics.');
-  }
-
-  return count ?? 0;
+async function fetchPendingTimeEntries(client: SupabaseClient, stormEventId?: string): Promise<number> {
+  let query = selectRows(client, 'time_entries', 'id', { head: true, count: 'exact' }).eq('status', 'PENDING').eq('is_deleted', false);
+  if (stormEventId) query = query.eq('storm_event_id', stormEventId);
+  const { count, error } = await query;
+  if (error) throw new Error('Unable to load pending time entry metrics.');
+  if (count == null) throw new Error('Time review count is unavailable.');
+  return count;
 }
 
-async function fetchPendingExpenseReports(client: Awaited<ReturnType<typeof getDefaultClient>>): Promise<number> {
-  const expenseReportsTable = client.from('expense_reports') as unknown as CountInClient;
-  const { count, error } = await expenseReportsTable
-    .select('id', { head: true, count: 'exact' })
-    .in('status', ['SUBMITTED', 'UNDER_REVIEW']);
-
-  if (error) {
-    throw new Error('Unable to load pending expense metrics.');
-  }
-
-  return count ?? 0;
+async function fetchPendingExpenseReports(client: SupabaseClient, stormEventId?: string): Promise<number> {
+  let query = selectRows(client, 'expense_reports', 'id', { head: true, count: 'exact' }).in('status', ['SUBMITTED', 'UNDER_REVIEW']).eq('is_deleted', false);
+  if (stormEventId) query = query.eq('storm_event_id', stormEventId);
+  const { count, error } = await query;
+  if (error) throw new Error('Unable to load pending expense metrics.');
+  if (count == null) throw new Error('Expense review count is unavailable.');
+  return count;
 }
 
-async function fetchPendingAssessments(client: Awaited<ReturnType<typeof getDefaultClient>>): Promise<number> {
-  const assessmentsTable = client.from('damage_assessments') as unknown as CountIsNotClient;
-  const { count, error } = await assessmentsTable
-    .select('id', { head: true, count: 'exact' })
-    .is('reviewed_at', null)
-    .not('assessed_at', 'is', null);
-
-  if (error) {
-    throw new Error('Unable to load pending assessment metrics.');
-  }
-
-  return count ?? 0;
+async function fetchPendingAssessments(client: SupabaseClient, stormEventId?: string): Promise<number> {
+  let query = selectRows(client, 'damage_assessments', stormEventId ? 'id,tickets!inner(storm_event_id,is_deleted)' : 'id', { head: true, count: 'exact' })
+    .is('reviewed_at', null).not('assessed_at', 'is', null);
+  if (stormEventId) query = query.eq('tickets.storm_event_id', stormEventId).eq('tickets.is_deleted', false);
+  const { count, error } = await query;
+  if (error) throw new Error('Unable to load pending assessment metrics.');
+  if (count == null) throw new Error('Assessment review count is unavailable.');
+  return count;
 }
 
-async function fetchAllTickets(client: SupabaseClient): Promise<DashboardTicketRow[]> {
-  const ticketsTable = client.from('tickets') as unknown as SelectEqClient<DashboardTicketRow>;
-  const { data, error } = await ticketsTable
-    .select('id, status, assigned_to, created_at, is_deleted')
-    .eq('is_deleted', false);
-
-  if (error) {
-    throw new Error('Unable to load ticket metrics.');
-  }
-
-  return (data ?? []) as DashboardTicketRow[];
+async function fetchAllTickets(client: SupabaseClient, stormEventId?: string): Promise<DashboardTicketRow[]> {
+  return readAllRows(() => {
+    let query = selectRows<DashboardTicketRow>(client, 'tickets', 'id,status,assigned_to,crew_id,created_at,is_deleted').eq('is_deleted', false);
+    if (stormEventId) query = query.eq('storm_event_id', stormEventId);
+    return query;
+  }, 'Unable to load ticket metrics.');
 }
 
-async function fetchReportTickets(
-  client: SupabaseClient,
-  startIso: string,
-  endIso: string,
-): Promise<DashboardTicketRow[]> {
-  const ticketsTable = client.from('tickets') as unknown as SelectEqDateRangeClient<DashboardTicketRow>;
-  const { data, error } = await ticketsTable
-    .select('id, status, assigned_to, created_at, is_deleted')
-    .eq('is_deleted', false)
-    .gte('created_at', startIso)
-    .lte('created_at', endIso);
-
-  if (error) {
-    throw new Error('Unable to load report tickets.');
-  }
-
-  return (data ?? []) as DashboardTicketRow[];
+async function fetchReportTickets(client: SupabaseClient, startIso: string, endIso: string, stormEventId?: string): Promise<DashboardTicketRow[]> {
+  return readAllRows(() => {
+    let query = selectRows<DashboardTicketRow>(client, 'tickets', 'id,status,assigned_to,crew_id,created_at,is_deleted').eq('is_deleted', false).gte('created_at', startIso).lte('created_at', endIso);
+    if (stormEventId) query = query.eq('storm_event_id', stormEventId);
+    return query;
+  }, 'Unable to load report tickets.');
 }
 
-async function fetchReportTimeEntries(
-  client: SupabaseClient,
-  startIso: string,
-  endIso: string,
-): Promise<DashboardTimeEntryRow[]> {
-  const timeEntriesTable = client.from('time_entries') as unknown as SelectDateRangeClient<DashboardTimeEntryRow>;
-  const { data, error } = await timeEntriesTable
-    .select('id, contractor_id, status, payroll_amount, clock_in_at')
-    .gte('clock_in_at', startIso)
-    .lte('clock_in_at', endIso);
-
-  if (error) {
-    throw new Error('Unable to load report time entries.');
-  }
-
-  return (data ?? []) as DashboardTimeEntryRow[];
+async function fetchReportTimeEntries(client: SupabaseClient, startIso: string, endIso: string, stormEventId?: string): Promise<DashboardTimeEntryRow[]> {
+  return readAllRows(() => {
+    let query = selectRows<DashboardTimeEntryRow>(client, 'time_entries', 'id,contractor_id,status,payroll_amount,clock_in_at').eq('is_deleted', false).gte('clock_in_at', startIso).lte('clock_in_at', endIso);
+    if (stormEventId) query = query.eq('storm_event_id', stormEventId);
+    return query;
+  }, 'Unable to load report time entries.');
 }
 
-async function fetchReportExpenseReports(
-  client: SupabaseClient,
-  startDate: string,
-  endDate: string,
-): Promise<DashboardExpenseReportRow[]> {
-  const expenseReportsTable = client.from('expense_reports') as unknown as SelectOverlapDateClient<DashboardExpenseReportRow>;
-  const { data, error } = await expenseReportsTable
-    .select('id, contractor_id, status, total_amount, report_period_start, report_period_end, reviewed_at')
-    .lte('report_period_start', endDate)
-    .gte('report_period_end', startDate);
-
-  if (error) {
-    throw new Error('Unable to load report expense data.');
-  }
-
-  return (data ?? []) as DashboardExpenseReportRow[];
+async function fetchReportExpenseReports(client: SupabaseClient, startDate: string, endDate: string, stormEventId?: string): Promise<DashboardExpenseReportRow[]> {
+  return readAllRows(() => {
+    let query = selectRows<DashboardExpenseReportRow>(client, 'expense_reports', 'id,contractor_id,status,total_amount,report_period_start,report_period_end,reviewed_at').eq('is_deleted', false).lte('report_period_start', endDate).gte('report_period_end', startDate);
+    if (stormEventId) query = query.eq('storm_event_id', stormEventId);
+    return query;
+  }, 'Unable to load report expense data.');
 }
 
 interface DashboardReportingDependencies {
+  getClient: () => Promise<SupabaseClient>;
   now: () => Date;
-  fetchTickets: () => Promise<DashboardTicketRow[]>;
-  fetchPendingTimeEntries: () => Promise<number>;
-  fetchPendingExpenseReports: () => Promise<number>;
-  fetchPendingAssessments: () => Promise<number>;
-  fetchReportTickets: (startIso: string, endIso: string) => Promise<DashboardTicketRow[]>;
-  fetchReportTimeEntries: (startIso: string, endIso: string) => Promise<DashboardTimeEntryRow[]>;
-  fetchReportExpenseReports: (startDate: string, endDate: string) => Promise<DashboardExpenseReportRow[]>;
+  fetchTickets: (stormEventId?: string) => Promise<DashboardTicketRow[]>;
+  fetchPendingTimeEntries: (stormEventId?: string) => Promise<number>;
+  fetchPendingExpenseReports: (stormEventId?: string) => Promise<number>;
+  fetchPendingAssessments: (stormEventId?: string) => Promise<number>;
+  fetchReportTickets: (startIso: string, endIso: string, stormEventId?: string) => Promise<DashboardTicketRow[]>;
+  fetchReportTimeEntries: (startIso: string, endIso: string, stormEventId?: string) => Promise<DashboardTimeEntryRow[]>;
+  fetchReportExpenseReports: (startDate: string, endDate: string, stormEventId?: string) => Promise<DashboardExpenseReportRow[]>;
   fetchContractorNames: (contractorIds: string[]) => Promise<Map<string, string>>;
 }
 
 export function createDashboardReportingService(
   dependencies?: Partial<DashboardReportingDependencies>,
 ): DashboardReportingService {
+  const getClient = dependencies?.getClient ?? getDefaultClient;
   const resolvedDependencies: DashboardReportingDependencies = {
+    getClient,
     now: dependencies?.now ?? (() => new Date()),
     fetchTickets:
       dependencies?.fetchTickets ??
-      (async () => {
-        const client = await getDefaultClient();
-        return fetchAllTickets(client);
+      (async (stormEventId) => {
+        const client = await getClient();
+        return fetchAllTickets(client, stormEventId);
       }),
     fetchPendingTimeEntries:
       dependencies?.fetchPendingTimeEntries ??
-      (async () => {
-        const client = await getDefaultClient();
-        return fetchPendingTimeEntries(client);
+      (async (stormEventId) => {
+        const client = await getClient();
+        return fetchPendingTimeEntries(client, stormEventId);
       }),
     fetchPendingExpenseReports:
       dependencies?.fetchPendingExpenseReports ??
-      (async () => {
-        const client = await getDefaultClient();
-        return fetchPendingExpenseReports(client);
+      (async (stormEventId) => {
+        const client = await getClient();
+        return fetchPendingExpenseReports(client, stormEventId);
       }),
     fetchPendingAssessments:
       dependencies?.fetchPendingAssessments ??
-      (async () => {
-        const client = await getDefaultClient();
-        return fetchPendingAssessments(client);
+      (async (stormEventId) => {
+        const client = await getClient();
+        return fetchPendingAssessments(client, stormEventId);
       }),
     fetchReportTickets:
       dependencies?.fetchReportTickets ??
-      (async (startIso, endIso) => {
-        const client = await getDefaultClient();
-        return fetchReportTickets(client, startIso, endIso);
+      (async (startIso, endIso, stormEventId) => {
+        const client = await getClient();
+        return fetchReportTickets(client, startIso, endIso, stormEventId);
       }),
     fetchReportTimeEntries:
       dependencies?.fetchReportTimeEntries ??
-      (async (startIso, endIso) => {
-        const client = await getDefaultClient();
-        return fetchReportTimeEntries(client, startIso, endIso);
+      (async (startIso, endIso, stormEventId) => {
+        const client = await getClient();
+        return fetchReportTimeEntries(client, startIso, endIso, stormEventId);
       }),
     fetchReportExpenseReports:
       dependencies?.fetchReportExpenseReports ??
-      (async (startDate, endDate) => {
-        const client = await getDefaultClient();
-        return fetchReportExpenseReports(client, startDate, endDate);
+      (async (startDate, endDate, stormEventId) => {
+        const client = await getClient();
+        return fetchReportExpenseReports(client, startDate, endDate, stormEventId);
       }),
     fetchContractorNames:
       dependencies?.fetchContractorNames ??
       (async (contractorIds) => {
-        const client = await getDefaultClient();
+        const client = await getClient();
         return fetchContractorNames(contractorIds, client);
       }),
   };
 
   return {
-    async getDashboardMetrics(): Promise<DashboardMetricsData> {
+    async getDashboardMetrics(input: { stormEventId?: string } = {}): Promise<DashboardMetricsData> {
       const now = resolvedDependencies.now();
       if (isSuperAdminTestingEnabled()) {
-        const tickets = localTestStore.getTickets();
+        const tickets = localTestStore.getTickets().filter(ticket => !input.stormEventId || ticket.storm_event_id === input.stormEventId);
         return buildDashboardMetrics({
           now,
           tickets: tickets.map(ticket => ({
             id: ticket.id,
             status: ticket.status,
             assigned_to: ticket.assigned_to ?? null,
+            crew_id: ticket.crew_id ?? null,
             created_at: ticket.created_at,
             is_deleted: false,
           })),
@@ -892,10 +818,10 @@ export function createDashboardReportingService(
 
       const [ticketResult, timeResult, expenseResult, assessmentResult] =
         await Promise.allSettled([
-          resolvedDependencies.fetchTickets(),
-          resolvedDependencies.fetchPendingTimeEntries(),
-          resolvedDependencies.fetchPendingExpenseReports(),
-          resolvedDependencies.fetchPendingAssessments(),
+          resolvedDependencies.fetchTickets(input.stormEventId),
+          resolvedDependencies.fetchPendingTimeEntries(input.stormEventId),
+          resolvedDependencies.fetchPendingExpenseReports(input.stormEventId),
+          resolvedDependencies.fetchPendingAssessments(input.stormEventId),
         ]);
 
       // A denied review query must not erase valid ticket and crew counts.
@@ -939,9 +865,9 @@ export function createDashboardReportingService(
       const endDateOnly = toDateOnly(normalizedEnd);
 
       const [tickets, timeEntries, expenseReports] = await Promise.all([
-        resolvedDependencies.fetchReportTickets(startIso, endIso),
-        resolvedDependencies.fetchReportTimeEntries(startIso, endIso),
-        resolvedDependencies.fetchReportExpenseReports(startDateOnly, endDateOnly),
+        resolvedDependencies.fetchReportTickets(startIso, endIso, input.stormEventId),
+        resolvedDependencies.fetchReportTimeEntries(startIso, endIso, input.stormEventId),
+        resolvedDependencies.fetchReportExpenseReports(startDateOnly, endDateOnly, input.stormEventId),
       ]);
 
       const contractorIds = Array.from(
@@ -953,7 +879,7 @@ export function createDashboardReportingService(
 
       const contractorNameById = await resolvedDependencies.fetchContractorNames(contractorIds);
 
-      return buildDashboardReport({
+      return { ...buildDashboardReport({
         now,
         startDate: normalizedStart,
         endDate: normalizedEnd,
@@ -962,7 +888,7 @@ export function createDashboardReportingService(
         timeEntries,
         expenseReports,
         contractorNameById,
-      });
+      }), storm_event_id: input.stormEventId ?? null };
     },
 
     createReportExport(

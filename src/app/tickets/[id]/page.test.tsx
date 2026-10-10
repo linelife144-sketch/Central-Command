@@ -1,5 +1,5 @@
 import React, { type ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   notFound: vi.fn(),
   replace: vi.fn(),
   options: vi.fn(),
+  getContractorById: vi.fn(),
   setTicketDisabled: vi.fn(),
   profile: null as { id: string; role: string } | null,
   canManageTickets: false,
@@ -23,6 +24,7 @@ vi.mock('next/link', () => ({
 }));
 vi.mock('@/lib/services/ticketService', () => ({ ticketService: { getTicketById: mocks.getTicketById, setTicketDisabled: mocks.setTicketDisabled } }));
 vi.mock('@/lib/services/ticketAssessmentWorkflow', () => ({ ticketAssessmentWorkflow: { options: mocks.options } }));
+vi.mock('@/lib/services/contractorService', () => ({ contractorService: { getContractorById: mocks.getContractorById } }));
 vi.mock('@/lib/supabase/client', () => ({
   supabase: {
     channel: () => ({ on: () => ({ subscribe: () => ({}) }) }),
@@ -61,6 +63,57 @@ vi.mock('@/components/ui/button', () => ({
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import TicketDetailPage from './page';
+import { GRID_TICKETS_CHANGED_EVENT } from '@/lib/tickets/events';
+
+describe('ticket detail assignment', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getTicketById.mockReset();
+    mocks.getContractorById.mockReset();
+  });
+  afterEach(cleanup);
+
+  it('shows the assigned contractor name instead of a generic label', async () => {
+    mocks.profile = { id: 'staff-1', role: 'SUPER_ADMIN' };
+    mocks.getTicketById.mockResolvedValue({
+      id: 'ticket-123', ticket_number: 'CC-123', utility_client: 'Grid Electric', status: 'ASSIGNED',
+      assigned_to: 'contractor-1', is_important: false, created_at: '2026-10-06T12:00:00.000Z',
+      geofence_radius_meters: 500, work_description: 'Inspect the service location.',
+    });
+    mocks.options.mockResolvedValue({ crews: [], teamLeads: [] });
+    mocks.getContractorById.mockResolvedValue({ fullName: 'David McCarty' });
+
+    render(<TicketDetailPage />);
+
+    expect(await screen.findByText('David McCarty')).toBeTruthy();
+    expect(mocks.getContractorById).toHaveBeenCalledWith('contractor-1');
+    expect(screen.queryByText('Contractor Assigned')).toBeNull();
+  });
+
+  it('does not show the former assignee while a changed assignment is being read', async () => {
+    mocks.profile = { id: 'staff-1', role: 'SUPER_ADMIN' };
+    const ticket = {
+      id: 'ticket-123', ticket_number: 'CC-123', utility_client: 'Grid Electric', status: 'ASSIGNED',
+      assigned_to: 'contractor-1', is_important: false, created_at: '2026-10-06T12:00:00.000Z',
+      geofence_radius_meters: 500, work_description: 'Inspect the service location.',
+    };
+    let resolveAssignee!: (contractor: { fullName: string }) => void;
+    const pendingAssignee = new Promise<{ fullName: string }>(resolve => { resolveAssignee = resolve; });
+    mocks.getTicketById.mockResolvedValueOnce(ticket).mockResolvedValue({ ...ticket, assigned_to: 'contractor-2' });
+    mocks.options.mockResolvedValue({ crews: [], teamLeads: [] });
+    mocks.getContractorById.mockResolvedValueOnce({ fullName: 'David McCarty' }).mockReturnValueOnce(pendingAssignee);
+    render(<TicketDetailPage />);
+    await screen.findByText('David McCarty');
+
+    act(() => window.dispatchEvent(new Event(GRID_TICKETS_CHANGED_EVENT)));
+    await waitFor(() => expect(mocks.getContractorById).toHaveBeenCalledWith('contractor-2'));
+    expect(screen.queryByText('David McCarty')).toBeNull();
+    expect(screen.getByText('Loading assignee…')).toBeTruthy();
+
+    await act(async () => resolveAssignee({ fullName: 'Alex Manager' }));
+    expect(await screen.findByText('Alex Manager')).toBeTruthy();
+  });
+});
 
 describe('ticket detail fetch errors', () => {
   beforeEach(() => {
@@ -70,6 +123,7 @@ describe('ticket detail fetch errors', () => {
     mocks.confirm.mockReturnValue(true);
     vi.stubGlobal('confirm', mocks.confirm);
     mocks.options.mockResolvedValue({ crews: [], teamLeads: [] });
+    mocks.getContractorById.mockResolvedValue(null);
   });
 
   afterEach(() => {

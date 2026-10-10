@@ -1,5 +1,6 @@
 // Central Command - Auth Store (Zustand)
 
+import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, UserRole } from '@/types';
@@ -56,7 +57,7 @@ export const useAuthStore = create<AuthState>()(
       // Computed helpers
       isAdmin: () => {
         const { user } = get();
-        return user?.role === 'SUPER_ADMIN';
+        return isAdminClassRole(user?.role);
       },
       
       isTeamLead: () => {

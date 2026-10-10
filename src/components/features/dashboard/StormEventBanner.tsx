@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, CloudLightning, Loader2, RefreshCw } from 'lucide-react';
 
@@ -10,9 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { contractorService } from '@/lib/services/contractorService';
+import { stormRosterService } from '@/lib/services/stormRosterService';
 import {
-  stormEventService,
   type StormEventStatus,
   type StormEventSummary,
 } from '@/lib/services/stormEventService';
@@ -40,6 +41,9 @@ interface AdminStormHeadline {
 
 export function StormEventBanner({ className }: StormEventBannerProps) {
   const { can } = useAuth();
+  const { stormEventId, selectedStorm } = useStormContext();
+  const request = useRef(0);
+  const cancelRequests = useCallback(() => { request.current++; }, []);
   const [headline, setHeadline] = useState<AdminStormHeadline | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -52,13 +56,13 @@ export function StormEventBanner({ className }: StormEventBannerProps) {
       setIsLoading(true);
     }
 
+    const version = ++request.current;
     setError(null);
 
     try {
-      const [event, contractors] = await Promise.all([
-        stormEventService.getAdminActiveStormEvent(),
-        contractorService.listContractors({ activeOnly: true }).catch(() => null),
-      ]);
+      const event = selectedStorm ?? null;
+      const contractors = stormEventId ? await stormRosterService.list(stormEventId).catch(() => null) : null;
+      if (version !== request.current) return;
 
       setHeadline({
         event,
@@ -66,20 +70,21 @@ export function StormEventBanner({ className }: StormEventBannerProps) {
         loadedAt: new Date().toISOString(),
       });
     } catch {
+      if (version !== request.current) return;
       // A failed refresh keeps the last good headline visible; the error alert explains itself.
       setError('Unable to load the active storm event.');
     } finally {
+      if (version !== request.current) return;
       if (mode === 'refresh') {
         setIsRefreshing(false);
       } else {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [stormEventId, selectedStorm]);
 
   useEffect(() => {
     if (!can('admin.storms.view')) {
-      setIsLoading(false);
       return;
     }
 
@@ -89,15 +94,17 @@ export function StormEventBanner({ className }: StormEventBannerProps) {
       await loadHeadline('initial');
     })();
     return () => {
-      active = false;
+      active = false; cancelRequests();
     };
-  }, [can, loadHeadline]);
+  }, [can, loadHeadline, cancelRequests]);
 
   if (!can('admin.storms.view')) {
     return null;
   }
 
-  const event = headline?.event ?? null;
+  if (!stormEventId) return <Card className={className}><CardContent className="flex flex-wrap items-center justify-between gap-3 p-6"><div><h2 className="text-xl font-bold text-grid-navy">Company-wide operations</h2><p className="mt-1 text-sm text-muted-foreground">These dashboard totals include all storms. Choose a storm to focus this dashboard.</p></div><Button asChild variant="outline"><Link href="/admin/storms">Storm workspaces<ArrowUpRight className="ml-2 size-4" /></Link></Button></CardContent></Card>;
+
+  const event = selectedStorm ?? null;
   const hasData = headline !== null;
 
   return (
@@ -135,7 +142,7 @@ export function StormEventBanner({ className }: StormEventBannerProps) {
               <div className="min-w-0">
                 <div className="cc-eyebrow mb-1">
                   <CloudLightning className="size-3.5 text-grid-lightning" aria-hidden="true" />
-                  Active storm
+                  Selected storm
                 </div>
                 <h2 className="text-xl font-bold leading-tight text-[#0a1733]">
                   {event.name.trim().length > 0 ? event.name : event.eventCode}
@@ -170,7 +177,7 @@ export function StormEventBanner({ className }: StormEventBannerProps) {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active tickets</p>
-                <p className="text-lg font-bold text-[#0a1733]">{event.activeTickets}</p>
+                <p className="text-lg font-bold text-[#0a1733]">{event.activeTickets ?? 'Unavailable'}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active contractors</p>

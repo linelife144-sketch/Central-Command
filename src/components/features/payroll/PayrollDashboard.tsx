@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,7 +19,8 @@ import {
 import { APP_CONFIG } from '@/lib/config/appConfig';
 import { payrollService } from '@/lib/services/payrollService';
 import { contractorService } from '@/lib/services/contractorService';
-import { stormEventService, type StormEventSummary } from '@/lib/services/stormEventService';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+import { stormRosterService } from '@/lib/services/stormRosterService';
 import { ContractorPayrollTable } from './ContractorPayrollTable';
 import { PayrollSummaryCards } from './PayrollSummaryCards';
 import { StormCompensationRateEditor } from './StormCompensationRateEditor';
@@ -85,8 +86,9 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
   const defaultPeriod = useMemo(() => buildDefaultPeriod(), []);
   const [from, setFrom] = useState(defaultPeriod.from);
   const [to, setTo] = useState(defaultPeriod.to);
-  const [stormEventId, setStormEventId] = useState<string>(ALL_STORMS_VALUE);
-  const [stormEvents, setStormEvents] = useState<StormEventSummary[]>([]);
+  const { selection: stormEventId, selectStorm: setStormEventId, storms: stormEvents } = useStormContext();
+  const request = useRef(0);
+  const cancelRequests = useCallback(() => { request.current++; }, []);
 
   const [summary, setSummary] = useState<PayrollSummary | null>(null);
   // Active contractors on the roster — independent of the payroll period.
@@ -96,17 +98,17 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!canViewStorms) return;
-    void stormEventService.listStormEvents().then(setStormEvents).catch(() => setStormEvents([]));
-  }, [canViewStorms]);
-
-  useEffect(() => {
-    void contractorService.listContractors({ activeOnly: true })
-      .then((contractors) => setActiveContractorCount(contractors.length))
-      .catch(() => setActiveContractorCount(null));
-  }, []);
+    let active = true;
+    const source = stormEventId === ALL_STORMS_VALUE
+      ? contractorService.listContractors({ activeOnly: true })
+      : stormRosterService.list(stormEventId);
+    void source.then(contractors => { if (active) setActiveContractorCount(contractors.length); })
+      .catch(() => { if (active) setActiveContractorCount(null); });
+    return () => { active = false; };
+  }, [stormEventId]);
 
   const loadSummary = useCallback(async () => {
+    const version = ++request.current;
     setIsLoading(true);
     setError(null);
     try {
@@ -116,12 +118,13 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
         to: new Date(`${to}T23:59:59.999`).toISOString(),
         stormEventId: stormEventId === ALL_STORMS_VALUE ? undefined : stormEventId,
       });
-      setSummary(result);
+      if (version === request.current) setSummary(result);
     } catch (loadError) {
+      if (version !== request.current) return;
       setSummary(null);
       setError(toErrorMessage(loadError));
     } finally {
-      setIsLoading(false);
+      if (version === request.current) setIsLoading(false);
     }
   }, [from, to, stormEventId, includeFinancial]);
 
@@ -130,8 +133,8 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
     const timer = window.setInterval(() => { void loadSummary(); }, 30000);
     const refreshed = () => { void loadSummary(); };
     window.addEventListener('time-entries-synced', refreshed);
-    return () => { window.clearInterval(timer); window.removeEventListener('time-entries-synced', refreshed); };
-  }, [loadSummary]);
+    return () => { cancelRequests(); window.clearInterval(timer); window.removeEventListener('time-entries-synced', refreshed); };
+  }, [loadSummary, cancelRequests]);
 
   const handleExport = async () => {
     if (!summary) {
@@ -167,7 +170,7 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
             </div>
             <div className="space-y-2">
               <Label htmlFor="payroll-storm">Storm Event</Label>
-              <Select value={stormEventId} onValueChange={setStormEventId}>
+              <Select value={stormEventId} onValueChange={setStormEventId} disabled={!canViewStorms}>
                 <SelectTrigger id="payroll-storm">
                   <SelectValue />
                 </SelectTrigger>
@@ -218,7 +221,7 @@ export function PayrollDashboard({ reviewerId, canEdit = false, canViewStorms = 
           <CardTitle>Vehicle Reimbursement Review</CardTitle>
         </CardHeader>
         <CardContent>
-          <VehicleReimbursementReview reviewerId={reviewerId} canEdit={canEdit} onReviewed={() => void loadSummary()} />
+          <VehicleReimbursementReview key={stormEventId} stormEventId={stormEventId === ALL_STORMS_VALUE ? undefined : stormEventId} reviewerId={reviewerId} canEdit={canEdit} onReviewed={() => void loadSummary()} />
         </CardContent>
       </Card>
 

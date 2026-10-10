@@ -6,7 +6,44 @@ Use the [project brief](../PROJECT_BRIEF.md), [current scope / PRD](01-TECHNICAL
 
 Earlier checklists and dated entries remain historical evidence. They do not certify the revised Storm Manager/crew/official-time model, reinstate removal instructions, or require preserving artificial test records as production history. Continue Phase 4 in the current dependency order. Mark documentation, code, local checks, applied migrations/readback, browser/device acceptance, and launch work distinctly with an agent identifier.
 
+### Documentation handoff — 2026-10-09, Codex /root
+
+- [x] Save/refine the existing project brief, scope, and master build plan with an explicit distinction between the owner's request and instructions embedded in the scratchpad. — Codex /root
+- [x] Add source-normalization references and a task-decomposition record covering preserved capabilities, related records, dashboard/permission/offline effects, dependencies, and acceptance evidence. — Codex /root
+- [x] Label the master plan's original implementation baseline by date and correct the brief's stale management-role wording using current source, without claiming live activation or acceptance. — Codex /root
+- [x] Verify saved-document links, CC/AC coverage, and preservation of the original scratchpad and prior implementation/checklist history: 28 current guidance file links and 36 source anchors resolve; CC-01–CC-11 and AC-01–AC-19 remain; 85 documentation assertions pass. — Codex /root, 2026-10-09
+- [ ] Audit and decompose the remaining implementation work; document completion does not complete application acceptance. — Codex /root
+
+### Storm Manager authority / B5 decomposition — 2026-10-09, Codex /root
+
+- [x] B4a: coordinate native Storm Manager application/server/session/navigation authority and trusted provisioning; preserve legacy, CEO, reviewer and contractor/pay-role boundaries. — Codex /root
+- [x] B4b: apply/read back native enum, responsible-manager relationship and guarded operations under live ledger 20261009184240 / 20261009185436. Existing business-row counts unchanged; no inferred assignments or account promotions. — Codex /root
+- [x] B4c: require verified manager selection in storm create, display persisted manager and controlled reassignment in detail; preserve rates, roster and ticket controls. — Codex /root
+- [x] Reproduce and correct independent review findings: manager read projections, configured-storm reopen/restore eligibility, and last-manager password setup. Apply strictly additive follow-up 20261009192037, preserving existing authority objects; the earlier replacement variant was rejected and not applied. — Codex /root, reviewer /root/review_storm_manager
+- [x] Regenerate live Supabase types and verify exact definitions/ACLs/triggers, unchanged counts and no new advisor findings; retain [durable B4 evidence](../docs/testing/2026-10-09-storm-manager-authority.md). — Codex /root
+- [x] Final local verification: 772 tests/140 files, 18 isolated database groups, scoped lint, strict active-source diagnostic types and AST Graphify update pass. Root types/build remain gated by the same 16 errors in six archival copies. — Codex /root
+- [x] Verify 34 documentation links, unchanged scratchpad/historical sections and preserved CC-01–CC-11 / AC-01–AC-19 coverage. — Codex /root
+- [x] Save [B5 context completion decomposition](../docs/plans/2026-10-09-management-storm-context-completion.md) with source anchors, services/dashboards/creation/cache/offline/export impacts, preservation and C/F/E dependencies. — Codex /root
+- [ ] B4 authenticated native-manager/RLS, same-record and genuine concurrent-transaction acceptance. Existing browser session reaches Access Forbidden; CC-02 remains open. — Codex /root
+- [x] B5a context lifecycle/read errors: verified creation adoption, saved-result retry, actor cancellation and unavailable/empty distinction; correct real workspace manager readback retry and hidden storm count states. — Codex /root, 2026-10-09
+- [x] B5b services: explicit storm/latest-roster filters, complete pages/related IDs, both crew-member counts, field queue cache preservation, personal pending time ownership and current read-permission checks. See [local evidence and live contract audit](../docs/testing/2026-10-09-management-storm-context-services.md). — Codex /root, reviewer /root/review_storm_manager
+- [x] B5a/b final local verification and source-review closure: 828 tests/143 files, scoped lint across 26 files, strict active-source diagnostic types and AST Graphify pass; 43 checkpoint links resolve. Repository types retain the same 16 errors in six archival payroll copies; live acceptance remains open. — Codex /root, 2026-10-09
+- [ ] B5c–e remaining dashboard/creation/export integration and connected acceptance, followed by C–I. Full master-plan objective remains unfinished. — Codex /root
+
+### Release preparation — 2026-10-09, Codex /root
+
+- [x] Prepare the owner's requested release: retain all six archival payroll copies with exact compiler exclusions and strict checking, correct broader hook lint issues, and verify production build/50 pages, 82-file scoped lint, 21 focused regressions and loopback production startup/public/signed-out routing. See [release evidence](../docs/testing/2026-10-09-release-preparation.md). — Codex /root
+- [x] Final full regression: 829 tests/143 files; normal strict repository types, route-type generation and AST Graphify pass. — Codex /root
+- [x] Prepare the owner-selected Hostinger VPS development deployment, protected build/runtime configuration and verified additive Supabase redirect allowlist entry. — Codex /root
+- [ ] Verify hosted container build/startup, HTTPS routes and repository push readback. Full B5/C–I, authenticated/device acceptance and controlled production launch/reset remain open. — Codex /root
+
+### Other recorded changes — Pi
+
 - [x] Database: live `work_type` enum on Central Command is Working, MOB, DE-MOB, and Stand-by. Migration `20261009152535_align_owner_work_types` remapped existing rates and shifts; emergency rows were archived and removed. App constants updated to the same labels. — Pi
+- [x] UI: the shared top bar centers the current storm name for admin and contractor shells. Admin uses the operational storm; contractors use their open assigned storm. — Pi
+- [x] UI: removed the create-storm status picker and the top-bar page search. New storms still start at MOB. — Pi
+- [x] UI: ticket queue table shows the feeder number only and no longer has an Importance column. — Pi
+- [x] UI: ticket detail Assigned To shows the assigned contractor name, including tickets assigned without a crew. — Pi
 
 ## Complete Build-Out Guide Based on Field Forms Analysis
 
@@ -1060,11 +1097,27 @@ Detailed work and evidence are tracked in the implementation plan's dated comple
 - [x] Create `PROJECT_BRIEF.md` to explain the project, operating model, dashboards, relationships, preservation rules, and general build sequence to coding agents. — Codex /root
 - [x] Save `docs/plans/2026-10-08-central-command-workflow-master-plan.md` with CC-01–CC-11 requirements, current-state dispositions, interface/dependency mapping, and AC-01–AC-19 scenarios. — Codex /root
 - [x] Update the existing implementation plan and project scope/PRD, plus README/index/agent/roadmap entry points; label conflicting older plans and examples as historical while preserving their evidence. — Codex /root
-- [ ] Verify documentation links, coverage, consistency, and retained historical execution records. — Codex /root
-- [ ] Decompose the current workstreams against fresh canonical source/schema/runtime evidence before implementation. — Codex /root
+- [x] Verify documentation links, CC-01–CC-11 / AC-01–AC-19 coverage, consistency, and retained historical execution records. — Codex /root, 2026-10-09
+- [x] Refresh canonical source/read-only schema evidence and decompose first-batch B1–B3; retain later workstream dependencies for subsequent detailed decomposition. Authenticated runtime acceptance remains open. — Codex /root, 2026-10-09
 - [ ] Implement and verify the revised management authority, storm context, participation/crew integration, official time, financial readback, company expenses, and reviewed intake as bounded tasks. — Codex /root
 - [ ] Complete same-record management/contractor/browser/device/offline/print acceptance and the separately controlled launch reset. — Codex /root
 
 Owner clarification: all current operational records are test data; normal work is 16 hours every day until release, and Storm Manager replaces Super Admin with full management authority beneath the CEO. Controlled rate edits remain in storm setup/detail. Existing dashboards and capabilities are to be preserved. Earlier instructions to populate every existing test storm with production rates are not prerequisites for this design; earlier removal directions must be reconciled with the current preservation requirement.
 
 This delivery changes documentation only. No product requirement above is marked implemented by this entry. No application code, schema, accounts, stored business records, or test data were changed.
+
+### Phase 4 — Workflow alignment first implementation batch — 2026-10-09 (Codex /root)
+
+Execution: [B1–B3 plan and remaining dependencies](../docs/plans/2026-10-09-workflow-alignment-execution.md). Evidence: [first-batch verification and limitations](../docs/testing/2026-10-09-workflow-alignment-batch1.md).
+
+- [x] B1: Add actor-owned shared storm/company selection to primary Dashboard, Payroll, and Reports; validate restored selection, isolate account changes, and preserve current navigation/dashboard controls. — Codex /root
+- [x] B2: Scope ticket/review/report/expense/payroll reads, count crews by stable IDs, paginate aggregate reads, carry report export scope, and filter offline expense ownership. — Codex /root
+- [x] B3: Connect dashboard cards/banner/roster counts and claim review to shared context; prevent stale responses after scope changes. Financial snapshots/calculations and existing fieldwork remain. — Codex /root
+- [x] Verify 749 tests across 137 files, scoped ESLint, strict active-source diagnostic TypeScript, and Graphify AST update. — Codex /root
+- [x] Record read-only live foreign-key/role/migration metadata and the browser's Access Forbidden result separately from acceptance. No database/business record/account mutations occurred. — Codex /root
+- [ ] Resolve the 16 root TypeScript errors in six archival ` 2` / ` 3` payroll copies and complete final production build; do not delete copies or weaken types to manufacture success. — Codex /root
+- [ ] Complete authenticated two-storm primary/Payroll/Reports readback and AC-01/16/19 runtime checks. Local mocked joins/pagination are not live RLS proof. — Codex /root
+- [ ] B4/B5: Align Storm Manager authority and one responsible manager; complete context across remaining dashboards, creation paths, caches/offline records, and exports. — Codex /root
+- [ ] Follow C–I dependencies for participation, teams/crews, official time, financial sources, company expenses, summaries/exports, intake, and connected launch acceptance. Full master-plan goal remains active. — Codex /root
+
+These are bounded code/local-verification completions. No entire CC requirement, official-time model, authenticated/device/offline acceptance, deployment, or launch reset is marked complete.

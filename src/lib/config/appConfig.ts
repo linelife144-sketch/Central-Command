@@ -46,6 +46,7 @@ export const APP_CONFIG = {
 
 // Role definitions
 export const USER_ROLES = {
+  STORM_MANAGER: 'STORM_MANAGER',
   SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   TEAM_LEAD: 'TEAM_LEAD',
@@ -78,7 +79,7 @@ export const WORK_TYPES = {
 } as const;
 
 // Contractor payroll roles — one per contractor, separate from
-// profiles.role (the CEO/SUPER_ADMIN/ADMIN/CONTRACTOR authorization enum).
+// profiles.role (the CEO/STORM_MANAGER/legacy SUPER_ADMIN/ADMIN/CONTRACTOR authorization enum).
 export const CONTRACTOR_ROLES = {
   STORM_MANAGER: 'STORM_MANAGER',
   TEAM_LEAD: 'TEAM_LEAD',

@@ -1,0 +1,39 @@
+name: central-command
+
+services:
+  app:
+    image: central-command:${CC_RELEASE_ID:?Set CC_RELEASE_ID}
+    build:
+      context: .
+      secrets:
+        - central_command_env
+    container_name: central-command-development
+    restart: unless-stopped
+    env_file:
+      - ${CC_RUNTIME_ENV:?Set CC_RUNTIME_ENV}
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_URL: https://${CC_DOMAIN:?Set CC_DOMAIN}
+      NEXT_TELEMETRY_DISABLED: "1"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.central-command.rule: Host(`${CC_DOMAIN:?Set CC_DOMAIN}`)
+      traefik.http.routers.central-command.entrypoints: websecure
+      traefik.http.routers.central-command.tls: "true"
+      traefik.http.routers.central-command.tls.certresolver: letsencrypt
+      traefik.http.services.central-command.loadbalancer.server.port: "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+secrets:
+  central_command_env:
+    file: ${CC_RUNTIME_ENV:?Set CC_RUNTIME_ENV}

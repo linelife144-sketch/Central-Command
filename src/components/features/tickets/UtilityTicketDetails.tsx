@@ -1,4 +1,5 @@
  'use client';
+import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -8,7 +9,7 @@ import { getTicketTemplateByUtilityClient, normalizeUtilityClient, type TicketTe
 import type { Ticket } from '@/types';
 export function UtilityTicketDetails({ ticket }: { ticket: Ticket }) {
   const { profile } = useAuth();
-  const canOpenStorm = profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO' || profile?.role === 'ADMIN';
+  const canOpenStorm = isAdminClassRole(profile?.role);
   const [data, setData] = useState<{ code: string; fields: TicketTemplateFieldConfig[]; payload: Record<string, unknown> } | null>(null);
   const [error, setError] = useState('');
   useEffect(() => {

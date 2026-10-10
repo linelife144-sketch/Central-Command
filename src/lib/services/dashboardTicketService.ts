@@ -15,9 +15,9 @@ export interface DashboardTicketRow {
 }
 
 export const dashboardTicketService = {
-  async getRecentTickets(limit = 8): Promise<DashboardTicketRow[]> {
-    const ticketRows = await ticketService.getTickets() as Array<Ticket & { is_deleted?: boolean | null }>;
-    const tickets = ticketRows.filter(ticket => !ticket.is_deleted)
+  async getRecentTickets(limit = 8, filters: { stormEventId?: string } = {}): Promise<DashboardTicketRow[]> {
+    const ticketRows = await ticketService.getTickets(filters) as Array<Ticket & { is_deleted?: boolean | null }>;
+    const tickets = ticketRows.filter(ticket => !ticket.is_deleted && (!filters.stormEventId || ticket.storm_event_id === filters.stormEventId))
       .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
     const recent = tickets.slice(0, limit);
     const assigneeName = new Map<string, string>();

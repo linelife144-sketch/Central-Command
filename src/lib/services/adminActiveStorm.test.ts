@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// This suite exercises the pure resolver; importing its service must not
+// require credentials or a network connection.
+vi.mock('@/lib/supabase/client', () => ({ supabase: {} }));
 
 import {
   resolveAdminActiveStormEvent,

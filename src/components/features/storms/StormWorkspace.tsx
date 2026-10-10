@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { getStaffTicketStatusLabel } from '@/lib/utils/statusUpdateFlow';
 import { ROLE_LABELS } from '@/lib/config/appConfig';
 import type { ContractorRole } from '@/types';
+import { StormManagerEditor } from './StormManagerControl';
 
 function parseOptionalRate(value: string, label: string): number | null {
   if (!value.trim()) return null;
@@ -83,18 +84,21 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
   const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
   const canManage = canPerformManagementAction(profile?.role, 'contractor_assignment_write', permissions);
   const canManageCompensation = canManage && permissions['admin.payroll.edit'];
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (reloadOptions?: { throwOnError?: boolean }) => {
     setError('');
     try {
       const event = await stormEventService.getStormEventById(stormId);
       if (!event) throw new Error('Storm event not found.');
-      setStorm(event);
       const [allTickets, members, available] = await Promise.all([permissions['admin.tickets.view'] ? ticketService.getTickets() : Promise.resolve([]), permissions['admin.assignments.view'] ? stormRosterService.list(stormId) : Promise.resolve([]), canManage ? stormRosterService.listOptions() : Promise.resolve([])]);
+      setStorm(event);
       setTickets(allTickets.filter(ticket => ticket.storm_event_id === stormId)); setRoster(members); setOptions(available);
-    } catch (error) { setError(error instanceof Error ? error.message : 'Unable to load storm.'); }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to load storm.');
+      if (reloadOptions?.throwOnError) throw error;
+    }
     finally { setLoading(false); }
   }, [stormId, permissions, canManage]);
-  useEffect(() => { void Promise.resolve().then(reload); }, [reload]);
+  useEffect(() => { void Promise.resolve().then(() => reload()); }, [reload]);
   if (loading) return <p>Loading storm workspace...</p>;
   if (!storm) return <div role="alert">{error || 'Storm not found.'} <Link href="/admin/storms">Back to storm events</Link></div>;
   const selectedRole = options.find((option) => option.id === selected)?.role;
@@ -113,6 +117,7 @@ export function StormWorkspace({ stormId }: { stormId: string }) {
       <p className="mt-3 text-sm text-grid-muted">Contractors, tickets, time, and expenses belong to this event. Ticket forms use {storm.utilityClient} rules.</p>
     </div>
     {error && <p role="alert" className="text-destructive">{error}</p>}
+    {permissions['admin.storms.view'] && <StormManagerEditor key={`${profile?.id}-${storm.id}-${storm.responsibleManagerId ?? 'none'}`} stormId={storm.id} managerId={storm.responsibleManagerId ?? null} canEdit={!!permissions['admin.storms.edit'] && !isClosed} onSaved={() => reload({ throwOnError: true })} />}
     {permissions['admin.assignments.view'] && <section className="storm-surface space-y-4 rounded-xl p-6" aria-labelledby="storm-contractors">
       <h2 id="storm-contractors" className="text-xl font-semibold text-white">Contractors</h2>
       {roster.length ? <ul className="divide-y">{roster.map(member => <li key={member.contractorId} className="flex flex-wrap items-center justify-between gap-2 py-3">

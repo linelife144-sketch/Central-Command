@@ -17,9 +17,9 @@ describe('verified profile auth',()=>{
     remote.getUser.mockResolvedValue({data:{user:{id}},error:null});remote.maybeSingle.mockResolvedValue({data:{id,role:'CONTRACTOR'},error:null});
     const response=await GET(request());expect(response.status).toBe(200);expect((await response.json()).profile.role).toBe('CONTRACTOR');expect(remote.eq).toHaveBeenCalledWith('id',id);
   });
-  it('returns the real Super Admin profile for the verified account',async()=>{
-    remote.getUser.mockResolvedValue({data:{user:{id:'verified-admin'}},error:null});remote.maybeSingle.mockResolvedValue({data:{id:'verified-admin',role:'SUPER_ADMIN',is_active:true},error:null});
-    expect((await (await GET(request())).json()).profile).toMatchObject({id:'verified-admin',role:'SUPER_ADMIN',is_active:true});
+  it.each(['SUPER_ADMIN','STORM_MANAGER'])('returns the stored %s profile for the verified account',async role=>{
+    remote.getUser.mockResolvedValue({data:{user:{id:'verified-admin'}},error:null});remote.maybeSingle.mockResolvedValue({data:{id:'verified-admin',role,is_active:true},error:null});
+    expect((await (await GET(request())).json()).profile).toMatchObject({id:'verified-admin',role,is_active:true});
   });
   it('does not synthesize a profile when the stored profile is missing',async()=>{
     remote.getUser.mockResolvedValue({data:{user:{id:'missing'}},error:null});remote.maybeSingle.mockResolvedValue({data:null,error:null});expect((await GET(request())).status).toBe(404);

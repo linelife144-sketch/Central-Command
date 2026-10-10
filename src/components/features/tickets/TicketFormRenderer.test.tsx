@@ -1,3 +1,4 @@
+import { SUPER_ADMIN_TEST_PROFILE } from '@/lib/testing/superAdminTesting';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
@@ -24,7 +25,7 @@ afterEach(() => { cleanup(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe('storm utility ticket workflow', () => {
   it('submits the Entergy form with blank optional counts and common defaults', async () => {
-    const submit = vi.fn(async (_values: Record<string, unknown>) => {});
+    const submit = vi.fn<(values: Record<string, unknown>) => Promise<void>>(async () => {});
     render(createElement(TicketFormRenderer, {
       storm: { id: 'test-storm', name: 'Test Storm', eventCode: 'EVENT-001', utilityClient: 'ENTERGY', state: 'Louisiana' },
       template: getTicketTemplateByUtilityClient('ENTERGY'), onSubmitTicket: submit, onRunOcr: () => {},
@@ -49,7 +50,7 @@ describe('storm utility ticket workflow', () => {
   });
 
   it('saves utility payloads locally and rejects templates from another utility', async () => {
-    const storm = await stormEventService.createStormEvent({ name: 'Entergy storm', utilityClient: 'Entergy', roleRates: TEST_ROLE_RATES });
+    const storm = await stormEventService.createStormEvent({ name: 'Entergy storm', utilityClient: 'Entergy', responsibleManagerId: SUPER_ADMIN_TEST_PROFILE.id, roleRates: TEST_ROLE_RATES });
     const common = { status: 'DRAFT', is_important: true, source_type: 'MANUAL' } as const;
     const payload = { incident_number: '1234567890', incident_type: 'XFMR', address_line: '100 Test Street' };
     const created = await ticketIntakeService.createUtilityTicket({ stormEventId: storm.id, stormUtilityClient: 'Entergy', template: getTicketTemplateByUtilityClient('ENTERGY'), common, payload });

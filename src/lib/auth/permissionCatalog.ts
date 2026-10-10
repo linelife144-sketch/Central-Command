@@ -12,7 +12,7 @@ export const PERMISSION_MODULES = [
   { id: 'assessments', label: 'Assessments', description: 'View damage assessments; approve or request rework.', group: 'Review & reporting', path: '/tickets', editable: true },
   { id: 'payroll', label: 'Payroll & profit', description: 'View payroll, vehicle reimbursements, billing, and margins; manage rates and review claims.', group: 'Review & reporting', path: '/admin/payroll', editable: true },
   { id: 'reports', label: 'Reports', description: 'Open reports. Results include only modules this person can view.', group: 'Review & reporting', path: '/admin/reports', editable: false },
-  { id: 'users', label: 'User administration', description: 'View staff access; change permissions and account access. Super Admin only.', group: 'Administration', path: '/admin/users', editable: true },
+  { id: 'users', label: 'User administration', description: 'View staff access; change permissions and account access. CEO or Storm Manager only.', group: 'Administration', path: '/admin/users', editable: true },
 ] as const;
 
 export type PermissionModuleId = typeof PERMISSION_MODULES[number]['id'];

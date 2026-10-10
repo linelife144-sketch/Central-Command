@@ -1,5 +1,6 @@
 'use client';
 
+import { isSuperAdminClassRole } from '@/lib/auth/roleGuards';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -44,10 +45,10 @@ export default function TicketWorkPage() {
   if(profile.role==='CONTRACTOR'&&!contractorId)return <p role="status">Verifying your crew access…</p>;
   const worker=profile.role==='CONTRACTOR';
   const assigned=worker&&(ticket.assigned_to===contractorId||ticket.assigned_driver_id===contractorId);
-  const staff=can('admin.tickets.view')&&(['CEO','SUPER_ADMIN'].includes(profile.role)||profile.role==='ADMIN'&&ticket.team_lead_id===profile.id);
+  const staff=can('admin.tickets.view')&&(isSuperAdminClassRole(profile.role)||profile.role==='ADMIN'&&ticket.team_lead_id===profile.id);
   if(!assigned&&!staff)return <p role="alert">This ticket is not assigned to your team or crew.</p>;
   const open=getContractorTicketStatus(ticket.status)==='OPEN';
-  const canAssess=assigned&&ticket.assigned_to===contractorId||staff&&['CEO','SUPER_ADMIN'].includes(profile.role)&&can('admin.assessments.edit');
+  const canAssess=assigned&&ticket.assigned_to===contractorId||staff&&isSuperAdminClassRole(profile.role)&&can('admin.assessments.edit');
   const fieldReady=['ON_SITE','IN_PROGRESS','NEEDS_REWORK'].includes(ticket.status);
   const stepLabel=ticket.status==='IN_ROUTE'?'Travel to the ticket location':fieldReady?'Assess the site and record your findings':open?'Prepare for the ticket':'Field work submitted';
   return <div className="space-y-6 pb-4">

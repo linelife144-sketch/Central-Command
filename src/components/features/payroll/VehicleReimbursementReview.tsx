@@ -17,6 +17,7 @@ import type { VehicleClaim } from '@/types';
 
 export interface VehicleReimbursementReviewProps {
   reviewerId?: string;
+  stormEventId?: string;
   canEdit?: boolean;
   onReviewed?: () => void;
 }
@@ -28,7 +29,7 @@ export interface VehicleReimbursementReviewProps {
  * client-side). Approve/reject mirrors the existing time-entry review
  * batch pattern in TimeEntryList.tsx.
  */
-export function VehicleReimbursementReview({ reviewerId, canEdit = false, onReviewed }: VehicleReimbursementReviewProps) {
+export function VehicleReimbursementReview({ reviewerId, stormEventId, canEdit = false, onReviewed }: VehicleReimbursementReviewProps) {
   const [claims, setClaims] = useState<VehicleClaim[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [busyClaimId, setBusyClaimId] = useState<string | null>(null);
@@ -37,14 +38,14 @@ export function VehicleReimbursementReview({ reviewerId, canEdit = false, onRevi
   const loadClaims = useCallback(async () => {
     setIsLoading(true);
     try {
-      const pending = await payrollService.listVehicleClaims({ status: 'PENDING' });
+      const pending = await payrollService.listVehicleClaims({ status: 'PENDING', ...(stormEventId ? { stormEventId } : {}) });
       setClaims(pending);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to load vehicle reimbursement claims.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [stormEventId]);
 
   useEffect(() => {
     void Promise.resolve().then(loadClaims);

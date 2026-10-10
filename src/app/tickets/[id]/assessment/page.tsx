@@ -1,5 +1,6 @@
 'use client';
 
+import { isSuperAdminClassRole } from '@/lib/auth/roleGuards';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -39,7 +40,7 @@ export default function TicketAssessmentPage() {
     return () => { active = false; };
   }, [id]);
 
-  const chief = profile?.role === 'CEO' || profile?.role === 'SUPER_ADMIN';
+  const chief = isSuperAdminClassRole(profile?.role);
   const allowed = Boolean(profile && ticket?.assigned_to && (
     chief && can('admin.assessments.edit')
     || profile.role === 'CONTRACTOR' && contractorId === ticket.assigned_to

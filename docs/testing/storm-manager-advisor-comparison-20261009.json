@@ -1,0 +1,11 @@
+{
+  "before": [
+    "auth_leaked_password_protection:[{\"type\":\"auth\",\"entity\":\"Auth\"}]",
+    "authenticated_security_definer_function_executable:[{\"name\":\"set_ticket_disabled\",\"schema\":\"public\",\"language\":\"plpgsql\",\"arguments\":\"p_ticket_id uuid, p_disabled boolean\",\"security_definer\":true}]"
+  ],
+  "after": [
+    "auth_leaked_password_protection:[{\"type\":\"auth\",\"entity\":\"Auth\"}]",
+    "authenticated_security_definer_function_executable:[{\"name\":\"set_ticket_disabled\",\"schema\":\"public\",\"language\":\"plpgsql\",\"arguments\":\"p_ticket_id uuid, p_disabled boolean\",\"security_definer\":true}]"
+  ],
+  "newFindings": []
+}

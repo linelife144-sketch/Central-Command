@@ -187,7 +187,7 @@ interface PayrollDependencies {
   fetchPayrollTimeEntries: (filters: PayrollFilters) => Promise<RemotePayrollTimeEntryRow[]>;
   fetchVehicleClaimsForEntries: (timeEntryIds: string[]) => Promise<VehicleClaim[]>;
   fetchContractorNames: (contractorIds: string[]) => Promise<Map<string, { name: string; role: ContractorRole }>>;
-  fetchVehicleClaims: (filters: { status?: VehicleClaimStatus }) => Promise<VehicleClaim[]>;
+  fetchVehicleClaims: (filters: { status?: VehicleClaimStatus; stormEventId?: string }) => Promise<VehicleClaim[]>;
   uploadVehicleClaimPhoto: (input: {
     contractorId: string;
     timeEntryId: string;
@@ -227,7 +227,7 @@ export interface PayrollService {
     hourlyRate: number;
   }) => Promise<void>;
   getPayrollSummary: (filters?: PayrollFilters) => Promise<PayrollSummary>;
-  listVehicleClaims: (filters?: { status?: VehicleClaimStatus }) => Promise<VehicleClaim[]>;
+  listVehicleClaims: (filters?: { status?: VehicleClaimStatus; stormEventId?: string }) => Promise<VehicleClaim[]>;
   submitVehicleClaim: (input: SubmitVehicleClaimInput) => Promise<VehicleClaim>;
   reviewVehicleClaim: (input: ReviewVehicleClaimInput) => Promise<VehicleClaim>;
   createPayrollCsvExport: (summary: PayrollSummary, generatedAt?: Date) => ReportExportArtifact;
@@ -407,9 +407,14 @@ async function defaultWriteContractorWorkTypeRate(input: {
 async function defaultFetchPayrollTimeEntries(filters: PayrollFilters): Promise<RemotePayrollTimeEntryRow[]> {
   const client = await getDefaultClient();
   if (filters.includeFinancial) {
-    const { data, error } = await client.rpc('get_privileged_payroll_entries', { p_from: filters.from, p_to: filters.to, p_storm: filters.stormEventId, p_contractor: filters.contractorId });
-    if (error) throw error;
-    return data as unknown as RemotePayrollTimeEntryRow[];
+    const entries: RemotePayrollTimeEntryRow[] = [];
+    for (let offset = 0; ; offset += 500) {
+      const { data, error } = await client.rpc('get_privileged_payroll_entries', { p_from: filters.from, p_to: filters.to, p_storm: filters.stormEventId, p_contractor: filters.contractorId }).order('id').range(offset, offset + 499);
+      if (error) throw error;
+      const page = (data ?? []) as unknown as RemotePayrollTimeEntryRow[];
+      entries.push(...page);
+      if (page.length < 500) return entries;
+    }
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (client.from('time_entries') as any)
@@ -431,13 +436,14 @@ async function defaultFetchPayrollTimeEntries(filters: PayrollFilters): Promise<
     query = query.eq('contractor_id', filters.contractorId);
   }
 
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error('Unable to load payroll time entries.');
+  const entries: RemotePayrollTimeEntryRow[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await query.order('id').range(offset, offset + 499);
+    if (error) throw new Error('Unable to load payroll time entries.');
+    const page = (data ?? []) as RemotePayrollTimeEntryRow[];
+    entries.push(...page);
+    if (page.length < 500) return entries;
   }
-
-  return (data ?? []) as RemotePayrollTimeEntryRow[];
 }
 
 async function defaultFetchVehicleClaimsForEntries(timeEntryIds: string[]): Promise<VehicleClaim[]> {
@@ -564,7 +570,7 @@ export function createPayrollService(overrides: Partial<PayrollDependencies> = {
       };
     },
 
-    listVehicleClaims(filters: { status?: VehicleClaimStatus } = {}): Promise<VehicleClaim[]> {
+    listVehicleClaims(filters: { status?: VehicleClaimStatus; stormEventId?: string } = {}): Promise<VehicleClaim[]> {
       return dependencies.fetchVehicleClaims(filters);
     },
 
@@ -800,10 +806,11 @@ async function defaultFetchContractorNames(
   return result;
 }
 
-async function defaultFetchVehicleClaims(filters: { status?: VehicleClaimStatus }): Promise<VehicleClaim[]> {
+async function defaultFetchVehicleClaims(filters: { status?: VehicleClaimStatus; stormEventId?: string }): Promise<VehicleClaim[]> {
   const client = await getDefaultClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (client.from('time_entry_vehicle_claims') as any).select('*');
+  let query = (client.from('time_entry_vehicle_claims') as any).select(filters.stormEventId ? '*,time_entries!inner(storm_event_id)' : '*');
+  if (filters.stormEventId) query = query.eq('time_entries.storm_event_id', filters.stormEventId);
 
   if (filters.status) {
     query = query.eq('status', filters.status);

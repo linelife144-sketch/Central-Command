@@ -10,13 +10,19 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { canPerformManagementAction } from '@/lib/auth/authorization';
 import { stormEventService, type StormEventSummary } from '@/lib/services/stormEventService';
-import { getErrorMessage, isAuthOrPermissionError } from '@/lib/utils/errorHandling';
-import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function StormEventsPage() {
+  const { profile } = useAuth();
+  return <StormEvents key={profile?.id ?? 'anonymous'} />;
+}
+
+function StormEvents() {
   const { profile, permissions } = useAuth();
   const [stormEvents, setStormEvents] = useState<StormEventSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const canManageStormEvents = canPerformManagementAction(profile?.role, 'storm_event_write', permissions);
   const canCreateTicketEntries = canPerformManagementAction(profile?.role, 'ticket_entry_write', permissions);
 
@@ -25,17 +31,16 @@ export default function StormEventsPage() {
 
     const loadStormEvents = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const data = await stormEventService.listStormEvents();
         if (active) {
           setStormEvents(data);
         }
       } catch (error) {
-        if (!isAuthOrPermissionError(error)) {
-          toast.error(getErrorMessage(error, 'Failed to load storm events'));
-        }
         if (active) {
           setStormEvents([]);
+          setError(getErrorMessage(error, 'Storm events are unavailable. Retry to load them.'));
         }
       } finally {
         if (active) {
@@ -49,7 +54,7 @@ export default function StormEventsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [attempt]);
 
   return (
     <div className="space-y-6">
@@ -74,13 +79,18 @@ export default function StormEventsPage() {
 
       {!canManageStormEvents && (
         <div className="rounded-xl border border-grid-warning bg-grid-warning-soft p-3 text-sm text-grid-navy">
-          You have view access to storm events. A Super Admin can enable Edit in your permissions.
+          You have view access to storm events. A Storm Manager or CEO can enable Edit in your permissions.
         </div>
       )}
 
       <div className="stagger-children grid gap-5 2xl:grid-cols-2">
         {isLoading ? (
           <div className="storm-surface rounded-xl px-4 py-6 text-sm text-grid-muted">Loading storm events...</div>
+        ) : error ? (
+          <div role="alert" className="storm-surface rounded-xl px-4 py-6 text-sm text-grid-muted">
+            <p>{error}</p>
+            <Button className="mt-3" variant="outline" onClick={() => setAttempt(value => value + 1)}>Retry storm events</Button>
+          </div>
         ) : stormEvents.length === 0 ? (
           <div className="storm-surface rounded-xl px-4 py-6 text-sm text-grid-muted">
             No storm events found. Create a storm event to begin the operational workflow.
@@ -96,7 +106,7 @@ export default function StormEventsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
-                <dl className="cc-storm-meta"><div><dt>Utility client</dt><dd>{stormEvent.utilityClient}</dd></div><div><dt>Region</dt><dd>{stormEvent.region ?? 'Unspecified'}</dd></div><div><dt>Active tickets</dt><dd>{stormEvent.activeTickets}</dd></div></dl>
+                <dl className="cc-storm-meta"><div><dt>Utility client</dt><dd>{stormEvent.utilityClient}</dd></div><div><dt>Region</dt><dd>{stormEvent.region ?? 'Unspecified'}</dd></div><div><dt>Active tickets</dt><dd>{stormEvent.activeTickets ?? 'Unavailable'}</dd></div></dl>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                 <Link className="inline-flex items-center gap-2 text-xs font-bold text-grid-navy underline-offset-4 hover:underline" href={`/admin/storms/${stormEvent.id}`}>Open workspace<ArrowUpRight className="size-4" /></Link>
                 {canCreateTicketEntries ? (

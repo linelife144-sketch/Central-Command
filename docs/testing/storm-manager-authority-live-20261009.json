@@ -1,0 +1,264 @@
+{
+  "project": "xcvacmreerrypygpritq",
+  "agent": "Codex /root",
+  "date": "2026-10-09",
+  "migrationBodies": {
+    "inspected": 17,
+    "mismatches": []
+  },
+  "beforeCounts": {
+    "storms": 3,
+    "tickets": 6,
+    "profiles": 9,
+    "audit_logs": 16,
+    "auth_users": 9,
+    "contractors": 7,
+    "time_entries": 10,
+    "expense_reports": 0
+  },
+  "functions": [
+    {
+      "name": "active_profile_role",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.active_profile_role()\n RETURNS text\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  SELECT private.authority_role(role::text) FROM public.profiles WHERE id=(SELECT auth.uid()) AND is_active IS TRUE AND NOT must_reset_password LIMIT 1;\n$function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "add_contractor_record",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "public",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION public.add_contractor_record(p_actor_id uuid, p_first_name text, p_last_name text, p_email text, p_phone text, p_terms jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nDECLARE c_id uuid; agreement_id uuid; actor_role public.user_role; normalized_email text:=lower(btrim(p_email));\nBEGIN\n IF current_setting('role',true) IS DISTINCT FROM 'service_role' THEN\n  RAISE EXCEPTION 'Server-only contractor creation' USING ERRCODE='42501'; END IF;\n SELECT role INTO actor_role FROM public.profiles WHERE id=p_actor_id AND is_active AND NOT must_reset_password;\n IF actor_role IS NULL OR actor_role::text NOT IN ('CEO','STORM_MANAGER','SUPER_ADMIN')\n OR NOT private.has_permission(p_actor_id,'admin.contractors.edit') OR NOT private.has_permission(p_actor_id,'admin.payroll.edit') THEN\n  RAISE EXCEPTION 'Privileged contractor and payroll editing required' USING ERRCODE='42501'; END IF;\n IF p_first_name IS NULL OR p_last_name IS NULL OR length(btrim(p_first_name)) NOT BETWEEN 1 AND 80 OR length(btrim(p_last_name)) NOT BETWEEN 1 AND 80\n OR normalized_email IS NULL OR length(normalized_email)>254 OR normalized_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'\n OR (coalesce(p_phone,'')<>'' AND p_phone !~ '^[(][0-9]{3}[)] [0-9]{3}-[0-9]{4}$') THEN\n  RAISE EXCEPTION 'Invalid contractor contact details' USING ERRCODE='23514'; END IF;\n PERFORM private.validate_compensation(p_terms);\n PERFORM pg_advisory_xact_lock(hashtextextended(normalized_email,734918206));\n IF EXISTS(SELECT 1 FROM public.profiles WHERE lower(email)=normalized_email)\n OR EXISTS(SELECT 1 FROM public.contractors WHERE lower(business_email)=normalized_email) THEN\n  RAISE EXCEPTION 'A contractor or account already uses this email address' USING ERRCODE='23505'; END IF;\n INSERT INTO public.contractors(first_name,last_name,business_name,business_email,business_phone,role,onboarding_status,is_eligible_for_assignment,eligibility_reason,created_by)\n VALUES(btrim(p_first_name),btrim(p_last_name),btrim(p_first_name)||' '||btrim(p_last_name),normalized_email,nullif(p_phone,''),(p_terms->>'role')::public.contractor_role,'PENDING',false,'Onboarding approval required',p_actor_id)\n RETURNING id INTO c_id;\n INSERT INTO public.contractor_pay_agreements(contractor_id,effective_from,terms,created_by)\n VALUES(c_id,clock_timestamp(),p_terms,p_actor_id) RETURNING id INTO agreement_id;\n INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,new_values,change_summary)\n VALUES('CONTRACTOR_ADDED','contractor',c_id,p_actor_id,actor_role,jsonb_build_object('first_name',btrim(p_first_name),'last_name',btrim(p_last_name),'email',normalized_email,'onboarding_status','PENDING','agreement_id',agreement_id),'Contractor record added without an account or invitation');\n RETURN jsonb_build_object('id',c_id,'agreement_id',agreement_id,'onboarding_status','PENDING');\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "authority_role",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION private.authority_role(p_role text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE\n SET search_path TO ''\nAS $function$\n SELECT CASE WHEN p_role='STORM_MANAGER' THEN 'SUPER_ADMIN' ELSE p_role END;\n$function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "create_storm_event_with_rates",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "public",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION public.create_storm_event_with_rates(p_event jsonb, p_role_rates jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nDECLARE actor uuid:=auth.uid(); event_row public.storm_events; item jsonb; initial_status text;\nBEGIN\n IF actor IS NULL OR NOT private.has_permission(actor,'admin.storms.edit') OR NOT private.has_permission(actor,'admin.payroll.view') OR NOT private.has_permission(actor,'admin.payroll.edit') THEN\n  RAISE EXCEPTION 'Storm and payroll editing permissions are required' USING ERRCODE='42501';\n END IF;\n PERFORM private.validate_storm_role_rates(p_role_rates);\n IF jsonb_typeof(p_event) IS DISTINCT FROM 'object' OR nullif(btrim(p_event->>'event_code'),'') IS NULL\n   OR nullif(btrim(p_event->>'name'),'') IS NULL OR nullif(btrim(p_event->>'utility_client'),'') IS NULL THEN\n  RAISE EXCEPTION 'Storm code, name, and utility are required' USING ERRCODE='23514';\n END IF;\n initial_status:=coalesce(nullif(p_event->>'status',''),'MOB');\n IF initial_status NOT IN ('MOB','ACTIVE','DE-MOB','RELEASED','BILLING','CLOSED') THEN\n  RAISE EXCEPTION 'Invalid storm status' USING ERRCODE='23514';\n END IF;\n INSERT INTO public.storm_events(event_code,name,utility_client,status,region,contract_reference,start_date,end_date,notes,created_by,updated_by,responsible_manager_id)\n VALUES(upper(btrim(p_event->>'event_code')),btrim(p_event->>'name'),upper(btrim(p_event->>'utility_client')),\n   CASE WHEN initial_status='CLOSED' THEN 'MOB' ELSE initial_status END,\n   nullif(btrim(p_event->>'region'),''),nullif(btrim(p_event->>'contract_reference'),''),\n   nullif(p_event->>'start_date','')::date,nullif(p_event->>'end_date','')::date,nullif(p_event->>'notes',''),actor,actor,nullif(p_event->>'responsible_manager_id','')::uuid)\n RETURNING * INTO event_row;\n FOR item IN SELECT value FROM jsonb_array_elements(p_role_rates) LOOP\n  INSERT INTO public.storm_role_pay_rates(storm_event_id,role,hourly_rate,updated_by)\n   VALUES(event_row.id,(item->>'role')::public.contractor_role,(item->>'pay_rate')::numeric,actor);\n  INSERT INTO public.utility_billing_rates(storm_event_id,role,work_type,hourly_rate,currency,updated_by)\n   VALUES(event_row.id,(item->>'role')::public.contractor_role,NULL,(item->>'bill_rate')::numeric,'USD',actor);\n END LOOP;\n IF initial_status='CLOSED' THEN UPDATE public.storm_events SET status='CLOSED' WHERE id=event_row.id RETURNING * INTO event_row; END IF;\n RETURN to_jsonb(event_row);\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "guard_internal_account_creation",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_internal_account_creation()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE c public.contractors; setup_claim private.contractor_account_setup_claims;\nBEGIN\n IF NEW.raw_app_meta_data->>'role' IN ('CEO','STORM_MANAGER','SUPER_ADMIN','ADMIN') THEN RETURN NEW; END IF;\n IF NEW.email IS NULL THEN RAISE EXCEPTION 'Internally added contractor required' USING ERRCODE='42501'; END IF;\n -- Supabase Auth may insert a user before persisting server-only app_metadata.\n -- A high-entropy, one-use claim from the protected setup RPC authorizes only\n -- this exact pre-added email/contractor pair for a short window.\n IF NEW.raw_user_meta_data ? 'contractor_setup_claim_token' THEN\n  SELECT sc.* INTO setup_claim FROM private.contractor_account_setup_claims sc\n  JOIN public.contractors co ON co.id=sc.contractor_id\n  WHERE sc.claim_token::text=NEW.raw_user_meta_data->>'contractor_setup_claim_token'\n   AND sc.contractor_id::text=NEW.raw_user_meta_data->>'contractor_record_id'\n   AND sc.consumed_at IS NULL AND sc.expires_at>clock_timestamp()\n   AND co.profile_id IS NULL AND co.is_deleted IS NOT TRUE\n   AND lower(co.business_email)=lower(NEW.email)\n  FOR UPDATE OF sc,co;\n  IF setup_claim.contractor_id IS NULL THEN RAISE EXCEPTION 'Valid contractor setup request required' USING ERRCODE='42501'; END IF;\n  UPDATE private.contractor_account_setup_claims SET consumed_at=clock_timestamp() WHERE contractor_id=setup_claim.contractor_id;\n  RETURN NEW;\n END IF;\n -- Preserve service-created contractor accounts whose trusted app metadata is\n -- already present during INSERT.\n IF NEW.raw_app_meta_data->>'role' IS DISTINCT FROM 'CONTRACTOR' THEN\n  RAISE EXCEPTION 'Internally added contractor required' USING ERRCODE='42501';\n END IF;\n SELECT * INTO c FROM public.contractors WHERE id::text=NEW.raw_app_meta_data->>'contractor_record_id' FOR UPDATE;\n IF c.id IS NULL OR c.profile_id IS NOT NULL OR c.is_deleted OR lower(c.business_email) IS DISTINCT FROM lower(NEW.email)\n  OR c.account_setup_requested_at IS NULL OR c.account_setup_requested_at<clock_timestamp()-interval '10 minutes' THEN\n  RAISE EXCEPTION 'Valid contractor setup request required' USING ERRCODE='42501'; END IF;\n IF EXISTS(SELECT 1 FROM auth.users WHERE lower(email)=lower(NEW.email)) THEN\n  RAISE EXCEPTION 'Account already exists' USING ERRCODE='23505'; END IF;\n RETURN NEW;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "guard_pay_agreement",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_pay_agreement()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE previous jsonb; actor_id uuid:=auth.uid(); actor text;\nBEGIN\n IF TG_OP<>'INSERT' THEN RAISE EXCEPTION 'Pay agreements are immutable; create a new effective version' USING ERRCODE='23514'; END IF;\n PERFORM pg_advisory_xact_lock(hashtextextended(NEW.contractor_id::text,0));\n IF actor_id IS NULL AND current_setting('role',true)='service_role' THEN actor_id:=NEW.created_by; END IF;\n SELECT role::text INTO actor FROM public.profiles WHERE id=actor_id;\n IF actor_id IS NULL OR actor NOT IN ('CEO','STORM_MANAGER','SUPER_ADMIN') OR NOT private.has_permission(actor_id,'admin.payroll.edit') THEN\n  RAISE EXCEPTION 'Privileged payroll editing required' USING ERRCODE='42501'; END IF;\n PERFORM private.validate_compensation(NEW.terms);\n IF NOT isfinite(NEW.effective_from) OR NEW.effective_from<clock_timestamp()-interval '1 minute' OR EXISTS(SELECT 1 FROM public.time_entries WHERE contractor_id=NEW.contractor_id AND clock_out_at>=NEW.effective_from) THEN\n  RAISE EXCEPTION 'Use a current or future effective time outside closed payroll' USING ERRCODE='23514'; END IF;\n SELECT terms INTO previous FROM public.contractor_pay_agreements WHERE contractor_id=NEW.contractor_id AND effective_from<NEW.effective_from ORDER BY effective_from DESC LIMIT 1;\n IF previous IS NOT NULL AND ROW(previous->>'timezone',previous->>'week_start_day') IS DISTINCT FROM ROW(NEW.terms->>'timezone',NEW.terms->>'week_start_day') THEN\n  IF private.pay_week_start(NEW.effective_from,previous)<>NEW.effective_from THEN\n   RAISE EXCEPTION 'Workweek changes require the current workweek boundary' USING ERRCODE='23514'; END IF;\n END IF;\n NEW.created_by:=actor_id; NEW.created_at:=clock_timestamp();\n INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,old_values,new_values,change_summary)\n VALUES('PAY_AGREEMENT_CREATED','contractor',NEW.contractor_id,actor_id,actor::public.user_role,previous,to_jsonb(NEW),'Effective contractor pay agreement saved');\n RETURN NEW;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "guard_profile_authorization",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_profile_authorization()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nBEGIN\n IF current_user='authenticated' THEN\n  IF TG_OP='INSERT' AND NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'User administration permission required'; END IF;\n  IF TG_OP='UPDATE' THEN\n   IF NEW.id<>auth.uid() AND NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'User administration permission required'; END IF;\n   IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.is_active IS DISTINCT FROM OLD.is_active OR NEW.is_email_verified IS DISTINCT FROM OLD.is_email_verified OR NEW.must_reset_password IS DISTINCT FROM OLD.must_reset_password OR NEW.mfa_enabled IS DISTINCT FROM OLD.mfa_enabled OR NEW.mfa_secret_encrypted IS DISTINCT FROM OLD.mfa_secret_encrypted) THEN\n    IF NEW.id=auth.uid() OR private.authority_role(OLD.role::text)='CEO' OR NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'Authorization fields are protected'; END IF;\n    PERFORM pg_advisory_xact_lock(734918206);\n    IF private.authority_role(OLD.role::text)='SUPER_ADMIN' AND (private.authority_role(NEW.role::text)<>'SUPER_ADMIN' OR NOT NEW.is_active) AND NOT EXISTS(SELECT 1 FROM public.profiles p WHERE p.id<>OLD.id AND private.authority_role(p.role::text)='SUPER_ADMIN' AND p.is_active AND private.has_permission(p.id,'admin.users.edit')) THEN RAISE EXCEPTION 'Keep one active Storm Manager'; END IF;\n   END IF;\n  END IF;\n END IF;\n RETURN NEW;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "guard_profile_deletion",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_profile_deletion()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nBEGIN\n IF current_user='authenticated' THEN\n  IF OLD.id=auth.uid() OR private.authority_role(OLD.role::text)='CEO' OR NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'Protected account cannot be deleted'; END IF;\n  PERFORM pg_advisory_xact_lock(734918206);\n  IF private.authority_role(OLD.role::text)='SUPER_ADMIN' AND NOT EXISTS(SELECT 1 FROM public.profiles p WHERE p.id<>OLD.id AND private.authority_role(p.role::text)='SUPER_ADMIN' AND p.is_active AND private.has_permission(p.id,'admin.users.edit')) THEN RAISE EXCEPTION 'Keep one active Storm Manager'; END IF;\n END IF;\n RETURN OLD;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "guard_storm_manager",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_storm_manager()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE actor uuid:=auth.uid(); candidate public.profiles; previous uuid;\nBEGIN\n IF TG_OP='UPDATE' AND NEW.responsible_manager_id IS NOT DISTINCT FROM OLD.responsible_manager_id THEN RETURN NEW; END IF;\n IF TG_OP='UPDATE' AND OLD.status='CLOSED' THEN RAISE EXCEPTION 'Closed storm manager history is fixed' USING ERRCODE='23514'; END IF;\n IF actor IS NULL OR NOT private.has_permission(actor,'admin.storms.edit') THEN RAISE EXCEPTION 'Storm management permission required' USING ERRCODE='42501'; END IF;\n IF NEW.responsible_manager_id IS NULL THEN RAISE EXCEPTION 'Select a responsible Storm Manager' USING ERRCODE='23514'; END IF;\n SELECT * INTO candidate FROM public.profiles WHERE id=NEW.responsible_manager_id FOR SHARE;\n IF candidate.id IS NULL OR candidate.role::text NOT IN ('STORM_MANAGER','SUPER_ADMIN') OR NOT candidate.is_active OR candidate.must_reset_password OR NOT private.has_permission(candidate.id,'admin.storms.edit') THEN\n  RAISE EXCEPTION 'Select an active, setup-complete Storm Manager with storm management access' USING ERRCODE='23514'; END IF;\n IF TG_OP='UPDATE' THEN previous:=OLD.responsible_manager_id; END IF;\n INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,old_values,new_values,change_summary)\n VALUES('STORM_MANAGER_ASSIGNED','storm_event',NEW.id,actor,(SELECT role FROM public.profiles WHERE id=actor),jsonb_build_object('responsible_manager_id',previous),jsonb_build_object('responsible_manager_id',NEW.responsible_manager_id),'Responsible Storm Manager explicitly assigned');\n RETURN NEW;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "guard_storm_manager_permissions",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_storm_manager_permissions()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nBEGIN\n IF NEW.effect='deny' AND NEW.permission_key IN ('admin.storms.view','admin.storms.edit') AND EXISTS(SELECT 1 FROM public.storm_events WHERE responsible_manager_id=NEW.profile_id AND NOT coalesce(is_deleted,false) AND status<>'CLOSED') THEN\n  RAISE EXCEPTION 'Reassign active storms before restricting their manager access' USING ERRCODE='23514'; END IF;\n RETURN NEW;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "guard_storm_manager_profile",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.guard_storm_manager_profile()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nBEGIN\n IF (NOT NEW.is_active OR NEW.must_reset_password OR NEW.role::text NOT IN ('STORM_MANAGER','SUPER_ADMIN')) AND EXISTS(SELECT 1 FROM public.storm_events WHERE responsible_manager_id=OLD.id AND NOT coalesce(is_deleted,false) AND status<>'CLOSED') THEN\n  RAISE EXCEPTION 'Reassign active storms before changing their responsible manager access' USING ERRCODE='23514'; END IF;\n RETURN NEW;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "has_permission",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.has_permission(p_profile_id uuid, p_key text)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE r text; active boolean; def boolean; privileged boolean; effect text; permitted boolean;\nBEGIN\n SELECT private.authority_role(role::text),(is_active AND NOT must_reset_password) INTO r,active FROM public.profiles WHERE id=p_profile_id;\n IF NOT coalesce(active,false) OR r NOT IN ('CEO','SUPER_ADMIN','ADMIN') THEN RETURN false; END IF;\n IF r='ADMIN' AND p_key NOT IN ('admin.tickets.view','admin.tickets.edit','admin.assessments.view','admin.assessments.edit') THEN RETURN false; END IF;\n SELECT admin_default,c.privileged INTO def,privileged FROM private.permission_catalog c WHERE permission_key=p_key;\n IF NOT FOUND OR (privileged AND r NOT IN ('CEO','SUPER_ADMIN')) THEN RETURN false; END IF;\n SELECT u.effect INTO effect FROM public.user_permissions u WHERE profile_id=p_profile_id AND permission_key=p_key;\n permitted:=CASE WHEN effect IS NOT NULL THEN effect='allow' WHEN r IN ('CEO','SUPER_ADMIN','ADMIN') THEN true ELSE def END;\n IF p_key LIKE '%.edit' THEN permitted:=permitted AND private.has_permission(p_profile_id,regexp_replace(p_key,'\\.edit$','.view')); END IF;\n RETURN coalesce(permitted,false);\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "list_storm_manager_options",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "public",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION public.list_storm_manager_options(p_storm_id uuid DEFAULT NULL::uuid)\n RETURNS jsonb\n LANGUAGE sql\n STABLE\n SET search_path TO ''\nAS $function$ SELECT private.list_storm_manager_options(p_storm_id); $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "list_storm_manager_options",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.list_storm_manager_options(p_storm_id uuid DEFAULT NULL::uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nBEGIN\n IF auth.uid() IS NULL OR NOT private.has_permission(auth.uid(),'admin.storms.view') THEN RAISE EXCEPTION 'Storm view permission required' USING ERRCODE='42501'; END IF;\n RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'display_name',coalesce(nullif(btrim(concat_ws(' ',first_name,last_name)),''),email),'role',role,\n  'eligible',is_active AND NOT must_reset_password AND role::text IN ('STORM_MANAGER','SUPER_ADMIN') AND private.has_permission(id,'admin.storms.edit')) ORDER BY last_name,first_name,id),'[]'::jsonb)\n FROM public.profiles WHERE (role::text IN ('STORM_MANAGER','SUPER_ADMIN') AND is_active AND NOT must_reset_password AND private.has_permission(id,'admin.storms.edit'))\n OR id=(SELECT responsible_manager_id FROM public.storm_events WHERE id=p_storm_id AND NOT coalesce(is_deleted,false)));\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "provision_auth_profile",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.provision_auth_profile()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE profile_role public.user_role; c public.contractors;\nBEGIN\n IF NEW.email IS NULL THEN RETURN NEW; END IF;\n profile_role:=CASE WHEN NEW.raw_app_meta_data->>'role' IN ('CEO','STORM_MANAGER','SUPER_ADMIN','ADMIN','CONTRACTOR')\n  THEN (NEW.raw_app_meta_data->>'role')::public.user_role ELSE 'CONTRACTOR'::public.user_role END;\n IF TG_OP='INSERT' THEN\n  INSERT INTO public.profiles(id,email,first_name,last_name,role,is_active,is_email_verified,must_reset_password)\n  VALUES(NEW.id,NEW.email,coalesce(NEW.raw_user_meta_data->>'first_name',''),coalesce(NEW.raw_user_meta_data->>'last_name',''),profile_role,true,NEW.email_confirmed_at IS NOT NULL,profile_role::text='CONTRACTOR')\n  ON CONFLICT(id) DO NOTHING;\n ELSE\n  UPDATE public.profiles SET email=NEW.email,is_email_verified=(NEW.email_confirmed_at IS NOT NULL)\n  WHERE id=NEW.id AND (email IS DISTINCT FROM NEW.email OR is_email_verified IS DISTINCT FROM (NEW.email_confirmed_at IS NOT NULL));\n END IF;\n IF profile_role::text='CONTRACTOR' AND NEW.raw_app_meta_data ? 'contractor_record_id' THEN\n  SELECT * INTO c FROM public.contractors WHERE id::text=NEW.raw_app_meta_data->>'contractor_record_id' FOR UPDATE;\n  IF c.id IS NULL OR c.is_deleted OR lower(c.business_email) IS DISTINCT FROM lower(NEW.email)\n   OR (c.profile_id IS NOT NULL AND c.profile_id<>NEW.id) THEN\n   RAISE EXCEPTION 'Account does not match the contractor record' USING ERRCODE='42501'; END IF;\n  IF NEW.email_confirmed_at IS NOT NULL AND c.profile_id IS NULL THEN\n   UPDATE public.contractors SET profile_id=NEW.id WHERE id=c.id;\n   UPDATE public.profiles SET first_name=c.first_name,last_name=c.last_name,phone=c.business_phone WHERE id=NEW.id;\n   INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,new_values,change_summary)\n   VALUES('CONTRACTOR_ACCOUNT_VERIFIED','contractor',c.id,NEW.id,'CONTRACTOR',jsonb_build_object('profile_id',NEW.id),'Contractor verified email ownership');\n  END IF;\n END IF;\n RETURN NEW;\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": false
+    },
+    {
+      "name": "set_storm_manager",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "public",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION public.set_storm_manager(p_storm_id uuid, p_manager_id uuid, p_expected_manager_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nDECLARE event_row public.storm_events;\nBEGIN\n IF auth.uid() IS NULL OR NOT private.has_permission(auth.uid(),'admin.storms.edit') THEN RAISE EXCEPTION 'Storm management permission required' USING ERRCODE='42501'; END IF;\n SELECT * INTO event_row FROM public.storm_events WHERE id=p_storm_id AND NOT coalesce(is_deleted,false) FOR UPDATE;\n IF NOT FOUND THEN RAISE EXCEPTION 'Storm not found' USING ERRCODE='P0002'; END IF;\n IF event_row.status='CLOSED' THEN RAISE EXCEPTION 'Closed storm manager history is fixed' USING ERRCODE='23514'; END IF;\n IF event_row.responsible_manager_id IS DISTINCT FROM p_expected_manager_id THEN RAISE EXCEPTION 'Responsible manager changed. Reload before saving.' USING ERRCODE='40001'; END IF;\n UPDATE public.storm_events SET responsible_manager_id=p_manager_id,updated_by=auth.uid() WHERE id=p_storm_id RETURNING * INTO event_row;\n RETURN to_jsonb(event_row);\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "set_user_permissions",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "public",
+      "definer": false,
+      "definition": "CREATE OR REPLACE FUNCTION public.set_user_permissions(p_profile_id uuid, p_overrides jsonb, p_version uuid DEFAULT NULL::uuid)\n RETURNS jsonb\n LANGUAGE sql\n SET search_path TO ''\nAS $function$ SELECT private.set_user_permissions(p_profile_id,p_overrides,p_version); $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    },
+    {
+      "name": "set_user_permissions",
+      "config": [
+        "search_path=\"\""
+      ],
+      "schema": "private",
+      "definer": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.set_user_permissions(p_profile_id uuid, p_overrides jsonb, p_version uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE actor uuid:=auth.uid(); target_role text; old_values jsonb; old_version uuid; entry record;\nBEGIN\n IF actor IS NULL OR NOT private.has_permission(actor,'admin.users.edit') THEN RAISE EXCEPTION 'Storm Manager permission required' USING ERRCODE='42501'; END IF;\n IF actor=p_profile_id THEN RAISE EXCEPTION 'You cannot change your own permissions' USING ERRCODE='42501'; END IF;\n -- Serialize permission and account edits, including concurrent last-admin changes.\n PERFORM pg_advisory_xact_lock(734918206);\n IF NOT private.has_permission(actor,'admin.users.edit') THEN RAISE EXCEPTION 'Storm Manager permission required' USING ERRCODE='42501'; END IF;\n SELECT private.authority_role(role::text) INTO target_role FROM public.profiles WHERE id=p_profile_id FOR UPDATE;\n IF NOT FOUND THEN RAISE EXCEPTION 'User not found' USING ERRCODE='P0002'; END IF;\n IF target_role NOT IN ('ADMIN','SUPER_ADMIN') THEN RAISE EXCEPTION 'Contractor and executive permissions are locked' USING ERRCODE='42501'; END IF;\n IF jsonb_typeof(p_overrides) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'Overrides must be an object' USING ERRCODE='22023'; END IF;\n FOR entry IN SELECT key,value FROM jsonb_each_text(p_overrides) LOOP\n  IF NOT EXISTS(SELECT 1 FROM private.permission_catalog WHERE permission_key=entry.key) OR entry.value NOT IN ('allow','deny') OR entry.value IS NULL THEN RAISE EXCEPTION 'Unknown permission or effect' USING ERRCODE='22023'; END IF;\n  IF entry.key LIKE '%.edit' AND entry.value='allow' AND p_overrides->>regexp_replace(entry.key,'\\.edit$','.view')='deny' THEN RAISE EXCEPTION 'Enable View before Edit' USING ERRCODE='22023'; END IF;\n  IF entry.key LIKE 'admin.users.%' AND entry.value='allow' AND target_role<>'SUPER_ADMIN' THEN RAISE EXCEPTION 'User administration requires the Storm Manager role' USING ERRCODE='42501'; END IF;\n END LOOP;\n SELECT version INTO old_version FROM public.user_permission_versions WHERE profile_id=p_profile_id;\n IF old_version IS DISTINCT FROM p_version THEN RAISE EXCEPTION 'Permissions changed. Reload before saving.' USING ERRCODE='40001'; END IF;\n SELECT coalesce(jsonb_object_agg(permission_key,effect),'{}'::jsonb) INTO old_values FROM public.user_permissions WHERE profile_id=p_profile_id;\n DELETE FROM public.user_permissions WHERE profile_id=p_profile_id;\n INSERT INTO public.user_permissions(profile_id,permission_key,effect,updated_by) SELECT p_profile_id,key,value,actor FROM jsonb_each_text(p_overrides);\n IF NOT EXISTS(SELECT 1 FROM public.profiles WHERE private.authority_role(role::text)='SUPER_ADMIN' AND is_active AND private.has_permission(id,'admin.users.edit')) THEN RAISE EXCEPTION 'Keep at least one active Storm Manager with user administration' USING ERRCODE='42501'; END IF;\n INSERT INTO public.user_permission_versions(profile_id) VALUES(p_profile_id) ON CONFLICT(profile_id) DO UPDATE SET version=gen_random_uuid();\n INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,old_values,new_values,change_summary)\n VALUES('PERMISSIONS_UPDATED','user_permissions',p_profile_id,actor,(SELECT role FROM public.profiles WHERE id=actor),old_values,p_overrides,'Individual admin permissions updated');\n RETURN private.user_permission_settings(p_profile_id);\nEND $function$\n",
+      "anon_execute": false,
+      "authenticated_execute": true
+    }
+  ],
+  "migrations": [
+    {
+      "name": "add_storm_manager_application_role",
+      "version": "20261009184240"
+    },
+    {
+      "name": "storm_manager_authority_and_responsibility",
+      "version": "20261009185436"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "storm_events_responsible_manager_id_fkey",
+      "definition": "FOREIGN KEY (responsible_manager_id) REFERENCES profiles(id) ON DELETE RESTRICT"
+    }
+  ],
+  "indexes": [
+    "CREATE INDEX storm_events_responsible_manager_idx ON public.storm_events USING btree (responsible_manager_id)"
+  ],
+  "counts": {
+    "storms": 3,
+    "tickets": 6,
+    "profiles": 9,
+    "audit_logs": 16,
+    "auth_users": 9,
+    "contractors": 7,
+    "time_entries": 10,
+    "expense_reports": 0
+  },
+  "configured_storms": 0,
+  "native_manager_profiles": 0,
+  "triggers": [
+    {
+      "name": "guard_storm_manager_profile",
+      "definition": "CREATE TRIGGER guard_storm_manager_profile BEFORE UPDATE OF role, is_active, must_reset_password ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.guard_storm_manager_profile()"
+    },
+    {
+      "name": "guard_storm_manager",
+      "definition": "CREATE TRIGGER guard_storm_manager BEFORE INSERT OR UPDATE OF responsible_manager_id ON public.storm_events FOR EACH ROW EXECUTE FUNCTION private.guard_storm_manager()"
+    },
+    {
+      "name": "guard_storm_manager_permissions",
+      "definition": "CREATE TRIGGER guard_storm_manager_permissions BEFORE INSERT OR UPDATE ON public.user_permissions FOR EACH ROW EXECUTE FUNCTION private.guard_storm_manager_permissions()"
+    }
+  ]
+}

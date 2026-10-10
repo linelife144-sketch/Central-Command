@@ -1,3 +1,4 @@
+import { isAdminClassRole } from '@/lib/auth/roleGuards';
 import { TicketStatus, UserRole } from "@/types";
 
 /**
@@ -17,7 +18,7 @@ export function isValidTransition(
   if (current === next) return true;
 
   // Admin Transitions
-  if (role === 'CEO' || role === 'ADMIN' || role === 'SUPER_ADMIN') {
+  if (isAdminClassRole(role)) {
     switch (current) {
       case 'DRAFT':
         return ['ASSIGNED', 'CLOSED'].includes(next);

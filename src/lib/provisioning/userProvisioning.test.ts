@@ -37,6 +37,11 @@ describe('parseProvisioningCsv', () => {
 });
 
 describe('validateProvisioningRows', () => {
+  it('accepts native Storm Manager independently of contractor pay roles', () => {
+    const result = validateProvisioningRows([{ lineNumber: 2, first_name: 'Sam', last_name: 'Manager', email: 'manager@example.test', role: 'STORM_MANAGER', temp_password: 'Temp1234!Temp' }]);
+    expect(result.rowIssues).toEqual([]);
+    expect(result.validRows[0].role).toBe('STORM_MANAGER');
+  });
   it('accepts CEO as a valid role', () => {
     const rows = [
       {

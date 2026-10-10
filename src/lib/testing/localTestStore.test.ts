@@ -33,7 +33,7 @@ afterEach(() => {
 });
 
 async function createStorm() {
-  return stormEventService.createStormEvent({ name: 'Local test storm', eventCode: 'LOCAL-001', utilityClient: 'Entergy', roleRates: TEST_ROLE_RATES });
+  return stormEventService.createStormEvent({ name: 'Local test storm', eventCode: 'LOCAL-001', utilityClient: 'Entergy', responsibleManagerId: SUPER_ADMIN_TEST_PROFILE.id, roleRates: TEST_ROLE_RATES });
 }
 
 function ticketInput(stormId: string): Partial<Ticket> {
@@ -121,7 +121,8 @@ describe('local Super Admin testing boundaries', () => {
     vi.stubEnv('NODE_ENV', 'production');
 
     const realTicket = { id: 'remote-ticket', ticket_number: 'REAL-001' };
-    remote.from.mockReturnValue({ select: () => ({ order: async () => ({ data: [realTicket], error: null }) }) });
+    const query = { order: () => query, range: () => query, then: Promise.resolve({ data: [realTicket], error: null }).then.bind(Promise.resolve({ data: [realTicket], error: null })) };
+    remote.from.mockReturnValue({ select: () => query });
     expect(await ticketService.getTickets()).toEqual([realTicket]);
     expect(remote.from).toHaveBeenCalledWith('tickets');
     expect(() => localTestStore.getTickets()).toThrow('not enabled');
@@ -142,7 +143,7 @@ describe('storm ticket assignment', () => {
   });
   it('rejects a contractor from another storm without changing the ticket', async () => {
     const storm = await createStorm();
-    const other = await stormEventService.createStormEvent({ name: 'Other', eventCode: 'OTHER', utilityClient: 'Entergy', roleRates: TEST_ROLE_RATES });
+    const other = await stormEventService.createStormEvent({ name: 'Other', eventCode: 'OTHER', utilityClient: 'Entergy', responsibleManagerId: SUPER_ADMIN_TEST_PROFILE.id, roleRates: TEST_ROLE_RATES });
     const ticket = await ticketService.createTicket(ticketInput(storm.id));
     const crew = localTestStore.createContractor('Other Crew');
     localTestStore.assignContractor(other.id, crew.id);

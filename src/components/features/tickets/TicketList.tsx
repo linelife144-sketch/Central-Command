@@ -2,12 +2,12 @@
 
 'use client';
 
+import { isSuperAdminClassRole } from '@/lib/auth/roleGuards';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
 import { DataTable, Column } from '@/components/common/data-display/DataTable';
 import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
-import { TicketImportanceBadge } from './TicketImportanceBadge';
 import { formatAddress, formatDateTime } from '@/lib/utils/formatters';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ interface TicketListProps {
 export function TicketList({ userRole, userId }: TicketListProps) {
     const { can, profile } = useAuth();
     const profileRole = profile?.role;
-    const canCreate = ['CEO','SUPER_ADMIN'].includes(profile?.role??'') && can('admin.tickets.edit');
+    const canCreate = isSuperAdminClassRole(profile?.role) && can('admin.tickets.edit');
     const canManageTickets = userRole === 'admin' && Boolean(profile?.id) && can('admin.tickets.edit');
     const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -152,25 +152,9 @@ export function TicketList({ userRole, userId }: TicketListProps) {
             cell: ticket => ticket.assigned_to ? assigneeNames[ticket.assigned_to] ?? (userRole === 'contractor' ? 'You' : 'Contractor assigned') : 'Unassigned',
         },
         {
-            key: 'title',
-            header: 'Utility / Feeder',
-            cell: (ticket) => (
-                <div className="flex flex-col">
-                    <span className="font-medium">{ticket.utility_client}</span>
-                    {feedersByTicketId[ticket.id] ? (
-                        <span className="text-xs font-semibold text-grid-blue">Feeder {feedersByTicketId[ticket.id]}</span>
-                    ) : (
-                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                            {ticket.work_description || 'No description'}
-                        </span>
-                    )}
-                </div>
-            ),
-        },
-        {
-            key: 'importance',
-            header: 'Importance',
-            cell: (ticket) => <TicketImportanceBadge isImportant={ticket.is_important} />,
+            key: 'feeder',
+            header: 'Feeder',
+            cell: (ticket) => feedersByTicketId[ticket.id] ?? '—',
         },
         {
             key: 'status',

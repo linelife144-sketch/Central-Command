@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Loader2, ReceiptText, RefreshCw } from 'lucide-react';
 
@@ -104,6 +106,9 @@ function buildExpensesCard(
 
 export function ExpensesSummaryCard({ className }: ExpensesSummaryCardProps) {
   const { can } = useAuth();
+  const { stormEventId } = useStormContext();
+  const request = useRef(0);
+  const cancelRequests = useCallback(() => { request.current++; }, []);
   const [model, setModel] = useState<ExpensesCardModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -116,32 +121,35 @@ export function ExpensesSummaryCard({ className }: ExpensesSummaryCardProps) {
       setIsLoading(true);
     }
 
+    const version = ++request.current;
     setError(null);
 
     try {
       const [submittedItems, underReviewItems] = await Promise.all([
-        expenseProcessingService.listReviewItems({ status: 'SUBMITTED' }),
-        expenseProcessingService.listReviewItems({ status: 'UNDER_REVIEW' }),
+        expenseProcessingService.listReviewItems({ status: 'SUBMITTED', stormEventId }),
+        expenseProcessingService.listReviewItems({ status: 'UNDER_REVIEW', stormEventId }),
       ]);
 
+      if (version !== request.current) return;
       setModel(buildExpensesCard(submittedItems, underReviewItems));
     } catch {
+      if (version !== request.current) return;
       setError(ERROR_COPY);
       if (mode === 'initial') {
         setModel(null);
       }
     } finally {
+      if (version !== request.current) return;
       if (mode === 'refresh') {
         setIsRefreshing(false);
       } else {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [stormEventId]);
 
   useEffect(() => {
     if (!can('admin.expenses.view')) {
-      setIsLoading(false);
       return;
     }
 
@@ -151,9 +159,9 @@ export function ExpensesSummaryCard({ className }: ExpensesSummaryCardProps) {
       await load('initial');
     })();
     return () => {
-      active = false;
+      active = false; cancelRequests();
     };
-  }, [can, load]);
+  }, [can, load, cancelRequests]);
 
   if (!can('admin.expenses.view')) {
     return null;

@@ -2141,6 +2141,123 @@ export type Database = {
           },
         ]
       }
+      storm_events: {
+        Row: {
+          city: string | null
+          city_code: string | null
+          config_snapshot: Json
+          contract_reference: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          end_date: string | null
+          event_code: string
+          event_date: string | null
+          event_sequence: number
+          id: string
+          is_deleted: boolean | null
+          name: string
+          notes: string | null
+          region: string | null
+          responsible_manager_id: string | null
+          start_date: string | null
+          status: string
+          ticket_template_key: string
+          updated_at: string | null
+          updated_by: string | null
+          utility_client: string
+          utility_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          city_code?: string | null
+          config_snapshot?: Json
+          contract_reference?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          end_date?: string | null
+          event_code: string
+          event_date?: string | null
+          event_sequence?: number
+          id?: string
+          is_deleted?: boolean | null
+          name: string
+          notes?: string | null
+          region?: string | null
+          responsible_manager_id?: string | null
+          start_date?: string | null
+          status?: string
+          ticket_template_key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          utility_client: string
+          utility_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          city_code?: string | null
+          config_snapshot?: Json
+          contract_reference?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          end_date?: string | null
+          event_code?: string
+          event_date?: string | null
+          event_sequence?: number
+          id?: string
+          is_deleted?: boolean | null
+          name?: string
+          notes?: string | null
+          region?: string | null
+          responsible_manager_id?: string | null
+          start_date?: string | null
+          status?: string
+          ticket_template_key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          utility_client?: string
+          utility_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storm_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storm_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storm_events_responsible_manager_id_fkey"
+            columns: ["responsible_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storm_events_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storm_events_utility_id_fkey"
+            columns: ["utility_id"]
+            isOneToOne: false
+            referencedRelation: "utilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storm_role_pay_rates: {
         Row: {
           hourly_rate: number
@@ -2176,113 +2293,6 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      storm_events: {
-        Row: {
-          city: string | null
-          city_code: string | null
-          config_snapshot: Json
-          contract_reference: string | null
-          created_at: string | null
-          created_by: string | null
-          customer_id: string | null
-          end_date: string | null
-          event_code: string
-          event_date: string | null
-          event_sequence: number
-          id: string
-          is_deleted: boolean | null
-          name: string
-          notes: string | null
-          region: string | null
-          start_date: string | null
-          status: string
-          ticket_template_key: string
-          updated_at: string | null
-          updated_by: string | null
-          utility_client: string
-          utility_id: string | null
-        }
-        Insert: {
-          city?: string | null
-          city_code?: string | null
-          config_snapshot?: Json
-          contract_reference?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          customer_id?: string | null
-          end_date?: string | null
-          event_code: string
-          event_date?: string | null
-          event_sequence?: number
-          id?: string
-          is_deleted?: boolean | null
-          name: string
-          notes?: string | null
-          region?: string | null
-          start_date?: string | null
-          status?: string
-          ticket_template_key: string
-          updated_at?: string | null
-          updated_by?: string | null
-          utility_client: string
-          utility_id?: string | null
-        }
-        Update: {
-          city?: string | null
-          city_code?: string | null
-          config_snapshot?: Json
-          contract_reference?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          customer_id?: string | null
-          end_date?: string | null
-          event_code?: string
-          event_date?: string | null
-          event_sequence?: number
-          id?: string
-          is_deleted?: boolean | null
-          name?: string
-          notes?: string | null
-          region?: string | null
-          start_date?: string | null
-          status?: string
-          ticket_template_key?: string
-          updated_at?: string | null
-          updated_by?: string | null
-          utility_client?: string
-          utility_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "storm_events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storm_events_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storm_events_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "storm_events_utility_id_fkey"
-            columns: ["utility_id"]
-            isOneToOne: false
-            referencedRelation: "utilities"
             referencedColumns: ["id"]
           },
         ]
@@ -3218,8 +3228,8 @@ export type Database = {
           updated_by: string | null
           utility_bill_amount: number | null
           utility_bill_rate_applied: number | null
-          vehicle_hourly_rate_applied: number | null
           vehicle_allowance_amount: number | null
+          vehicle_hourly_rate_applied: number | null
           vehicle_minutes: number | null
           weekly_allocations: Json
           work_type: Database["public"]["Enums"]["work_type"]
@@ -3276,8 +3286,8 @@ export type Database = {
           updated_by?: string | null
           utility_bill_amount?: number | null
           utility_bill_rate_applied?: number | null
-          vehicle_hourly_rate_applied?: number | null
           vehicle_allowance_amount?: number | null
+          vehicle_hourly_rate_applied?: number | null
           vehicle_minutes?: number | null
           weekly_allocations?: Json
           work_type: Database["public"]["Enums"]["work_type"]
@@ -3334,8 +3344,8 @@ export type Database = {
           updated_by?: string | null
           utility_bill_amount?: number | null
           utility_bill_rate_applied?: number | null
-          vehicle_hourly_rate_applied?: number | null
           vehicle_allowance_amount?: number | null
+          vehicle_hourly_rate_applied?: number | null
           vehicle_minutes?: number | null
           weekly_allocations?: Json
           work_type?: Database["public"]["Enums"]["work_type"]
@@ -3669,9 +3679,9 @@ export type Database = {
       assign_contractor_to_storm_with_compensation: {
         Args: {
           p_contractor_id: string
-          p_pay_rate_override: number | null
+          p_pay_rate_override: number
           p_storm_id: string
-          p_vehicle_hourly_rate: number | null
+          p_vehicle_hourly_rate: number
         }
         Returns: undefined
       }
@@ -3843,14 +3853,6 @@ export type Database = {
         Args: { p_event: Json; p_role_rates: Json }
         Returns: Json
       }
-      get_storm_compensation_rates: {
-        Args: { p_storm_id: string }
-        Returns: Json
-      }
-      save_storm_compensation_rates: {
-        Args: { p_role_rates: Json; p_storm_id: string }
-        Returns: undefined
-      }
       create_storm_ticket: {
         Args: {
           p_common: Json
@@ -3888,6 +3890,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_storm_compensation_rates: {
+        Args: { p_storm_id: string }
+        Returns: Json
+      }
       get_user_permission_settings: {
         Args: { p_profile_id: string }
         Returns: Json
@@ -3899,37 +3905,68 @@ export type Database = {
         Returns: Json
       }
       list_storm_contractors: { Args: { p_storm_id: string }; Returns: Json }
+      list_storm_manager_options: {
+        Args: { p_storm_id?: string }
+        Returns: Json
+      }
       mark_ticket_notification_read: {
         Args: { p_notification_id: string }
         Returns: undefined
       }
-      record_ticket_work_note: {
-        Args: {
-          p_body: string
-          p_id: string
-          p_kind: string
-          p_reported_at: string
-          p_ticket_id: string
-        }
-        Returns: {
-          actor_profile_id: string
-          body: string
-          created_at: string
-          id: string
-          kind: string
-          reported_at: string
-          ticket_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "ticket_work_notes"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       record_ticket_field_action: {
         Args: { p_action: string; p_ticket_id: string }
-        Returns: Database["public"]["Tables"]["tickets"]["Row"]
+        Returns: {
+          address: string
+          address_line2: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_driver_id: string | null
+          assigned_to: string | null
+          city: string | null
+          client_contact_name: string | null
+          client_contact_phone: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          crew_id: string | null
+          current_assessment_id: string | null
+          damage_types: string[] | null
+          deleted_at: string | null
+          deleted_by: string | null
+          due_date: string | null
+          estimated_travel_time: number | null
+          geofence_radius_meters: number | null
+          id: string
+          is_deleted: boolean | null
+          is_important: boolean
+          latitude: number | null
+          longitude: number | null
+          raw_ocr_text: string | null
+          review_stage: string
+          route_batch_id: string | null
+          route_order: number | null
+          scheduled_date: string | null
+          severity: string | null
+          source_file_id: string | null
+          source_type: Database["public"]["Enums"]["ticket_source_type"]
+          special_instructions: string | null
+          started_at: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          storm_event_id: string | null
+          team_lead_id: string | null
+          template_key: string | null
+          ticket_number: string
+          updated_at: string | null
+          updated_by: string | null
+          utility_client: string
+          utility_submission_reference: string | null
+          utility_submitted_at: string | null
+          utility_submitted_by: string | null
+          work_description: string | null
+          work_order_ref: string | null
+          zip_code: string | null
+        }
         SetofOptions: {
           from: "*"
           to: "tickets"
@@ -3994,6 +4031,30 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_ticket_work_note: {
+        Args: {
+          p_body: string
+          p_id: string
+          p_kind: string
+          p_reported_at: string
+          p_ticket_id: string
+        }
+        Returns: {
+          actor_profile_id: string
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          reported_at: string
+          ticket_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_work_notes"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -4068,6 +4129,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_storm_compensation_rates: {
+        Args: { p_role_rates: Json; p_storm_id: string }
+        Returns: undefined
+      }
       save_ticket_assessment_draft: {
         Args: {
           p_assessment_id: string
@@ -4093,9 +4158,68 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_storm_manager: {
+        Args: {
+          p_expected_manager_id: string
+          p_manager_id: string
+          p_storm_id: string
+        }
+        Returns: Json
+      }
       set_ticket_disabled: {
         Args: { p_disabled: boolean; p_ticket_id: string }
-        Returns: Database["public"]["Tables"]["tickets"]["Row"]
+        Returns: {
+          address: string
+          address_line2: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_driver_id: string | null
+          assigned_to: string | null
+          city: string | null
+          client_contact_name: string | null
+          client_contact_phone: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          crew_id: string | null
+          current_assessment_id: string | null
+          damage_types: string[] | null
+          deleted_at: string | null
+          deleted_by: string | null
+          due_date: string | null
+          estimated_travel_time: number | null
+          geofence_radius_meters: number | null
+          id: string
+          is_deleted: boolean | null
+          is_important: boolean
+          latitude: number | null
+          longitude: number | null
+          raw_ocr_text: string | null
+          review_stage: string
+          route_batch_id: string | null
+          route_order: number | null
+          scheduled_date: string | null
+          severity: string | null
+          source_file_id: string | null
+          source_type: Database["public"]["Enums"]["ticket_source_type"]
+          special_instructions: string | null
+          started_at: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          storm_event_id: string | null
+          team_lead_id: string | null
+          template_key: string | null
+          ticket_number: string
+          updated_at: string | null
+          updated_by: string | null
+          utility_client: string
+          utility_submission_reference: string | null
+          utility_submitted_at: string | null
+          utility_submitted_by: string | null
+          work_description: string | null
+          work_order_ref: string | null
+          zip_code: string | null
+        }
         SetofOptions: {
           from: "*"
           to: "tickets"
@@ -4289,7 +4413,12 @@ export type Database = {
         | "CLOSED"
         | "ARCHIVED"
         | "EXPIRED"
-      user_role: "CEO" | "SUPER_ADMIN" | "ADMIN" | "CONTRACTOR"
+      user_role:
+        | "CEO"
+        | "SUPER_ADMIN"
+        | "ADMIN"
+        | "CONTRACTOR"
+        | "STORM_MANAGER"
       wire_size:
         | "#6"
         | "#4"
@@ -4301,11 +4430,7 @@ export type Database = {
         | "336"
         | "556"
         | "795"
-      work_type:
-        | "Working"
-        | "MOB"
-        | "DE-MOB"
-        | "Stand-by"
+      work_type: "Working" | "MOB" | "DE-MOB" | "Stand-by"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4505,7 +4630,7 @@ export const Constants = {
         "ARCHIVED",
         "EXPIRED",
       ],
-      user_role: ["CEO", "SUPER_ADMIN", "ADMIN", "CONTRACTOR"],
+      user_role: ["CEO", "SUPER_ADMIN", "ADMIN", "CONTRACTOR", "STORM_MANAGER"],
       wire_size: [
         "#6",
         "#4",
@@ -4518,12 +4643,7 @@ export const Constants = {
         "556",
         "795",
       ],
-      work_type: [
-        "Working",
-        "MOB",
-        "DE-MOB",
-        "Stand-by",
-      ],
+      work_type: ["Working", "MOB", "DE-MOB", "Stand-by"],
     },
   },
 } as const

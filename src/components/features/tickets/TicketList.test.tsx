@@ -57,6 +57,20 @@ beforeEach(() => {
   }));
 });
 
+describe('TicketList columns', () => {
+  it('shows the ticket feeder number without the utility or importance column', async () => {
+    mocks.getUtilityPayloadsByTicketIds.mockResolvedValue({
+      'active-id': { feeder: 'N1842' },
+    });
+    render(<TicketList userRole="admin" />);
+
+    expect(await screen.findByRole('columnheader', { name: 'Feeder' })).toBeTruthy();
+    expect(screen.getByText('N1842')).toBeTruthy();
+    expect(screen.queryByRole('columnheader', { name: 'Utility / Feeder' })).toBeNull();
+    expect(screen.queryByRole('columnheader', { name: 'Importance' })).toBeNull();
+  });
+});
+
 describe('TicketList disable controls', () => {
   it('requires confirmation, disables the selected ticket, and exposes the disabled queue', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);

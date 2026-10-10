@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
+import { readAllRows, readRowsByIds, type PagedRead } from '@/lib/supabase/readRows';
 import { isAuthOrPermissionError } from '@/lib/utils/errorHandling';
+import type { PermissionMap } from '@/lib/auth/permissionCatalog';
 import type { ContractorRole } from '@/types';
 
 interface RemoteContractorRow {
@@ -41,6 +43,7 @@ interface RemoteTicketRow {
   utility_client: string;
   updated_at: string;
   assigned_to: string | null;
+  assigned_driver_id: string | null;
   review_stage: string | null;
   utility_submitted_at: string | null;
 }
@@ -57,13 +60,14 @@ export interface ContractorListItem {
   onboardingCompletedAt: string | null;
   email: string;
   phone: string | null;
-  assignedTicketCount: number;
+  assignedTicketCount: number | null;
   alerts: string[];
   emailVerified?: boolean;
   role: ContractorRole;
 }
 
 export interface ContractorListFilters {
+  stormEventId?: string;
   search?: string;
   activeOnly?: boolean;
 }
@@ -94,8 +98,8 @@ export interface ContractorDetail {
   isActive: boolean;
   onboardingCompletedAt: string | null;
   role: ContractorRole;
-  assignedTicketCount: number;
-  totalTicketCount: number;
+  assignedTicketCount: number | null;
+  totalTicketCount: number | null;
   createdAt: string;
   updatedAt: string;
   recentTickets: Array<{
@@ -134,9 +138,8 @@ function buildAlerts(contractor: RemoteContractorRow): string[] {
 
 async function hasActiveSession(): Promise<boolean> {
   const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session) {
-    return false;
-  }
+  if (error) throw error;
+  if (!data.session) return false;
 
   return true;
 }
@@ -146,52 +149,60 @@ async function fetchProfilesByIds(profileIds: string[]): Promise<Map<string, Rem
     return new Map();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('profiles') as any)
+  const rows = await readRowsByIds<RemoteProfileRow>(profileIds, batch => supabase.from('profiles')
     .select('id, first_name, last_name, email, phone, is_active, is_email_verified')
-    .in('id', profileIds);
-
-  if (error) {
-    if (isAuthOrPermissionError(error)) {
-      return new Map();
-    }
-    throw error;
-  }
-
-  const rows = (data ?? []) as RemoteProfileRow[];
-  return new Map(rows.map((row) => [row.id, row]));
+    .in('id', batch) as unknown as PagedRead<RemoteProfileRow>);
+  const byId = new Map(rows.map(row => [row.id, row]));
+  if (profileIds.some(id => !byId.has(id))) throw new Error('Linked contractor profile data is unavailable. Retry to load contractors.');
+  return byId;
 }
 
-async function fetchTicketRows(contractorIds: string[]): Promise<RemoteTicketRow[]> {
-  if (contractorIds.length === 0) {
-    return [];
+async function fetchTicketRows(contractorIds: string[], stormEventId?: string): Promise<RemoteTicketRow[]> {
+  if (!contractorIds.length) return [];
+  const columns = 'id, ticket_number, status, is_important, utility_client, updated_at, assigned_to, assigned_driver_id, review_stage, utility_submitted_at';
+  const memberRows = await Promise.all((['assigned_to', 'assigned_driver_id'] as const).map(column =>
+    readRowsByIds<RemoteTicketRow>(contractorIds, batch => {
+      let query = supabase.from('tickets').select(columns).in(column, batch).eq('is_deleted', false);
+      if (stormEventId) query = query.eq('storm_event_id', stormEventId);
+      return query as unknown as PagedRead<RemoteTicketRow>;
+    })));
+  return [...new Map(memberRows.flat().map(row => [row.id, row])).values()];
+}
+
+async function readCurrentPermissions(): Promise<PermissionMap> {
+  const { data, error } = await supabase.rpc('get_my_permissions');
+  if (error) throw error;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Contractor permissions are unavailable.');
+  return data as PermissionMap;
+}
+
+async function fetchCurrentRosterIds(stormEventId: string, permissions: PermissionMap): Promise<string[]> {
+  if (permissions['admin.assignments.view'] !== true) {
+    throw new Error('Roster view permission is required to load storm contractors.');
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('tickets') as any)
-    .select('id, ticket_number, status, is_important, utility_client, updated_at, assigned_to, review_stage, utility_submitted_at')
-    .in('assigned_to', contractorIds)
-    .eq('is_deleted', false);
-
-  if (error) {
-    if (isAuthOrPermissionError(error)) {
-      return [];
-    }
-    throw error;
-  }
-
-  return (data ?? []) as RemoteTicketRow[];
+  // The existing compensation RPC joins login profiles, excluding planned
+  // unlinked members. Read the same latest revision directly under existing RLS.
+  const revisions = await readAllRows(() => supabase.from('storm_event_roster_revisions')
+    .select('id, revision_number').eq('storm_event_id', stormEventId));
+  const current = revisions.reduce<typeof revisions[number] | undefined>((latest, row) =>
+    !latest || row.revision_number > latest.revision_number ? row : latest, undefined);
+  if (!current) return [];
+  const members = await readAllRows(() => supabase.from('storm_event_roster_members')
+    .select('id, contractor_id').eq('roster_revision_id', current.id).neq('member_status', 'REMOVED'));
+  return [...new Set(members.map(row => row.contractor_id).filter((id): id is string => !!id))];
 }
 
 function buildAssignedTicketCountByContractor(ticketRows: RemoteTicketRow[]): Map<string, number> {
   const counts = new Map<string, number>();
 
   for (const row of ticketRows) {
-    if (!row.assigned_to || !isOpenTicketStatus(row.status)) {
+    if (!isOpenTicketStatus(row.status)) {
       continue;
     }
 
-    counts.set(row.assigned_to, (counts.get(row.assigned_to) ?? 0) + 1);
+    for (const id of new Set([row.assigned_to, row.assigned_driver_id])) {
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
   }
 
   return counts;
@@ -201,11 +212,9 @@ function buildTotalTicketCountByContractor(ticketRows: RemoteTicketRow[]): Map<s
   const counts = new Map<string, number>();
 
   for (const row of ticketRows) {
-    if (!row.assigned_to) {
-      continue;
+    for (const id of new Set([row.assigned_to, row.assigned_driver_id])) {
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
     }
-
-    counts.set(row.assigned_to, (counts.get(row.assigned_to) ?? 0) + 1);
   }
 
   return counts;
@@ -244,9 +253,7 @@ export const contractorService = {
     if (error) throw new Error(error.message);
   },
   async listContractors(filters: ContractorListFilters = {}): Promise<ContractorListItem[]> {
-    if (!(await hasActiveSession())) {
-      return [];
-    }
+    if (!(await hasActiveSession())) throw new Error('Sign in to load contractors.');
 
     const contractorColumns = [
       'id',
@@ -269,32 +276,25 @@ export const contractorService = {
       'updated_at',
     ].join(',');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const query = (supabase.from('contractors') as any).select(
-      contractorColumns,
-    ).eq('is_deleted', false);
-
-
-    const { data, error } = await query;
-
-
-    if (error) {
-      if (isAuthOrPermissionError(error)) {
-        return [];
-      }
-      throw error;
+    const permissions = await readCurrentPermissions();
+    if (permissions['admin.contractors.view'] !== true && permissions['admin.payroll.view'] !== true) {
+      throw new Error('Contractor view permission is required to load the directory.');
     }
-
-    const rows = (data ?? []) as RemoteContractorRow[];
+    const canReadTickets = permissions['admin.tickets.view'] === true;
+    const memberIds = filters.stormEventId ? await fetchCurrentRosterIds(filters.stormEventId, permissions) : undefined;
+    const createQuery = () => supabase.from('contractors').select(contractorColumns).eq('is_deleted', false);
+    const rows = memberIds
+      ? await readRowsByIds<RemoteContractorRow>(memberIds, batch => createQuery().in('id', batch) as unknown as PagedRead<RemoteContractorRow>)
+      : await readAllRows<RemoteContractorRow>(() => createQuery() as unknown as PagedRead<RemoteContractorRow>);
     const profileIds = rows.map((row) => row.profile_id).filter((id): id is string => !!id);
     const contractorIds = rows.map((row) => row.id);
 
     const [profilesById, ticketRows] = await Promise.all([
       fetchProfilesByIds(profileIds),
-      fetchTicketRows(contractorIds),
+      canReadTickets ? fetchTicketRows(contractorIds, filters.stormEventId) : Promise.resolve(null),
     ]);
 
-    const assignedTicketCountByContractor = buildAssignedTicketCountByContractor(ticketRows);
+    const assignedTicketCountByContractor = buildAssignedTicketCountByContractor(ticketRows ?? []);
 
     const mappedItems = rows.map((row) => {
       const profile = row.profile_id ? profilesById.get(row.profile_id) : undefined;
@@ -314,7 +314,7 @@ export const contractorService = {
         onboardingCompletedAt: row.onboarding_completed_at ?? null,
         email,
         phone: profile?.phone ?? row.business_phone,
-        assignedTicketCount: assignedTicketCountByContractor.get(row.id) ?? 0,
+        assignedTicketCount: canReadTickets ? assignedTicketCountByContractor.get(row.id) ?? 0 : null,
         alerts: buildAlerts(row),
         role: row.role,
       } satisfies ContractorListItem;
@@ -388,16 +388,17 @@ export const contractorService = {
     }
 
     const row = contractorData as RemoteContractorRow;
+    const canReadTickets = (await readCurrentPermissions())['admin.tickets.view'] === true;
     const [profilesById, ticketRows] = await Promise.all([
       fetchProfilesByIds(row.profile_id ? [row.profile_id] : []),
-      fetchTicketRows([row.id]),
+      canReadTickets ? fetchTicketRows([row.id]) : Promise.resolve(null),
     ]);
 
     const profile = row.profile_id ? profilesById.get(row.profile_id) : undefined;
-    const assignedTicketCountByContractor = buildAssignedTicketCountByContractor(ticketRows);
-    const totalTicketCountByContractor = buildTotalTicketCountByContractor(ticketRows);
+    const assignedTicketCountByContractor = buildAssignedTicketCountByContractor(ticketRows ?? []);
+    const totalTicketCountByContractor = buildTotalTicketCountByContractor(ticketRows ?? []);
 
-    const recentTickets = ticketRows
+    const recentTickets = (ticketRows ?? [])
       .sort((left, right) => Date.parse(right.updated_at) - Date.parse(left.updated_at))
       .slice(0, 8)
       .map((ticket) => ({
@@ -431,8 +432,8 @@ export const contractorService = {
       isActive: profile?.is_active ?? !row.profile_id,
       onboardingCompletedAt: row.onboarding_completed_at ?? null,
       role: row.role,
-      assignedTicketCount: assignedTicketCountByContractor.get(row.id) ?? 0,
-      totalTicketCount: totalTicketCountByContractor.get(row.id) ?? 0,
+      assignedTicketCount: canReadTickets ? assignedTicketCountByContractor.get(row.id) ?? 0 : null,
+      totalTicketCount: canReadTickets ? totalTicketCountByContractor.get(row.id) ?? 0 : null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       recentTickets,

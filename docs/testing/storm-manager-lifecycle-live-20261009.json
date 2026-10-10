@@ -1,0 +1,233 @@
+{
+  "project": "xcvacmreerrypygpritq",
+  "date": "2026-10-09",
+  "agent": "Codex /root",
+  "before": {
+    "counts": {
+      "storms": 3,
+      "tickets": 6,
+      "profiles": 9,
+      "audit_logs": 16,
+      "auth_users": 9,
+      "contractors": 7,
+      "time_entries": 10,
+      "expense_reports": 0
+    },
+    "trigger": "CREATE TRIGGER guard_storm_manager BEFORE INSERT OR UPDATE OF responsible_manager_id ON public.storm_events FOR EACH ROW EXECUTE FUNCTION private.guard_storm_manager()",
+    "functions": [
+      {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "name": "guard_profile_authorization",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "definition": "CREATE OR REPLACE FUNCTION private.guard_profile_authorization()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nBEGIN\n IF current_user='authenticated' THEN\n  IF TG_OP='INSERT' AND NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'User administration permission required'; END IF;\n  IF TG_OP='UPDATE' THEN\n   IF NEW.id<>auth.uid() AND NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'User administration permission required'; END IF;\n   IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.is_active IS DISTINCT FROM OLD.is_active OR NEW.is_email_verified IS DISTINCT FROM OLD.is_email_verified OR NEW.must_reset_password IS DISTINCT FROM OLD.must_reset_password OR NEW.mfa_enabled IS DISTINCT FROM OLD.mfa_enabled OR NEW.mfa_secret_encrypted IS DISTINCT FROM OLD.mfa_secret_encrypted) THEN\n    IF NEW.id=auth.uid() OR private.authority_role(OLD.role::text)='CEO' OR NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'Authorization fields are protected'; END IF;\n    PERFORM pg_advisory_xact_lock(734918206);\n    IF private.authority_role(OLD.role::text)='SUPER_ADMIN' AND (private.authority_role(NEW.role::text)<>'SUPER_ADMIN' OR NOT NEW.is_active) AND NOT EXISTS(SELECT 1 FROM public.profiles p WHERE p.id<>OLD.id AND private.authority_role(p.role::text)='SUPER_ADMIN' AND p.is_active AND private.has_permission(p.id,'admin.users.edit')) THEN RAISE EXCEPTION 'Keep one active Storm Manager'; END IF;\n   END IF;\n  END IF;\n END IF;\n RETURN NEW;\nEND $function$\n",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "name": "guard_storm_manager",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "definition": "CREATE OR REPLACE FUNCTION private.guard_storm_manager()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE actor uuid:=auth.uid(); candidate public.profiles; previous uuid;\nBEGIN\n IF TG_OP='UPDATE' AND NEW.responsible_manager_id IS NOT DISTINCT FROM OLD.responsible_manager_id THEN RETURN NEW; END IF;\n IF TG_OP='UPDATE' AND OLD.status='CLOSED' THEN RAISE EXCEPTION 'Closed storm manager history is fixed' USING ERRCODE='23514'; END IF;\n IF actor IS NULL OR NOT private.has_permission(actor,'admin.storms.edit') THEN RAISE EXCEPTION 'Storm management permission required' USING ERRCODE='42501'; END IF;\n IF NEW.responsible_manager_id IS NULL THEN RAISE EXCEPTION 'Select a responsible Storm Manager' USING ERRCODE='23514'; END IF;\n SELECT * INTO candidate FROM public.profiles WHERE id=NEW.responsible_manager_id FOR SHARE;\n IF candidate.id IS NULL OR candidate.role::text NOT IN ('STORM_MANAGER','SUPER_ADMIN') OR NOT candidate.is_active OR candidate.must_reset_password OR NOT private.has_permission(candidate.id,'admin.storms.edit') THEN\n  RAISE EXCEPTION 'Select an active, setup-complete Storm Manager with storm management access' USING ERRCODE='23514'; END IF;\n IF TG_OP='UPDATE' THEN previous:=OLD.responsible_manager_id; END IF;\n INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,old_values,new_values,change_summary)\n VALUES('STORM_MANAGER_ASSIGNED','storm_event',NEW.id,actor,(SELECT role FROM public.profiles WHERE id=actor),jsonb_build_object('responsible_manager_id',previous),jsonb_build_object('responsible_manager_id',NEW.responsible_manager_id),'Responsible Storm Manager explicitly assigned');\n RETURN NEW;\nEND $function$\n",
+        "securityDefiner": true
+      }
+    ]
+  },
+  "after": {
+    "counts": {
+      "storms": 3,
+      "tickets": 6,
+      "profiles": 9,
+      "audit_logs": 16,
+      "auth_users": 9,
+      "contractors": 7,
+      "time_entries": 10,
+      "expense_reports": 0
+    },
+    "triggers": [
+      {
+        "name": "guard_last_storm_manager_setup",
+        "definition": "CREATE TRIGGER guard_last_storm_manager_setup BEFORE UPDATE OF must_reset_password ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.guard_last_storm_manager_setup()"
+      },
+      {
+        "name": "guard_storm_manager",
+        "definition": "CREATE TRIGGER guard_storm_manager BEFORE INSERT OR UPDATE OF responsible_manager_id ON public.storm_events FOR EACH ROW EXECUTE FUNCTION private.guard_storm_manager()"
+      },
+      {
+        "name": "guard_storm_manager_reactivation",
+        "definition": "CREATE TRIGGER guard_storm_manager_reactivation BEFORE UPDATE OF status, is_deleted ON public.storm_events FOR EACH ROW EXECUTE FUNCTION private.guard_storm_manager_reactivation()"
+      }
+    ],
+    "functions": [
+      {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "name": "guard_last_storm_manager_setup",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "definition": "CREATE OR REPLACE FUNCTION private.guard_last_storm_manager_setup()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nBEGIN\n IF current_user='authenticated'\n AND NEW.must_reset_password AND NOT OLD.must_reset_password\n AND OLD.is_active AND private.authority_role(OLD.role::text)='SUPER_ADMIN' THEN\n  -- The existing authorization trigger independently protects actor, CEO and self.\n  PERFORM pg_advisory_xact_lock(734918206);\n  IF NOT EXISTS(\n   SELECT 1 FROM public.profiles p WHERE p.id<>OLD.id\n    AND private.authority_role(p.role::text)='SUPER_ADMIN' AND p.is_active\n    AND private.has_permission(p.id,'admin.users.edit')\n  ) THEN RAISE EXCEPTION 'Keep one active Storm Manager'; END IF;\n END IF;\n RETURN NEW;\nEND $function$\n",
+        "anonExecute": false,
+        "securityDefiner": false,
+        "authenticatedExecute": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "name": "guard_profile_authorization",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "definition": "CREATE OR REPLACE FUNCTION private.guard_profile_authorization()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nBEGIN\n IF current_user='authenticated' THEN\n  IF TG_OP='INSERT' AND NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'User administration permission required'; END IF;\n  IF TG_OP='UPDATE' THEN\n   IF NEW.id<>auth.uid() AND NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'User administration permission required'; END IF;\n   IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.is_active IS DISTINCT FROM OLD.is_active OR NEW.is_email_verified IS DISTINCT FROM OLD.is_email_verified OR NEW.must_reset_password IS DISTINCT FROM OLD.must_reset_password OR NEW.mfa_enabled IS DISTINCT FROM OLD.mfa_enabled OR NEW.mfa_secret_encrypted IS DISTINCT FROM OLD.mfa_secret_encrypted) THEN\n    IF NEW.id=auth.uid() OR private.authority_role(OLD.role::text)='CEO' OR NOT private.has_permission(auth.uid(),'admin.users.edit') THEN RAISE EXCEPTION 'Authorization fields are protected'; END IF;\n    PERFORM pg_advisory_xact_lock(734918206);\n    IF private.authority_role(OLD.role::text)='SUPER_ADMIN' AND (private.authority_role(NEW.role::text)<>'SUPER_ADMIN' OR NOT NEW.is_active) AND NOT EXISTS(SELECT 1 FROM public.profiles p WHERE p.id<>OLD.id AND private.authority_role(p.role::text)='SUPER_ADMIN' AND p.is_active AND private.has_permission(p.id,'admin.users.edit')) THEN RAISE EXCEPTION 'Keep one active Storm Manager'; END IF;\n   END IF;\n  END IF;\n END IF;\n RETURN NEW;\nEND $function$\n",
+        "anonExecute": false,
+        "securityDefiner": false,
+        "authenticatedExecute": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "name": "guard_storm_manager",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "definition": "CREATE OR REPLACE FUNCTION private.guard_storm_manager()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE actor uuid:=auth.uid(); candidate public.profiles; previous uuid;\nBEGIN\n IF TG_OP='UPDATE' AND NEW.responsible_manager_id IS NOT DISTINCT FROM OLD.responsible_manager_id THEN RETURN NEW; END IF;\n IF TG_OP='UPDATE' AND OLD.status='CLOSED' THEN RAISE EXCEPTION 'Closed storm manager history is fixed' USING ERRCODE='23514'; END IF;\n IF actor IS NULL OR NOT private.has_permission(actor,'admin.storms.edit') THEN RAISE EXCEPTION 'Storm management permission required' USING ERRCODE='42501'; END IF;\n IF NEW.responsible_manager_id IS NULL THEN RAISE EXCEPTION 'Select a responsible Storm Manager' USING ERRCODE='23514'; END IF;\n SELECT * INTO candidate FROM public.profiles WHERE id=NEW.responsible_manager_id FOR SHARE;\n IF candidate.id IS NULL OR candidate.role::text NOT IN ('STORM_MANAGER','SUPER_ADMIN') OR NOT candidate.is_active OR candidate.must_reset_password OR NOT private.has_permission(candidate.id,'admin.storms.edit') THEN\n  RAISE EXCEPTION 'Select an active, setup-complete Storm Manager with storm management access' USING ERRCODE='23514'; END IF;\n IF TG_OP='UPDATE' THEN previous:=OLD.responsible_manager_id; END IF;\n INSERT INTO public.audit_logs(action,entity_type,entity_id,user_id,user_role,old_values,new_values,change_summary)\n VALUES('STORM_MANAGER_ASSIGNED','storm_event',NEW.id,actor,(SELECT role FROM public.profiles WHERE id=actor),jsonb_build_object('responsible_manager_id',previous),jsonb_build_object('responsible_manager_id',NEW.responsible_manager_id),'Responsible Storm Manager explicitly assigned');\n RETURN NEW;\nEND $function$\n",
+        "anonExecute": false,
+        "securityDefiner": true,
+        "authenticatedExecute": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "name": "guard_storm_manager_reactivation",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "definition": "CREATE OR REPLACE FUNCTION private.guard_storm_manager_reactivation()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE actor uuid:=auth.uid(); candidate public.profiles;\nBEGIN\n -- Only reactivation/restoration of a configured operational storm needs this check.\n -- Closed history and unchanged null compatibility remain covered by existing guards.\n IF NEW.responsible_manager_id IS NULL OR NEW.status='CLOSED' OR coalesce(NEW.is_deleted,false)\n OR NOT (OLD.status='CLOSED' OR coalesce(OLD.is_deleted,false)) THEN RETURN NEW; END IF;\n IF actor IS NULL OR NOT private.has_permission(actor,'admin.storms.edit') THEN\n  RAISE EXCEPTION 'Storm management permission required' USING ERRCODE='42501'; END IF;\n SELECT * INTO candidate FROM public.profiles WHERE id=NEW.responsible_manager_id FOR SHARE;\n IF candidate.id IS NULL OR candidate.role::text NOT IN ('STORM_MANAGER','SUPER_ADMIN')\n OR NOT candidate.is_active OR candidate.must_reset_password\n OR NOT private.has_permission(candidate.id,'admin.storms.edit') THEN\n  RAISE EXCEPTION 'Select an active, setup-complete Storm Manager with storm management access' USING ERRCODE='23514'; END IF;\n -- The assignment is unchanged, so do not write an assignment audit event.\n RETURN NEW;\nEND $function$\n",
+        "anonExecute": false,
+        "securityDefiner": true,
+        "authenticatedExecute": false
+      }
+    ],
+    "migrations": [
+      {
+        "name": "add_storm_manager_application_role",
+        "version": "20261009184240"
+      },
+      {
+        "name": "storm_manager_authority_and_responsibility",
+        "version": "20261009185436"
+      },
+      {
+        "name": "storm_manager_lifecycle_guards",
+        "version": "20261009192037"
+      }
+    ]
+  },
+  "verification": {
+    "countSame": true,
+    "existing": [
+      {
+        "name": "guard_profile_authorization",
+        "unchanged": true
+      },
+      {
+        "name": "guard_storm_manager",
+        "unchanged": true
+      }
+    ],
+    "matches": [
+      {
+        "name": "guard_last_storm_manager_setup",
+        "bodyMatches": true,
+        "noDirectExecution": true
+      },
+      {
+        "name": "guard_storm_manager_reactivation",
+        "bodyMatches": true,
+        "noDirectExecution": true
+      }
+    ],
+    "triggerUnchanged": true
+  },
+  "approvalReview": {
+    "replacementVariantRejected": true,
+    "reason": "Equivalence and blast radius not sufficiently proven",
+    "saferVariant": "Two new narrow guard functions/triggers; no existing authority object replaced",
+    "saferVariantApplied": true
+  },
+  "securityAdvisors": [
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "facing": "EXTERNAL",
+      "categories": [
+        "SECURITY"
+      ],
+      "description": "Detects `SECURITY DEFINER` functions that are callable by signed-in users. Revoke `EXECUTE`, switch the function to `SECURITY INVOKER`, or move it out of your exposed API schema if signed-in users should not call it.",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable",
+      "count": 1,
+      "findings": [
+        {
+          "detail": "Function `public.set_ticket_disabled(p_ticket_id uuid, p_disabled boolean)` can be executed by the `authenticated` role as a `SECURITY DEFINER` function via `/rest/v1/rpc/set_ticket_disabled`. Revoke `EXECUTE` or switch it to `SECURITY INVOKER` if that is not intentional.",
+          "metadata": {
+            "name": "set_ticket_disabled",
+            "schema": "public",
+            "language": "plpgsql",
+            "arguments": "p_ticket_id uuid, p_disabled boolean",
+            "security_definer": true
+          },
+          "observed_at": "2026-10-09T19:21:01.604Z"
+        }
+      ]
+    },
+    {
+      "name": "auth_leaked_password_protection",
+      "title": "Leaked Password Protection Disabled",
+      "level": "WARN",
+      "facing": "EXTERNAL",
+      "categories": [
+        "SECURITY"
+      ],
+      "description": "Leaked password protection is currently disabled.",
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection",
+      "count": 1,
+      "findings": [
+        {
+          "detail": "Supabase Auth prevents the use of compromised passwords by checking against HaveIBeenPwned.org. Enable this feature to enhance security.",
+          "metadata": {
+            "type": "auth",
+            "entity": "Auth"
+          }
+        }
+      ]
+    }
+  ],
+  "advisorComparison": {
+    "before": [
+      "auth_leaked_password_protection:[{\"type\":\"auth\",\"entity\":\"Auth\"}]",
+      "authenticated_security_definer_function_executable:[{\"name\":\"set_ticket_disabled\",\"schema\":\"public\",\"language\":\"plpgsql\",\"arguments\":\"p_ticket_id uuid, p_disabled boolean\",\"security_definer\":true}]"
+    ],
+    "after": [
+      "auth_leaked_password_protection:[{\"type\":\"auth\",\"entity\":\"Auth\"}]",
+      "authenticated_security_definer_function_executable:[{\"name\":\"set_ticket_disabled\",\"schema\":\"public\",\"language\":\"plpgsql\",\"arguments\":\"p_ticket_id uuid, p_disabled boolean\",\"security_definer\":true}]"
+    ],
+    "newFindings": []
+  }
+}

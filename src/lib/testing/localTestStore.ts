@@ -141,6 +141,17 @@ export const localTestStore = {
     return this.listStormEvents().find((event) => event.id === id) ?? null;
   },
 
+  setStormManager(stormId: string, managerId: string, expectedManagerId: string | null): StormEventSummary {
+    const data = readData();
+    const event = data.stormEvents.find(item => item.id === stormId);
+    if (!event) throw new Error('Storm not found.');
+    if (event.status === 'CLOSED') throw new Error('Closed storm manager history is fixed.');
+    if ((event.responsibleManagerId ?? null) !== expectedManagerId) throw new Error('Responsible manager changed. Reload before saving.');
+    event.responsibleManagerId = managerId;
+    saveData(data);
+    return this.getStormEventById(stormId)!;
+  },
+
   createStormEvent(input: Omit<StormEventSummary, 'id' | 'createdAt' | 'activeTickets'> & { roleRates: StormRoleRates }): StormEventSummary {
     const data = readData();
     if (!input.name.trim()) throw new Error('Storm event name is required.');

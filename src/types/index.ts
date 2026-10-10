@@ -19,6 +19,7 @@ export interface User {
 
 export type UserRole =
   | 'CEO'
+  | 'STORM_MANAGER'
   | 'SUPER_ADMIN'
   | 'ADMIN'
   | 'TEAM_LEAD'
@@ -50,7 +51,7 @@ export interface Contractor {
 
 
 // Payroll role model — one role per contractor, separate from profiles.role
-// (the CEO/SUPER_ADMIN/ADMIN/CONTRACTOR authorization enum).
+// (the CEO/STORM_MANAGER/legacy SUPER_ADMIN/ADMIN/CONTRACTOR authorization enum).
 export type ContractorRole =
   | 'STORM_MANAGER'
   | 'TEAM_LEAD'

@@ -1,9 +1,15 @@
 # Central Command — Project Brief
 
-**Updated:** 2026-10-08  
+**Updated:** 2026-10-09
 **Audience:** AI coding agents and developers  
 **Owner direction:** David McCarty, Storm Manager  
 **Status:** Current product direction; implementation remains in Phase 4 refinement and acceptance.
+
+## Purpose of this handoff
+
+This brief explains the project and its general build direction to agents. The companion scope and master plan provide the requirements, relationships, dependencies, and acceptance criteria needed for an audit and subsequent task decomposition. The owner's request for this handoff is to write and update the documentation. Saving a plan is not a claim that its proposed application behavior has been implemented or verified.
+
+The original [scratchpad](scratchpad.md) is dictated source material. Its repetitions, tentative alternatives, and instructions embedded in the prose must be interpreted against the owner's current request and clarifications. Use the normalized requirements here and in the scope; do not execute an isolated sentence from the scratchpad as an independent task. For example, tickets are assigned to crews even where the dictation calls the assignment target a contractor.
 
 ## What this project is
 
@@ -17,7 +23,7 @@ Each operational page is a dashboard for its subject: Storms, Contractors, Ticke
 
 The **CEO runs the company**. Each storm has **one responsible Storm Manager**, who runs that storm. Storm Manager replaces the Super Admin business role and has the existing full management access beneath the CEO, including the operational and financial dashboards. Do not invent a reduced-access manager persona or restrict management access to the assigned storm merely because each storm has an owner.
 
-Application permissions and contractor pay roles are different concepts. A pay-role selection must not grant administrative access. The current code still uses `SUPER_ADMIN` for management authority; changing the business role requires coordinated work in authentication, server checks, database policies, navigation, and labels. A label change alone is insufficient.
+Application permissions and contractor pay roles are different concepts. A pay-role selection must not grant administrative access. The initial planning baseline used `SUPER_ADMIN` for management authority. Source reviewed on 2026-10-09 includes native `STORM_MANAGER` role guards and responsible-manager service inputs; that source alone does not establish live database activation or authenticated acceptance. Consult the dated implementation evidence and verify authentication, server checks, database policies, navigation, and labels together. A label change alone is insufficient.
 
 Contractors perform the fieldwork. A **crew** contains one Driver and one Damage Assessor or Senior Damage Assessor. A **team** contains a Team Lead, that Team Lead's Driver, and its working crews. The leadership pair is distinct from the Driver/Assessor pairs below it. A contractor identity, a crew, a team, and an authenticated reviewer are not interchangeable records.
 
@@ -104,6 +110,8 @@ Completion requires connected evidence: the same storm, crew, ticket, official h
 
 Read the current sections of [implementation_plan.md](implementation_plan.md) and the [progress checklist](grid-electric-docs/10-IMPLEMENTATION-CHECKLIST.md), then this brief and the [project scope / PRD](grid-electric-docs/01-TECHNICAL-PRD.md). Use the [detailed workflow master plan](docs/plans/2026-10-08-central-command-workflow-master-plan.md) for requirement IDs, current-state findings, dependencies, and acceptance scenarios.
 
-The owner's current instructions take precedence. This brief and the updated scope express product intent; the implementation plan gives build order; the detailed plan supplies the audit/decomposition reference. Current code and database inspection establish what exists, not what the owner necessarily wants. Historical plans and the original [scratchpad](scratchpad.md) provide context and do not revive superseded instructions.
+The owner's current instructions take precedence. This brief and the updated scope express product intent; the implementation plan gives build order; the detailed plan supplies the audit/decomposition reference. Current code and database inspection establish what exists, not what the owner necessarily wants. Historical plans and the original [scratchpad](scratchpad.md) provide context and do not revive superseded instructions. Implementation observations are dated snapshots: refresh them before planning a change so that completed or partially completed work is retained rather than duplicated.
+
+The next planning output should be a set of bounded tasks derived from the [master plan's decomposition contract](docs/plans/2026-10-08-central-command-workflow-master-plan.md#decomposition-contract). Each task must state what exists, what changes, what remains available, which related records and dashboards are affected, what it depends on, and what evidence closes it. Use VERIFY for behavior whose source exists but whose connected acceptance is still unproven.
 
 **Preservation rule:** An omitted feature is not a removal request. A wording correction is not permission to replace a workflow. Keep behavior that fits, document specific gaps, and decompose only the necessary changes. Before implementation, each task must identify its affected records, interfaces, permissions, dashboards, offline behavior, and acceptance evidence. Do not mark a requirement implemented merely because it has been documented here.

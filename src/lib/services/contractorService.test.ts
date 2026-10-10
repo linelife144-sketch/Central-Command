@@ -1,14 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { contractorService } from './contractorService';
-const remote = vi.hoisted(() => ({ from: vi.fn(), getSession: vi.fn() }));
-vi.mock('@/lib/supabase/client', () => ({ supabase: { from: remote.from, auth: { getSession: remote.getSession } } }));
-beforeEach(() => { vi.clearAllMocks(); remote.getSession.mockResolvedValue({ data: { session: {} }, error: null }); });
+const remote = vi.hoisted(() => ({ from: vi.fn(), getSession: vi.fn(), rpc: vi.fn() }));
+vi.mock('@/lib/supabase/client', () => ({ supabase: { from: remote.from, rpc: remote.rpc, auth: { getSession: remote.getSession } } }));
+beforeEach(() => { vi.clearAllMocks(); remote.rpc.mockReset().mockResolvedValue({ data: { 'admin.contractors.view': true, 'admin.tickets.view': true, 'admin.assignments.view': true }, error: null }); remote.getSession.mockResolvedValue({ data: { session: {} }, error: null }); });
 function query(result: { data: unknown; error: unknown }) {
-  const chain = { select: vi.fn(), eq: vi.fn(), in: vi.fn(), gte: vi.fn(), lte: vi.fn(), maybeSingle: vi.fn(), then: Promise.resolve(result).then.bind(Promise.resolve(result)) };
-  for (const method of [chain.select,chain.eq,chain.in,chain.gte,chain.lte,chain.maybeSingle]) method.mockReturnValue(chain);
+  const chain = { select: vi.fn(), eq: vi.fn(), in: vi.fn(), gte: vi.fn(), lte: vi.fn(), order: vi.fn(), range: vi.fn(), maybeSingle: vi.fn(), then: Promise.resolve(result).then.bind(Promise.resolve(result)) };
+  for (const method of [chain.select,chain.eq,chain.in,chain.gte,chain.lte,chain.order,chain.range,chain.maybeSingle]) method.mockReturnValue(chain);
   return chain;
 }
 describe('canonical contractor queries', () => {
+  it('does not turn revoked contractor visibility into an empty company directory', async () => {
+    remote.rpc.mockResolvedValue({ data: { 'admin.assignments.view': true }, error: null });
+    remote.from.mockReturnValue(query({ data: [], error: null }));
+    await expect(contractorService.listContractors()).rejects.toThrow(/permission/i);
+    expect(remote.from).not.toHaveBeenCalled();
+  });
+  it('retains a permitted directory while representing hidden ticket counts as unavailable', async () => {
+    remote.rpc.mockResolvedValue({ data: { 'admin.contractors.view': true, 'admin.tickets.view': false }, error: null });
+    remote.from.mockImplementation(table => query({ data: table === 'contractors' ? [{ id: 'pending', profile_id: null, business_name: 'Pending person' }] : [], error: null }));
+    expect((await contractorService.listContractors())[0].assignedTicketCount).toBeNull();
+    expect(remote.from.mock.calls.some(call => call[0] === 'tickets')).toBe(false);
+  });
   it('queries the canonical table for the contractor list', async () => {
     remote.from.mockReturnValue(query({data:[],error:null}));
     expect(await contractorService.listContractors()).toEqual([]);
@@ -38,7 +50,7 @@ describe('canonical contractor queries', () => {
 
   it('does not use database queries without a session', async () => {
     remote.getSession.mockResolvedValue({ data:{ session:null },error:null });
-    expect(await contractorService.listContractors()).toEqual([]);
+    await expect(contractorService.listContractors()).rejects.toThrow(/sign in/i);
     expect(remote.from).not.toHaveBeenCalled();
   });
 });

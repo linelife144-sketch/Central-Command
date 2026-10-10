@@ -53,6 +53,13 @@ describe('real Supabase session routing', () => {
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
+  it('routes a native Storm Manager using verified profile permissions', async () => {
+    mocks.single.mockResolvedValue({ data: { role: 'STORM_MANAGER', is_active: true, must_reset_password: false }, error: null });
+    expect((await updateSession(new NextRequest('http://localhost:3000/login'))).headers.get('location')).toBe('http://localhost:3000/admin/dashboard');
+    expect((await updateSession(new NextRequest('http://localhost:3000/admin/dashboard'))).headers.get('location')).toBeNull();
+    expect((await updateSession(new NextRequest('http://localhost:3000/contractor/dashboard'))).headers.get('location')).toBe('http://localhost:3000/forbidden');
+  });
+
   it('denies a pasted hidden module URL and does not loop on forbidden', async () => {
     mocks.rpc.mockResolvedValue({data:{'admin.time.view':false},error:null});
     expect((await updateSession(new NextRequest('http://localhost:3000/admin/time-review'))).headers.get('location')).toBe('http://localhost:3000/forbidden');

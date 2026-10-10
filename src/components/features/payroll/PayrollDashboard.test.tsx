@@ -14,7 +14,16 @@ const mocks = vi.hoisted(() => ({
   listContractors: vi.fn(),
   getStormRates: vi.fn(),
   saveStormRates: vi.fn(),
+  listRoster: vi.fn(),
+  stormEventId: undefined as string | undefined,
 }));
+
+vi.mock('@/components/providers/StormContextProvider', () => ({ useStormContext: () => ({
+  ready: true, selection: mocks.stormEventId ?? 'ALL', stormEventId: mocks.stormEventId, selectStorm: vi.fn(),
+  selectedStorm: mocks.stormEventId ? { id: mocks.stormEventId, status: 'ACTIVE' } : undefined,
+  storms: mocks.stormEventId ? [{ id: mocks.stormEventId, eventCode: 'STORM-A', status: 'ACTIVE' }] : [],
+}) }));
+vi.mock('@/lib/services/stormRosterService', () => ({ stormRosterService: { list: mocks.listRoster } }));
 
 vi.mock('@/lib/services/payrollService', () => ({
   payrollService: {
@@ -43,9 +52,25 @@ import { PayrollDashboard } from './PayrollDashboard';
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  mocks.stormEventId = undefined;
 });
 
 describe('PayrollDashboard', () => {
+  it('uses the shared storm for payroll, roster count, and vehicle review', async () => {
+    mocks.stormEventId = 'storm-a';
+    mocks.listStormEvents.mockResolvedValue([]);
+    mocks.listContractors.mockResolvedValue([]);
+    mocks.listRoster.mockResolvedValue([{ contractorId: 'member' }]);
+    mocks.listVehicleClaims.mockResolvedValue([]);
+    mocks.getStormRates.mockResolvedValue([]);
+    mocks.getPayrollSummary.mockResolvedValue({ periodStart: '2026-10-01', periodEnd: '2026-10-09', totals: {}, rows: [] });
+    render(<PayrollDashboard reviewerId="manager" />);
+    await waitFor(() => expect(mocks.getPayrollSummary).toHaveBeenCalled());
+    expect(mocks.getPayrollSummary).toHaveBeenCalledWith(expect.objectContaining({ stormEventId: 'storm-a' }));
+    expect(mocks.listRoster).toHaveBeenCalledWith('storm-a');
+    expect(mocks.listContractors).not.toHaveBeenCalled();
+    expect(mocks.listVehicleClaims).toHaveBeenCalledWith({ status: 'PENDING', stormEventId: 'storm-a' });
+  });
   it('loads and renders the payroll summary, contractor table, and sub-editors', async () => {
     mocks.listStormEvents.mockResolvedValue([]);
     mocks.listContractors.mockResolvedValue([{ id: 'c-1' }, { id: 'c-2' }, { id: 'c-3' }, { id: 'c-4' }]);

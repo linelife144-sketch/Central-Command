@@ -22,7 +22,7 @@ interface AccessLevelsSectionProps {
 
 const ROLE_DEFINITIONS: ReadonlyArray<{ label: string; summary: string }> = [
   { label: 'CEO', summary: 'Full access, including people and access' },
-  { label: 'SUPER_ADMIN', summary: 'Full access, including people and access' },
+  { label: 'STORM_MANAGER', summary: 'Full access, including people and access' },
   {
     label: 'ADMIN',
     summary: 'Tickets and assessments, unless a Super Admin grants more',

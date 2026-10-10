@@ -51,10 +51,60 @@ Verify local tests, schema/permissions, authenticated browser behavior, same-rec
 
 - [x] Write the agent-facing project brief and save the detailed workflow master plan, including current-state findings, relationships, dependency order, preservation rules, and connected acceptance scenarios. — Codex /root, 2026-10-08
 - [x] Reconcile the current project scope and agent/document entry points with the owner's CEO/Storm Manager, crew assignment, 16-hour official-time, and test-data clarification. — Codex /root, 2026-10-08
-- [ ] Verify documentation links, requirement coverage, historical preservation, and consistency; record the result in the progress tracker. — Codex /root
-- [ ] Audit and decompose A–I into implementation tasks against the then-current canonical app. This documentation update does not mark any of those product changes complete. — Codex /root
+- [x] Verify documentation links, CC-01–CC-11 / AC-01–AC-19 coverage, historical preservation, and consistency; record the result in the progress tracker. — Codex /root, 2026-10-09
+- [x] Refresh canonical source/read-only live metadata and decompose B1–B3; preserve the full A–I dependency and acceptance scope in the [execution plan](docs/plans/2026-10-09-workflow-alignment-execution.md). — Codex /root, 2026-10-09
+- [ ] Finish detailed decomposition of later A–I workstreams when their upstream contracts and runtime evidence are ready. Do not infer full product acceptance from documentation or the first code batch. — Codex /root
+
+### Documentation handoff — 2026-10-09, Codex /root
+
+The requested project brief, current scope, and general build plan are saved in the existing linked documents. The brief and scope explicitly distinguish the owner's request from instructions embedded in the dictated scratchpad. The master plan now includes source normalization, dated baseline guidance, and a task record template covering dependencies, change impact, preservation, and acceptance evidence.
+
+This is a documentation handoff. The next planning step is to refresh each relevant implementation finding and audit/decompose the remaining A–I workstreams. Existing native Storm Manager source work must be considered during that audit; do not repeat a dated missing-feature finding without checking current code and live acceptance. Retain all prior implementation checkpoints and outstanding verification. No application or database work is performed by this handoff.
+
+Documentation verification passed 85 assertions: 28 current guidance file links and 36 implementation anchors resolve, CC-01–CC-11 and AC-01–AC-19 remain, and the original scratchpad and historical implementation/checklist sections are unchanged. Application tests were not run for this prose-only update.
+
+### Workflow alignment checkpoint — 2026-10-09, Codex /root
+
+B1–B3 code and local verification are recorded in the [first-batch evidence](docs/testing/2026-10-09-workflow-alignment-batch1.md). Primary Dashboard, Payroll, and Reports now share actor-owned storm/company context, scoped queries, roster counts, crew-ID metrics, export scope, and stale-response protection. Aggregate ticket/report/expense/recorded-payroll reads paginate. Existing dashboards and capabilities remain.
+
+The final local run passed 749 tests across 137 files; scoped lint, active-source diagnostic typecheck, and AST Graphify update passed. Root typecheck reports 16 known errors in six archival payroll copies; the isolated build is incomplete at the same typecheck gate. The available local browser session reached Access Forbidden, so authenticated two-storm readback is pending. No schema, role grant, account, or stored business record was changed. Existing recorded shifts remain the financial source until the official-time workstream is implemented.
+
+Next is B4 management authority and B5 context completion across the remaining dashboards/creation/cache/offline/export paths, followed by C–I. The full master-plan goal remains active; CC-01/CC-10 and connected acceptance are not marked complete by this checkpoint.
+
+### Storm Manager authority checkpoint — 2026-10-09, Codex /root
+
+B4a–c application/schema/setup-detail implementation is recorded in [the B4 evidence](docs/testing/2026-10-09-storm-manager-authority.md). Native Storm Manager authority is coordinated across app/server/session/database checks, remains separate from contractor pay roles, and retains legacy compatibility beneath the CEO. New storms require an explicit eligible responsible manager; setup/detail preserve the saved identity and provide audited stale-safe reassignment. Active assignment, closed history, reopening/restoration and last-manager password setup are guarded.
+
+The enum, authority and additive lifecycle migrations are live under ledger versions 20261009184240, 20261009185436 and 20261009192037. Exact definitions/grants/triggers and unchanged business-row counts were read back; live types were regenerated and advisors show no new findings. No accounts were promoted, managers inferred, or records reset. A rejected replacement-guard variant was not applied; the final follow-up adds narrow guards while retaining existing authority objects.
+
+Final local verification passed 772 tests/140 files, 18 isolated database groups, scoped lint, strict active-source diagnostic types and AST Graphify update. Documentation verification resolves 34 local links and confirms the original scratchpad, historical sections and CC/AC coverage remain. Root types still report the same 16 errors in six archival payroll copies; production compilation succeeded but build typecheck remains gated by those errors. The existing browser session reached Access Forbidden. Authenticated native-manager/RLS, same-record readback and genuine concurrent transactions remain open; CC-02 is not accepted by source or isolated tests alone.
+
+- [x] Implement/review B4a–c and record live activation/readback plus local evidence. — Codex /root
+- [x] Audit/decompose B5 across Tickets, Contractors, Map, Time, Expenses, creation, cache/offline and exports in [the next plan](docs/plans/2026-10-09-management-storm-context-completion.md). — Codex /root
+- [ ] Complete authenticated B4 acceptance, B5 implementation/acceptance, C–I and the separately controlled launch reset. — Codex /root
+
+Existing dashboards, navigation, controls, Alerts, fieldwork, evidence, review, maps, account setup, exports and offline behavior remain. The full workflow master-plan goal is active.
+
+### Storm context and service checkpoint — 2026-10-09, Codex /root
+
+B5a/b implementation is saved in [the dated evidence](docs/testing/2026-10-09-management-storm-context-services.md). Verified created-storm adoption, actor lifetime and honest unavailable/retry states now connect provider/create/storm-list callers. Ticket, storm, contractor, field-assignment and recorded-time reads paginate with explicit scope and bounded related-ID batches; planned roster members are retained. Hidden ticket counts/history are unavailable rather than zero/empty. Committed manager assignments remain saved if subsequent readback fails, with read-only recovery through the actual workspace callback. Personal clock/cache behavior and current money snapshots remain separate from E official time.
+
+Read-only live audit showed the compensation roster RPC omits unlinked planned members. Directory selection now reads the same latest saved revision under existing permission/RLS boundaries; no database changes or business mutations were made. B5c–e dashboard/creation/export integration and authenticated/device acceptance remain pending, followed by C–I. Root types/build remain gated by the existing archival errors. Final local verification is recorded in the evidence; it is not connected product acceptance.
+
+- [x] Implement B5a context lifecycle/read failures and B5b scoped services/complete related reads; correct independent source-review findings and retain tests. — Codex /root
+- [x] Record final local verification: 828 tests/143 files, 26-file scoped lint, strict active-source diagnostic types, AST Graphify and 43 checkpoint links pass. Root types retain the same 16 archival-copy errors; authenticated acceptance remains open. — Codex /root, 2026-10-09
+- [ ] Complete B5c–e, authenticated B4/B5 acceptance and remaining C–I dependencies. — Codex /root
 
 ---
+
+### Release preparation — 2026-10-09, Codex /root
+
+The owner requested pushing all saved work to the live app. [Release preparation evidence](docs/testing/2026-10-09-release-preparation.md) records the strict build correction, preserved archival files, broader hook lint corrections and production startup checks. The six unreferenced archival payroll copies are now explicitly excluded from compilation while remaining in place; this supersedes the earlier root-type gate for the current configuration.
+
+- [x] Pass strict isolated production build and 50 static pages, 82-file scoped lint, 21 focused auth/detail/workspace regressions and local production public/signed-out smoke checks. — Codex /root
+- [x] Final full regression passes 829 tests/143 files; normal repository strict types, route-type generation and AST Graphify pass. — Codex /root
+- [x] Identify the owner-selected Hostinger development VPS; prepare isolated Docker/Traefik deployment and protected environment configuration, and append/read back its Supabase redirect allowlist entry. — Codex /root
+- [ ] Verify clean hosted container build/startup, HTTPS routes and repository push readback. Development deployment does not complete unfinished workflow acceptance or the production launch/reset. — Codex /root
 
 ## Historical plans and implementation evidence
 

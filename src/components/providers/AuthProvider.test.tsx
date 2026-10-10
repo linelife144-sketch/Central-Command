@@ -112,6 +112,21 @@ describe('real Supabase auth provider', () => {
     expect(screen.getByText('time-hidden')).toBeTruthy();
   });
 
+  it('keeps the loaded profile when a later refresh cannot reach the server', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'real-user' } } }, error: null });
+    render(<AuthProvider><State /></AuthProvider>);
+    await waitFor(() => expect(screen.getByText('real-user:SUPER_ADMIN')).toBeTruthy());
+
+    mocks.single.mockResolvedValue({ data: null, error: new TypeError('Failed to fetch') });
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    act(() => { window.dispatchEvent(new Event('focus')); });
+
+    await waitFor(() => expect(mocks.from.mock.calls.length).toBeGreaterThan(1));
+    expect(screen.getByText('real-user:SUPER_ADMIN')).toBeTruthy();
+    expect(screen.getByText('time-visible')).toBeTruthy();
+    expect(errorLog).not.toHaveBeenCalled();
+  });
+
   it('logs profile network failures with a visible message and stays fail-closed', async () => {
     mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'real-user' } } }, error: null });
     mocks.single.mockResolvedValue({ data: null, error: new TypeError('Failed to fetch') });

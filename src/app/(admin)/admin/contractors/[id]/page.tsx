@@ -1,5 +1,6 @@
 'use client';
 
+import { isSuperAdminClassRole } from '@/lib/auth/roleGuards';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -25,16 +26,16 @@ export default function ContractorDetailPage() {
   if (!c) return <div><PageHeader title="Contractor not found" showBackButton backHref="/admin/contractors" /></div>;
   return <div className="space-y-6">
     <PageHeader title={c.fullName} description={c.businessName} showBackButton backHref="/admin/contractors"><Button variant="outline" onClick={() => query.refetch()}>Refresh</Button></PageHeader>
-    <div className="grid grid-cols-2 gap-4"><MetricCard title="Assigned Tickets" value={c.assignedTicketCount} /><MetricCard title="Total Tickets" value={c.totalTicketCount} /></div>
+    <div className="grid grid-cols-2 gap-4"><MetricCard title="Assigned Tickets" value={c.assignedTicketCount ?? 'Unavailable'} /><MetricCard title="Total Tickets" value={c.totalTicketCount ?? 'Unavailable'} /></div>
     <Card><CardHeader><CardTitle>Contractor account</CardTitle></CardHeader><CardContent className="space-y-3">
       <StatusBadge status={c.isActive ? 'Active' : 'Inactive'} />
-      {(profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO') && c.profileId && c.profileId !== profile.id && <div><Button variant="outline" onClick={async () => { try { await contractorService.setContractorActive(c.profileId!, !c.isActive); await query.refetch(); } catch (e) { window.alert(e instanceof Error ? e.message : 'Unable to update status.'); } }}>{c.isActive ? 'Mark inactive' : 'Reactivate'}</Button></div>}
+      {(isSuperAdminClassRole(profile?.role)) && c.profileId && c.profileId !== profile?.id && <div><Button variant="outline" onClick={async () => { try { await contractorService.setContractorActive(c.profileId!, !c.isActive); await query.refetch(); } catch (e) { window.alert(e instanceof Error ? e.message : 'Unable to update status.'); } }}>{c.isActive ? 'Mark inactive' : 'Reactivate'}</Button></div>}
       <p>Email: {c.email}</p><p>Phone: {c.phone || 'Not provided'}</p><p>Location: {[c.addressLine1,c.addressLine2,c.city,c.state,c.zipCode].filter(Boolean).join(', ') || 'Not provided'}</p>
       <p>Business type: {c.businessType || 'Not provided'}</p><p>Onboarding: {c.onboardingCompletedAt ? `Completed ${formatDate(c.onboardingCompletedAt)}` : c.profileId ? 'Incomplete' : 'Account setup not started'}</p><p>Joined: {formatDate(c.createdAt)}</p>
-      {c.vehicleRegistrationPhotoPath && (profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO') && <RegistrationTagLink path={c.vehicleRegistrationPhotoPath} />}
+      {c.vehicleRegistrationPhotoPath && (isSuperAdminClassRole(profile?.role)) && <RegistrationTagLink path={c.vehicleRegistrationPhotoPath} />}
       {!c.profileId && <p className="text-sm text-muted-foreground">The contractor can set up their account from the login screen using this email. Account access begins after email verification and password setup.</p>}
     </CardContent></Card>
-    {can('admin.payroll.view') && <ContractorPayrollEditor contractorId={c.id} currentRole={c.role} canEdit={can('admin.payroll.edit')} canChangeRole={profile?.role === 'SUPER_ADMIN' || profile?.role === 'CEO'} onRoleChanged={() => query.refetch()} />}
-    <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><TicketStatusBadge status={ticket.status} audienceRole="STAFF" reviewStage={ticket.reviewStage} utilitySubmittedAt={ticket.utilitySubmittedAt} /><span>{ticket.utilityClient}{ticket.isImportant ? ' · Important' : ''}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>
+    {can('admin.payroll.view') && <ContractorPayrollEditor contractorId={c.id} currentRole={c.role} canEdit={can('admin.payroll.edit')} canChangeRole={isSuperAdminClassRole(profile?.role)} onRoleChanged={() => query.refetch()} />}
+    <Card><CardHeader><CardTitle>Recent assigned tickets</CardTitle></CardHeader><CardContent>{c.totalTicketCount === null ? <p>Ticket history is unavailable with your current access.</p> : c.recentTickets.length ? <ul className="space-y-3">{c.recentTickets.map(ticket => <li key={ticket.id} className="flex flex-wrap gap-3 items-center"><Link className="text-grid-blue underline" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link><TicketStatusBadge status={ticket.status} audienceRole="STAFF" reviewStage={ticket.reviewStage} utilitySubmittedAt={ticket.utilitySubmittedAt} /><span>{ticket.utilityClient}{ticket.isImportant ? ' · Important' : ''}</span></li>)}</ul> : <p>No assigned tickets.</p>}</CardContent></Card>
   </div>;
 }

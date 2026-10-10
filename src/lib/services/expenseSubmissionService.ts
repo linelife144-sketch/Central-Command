@@ -10,6 +10,7 @@ import type { ExpenseCategory, ExpenseStatus, PolicyFlag } from '../../types';
 
 interface RemoteExpenseReportRow {
   id: string;
+  storm_event_id?: string | null;
   contractor_id: string;
   report_period_start: string;
   report_period_end: string;
@@ -72,6 +73,7 @@ type ExpenseSyncStatus = 'SYNCED' | 'PENDING' | 'FAILED';
 type ExpenseStatusFilter = ExpenseStatus | 'ALL';
 
 export interface ExpenseListFilters {
+  stormEventId?: string;
   contractorId?: string;
   status?: ExpenseStatusFilter;
   from?: string;
@@ -79,6 +81,7 @@ export interface ExpenseListFilters {
 }
 
 export interface ExpenseListItem {
+  storm_event_id?: string | null;
   id: string;
   expense_report_id: string;
   contractor_id: string;
@@ -289,6 +292,7 @@ function mapRemoteItemToListItem(
     id: item.id,
     expense_report_id: item.expense_report_id,
     contractor_id: report.contractor_id,
+    storm_event_id: report.storm_event_id,
     contractor_name: contractorNameById.get(report.contractor_id),
     category: toExpenseCategory(item.category),
     description: item.description,
@@ -326,6 +330,7 @@ function mapLocalItemToListItem(report: LocalExpenseReport, item: LocalExpenseIt
     id: item.id,
     expense_report_id: item.expense_report_id,
     contractor_id: report.contractor_id,
+    storm_event_id: report.storm_event_id,
     category: toExpenseCategory(item.category),
     description: item.description,
     amount: Number(item.amount ?? 0),
@@ -455,6 +460,7 @@ async function listRemote(filters: ExpenseListFilters): Promise<ExpenseListItem[
       [
         'id',
         'contractor_id',
+        'storm_event_id',
         'report_period_start',
         'report_period_end',
         'total_amount',
@@ -477,16 +483,20 @@ async function listRemote(filters: ExpenseListFilters): Promise<ExpenseListItem[
     query = query.eq('contractor_id', resolvedContractorId);
   }
 
+  if (filters.stormEventId) query = query.eq('storm_event_id', filters.stormEventId);
+
   if (filters.status && filters.status !== 'ALL') {
     query = query.eq('status', filters.status);
   }
 
-  const { data, error } = await query;
-  if (error) {
-    throw error;
+  const reports: RemoteExpenseReportRow[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await query.order('id', { ascending: true }).range(offset, offset + 499);
+    if (error) throw error;
+    const page = (data ?? []) as RemoteExpenseReportRow[];
+    reports.push(...page);
+    if (page.length < 500) break;
   }
-
-  const reports = (data ?? []) as RemoteExpenseReportRow[];
 
   const ticketIds = Array.from(
     new Set(
@@ -524,7 +534,7 @@ async function listLocal(filters: ExpenseListFilters): Promise<ExpenseListItem[]
     .equals(filters.contractorId)
     .toArray();
 
-  const filteredReports = reports.filter((report) =>
+  const filteredReports = reports.filter(report => !filters.stormEventId || report.storm_event_id === filters.stormEventId).filter((report) =>
     filters.status && filters.status !== 'ALL'
       ? toExpenseStatus(report.status) === filters.status
       : true,

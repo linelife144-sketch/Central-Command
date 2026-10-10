@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import { Ticket } from '@/types';
 import { ticketService } from '@/lib/services/ticketService';
+import { contractorService } from '@/lib/services/contractorService';
 import { PageHeader } from '@/components/common/layout/PageHeader';
 import { TicketStatusBadge } from '@/components/features/tickets/TicketStatusBadge';
 import { TicketImportanceBadge } from '@/components/features/tickets/TicketImportanceBadge';
@@ -40,7 +41,8 @@ export default function TicketDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [ticketNotFound, setTicketNotFound] = useState(false);
-    const [assigneeName, setAssigneeName] = useState('');
+    const [assignee, setAssignee] = useState<{ contractorId: string; name: string } | null>(null);
+    const assigneeName = ticket?.assigned_to === assignee?.contractorId ? assignee?.name ?? '' : '';
     const [teamLeadName, setTeamLeadName] = useState('');
     const [crewName, setCrewName] = useState('');
     const [tab,setTab]=useState('details');
@@ -58,12 +60,23 @@ export default function TicketDetailPage() {
             if(!active) return;
             const assignedCrew = options.crews.find(c=>c.id===ticket.crew_id);
             const team = options.teamLeads.find(l=>l.id===ticket.team_lead_id);
-            setAssigneeName(assignedCrew?.assessorName??'');
             setTeamLeadName(team?.name??'');
             setCrewName(assignedCrew?.name??'');
         }).catch(()=>undefined);
         return ()=>{active=false;};
     }, [ticket]);
+
+    useEffect(() => {
+        let active = true;
+        const contractorId = ticket?.assigned_to;
+        if (!contractorId) return;
+        void contractorService.getContractorById(contractorId).then(contractor => {
+            if (active) setAssignee({ contractorId, name: contractor?.fullName ?? '' });
+        }).catch(() => {
+            if (active) setAssignee({ contractorId, name: '' });
+        });
+        return () => { active = false; };
+    }, [ticket?.assigned_to]);
 
     const loadTicket = useCallback(async () => {
         if (!params.id) return;
@@ -248,7 +261,7 @@ export default function TicketDetailPage() {
                                 <p className="font-semibold">
                                     {userRole === 'contractor'
                                         ? 'You'
-                                        : (ticket.assigned_to ? (assigneeName || 'Contractor Assigned') : 'Unassigned')}
+                                        : (ticket.assigned_to ? (assigneeName || 'Loading assignee…') : 'Unassigned')}
                                 </p>
                             </div>
                             {userRole === 'admin' && ticket.team_lead_id && (

@@ -1168,7 +1168,9 @@
 .cc-sidebar-callout strong { display: block; font-size: 10px; color: white; }
 .cc-sidebar-callout small { display: block; font-size: 9px; line-height: 1.6; color: #a6bde0; margin-top: 3px; }
 .cc-sidebar-footer > p { display: flex; justify-content: space-between; margin: 18px 5px 3px; font-size: 8px; font-weight: 600; letter-spacing: 0.1em; color: #839dc4; }
-.cc-topbar { position: fixed; top: var(--offline-banner-height); left: var(--cc-sidebar-width); right: 0; height: var(--top-bar-height); z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 28px; border-bottom: 1px solid #dbe4f0; background: #f8faffec; backdrop-filter: blur(20px); }
+.cc-topbar { position: fixed; top: var(--offline-banner-height); left: var(--cc-sidebar-width); right: 0; height: var(--top-bar-height); z-index: 40; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, max-content) minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 28px; border-bottom: 1px solid #dbe4f0; background: #f8faffec; backdrop-filter: blur(20px); }
+.cc-topbar-end { justify-self: end; }
+.cc-topbar-storm { max-width: min(46vw, 28rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; color: var(--grid-navy); font-family: var(--font-barlow), sans-serif; font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; }
 .cc-breadcrumb { display: flex; align-items: center; gap: 12px; font-size: 11px; color: #6d7e99; white-space: nowrap; }
 .cc-breadcrumb strong { font-weight: 700; color: var(--grid-navy); }
 .cc-search-trigger { color: #60718a; font-size: 11px; gap: 10px; height: 38px; padding: 0 10px; }
@@ -1284,6 +1286,7 @@
   :root { --top-bar-height: 4rem; }
   .cc-main { padding: 20px 16px calc(88px + env(safe-area-inset-bottom)); }
   .cc-topbar { padding-inline: 10px; gap: 6px; }
+  .cc-topbar-storm { max-width: 34vw; font-size: 0.95rem; }
   .cc-search-trigger { width: 36px; padding-inline: 0; }
   .cc-user-trigger { padding-left: 8px; }
   .cc-page-header { padding-bottom: 18px; }

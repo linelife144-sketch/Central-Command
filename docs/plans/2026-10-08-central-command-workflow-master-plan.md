@@ -1,6 +1,9 @@
 # Central Command — Workflow and Dashboard Master Implementation Plan
 
+> **For implementing agents:** REQUIRED SUB-SKILL: Use the project's executing-plans skill when executing the audited, decomposed tasks. This master plan is the specification for that preparation.
+
 **Date:** 2026-10-08  
+**Documentation review:** 2026-10-09, Codex /root
 **Prepared by:** Codex /root  
 **Goal:** Refine the existing application into a consistent storm-centered operating system while preserving its pages, capabilities, and established layout.  
 **Architecture:** Each storm owns its operational participation, activity, and financial configuration. Shared services provide consistent records to every dashboard. Management-controlled official time determines payroll and hourly billing; contractors retain separate personal time records.  
@@ -11,7 +14,26 @@
 
 This saves the detailed plan developed from the owner's scratchpad and subsequent clarifications. The planning pass inspected source, project records, Graphify relationships, and read-only Supabase metadata for Central Command (`xcvacmreerrypygpritq`). It did not run authenticated application acceptance or change business records. Facts below describe that inspection baseline and must be refreshed where they can drift.
 
+Subsequent implementation is tracked in the [2026-10-09 execution plan](2026-10-09-workflow-alignment-execution.md) and [first-batch evidence](../testing/2026-10-09-workflow-alignment-batch1.md). Keep the baseline below as dated evidence; use that ledger for current implementation and acceptance limits.
+
 ## 1. Controlling decisions and preservation requirements
+
+### Source normalization and request boundary
+
+The owner's current request is to save an agent-facing project brief, update the existing implementation and scope documents, and retain the general build plan. The scratchpad explains the desired operation; it is not a queue of instructions to execute during this documentation handoff. Keep the original source for provenance and use the normalized contracts below for audit and decomposition.
+
+| Source wording or uncertainty | Normalized requirement / treatment | Requirement reference |
+|---|---|---|
+| Tickets repeatedly described as assigned to contractors, followed by an explicit correction | Dispatch to a Driver/Assessor crew; retain individual identities for access and evidence. | CC-04, CC-05, CC-06 |
+| Primary Dashboard versus the other pages | Every operational page is a dashboard for its subject; preserve the existing page organization and navigation. | CC-01, CC-10 |
+| Rate values described first as fixed and later as editable | Save rates in storm setup; use controlled effective edits in storm setup/detail and saved-value readback on ordinary dashboards. | CC-03, CC-08 |
+| Super Admin and Storm Manager used inconsistently | Follow the current CEO/Storm Manager direction and coordinate legacy authorization compatibility. | CC-02 |
+| Personal clocks coexist with management's master time | Preserve personal references; management-authorized official time drives payroll and hourly billing. Later owner clarification supplies the normal 16-hour, mobilization-to-release model. | CC-04, CC-07, CC-08 |
+| Expense examples are informal and incomplete | Support the named costs alongside existing categories; distinguish company spending, reimbursements, billability, and settlement. | CC-09 |
+| Invoicing is described as unfinished | Prepare reliable billing inputs/exports; defer final issuance and delivery design until its workflow is defined. | CC-11 |
+| A feature is omitted, repeated, or described imprecisely | Retain existing useful behavior; document only the specific required adjustment or missing acceptance evidence. | All CC requirements |
+
+Product requirements, implementation findings, and proposed technical mechanisms have different authority. Requirements state the intended outcome. Findings record what was inspected at a particular time. Mechanisms are implementation options to validate during decomposition. Do not treat any of these as permission for unrelated removal, a launch reset, or automatic delivery to another party.
 
 ### Confirmed operating model
 
@@ -56,7 +78,9 @@ Use these dispositions in audits and tasks:
 
 Technical mechanisms below are planning defaults, not additional owner requirements: a shared storm context, separate official-time records, stable membership history, and compatibility for legacy role tokens. Validate the smallest implementation that satisfies each contract. Do not invent rates, contracts, invoice terms, production identities, or utility form content.
 
-## 2. Current implementation baseline
+## 2. Inspected implementation baseline — 2026-10-08
+
+This table records the original planning inspection, not an evergreen description of the app. Later implementation may satisfy or partially satisfy these findings. Refresh each row from active source and the relevant runtime/schema evidence before turning it into a task; preserve completed behavior and classify unproven acceptance as VERIFY. The 2026-10-09 documentation review observed native Storm Manager guards and responsible-manager service inputs in source without asserting live activation.
 
 | Area | Observed foundation | Disposition |
 |---|---|---|
@@ -358,5 +382,31 @@ Configuring every existing test storm with production terms is not a prerequisit
 ### Decomposition contract
 
 Each task must include requirement IDs; KEEP/MODIFY/ADD/VERIFY disposition; current evidence; exact implementation anchors; before/after behavior; capabilities to preserve; affected records/interfaces/permissions/dashboards/offline paths; dependencies; and focused acceptance/evidence requirements.
+
+Use this record when deriving individual tasks. Exact implementation steps, code, and test commands belong in the resulting task plan after its source and interface contracts have been audited.
+
+```markdown
+### <Task ID> — <Concrete outcome>
+
+- Requirements / acceptance: CC-xx; AC-xx.
+- Disposition: KEEP, MODIFY, ADD, VERIFY, or DEFER, with a reason.
+- Current evidence: inspection date, active source paths, schema/runtime findings,
+  completed work to retain, and limits of the evidence.
+- Before / after: the triggering workflow and the specific behavior that changes.
+- Preserve: existing pages, controls, relationships, and protections affected.
+- Records / interfaces: IDs, ownership, service/RPC inputs and outputs,
+  saved calculation inputs, and historical attribution affected.
+- Change impact: every dashboard, permission check, cache, export, report,
+  and offline/reconnect path that must be rechecked.
+- Dependencies: upstream task IDs and contracts; unresolved decisions that
+  block only this task; work that can proceed independently.
+- Implementation anchors: exact create/modify/test paths after fresh inspection.
+- Verification: focused commands, expected results, same-record readback,
+  roles/devices required, and distinct local versus live evidence.
+- Completion: dated evidence and agent identifier in the existing trackers;
+  leave unperformed acceptance explicitly open.
+```
+
+A MODIFY finding must name the smallest behavior change that satisfies the requirement. A KEEP finding may require verification without code changes. An ADD finding must explain why existing services/components cannot already supply the capability. Resolve ambiguity in favor of retaining useful behavior, and flag missing product decisions without inventing them.
 
 Do not mark a requirement implemented because its documentation is complete. Append dated progress with the agent identifier to the existing implementation plan and checklist. Do not infer removal authority from silence, terminology cleanup, or an old document. Deferred invoice-product decisions remain outside executable tasks until their own scope is defined.

@@ -22,7 +22,7 @@ const columns: Column<ContractorListItem>[] = [
   { key: 'fullName', header: 'Name', cell: c => <Link className="font-semibold text-grid-navy underline-offset-4 hover:underline" href={`/admin/contractors/${c.id}`}>{c.fullName}</Link> },
   { key: 'role', header: 'Role', cell: c => ROLE_LABELS[c.role] },
   { key: 'isActive', header: 'Status', cell: c => <StatusBadge status={statusOf(c)} size="sm" /> },
-  { key: 'assignedTicketCount', header: 'Assigned Tickets', cell: c => c.assignedTicketCount },
+  { key: 'assignedTicketCount', header: 'Assigned Tickets', cell: c => c.assignedTicketCount ?? 'Unavailable' },
   { key: 'alerts', header: 'Alerts', cell: c => c.alerts.join('; ') || '—' },
 ];
 export default function ContractorsListPage() {
@@ -46,7 +46,7 @@ export default function ContractorsListPage() {
   const filtered = contractors.filter(c => [c.fullName, c.businessName, c.email].join(' ').toLowerCase().includes(search.toLowerCase()) && (status === 'all' || statusOf(c).toLowerCase() === status))
     .sort((a, b) => Number(!a.isActive) - Number(!b.isActive) || a.fullName.localeCompare(b.fullName));
   function exportCsv() {
-    const rows = [['Name','Business','Email','Status','Assigned Tickets'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.assignedTicketCount)])];
+    const rows = [['Name','Business','Email','Status','Assigned Tickets'], ...filtered.map(c => [c.fullName,c.businessName,c.email,statusOf(c),String(c.assignedTicketCount ?? 'Unavailable')])];
     const content = rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""').replace(/^[=+@-]/,"'") + '"').join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'contractors.csv'; anchor.click(); URL.revokeObjectURL(url);

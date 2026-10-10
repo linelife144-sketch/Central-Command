@@ -7,7 +7,7 @@ export const REQUIRED_PROVISIONING_COLUMNS = [
 ] as const;
 
 export type ProvisioningCsvColumn = (typeof REQUIRED_PROVISIONING_COLUMNS)[number];
-export type ProvisioningRole = 'CEO' | 'SUPER_ADMIN' | 'ADMIN' | 'CONTRACTOR';
+export type ProvisioningRole = 'CEO' | 'STORM_MANAGER' | 'SUPER_ADMIN' | 'ADMIN' | 'CONTRACTOR';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TEMP_PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
@@ -15,6 +15,8 @@ const MAX_SUPER_ADMINS = 1;
 
 const ROLE_ALIASES: Record<string, ProvisioningRole | null> = {
   CEO: 'CEO',
+  STORM_MANAGER: 'STORM_MANAGER',
+  STORMMANAGER: 'STORM_MANAGER',
   SUPER_ADMIN: 'SUPER_ADMIN',
   SUPERADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
@@ -281,7 +283,7 @@ export function validateProvisioningRows(rows: ParsedProvisioningRow[]): Validat
     if (!row.role) {
       lineIssues.push('`role` is required.');
     } else if (!normalizedRole) {
-      lineIssues.push('`role` must resolve to CEO, SUPER_ADMIN, ADMIN, or CONTRACTOR.');
+      lineIssues.push('`role` must resolve to CEO, STORM_MANAGER, SUPER_ADMIN, ADMIN, or CONTRACTOR.');
     }
 
     if (email && seenEmails.has(email)) {

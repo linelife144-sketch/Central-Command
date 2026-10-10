@@ -24,6 +24,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Public routes that don't require authentication
+function isTransientNetworkError(error: unknown): boolean {
+  const message = error instanceof Error
+    ? error.message
+    : typeof error === 'object' && error !== null && 'message' in error
+      ? String((error as { message?: unknown }).message ?? '')
+      : '';
+  return /failed to fetch|fetch failed|networkerror|network request failed/i.test(message);
+}
+
 const PUBLIC_ROUTES = [
   '/login',
   '/forgot-password',
@@ -60,11 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<PermissionMap>(DEV_BYPASS_AUTH ? resolvePermissions(DEV_MOCK_PROFILE.role) : {});
 
   const currentUserId = useRef<string | null>(DEV_BYPASS_AUTH ? DEV_MOCK_USER.id : null);
+  const profileRef = useRef<AppUser | null>(DEV_BYPASS_AUTH ? DEV_MOCK_PROFILE : null);
+  useEffect(() => { profileRef.current = profile; }, [profile]);
 
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
 
   // Fetch user profile from profiles table
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, options?: { preserveOnNetworkError?: boolean }) => {
     // A previously verified field identity stays usable while disconnected.
     // No profile or permissions are invented for a new offline session.
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -80,9 +91,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (currentUserId.current !== userId) return;
 
       if (error) {
+        const networkFailure = isTransientNetworkError(error);
         if (!error.code && typeof navigator !== 'undefined' && !navigator.onLine) {
           setProfile(current => current?.id === userId && current.role === 'CONTRACTOR' ? current : null);
           setPermissions({});
+          return;
+        }
+        // A background refresh can lose its request while the session is still valid.
+        // Keep the loaded profile instead of clearing it and opening the dev overlay.
+        if (networkFailure && options?.preserveOnNetworkError && profileRef.current?.id === userId) {
+          console.warn('Profile refresh could not reach the server. Keeping the current session.');
           return;
         }
         setProfile(null);
@@ -118,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = async () => {
     if (user?.id && user.id !== DEV_MOCK_PROFILE.id) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.id, { preserveOnNetworkError: true });
     }
   };
 
@@ -156,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Session error:', error);
+          console.warn('Session error:', getErrorLogContext(error));
           if (DEV_BYPASS_AUTH) {
             setUser(DEV_MOCK_USER);
             setProfile(DEV_MOCK_PROFILE);
@@ -174,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(DEV_MOCK_PROFILE);
         }
       } catch (error) {
-        console.error('Error checking session:', error);
+        console.warn('Error checking session:', getErrorLogContext(error));
         if (DEV_BYPASS_AUTH) {
           setUser(DEV_MOCK_USER);
           setProfile(DEV_MOCK_PROFILE);

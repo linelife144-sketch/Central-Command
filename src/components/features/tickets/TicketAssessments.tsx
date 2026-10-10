@@ -1,5 +1,6 @@
 'use client';
 
+import { isSuperAdminClassRole } from '@/lib/auth/roleGuards';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, Loader2, RotateCcw } from 'lucide-react';
@@ -40,7 +41,7 @@ export function TicketAssessments({ ticket, onChanged }: { ticket: Ticket; onCha
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState('');
   const [reference, setReference] = useState('');
-  const chief = profile?.role === 'CEO' || profile?.role === 'SUPER_ADMIN';
+  const chief = isSuperAdminClassRole(profile?.role);
   const contractor = profile?.role === 'CONTRACTOR';
   const canFill = !!profile && ((chief && can('admin.assessments.edit')) || (contractor && contractorId === ticket.assigned_to));
   const current = rows.find(row => row.id === ticket.current_assessment_id);

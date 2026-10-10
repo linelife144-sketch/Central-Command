@@ -1,5 +1,6 @@
 'use client';
 
+import { isSuperAdminClassRole } from '@/lib/auth/roleGuards';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ClipboardList, Leaf } from 'lucide-react';
@@ -21,7 +22,7 @@ export function TicketEntergyForms({ ticket, workspace = false }: { ticket: Tick
   const [error, setError] = useState(''); const [loading, setLoading] = useState(true);
   const applicable = ticket.utility_client.toUpperCase() === 'ENTERGY';
   const readable = profile?.role === 'CONTRACTOR' || can('admin.assessments.view');
-  const canFill = !!ticket.assigned_to && !!profile && ((['CEO','SUPER_ADMIN'].includes(profile.role) && can('admin.assessments.edit')) || profile.role === 'CONTRACTOR' && contractorId === ticket.assigned_to);
+  const canFill = !!ticket.assigned_to && !!profile && ((isSuperAdminClassRole(profile.role) && can('admin.assessments.edit')) || profile.role === 'CONTRACTOR' && contractorId === ticket.assigned_to);
   const load = useCallback(async () => {
     if (!profile || !applicable || !readable) return;
     try { setRecords(await entergyFormService.list(ticket.id, profile.id)); setError(''); }

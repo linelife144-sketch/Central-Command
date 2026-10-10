@@ -1,4 +1,5 @@
 import { TIME_ENTRY_WAGE_COLUMNS, type WageTimeEntryRow } from '../compensation/timeEntryProjection';
+import { readAllRows, readRowsByIds, type PagedRead } from '../supabase/readRows';
 import { db, type LocalTimeEntry } from '../db/dexie';
 import type { TimeEntry, TimeEntryStatus } from '../../types';
 
@@ -23,6 +24,7 @@ interface RemoteProfileRow {
 }
 
 export interface TimeEntryListFilters {
+  stormEventId?: string;
   contractorId?: string;
   status?: TimeEntryStatus | 'ALL';
   from?: string;
@@ -175,6 +177,8 @@ function parseTimestamp(value?: string): number {
 }
 
 function entryMatchesFilters(entry: TimeEntryListItem, filters: TimeEntryListFilters): boolean {
+  if (filters.stormEventId && entry.storm_event_id !== filters.stormEventId) return false;
+  if (filters.contractorId && entry.contractor_id !== filters.contractorId) return false;
   if (filters.status && filters.status !== 'ALL' && entry.status !== filters.status) {
     return false;
   }
@@ -210,17 +214,9 @@ async function fetchTicketNumbers(
     return new Map();
   }
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase.from('tickets') as any)
-      .select('id, ticket_number')
-      .in('id', ticketIds);
-
-    const rows = (data ?? []) as RemoteTicketRow[];
-    return new Map(rows.map((row) => [row.id, row.ticket_number]));
-  } catch {
-    return new Map();
-  }
+  const rows = await readRowsByIds<RemoteTicketRow>(ticketIds, batch => supabase.from('tickets')
+    .select('id, ticket_number').in('id', batch) as PagedRead<RemoteTicketRow>);
+  return new Map(rows.map(row => [row.id, row.ticket_number]));
 }
 
 async function fetchContractorNames(
@@ -228,76 +224,35 @@ async function fetchContractorNames(
   supabase: any,
   contractorIds: string[],
 ): Promise<Map<string, string>> {
-  if (contractorIds.length === 0) {
-    return new Map();
-  }
-
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: contractors } = await (supabase.from('contractors') as any)
-      .select('id, profile_id')
-      .in('id', contractorIds);
-
-    const contractorRows = (contractors ?? []) as RemoteContractorRow[];
-    if (contractorRows.length === 0) {
-      return new Map();
-    }
-
-    const profileIds = Array.from(
-      new Set(contractorRows.map((row) => row.profile_id).filter((value) => Boolean(value))),
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profiles } = await (supabase.from('profiles') as any)
-      .select('id, first_name, last_name')
-      .in('id', profileIds);
-
-    const profileRows = (profiles ?? []) as RemoteProfileRow[];
-    const profileNameById = new Map(
-      profileRows.map((profile) => [profile.id, `${profile.first_name} ${profile.last_name}`.trim()]),
-    );
-
-    return new Map(
-      contractorRows.map((row) => [
-        row.id,
-        profileNameById.get(row.profile_id) ?? row.id,
-      ]),
-    );
-  } catch {
-    return new Map();
-  }
+  const contractorRows = await readRowsByIds<RemoteContractorRow>(contractorIds, batch => supabase.from('contractors')
+    .select('id, profile_id').in('id', batch) as PagedRead<RemoteContractorRow>);
+  const profileIds = contractorRows.map(row => row.profile_id).filter(Boolean);
+  const profileRows = await readRowsByIds<RemoteProfileRow>(profileIds, batch => supabase.from('profiles')
+    .select('id, first_name, last_name').in('id', batch) as PagedRead<RemoteProfileRow>);
+  const profileNameById = new Map(profileRows.map(profile => [profile.id, `${profile.first_name} ${profile.last_name}`.trim()]));
+  return new Map(contractorRows.map(row => [row.id, profileNameById.get(row.profile_id) ?? row.id]));
 }
 
 async function fetchRemoteEntries(filters: TimeEntryListFilters): Promise<TimeEntryListItem[]> {
   const { supabase } = await import('../supabase/client');
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase.from('time_entries') as any)
-    .select(TIME_ENTRY_WAGE_COLUMNS)
-    .order('clock_in_at', { ascending: false });
-
-  if (filters.contractorId) {
-    query = query.eq('contractor_id', filters.contractorId);
+  if (!filters.contractorId) {
+    const { data: permissions, error } = await supabase.rpc('get_my_permissions');
+    if (error) throw error;
+    if (!permissions || typeof permissions !== 'object' || Array.isArray(permissions)
+      || (permissions['admin.time.view'] !== true && permissions['admin.payroll.view'] !== true)) {
+      throw new Error('Management time view permission is required to load entries.');
+    }
   }
 
-  if (filters.status && filters.status !== 'ALL') {
-    query = query.eq('status', filters.status);
-  }
-
-  if (filters.from) {
-    query = query.gte('clock_in_at', filters.from);
-  }
-
-  if (filters.to) {
-    query = query.lte('clock_in_at', filters.to);
-  }
-
-  const { data, error } = await query;
-  if (error) {
-    throw error;
-  }
-
-  const rows = (data ?? []) as RemoteTimeEntryRow[];
+  const rows = await readAllRows<RemoteTimeEntryRow>(() => {
+    let query = supabase.from('time_entries').select(TIME_ENTRY_WAGE_COLUMNS).order('clock_in_at', { ascending: false });
+    if (filters.contractorId) query = query.eq('contractor_id', filters.contractorId);
+    if (filters.stormEventId) query = query.eq('storm_event_id', filters.stormEventId);
+    if (filters.status && filters.status !== 'ALL') query = query.eq('status', filters.status);
+    if (filters.from) query = query.gte('clock_in_at', filters.from);
+    if (filters.to) query = query.lte('clock_in_at', filters.to);
+    return query as unknown as PagedRead<RemoteTimeEntryRow>;
+  });
   const entries = rows.map(mapRemoteRowToTimeEntry);
 
   const ticketIds = Array.from(
@@ -312,11 +267,8 @@ async function fetchRemoteEntries(filters: TimeEntryListFilters): Promise<TimeEn
 
   const claimByEntry = new Map<string, { amount: number; status: string }>();
   if (entries.length) {
-    const { data: claims, error: claimError } = await supabase
-      .from('time_entry_vehicle_claims')
-      .select('time_entry_id, amount, status')
-      .in('time_entry_id', entries.map(entry => entry.id));
-    if (claimError) throw claimError;
+    const claims = await readRowsByIds(entries.map(entry => entry.id), batch => supabase
+      .from('time_entry_vehicle_claims').select('time_entry_id, amount, status').in('time_entry_id', batch));
     for (const claim of claims ?? []) claimByEntry.set(claim.time_entry_id, claim);
   }
 
@@ -397,7 +349,7 @@ export function createTimeEntryManagementService(
     async listEntries(filters: TimeEntryListFilters = {}): Promise<TimeEntryListItem[]> {
       if (!dependencies.isOnline()) {
         if (!filters.contractorId) {
-          return [];
+          throw new Error('Management time entries require an internet connection.');
         }
 
         const localEntries = await dependencies.getLocalEntries(filters.contractorId);

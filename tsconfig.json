@@ -49,6 +49,12 @@
     "**/.next-*/**",
     "private/tmp/cc-click-driven-ticket-progress-build-20261006/**",
     "private/tmp/cc-ticket-disable-build-20261006/**",
-    "**/.node_modules-icloud-backup-*/**"
+    "**/.node_modules-icloud-backup-*/**",
+    "src/components/features/payroll/UtilityBillingRateEditor 2.tsx",
+    "src/components/features/payroll/UtilityBillingRateEditor 3.tsx",
+    "src/lib/services/payrollService 2.ts",
+    "src/lib/services/payrollService 3.ts",
+    "src/lib/utils/payroll.test 2.ts",
+    "src/lib/utils/payroll.test 3.ts"
   ]
 }

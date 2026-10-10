@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, FileSpreadsheet, FileText, Loader2, RefreshCw } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -87,6 +89,9 @@ function amountToPercent(value: number, maxValue: number): number {
 }
 
 export function ReportsDashboard() {
+  const { stormEventId } = useStormContext();
+  const request = useRef(0);
+  const cancelRequests = useCallback(() => { request.current++; }, []);
   const defaults = useMemo(() => buildDefaultDates(), []);
 
   const [startDate, setStartDate] = useState(defaults.startDate);
@@ -106,6 +111,7 @@ export function ReportsDashboard() {
       setIsLoading(true);
     }
 
+    const version = ++request.current;
     setError(null);
 
     try {
@@ -113,23 +119,27 @@ export function ReportsDashboard() {
         startDate,
         endDate,
         groupBy,
+        stormEventId,
       });
-      setReport(nextReport);
+      if (version === request.current) setReport(nextReport);
     } catch (loadError) {
+      if (version !== request.current) return;
       setReport(null);
       setError(toErrorMessage(loadError));
     } finally {
+      if (version !== request.current) return;
       if (mode === 'refresh') {
         setIsRefreshing(false);
       } else {
         setIsLoading(false);
       }
     }
-  }, [endDate, groupBy, startDate]);
+  }, [endDate, groupBy, startDate, stormEventId]);
 
   useEffect(() => {
-    void loadReport('initial');
-  }, [loadReport]);
+    void Promise.resolve().then(() => loadReport('initial'));
+    return () => { cancelRequests(); };
+  }, [loadReport, cancelRequests]);
 
   const chartMax = useMemo(() => {
     if (!report || report.series.length === 0) {

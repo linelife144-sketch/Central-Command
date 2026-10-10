@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useStormContext } from '@/components/providers/StormContextProvider';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Loader2, RefreshCw, Wallet } from 'lucide-react';
 
@@ -40,6 +42,10 @@ const ERROR_COPY = 'Unable to load payroll summary.';
 
 export function PayrollSummaryCard({ className }: PayrollSummaryCardProps) {
   const { can } = useAuth();
+  const { stormEventId, selectedStorm } = useStormContext();
+  const startDate = selectedStorm?.startDate;
+  const request = useRef(0);
+  const cancelRequests = useCallback(() => { request.current++; }, []);
   const [model, setModel] = useState<PayrollCardModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -52,12 +58,13 @@ export function PayrollSummaryCard({ className }: PayrollSummaryCardProps) {
       setIsLoading(true);
     }
 
+    const version = ++request.current;
     setError(null);
 
     try {
       const [summary, claimsResult] = await Promise.all([
-        payrollService.getPayrollSummary({ includeFinancial: false }),
-        payrollService.listVehicleClaims({}).then(
+        payrollService.getPayrollSummary({ includeFinancial: false, stormEventId, from: startDate ? new Date(`${startDate}T00:00:00`).toISOString() : undefined, to: new Date().toISOString() }),
+        payrollService.listVehicleClaims({ stormEventId }).then(
           (claims) => {
             // VehicleClaimStatus is PENDING | APPROVED | REJECTED; the waiting
             // claim count is PENDING (the spec's SUBMITTED/UNDER_REVIEW statuses
@@ -71,6 +78,7 @@ export function PayrollSummaryCard({ className }: PayrollSummaryCardProps) {
         ),
       ]);
 
+      if (version !== request.current) return;
       setModel({
         periodStart: summary.periodStart,
         periodEnd: summary.periodEnd,
@@ -83,22 +91,23 @@ export function PayrollSummaryCard({ className }: PayrollSummaryCardProps) {
         claimsFailed: claimsResult.failed,
       });
     } catch {
+      if (version !== request.current) return;
       setError(ERROR_COPY);
       if (mode === 'initial') {
         setModel(null);
       }
     } finally {
+      if (version !== request.current) return;
       if (mode === 'refresh') {
         setIsRefreshing(false);
       } else {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [stormEventId, startDate]);
 
   useEffect(() => {
     if (!can('admin.payroll.view')) {
-      setIsLoading(false);
       return;
     }
 
@@ -108,9 +117,9 @@ export function PayrollSummaryCard({ className }: PayrollSummaryCardProps) {
       await load('initial');
     })();
     return () => {
-      active = false;
+      active = false; cancelRequests();
     };
-  }, [can, load]);
+  }, [can, load, cancelRequests]);
 
   if (!can('admin.payroll.view')) {
     return null;

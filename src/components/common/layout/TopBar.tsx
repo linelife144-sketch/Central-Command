@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SidebarTrigger, adminNavItems, contractorNavItems } from './Sidebar';
-import { NavigationSearch } from './NavigationSearch';
 import { TicketNotifications } from './TicketNotifications';
 
 interface TopBarProps {
@@ -16,9 +15,10 @@ interface TopBarProps {
   userRole: string;
   onSignOut: () => void;
   portal: 'admin' | 'contractor';
+  stormName?: string | null;
 }
 
-export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal }: TopBarProps) {
+export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal, stormName }: TopBarProps) {
   const pathname = usePathname();
   const items = portal === 'admin' ? adminNavItems : contractorNavItems;
   const page = items.find(item => pathname === item.href || pathname?.startsWith(`${item.href}/`));
@@ -26,7 +26,7 @@ export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal }: T
   const initials = userName.split(' ').filter(Boolean).map(name => name[0]).join('').toUpperCase().slice(0, 2);
 
   return <header className="cc-topbar">
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="cc-topbar-start flex min-w-0 items-center gap-3">
       <SidebarTrigger onClick={onMenuClick} />
       <div className="cc-breadcrumb">
         <span className="hidden sm:inline">{portal === 'admin' ? 'Operations' : 'Field workspace'}</span>
@@ -34,8 +34,8 @@ export function TopBar({ onMenuClick, userName, userRole, onSignOut, portal }: T
         <strong>{page?.label || 'Central Command'}</strong>
       </div>
     </div>
-    <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-      <NavigationSearch portal={portal} />
+    <p className="cc-topbar-storm">{stormName ? <><span className="sr-only">Current storm: </span>{stormName}</> : null}</p>
+    <div className="cc-topbar-end flex min-w-0 items-center justify-end gap-2 sm:gap-4">
       <TicketNotifications />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

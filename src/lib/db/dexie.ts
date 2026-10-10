@@ -129,6 +129,7 @@ export interface LocalTimeEntry {
 
 export interface LocalExpenseReport {
   id: string;
+  storm_event_id?: string | null;
   contractor_id: string;
   report_period_start: string;
   report_period_end: string;
