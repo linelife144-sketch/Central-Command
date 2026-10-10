@@ -1,0 +1,166 @@
+{
+  "date": "2026-10-09 America/Chicago",
+  "agent": "Codex /root",
+  "target": {
+    "provider": "Hostinger",
+    "host": "srv1969199.hstgr.cloud",
+    "url": "https://srv1969199.hstgr.cloud",
+    "environment": "development"
+  },
+  "deployment": {
+    "release_id": "20261009-development-2",
+    "code_commit": "3d1d0e597e601f1715f91503ca1c9d049249e9c4",
+    "source_files_verified": 793,
+    "image_id": "sha256:3cb24d744414128d67a43355600f98364c0d0069a0d13ec0f038bef48c26f5cb",
+    "configured_user": "node",
+    "status": "running",
+    "health": "healthy",
+    "started_at": "2026-10-10T01:03:42.390723717Z",
+    "runtime_checks": {
+      "uid": 1000,
+      "source_map_js": "1.2.2",
+      "client_asset_files_scanned": 150,
+      "server_credential_in_client_assets": false,
+      "environment_file_in_image": false,
+      "backend_project": "xcvacmreerrypygpritq"
+    }
+  },
+  "archive_sha256": "2f057f8b7808d263f6b20ff267f70064f7b9ea62f84a02380b19c50596700b68",
+  "public_smoke": {
+    "origin": "https://srv1969199.hstgr.cloud",
+    "verified_at": "2026-10-10T01:04:43.988Z",
+    "login": {
+      "status": 200,
+      "password_field": true
+    },
+    "asset": {
+      "path": "/_next/static/chunks/4bd1b696-8a4ab4fdf0ae305a.js",
+      "status": 200
+    },
+    "manifest": {
+      "status": 200
+    },
+    "signed_out_dashboard": {
+      "status": 307,
+      "location": "/login?redirect=%2Fadmin%2Fdashboard"
+    },
+    "signed_out_profile": {
+      "status": 401
+    },
+    "http_to_https": {
+      "status": 301,
+      "location": "https://srv1969199.hstgr.cloud/login"
+    },
+    "certificate_validation_bypassed": false
+  },
+  "certificate": {
+    "host": "srv1969199.hstgr.cloud",
+    "authorized": true,
+    "protocol": "TLSv1.3",
+    "subject": "srv1969199.hstgr.cloud",
+    "issuer": "YR1",
+    "subject_alt_names": "DNS:srv1969199.hstgr.cloud",
+    "valid_from": "Oct  9 23:58:02 2026 GMT",
+    "valid_to": "Jan  7 23:58:01 2027 GMT",
+    "verified_at": "2026-10-10T01:00:34.351Z"
+  },
+  "auth_redirect": {
+    "project": "xcvacmreerrypygpritq",
+    "site_url": "http://localhost:3000",
+    "previous_uri_allow_list": "",
+    "uri_allow_list": "https://srv1969199.hstgr.cloud/**",
+    "site_url_preserved": true,
+    "redirect_added": "https://srv1969199.hstgr.cloud/**",
+    "verified_at": "2026-10-10T00:50:44.992Z"
+  },
+  "production_audit": {
+    "verified_at": "2026-10-10T00:58:19.078Z",
+    "source_map_js": "1.2.2",
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "local_verification": {
+    "pre_patch_full_tests": {
+      "tests": 829,
+      "files": 143,
+      "exit": 0
+    },
+    "post_patch_source_tests": {
+      "tests": 823,
+      "files": 142,
+      "exit": 0
+    },
+    "post_patch_cleaner_script_tests": {
+      "tests": 6,
+      "files": 1,
+      "exit": 0
+    },
+    "post_patch_strict_repository_types": {
+      "exit": 0
+    },
+    "scoped_lint": {
+      "files": 82,
+      "exit": 0
+    },
+    "isolated_production_build": {
+      "static_pages": 50,
+      "exit": 0
+    },
+    "vps_clean_production_build": {
+      "static_pages": 50,
+      "exit": 0
+    },
+    "graphify_update": {
+      "nodes": 14776,
+      "edges": 30941,
+      "communities": 766,
+      "exit": 0
+    }
+  },
+  "browser": {
+    "url": "https://srv1969199.hstgr.cloud/login",
+    "title": "Sign In - Central Command",
+    "login_fields_enabled": true,
+    "console_warnings_or_errors": [],
+    "screenshot": "hostinger-development-login-20261009.jpg",
+    "authenticated_acceptance": false
+  },
+  "preservation": {
+    "business_records_reset_by_deployment": false,
+    "accounts_created_or_promoted_by_deployment": false,
+    "email_sent_by_deployment": false,
+    "bulk_historical_migrations_applied_by_deployment": false,
+    "existing_hermes_and_traefik_restarted_by_deployment": false
+  },
+  "open_work": [
+    "B5c-e and C-I workflow implementation",
+    "Authenticated native-manager and two-storm role isolation acceptance",
+    "Physical GPS/photo and private-upload acceptance",
+    "Offline reconnect, cross-device and print acceptance",
+    "Separately controlled production launch/test-data reset"
+  ],
+  "services_readback": [
+    {
+      "name": "central-command-development",
+      "status": "running",
+      "health": "healthy",
+      "started_at": "2026-10-10T01:03:42.390723717Z"
+    },
+    {
+      "name": "hermes-agent-bq9a-hermes-agent-1",
+      "status": "running",
+      "started_at": "2026-09-29T23:26:35.873146901Z"
+    },
+    {
+      "name": "traefik-traefik-1",
+      "status": "running",
+      "started_at": "2026-09-29T23:26:35.855846896Z"
+    }
+  ]
+}

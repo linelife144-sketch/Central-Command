@@ -35,7 +35,9 @@ Earlier checklists and dated entries remain historical evidence. They do not cer
 - [x] Prepare the owner's requested release: retain all six archival payroll copies with exact compiler exclusions and strict checking, correct broader hook lint issues, and verify production build/50 pages, 82-file scoped lint, 21 focused regressions and loopback production startup/public/signed-out routing. See [release evidence](../docs/testing/2026-10-09-release-preparation.md). — Codex /root
 - [x] Final full regression: 829 tests/143 files; normal strict repository types, route-type generation and AST Graphify pass. — Codex /root
 - [x] Prepare the owner-selected Hostinger VPS development deployment, protected build/runtime configuration and verified additive Supabase redirect allowlist entry. — Codex /root
-- [ ] Verify hosted container build/startup, HTTPS routes and repository push readback. Full B5/C–I, authenticated/device acceptance and controlled production launch/reset remain open. — Codex /root
+- [x] Publish/read back all saved code on `origin/admin`; clean VPS build passes strict types/50 pages and the final development container is healthy at `https://srv1969199.hstgr.cloud`. Trusted HTTPS, public assets, signed-out access and 793 source checksums verify; existing Hermes/proxy services remain running. — Codex /root, 2026-10-09
+- [x] Resolve the production source-map-js advisory with the single 1.2.2 patch; post-patch checks cover 829 tests/143 files, strict repository types and zero known production audit findings. Save final deployment record, screenshot and [deployment instructions](../docs/deployment/hostinger-development.md). — Codex /root
+- [ ] Full B5/C–I, authenticated/device acceptance and controlled production launch/reset remain open. — Codex /root
 
 ### Other recorded changes — Pi
 

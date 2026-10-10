@@ -104,7 +104,8 @@ The owner requested pushing all saved work to the live app. [Release preparation
 - [x] Pass strict isolated production build and 50 static pages, 82-file scoped lint, 21 focused auth/detail/workspace regressions and local production public/signed-out smoke checks. — Codex /root
 - [x] Final full regression passes 829 tests/143 files; normal repository strict types, route-type generation and AST Graphify pass. — Codex /root
 - [x] Identify the owner-selected Hostinger development VPS; prepare isolated Docker/Traefik deployment and protected environment configuration, and append/read back its Supabase redirect allowlist entry. — Codex /root
-- [ ] Verify clean hosted container build/startup, HTTPS routes and repository push readback. Development deployment does not complete unfinished workflow acceptance or the production launch/reset. — Codex /root
+- [x] Publish/read back the saved code on `origin/admin`; clean VPS container build/startup and trusted HTTPS public/signed-out checks pass at `https://srv1969199.hstgr.cloud`. Patch the one source-map dependency advisory; post-patch verification covers all 829 tests/143 files, strict repository types and zero known production audit findings. Final container is healthy with 793 verified source checksums. — Codex /root, 2026-10-09
+- [ ] Complete B5c–e/C–I and authenticated/device acceptance; development publication does not complete the separately controlled production launch/reset. — Codex /root
 
 ## Historical plans and implementation evidence
 
